@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentType {
+  PAPER
+  BLOG
+  ESSAY
+  ARTICLE
+  POLICY_REPORT
+  BOOK
+  VIDEO
+  SOCIAL_POST
+  OTHER
+}
+
+enum ReadingStatus {
+  UNREAD
+  READING
+  READ
+}
+
+model Entry {
+  id            String        @id @default(cuid())
+  title         String
+  authors       String[]
+  year          Int?
+  contentType   ContentType   @default(PAPER)
+  url           String?
+  doi           String?
+  source        String?
+  abstract      String?
+  autoKeywords  String[]
+  userKeywords  String[]
+  summary       String?
+  notes         Json          @default("[]")
+  readingStatus ReadingStatus @default(UNREAD)
+  createdAt     DateTime      @default(now())
+}
