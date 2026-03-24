@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateApiKey } from '@/app/api/api-key-middleware';
+import { getCurrentUserId } from '@/lib/session';
 
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {
@@ -16,7 +17,13 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
     try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const collections = await prisma.collection.findMany({
+            where: { userId },
             include: {
                 _count: {
                     select: { entries: true }

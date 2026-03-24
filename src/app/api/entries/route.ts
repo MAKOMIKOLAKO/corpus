@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { validateApiKey } from '@/app/api/api-key-middleware';
 import { checkForDuplicates } from '@/lib/duplicateHandler';
+import { getCurrentUserId } from '@/lib/session';
 
 const prisma = new PrismaClient();
 
@@ -23,13 +24,18 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
     try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const search = searchParams.get('search');
         const contentType = searchParams.get('contentType');
         const readingStatus = searchParams.get('readingStatus');
         const year = searchParams.get('year');
 
-        const where: any = {};
+        const where: any = { userId };
 
         if (search) {
             where.OR = [
