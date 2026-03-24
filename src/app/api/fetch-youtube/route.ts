@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { validateApiKey } from '@/app/api/api-key-middleware';
-import { google } from 'googleapis';
 
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {
@@ -18,7 +17,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     let requestUrl: string = '';
-
+    
     try {
         // Validate API key first
         const validation = await validateApiKey(request);
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
         const requestData = await request.json();
         requestUrl = requestData.url;
         const { useAI = true } = requestData;
-
+        
         if (!requestUrl) {
             return NextResponse.json({ error: 'YouTube URL is required' }, { status: 400 });
         }
@@ -51,25 +50,24 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const youtube = google.youtube({
-            version: 'v3',
-            auth: process.env.YOUTUBE_API_KEY
-        });
+        // Fetch video details from YouTube API using direct fetch
+        const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
+        const videoResponse = await fetch(apiUrl);
+        
+        if (!videoResponse.ok) {
+            return NextResponse.json({ error: 'Failed to fetch video from YouTube API' }, { status: 500 });
+        }
 
-        // Fetch video details from YouTube API
-        const videoResponse = await youtube.videos.list({
-            part: ['snippet', 'contentDetails', 'statistics'],
-            id: [videoId]
-        });
-
-        if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
+        const videoData = await videoResponse.json();
+        
+        if (!videoData.items || videoData.items.length === 0) {
             return NextResponse.json({ error: 'Video not found' }, { status: 404 });
         }
 
-        const video = videoResponse.data.items[0];
-        const snippet = video.snippet!;
-        const contentDetails = video.contentDetails!;
-        const statistics = video.statistics!;
+        const video = videoData.items[0];
+        const snippet = video.snippet;
+        const contentDetails = video.contentDetails;
+        const statistics = video.statistics;
 
         // Extract basic metadata
         const basicData = {
@@ -205,7 +203,7 @@ Return exactly this JSON structure with no markdown formatting.`;
 
     } catch (error) {
         console.error('Error fetching YouTube video:', error);
-
+        
         // Return basic extraction as fallback
         const fallbackVideoId = extractYouTubeVideoId(requestUrl);
         if (fallbackVideoId) {
