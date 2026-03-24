@@ -26,6 +26,7 @@ export interface CreationResult {
     error?: string;
     confidence?: 'high' | 'medium' | 'low';
     reason?: string;
+    limit?: number;
 }
 
 /**
@@ -144,6 +145,14 @@ export async function createEntryWithMetadata(
                     existingEntry: errorData.duplicateEntry,
                     confidence: errorData.confidence,
                     reason: errorData.reason
+                };
+            }
+            // Check if it's an entry limit error (status 403)
+            if (response.status === 403 && errorData.error === 'entry_limit_reached') {
+                return {
+                    success: false,
+                    error: 'entry_limit_reached',
+                    limit: errorData.limit
                 };
             }
             return { success: false, error: errorData.error || 'Failed to create entry' };
