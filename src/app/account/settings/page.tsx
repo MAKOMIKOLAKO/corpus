@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,6 +26,36 @@ export default function AccountPage() {
         plan: session.user.plan as "FREE" | "PRO" | "LIFETIME_PRO"
     } : null);
     const upgraded = searchParams?.get('upgraded') === 'true';
+    const userIdFromUrl = searchParams?.get('userId');
+
+    // Handle immediate upgrade if coming from Stripe success
+    useEffect(() => {
+        if (upgraded && userIdFromUrl && session?.user?.id === userIdFromUrl) {
+            console.log("🚨 IMMEDIATE UPGRADE TRIGGERED");
+            upgradeUserToPro(userIdFromUrl);
+        }
+    }, [upgraded, userIdFromUrl, session?.user?.id]);
+
+    const upgradeUserToPro = async (userId: string) => {
+        try {
+            console.log("🚨 UPGRADING USER TO PRO:", userId);
+            const response = await fetch('/api/stripe/upgrade-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            if (response.ok) {
+                console.log("🚨 UPGRADE SUCCESSFUL");
+                // Force session refresh to update plan
+                window.location.reload();
+            } else {
+                console.error("🚨 UPGRADE FAILED");
+            }
+        } catch (error) {
+            console.error("🚨 UPGRADE ERROR:", error);
+        }
+    };
 
     const handleRedeemPromo = async (e: React.FormEvent) => {
         e.preventDefault();
