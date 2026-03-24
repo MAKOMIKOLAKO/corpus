@@ -98,6 +98,19 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && typeof (token as any).userId === "string") {
         (session.user as any).id = (token as any).userId;
+
+        // Fetch user plan from database
+        try {
+          const dbUser = await withRetry(() => (prisma as any).user.findUnique({
+            where: { id: (token as any).userId },
+            select: { plan: true }
+          }));
+          if (dbUser) {
+            (session.user as any).plan = dbUser.plan;
+          }
+        } catch (error) {
+          console.error('Error fetching user plan:', error);
+        }
       }
       return session;
     },

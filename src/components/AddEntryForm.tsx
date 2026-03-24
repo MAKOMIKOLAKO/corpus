@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApiKey } from '@/hooks/useApiKey';
 import { createEntryWithMetadata } from '@/lib/entryCreation';
+import UpgradeBanner from '@/components/UpgradeBanner';
 
 export default function AddEntryForm() {
     const router = useRouter();
@@ -22,6 +23,7 @@ export default function AddEntryForm() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [existingDuplicate, setExistingDuplicate] = useState<any | null>(null);
+    const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -143,6 +145,12 @@ export default function AddEntryForm() {
             if (result.success) {
                 router.push(`/entries/${result.entry.id}`);
             } else {
+                // Handle entry limit error
+                if (result.error === 'entry_limit_reached') {
+                    setShowUpgradeBanner(true);
+                    setError(null);
+                    return;
+                }
                 // Handle duplicate entries with enhanced messaging
                 if (result.error?.includes('duplicate') && result.existingEntry) {
                     const confidence = result.confidence || 'unknown';
@@ -204,6 +212,13 @@ export default function AddEntryForm() {
 
     return (
         <div className="space-y-8 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+            {/* Upgrade Banner for Entry Limit */}
+            {showUpgradeBanner && (
+                <UpgradeBanner
+                    message="You've reached the 100 entry limit on the free plan. Upgrade to Pro for unlimited entries."
+                    ctaText="Upgrade to Pro"
+                />
+            )}
             {/* Fetch Section */}
             <Card>
                 <CardHeader>

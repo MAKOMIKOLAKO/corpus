@@ -3,6 +3,7 @@ import { validateApiKey } from '@/app/api/api-key-middleware';
 import { checkForDuplicates } from '@/lib/duplicateHandler';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
+import { canAddEntry } from '@/lib/plans';
 
 // Define types to avoid import issues
 type ContentType = 'PAPER' | 'BLOG' | 'ESSAY' | 'ARTICLE' | 'POLICY_REPORT' | 'BOOK' | 'OTHER';
@@ -82,6 +83,39 @@ export async function POST(request: NextRequest) {
         const validation = await validateApiKey(request);
         if (!validation.valid) {
             return validation.response;
+        }
+
+        // Get current user and check entry limits
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Get user data to check plan limits
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        }) as any;
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        // Count current entries
+        const currentEntryCount = await prisma.entry.count({
+            where: { userId }
+        });
+
+        // Check if user can add more entries
+        if (!canAddEntry(user, currentEntryCount)) {
+            return NextResponse.json(
+                { error: 'entry_limit_reached', limit: 100 },
+                {
+                    status: 403,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                    }
+                }
+            );
         }
 
         let body;
@@ -199,6 +233,7 @@ export async function POST(request: NextRequest) {
             summary: body.summary || null,
             notes: body.notes || [],
             readingStatus: body.readingStatus || 'UNREAD',
+            userId, // Add userId to associate entry with user
         };
 
         const entry = await prisma.entry.create({

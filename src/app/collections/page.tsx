@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Calendar, FileText, Loader2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
+import UpgradeBanner from '@/components/UpgradeBanner';
+import { useSession } from 'next-auth/react';
+import { hasPaidFeature } from '@/lib/plans';
 
 interface Collection {
     id: string;
@@ -47,6 +50,7 @@ export default function CollectionsPage() {
     const [newCollection, setNewCollection] = useState({ name: '', description: '' });
     const [creating, setCreating] = useState(false);
     const apiKey = useApiKey();
+    const { data: session } = useSession();
 
     useEffect(() => {
         fetchCollections();
@@ -110,12 +114,23 @@ export default function CollectionsPage() {
 
     return (
         <div className="space-y-6">
+            {/* Upgrade Banner for Collections Feature */}
+            {!hasPaidFeature(session?.user || null, 'collections') && (
+                <UpgradeBanner
+                    message="Collections are a Pro feature. Upgrade to unlock unlimited collections and grouping."
+                    ctaText="Upgrade to Pro"
+                />
+            )}
+
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-xl font-medium tracking-tight">collections</h2>
                     <p className="text-sm text-muted-foreground">organize your entries into custom collections.</p>
                 </div>
-                <Button onClick={() => setShowCreateModal(true)}>
+                <Button
+                    onClick={() => setShowCreateModal(true)}
+                    disabled={!hasPaidFeature(session?.user || null, 'collections')}
+                >
                     <Plus className="w-4 h-4 mr-2" />
                     new collection
                 </Button>

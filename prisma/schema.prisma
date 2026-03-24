@@ -25,15 +25,28 @@ enum ReadingStatus {
   READ
 }
 
+enum Plan {
+  FREE
+  PRO
+  LIFETIME_PRO
+}
+
 model User {
-  id            String      @id @default(cuid())
-  email         String      @unique
-  name          String?
-  passwordHash  String?     // null for OAuth users
-  createdAt     DateTime    @default(now())
+  id                    String      @id @default(cuid())
+  email                 String      @unique
+  name                  String?
+  passwordHash          String?     // null for OAuth users
+  plan                  Plan        @default(FREE)
+  stripeCustomerId      String?     @unique
+  stripeSubscriptionId  String?     @unique
+  stripePriceId         String?
+  subscriptionStatus    String?
+  subscriptionEndsAt    DateTime?
+  createdAt             DateTime    @default(now())
 
   entries     Entry[]
   collections Collection[]
+  promoCodes  PromoCode[]
 }
 
 model Entry {
@@ -83,4 +96,13 @@ model EntryCollection {
   collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
   @@unique([entryId, collectionId])
+}
+
+model PromoCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  usedBy    String?
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [usedBy], references: [id], onDelete: SetNull)
 }
