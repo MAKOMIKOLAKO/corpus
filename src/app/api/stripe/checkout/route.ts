@@ -10,9 +10,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { priceId } = await request.json();
+    const { priceId, billingCycle } = await request.json();
 
-    if (!priceId) {
+    let actualPriceId = priceId;
+    if (billingCycle === 'monthly') {
+      actualPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
+    } else if (billingCycle === 'annual') {
+      actualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID;
+    }
+
+    if (!actualPriceId) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
     }
 
@@ -51,7 +58,7 @@ export async function POST(request: NextRequest) {
       mode: 'subscription',
       line_items: [
         {
-          price: priceId,
+          price: actualPriceId,
           quantity: 1,
         },
       ],
