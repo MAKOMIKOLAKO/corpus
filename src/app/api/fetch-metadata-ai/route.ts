@@ -3,6 +3,16 @@ import * as cheerio from 'cheerio';
 import { GoogleGenAI } from '@google/genai';
 import { validateApiKey } from '../api-key-middleware';
 
+function isYouTubeUrl(url: string): boolean {
+    const youtubePatterns = [
+        /youtube\.com\/watch\?v=/,
+        /youtu\.be\//,
+        /youtube\.com\/embed\//,
+        /youtube\.com\/shorts\//
+    ];
+    return youtubePatterns.some((pattern) => pattern.test(url));
+}
+
 export async function POST(request: NextRequest) {
     try {
         // Validate API key first
@@ -15,6 +25,42 @@ export async function POST(request: NextRequest) {
 
         if (!url && !doi) {
             return NextResponse.json({ error: 'URL or DOI is required' }, { status: 400 });
+        }
+
+        if (url && isYouTubeUrl(String(url).trim())) {
+            const youtubeResponse = await fetch(
+                `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/fetch-youtube`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': request.headers.get('x-api-key') || ''
+                    },
+                    body: JSON.stringify({ url: String(url).trim(), useAI: true })
+                }
+            );
+            const data = await youtubeResponse.json().catch(() => ({}));
+            if (youtubeResponse.ok) {
+                return NextResponse.json({
+                    title: data.title || '',
+                    authors: Array.isArray(data.authors) ? data.authors : [],
+                    year: typeof data.year === 'number' ? data.year : null,
+                    publishDate: data.publishDate || data.publishedAt || null,
+                    source: data.source || 'YouTube',
+                    abstract: data.abstract || '',
+                    contentType: 'VIDEO',
+                    url: String(url).trim(),
+                    doi: '',
+                    channelId: data.channelId ?? null,
+                    channelUrl: data.channelUrl ?? null
+                });
+            }
+            return NextResponse.json(
+                typeof data === 'object' && data !== null && 'error' in data
+                    ? data
+                    : { error: 'Failed to fetch YouTube metadata' },
+                { status: youtubeResponse.status }
+            );
         }
 
         let rawContent = '';

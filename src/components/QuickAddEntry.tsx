@@ -44,12 +44,12 @@ export default function QuickAddEntry() {
             // Use unified entry creation system
             const result = await createEntryWithMetadata(url, metadata, apiKey, false); // Keep AI generation for quick add
 
-            if (result.success) {
+            if (result.success && result.entry?.id) {
                 setSuccess(true);
                 setUrl('');
                 // Redirect to new entry after a short delay
                 setTimeout(() => {
-                    window.location.href = `/entries/${result.entry.id}`;
+                    window.location.href = `/entries/${result.entry!.id}`;
                 }, 1500);
             } else {
                 // Check if it's a duplicate entry error

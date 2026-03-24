@@ -29,6 +29,7 @@ export default function AddEntryForm() {
         title: '',
         authors: '',
         year: '',
+        publishDate: '',
         contentType: 'PAPER',
         url: '',
         doi: '',
@@ -66,8 +67,9 @@ export default function AddEntryForm() {
             setFormData(prev => ({
                 ...prev,
                 title: data.title || '',
-                authors: Array.isArray(data.authors) ? data.authors[0] || '' : '',
-                year: data.year ? data.year.toString() : '',
+                authors: Array.isArray(data.authors) ? data.authors.join(', ') : '',
+                year: data.year != null ? String(data.year) : '',
+                publishDate: data.publishDate ? String(data.publishDate) : '',
                 source: data.source || '',
                 abstract: data.abstract || '',
                 url: tab === 'URL' ? fetchInput : (data.url || ''),
@@ -131,8 +133,9 @@ export default function AddEntryForm() {
                 tab === 'URL' ? formData.url : `https://doi.org/${formData.doi}`,
                 {
                     title: formData.title,
-                    authors: Array.isArray(formData.authors) ? formData.authors.split(',').map(a => a.trim()).filter(Boolean) : [],
+                    authors: formData.authors.split(',').map(a => a.trim()).filter(Boolean),
                     year: formData.year ? parseInt(formData.year, 10) : undefined,
+                    publishDate: formData.publishDate || undefined,
                     contentType: formData.contentType,
                     url: formData.url,
                     doi: formData.doi,
@@ -142,7 +145,7 @@ export default function AddEntryForm() {
                 apiKey
             );
 
-            if (result.success) {
+            if (result.success && result.entry?.id) {
                 router.push(`/entries/${result.entry.id}`);
             } else {
                 // Handle entry limit error
@@ -317,10 +320,18 @@ export default function AddEntryForm() {
                                 <Label>Source (Journal/Publisher)</Label>
                                 <Input value={formData.source} onChange={e => setFormData({ ...formData, source: e.target.value })} />
                             </div>
-                            <div className="space-y-2 flex gap-4 md:col-span-2">
-                                <div className="w-1/3 space-y-2">
+                            <div className="space-y-2 flex flex-wrap gap-4 md:col-span-2">
+                                <div className="w-1/3 min-w-[140px] space-y-2">
                                     <Label>Year</Label>
                                     <Input type="number" value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} />
+                                </div>
+                                <div className="min-w-[200px] flex-1 space-y-2">
+                                    <Label>Publish date</Label>
+                                    <Input
+                                        placeholder="e.g. ISO date from source"
+                                        value={formData.publishDate}
+                                        onChange={e => setFormData({ ...formData, publishDate: e.target.value })}
+                                    />
                                 </div>
                                 <div className="flex-1 space-y-2">
                                     <Label>Content Type</Label>

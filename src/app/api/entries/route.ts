@@ -216,29 +216,41 @@ export async function POST(request: NextRequest) {
         // Only generate AI content if we have substantial text and not skipped
         if (!skipAI && textForAnalysis && textForAnalysis.length > 100 && process.env.GEMINI_API_KEY) {
             try {
+                const internalApiKey = request.headers.get('x-api-key') || process.env.KEY || '';
+                const internalHeaders: HeadersInit = {
+                    'Content-Type': 'application/json',
+                    'x-api-key': internalApiKey,
+                };
+                const base = process.env.NEXTAUTH_URL || 'http://localhost:3000';
                 // Generate topics and keywords in parallel for better performance
                 const [topicsResponse, keywordsResponse] = await Promise.all([
-                    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/topics`, {
+                    fetch(`${base}/api/topics`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: internalHeaders,
                         body: JSON.stringify({ text: textForAnalysis }),
                     }),
-                    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/keywords`, {
+                    fetch(`${base}/api/keywords`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: internalHeaders,
                         body: JSON.stringify({ text: textForAnalysis }),
                     })
                 ]);
 
-                // Process responses
+                // Process responses (avoid .json() on HTML error pages)
                 if (topicsResponse.ok) {
-                    const topicsData = await topicsResponse.json();
-                    topics = topicsData.topics || [];
+                    const ct = topicsResponse.headers.get('content-type') || '';
+                    if (ct.includes('application/json')) {
+                        const topicsData = await topicsResponse.json();
+                        topics = topicsData.topics || [];
+                    }
                 }
 
                 if (keywordsResponse.ok) {
-                    const keywordsData = await keywordsResponse.json();
-                    autoKeywords = keywordsData.keywords || [];
+                    const ct = keywordsResponse.headers.get('content-type') || '';
+                    if (ct.includes('application/json')) {
+                        const keywordsData = await keywordsResponse.json();
+                        autoKeywords = keywordsData.keywords || [];
+                    }
                 }
             } catch (error) {
                 console.error('Error generating topics/keywords:', error);

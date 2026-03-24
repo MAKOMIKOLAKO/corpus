@@ -57,7 +57,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
             });
 
             if (response.ok) {
-                router.push('/');
+                router.push('/library');
             } else {
                 const errorData = await response.json();
                 console.error('Delete failed:', errorData);

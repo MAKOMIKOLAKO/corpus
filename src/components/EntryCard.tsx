@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { saveScrollPositionForKey } from '@/hooks/useScrollPosition';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,7 +68,15 @@ const formatDate = (date: string | Date) => {
     }
 };
 
-export default function EntryCard({ entry }: { entry: Entry }) {
+export default function EntryCard({
+    entry,
+    scrollPositionKey = 'library',
+}: {
+    entry: Entry;
+    /** Session key for scroll restore (must match useScrollPosition on that page, e.g. `collection-${id}`). */
+    scrollPositionKey?: string;
+}) {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [isCollectionOpen, setIsCollectionOpen] = useState(false);
     const [isTitleHovered, setIsTitleHovered] = useState(false);
@@ -257,8 +267,7 @@ export default function EntryCard({ entry }: { entry: Entry }) {
             });
 
             if (response.ok) {
-                // Refresh the page to show updated list
-                window.location.reload();
+                router.refresh();
             } else {
                 const errorData = await response.json();
                 console.error('Delete failed:', errorData);
@@ -272,7 +281,11 @@ export default function EntryCard({ entry }: { entry: Entry }) {
 
     return (
         <>
-            <Link href={`/entries/${entry.id}`}>
+            <Link
+                href={`/entries/${entry.id}`}
+                scroll={false}
+                onClick={() => saveScrollPositionForKey(scrollPositionKey)}
+            >
                 <Card className="group h-full hover:shadow-lg transition-all duration-200 border-border/50 hover:border-foreground/20 overflow-visible">
                     <CardContent className="p-5 overflow-visible">
                         <div className="space-y-4">

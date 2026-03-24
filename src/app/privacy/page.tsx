@@ -23,7 +23,7 @@ export default function PrivacyPage() {
 
           <p>
             The extension reads the URL and title of the current browser tab solely to save 
-            that information to the user's own Corpus instance. This data is transmitted only 
+            that information to the user&apos;s own Corpus instance. This data is transmitted only 
             to the Corpus server configured by the user and nowhere else.
           </p>
 

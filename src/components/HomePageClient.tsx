@@ -36,7 +36,7 @@ export default function HomePageClient({
         if (sortBy) params.set('sortBy', sortBy);
 
         startTransition(() => {
-            router.push(`/?${params.toString()}`);
+            router.push(`/library?${params.toString()}`);
         });
     };
 
@@ -133,7 +133,7 @@ export default function HomePageClient({
                         </div>
                         {search && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md border border-primary/20">
-                                search: "{search}"
+                                search: &quot;{search}&quot;
                             </span>
                         )}
                         {contentType && (
