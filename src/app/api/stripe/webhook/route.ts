@@ -5,18 +5,18 @@ import { prisma } from '@/lib/prismaWithRetry';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.text();
-    const signature = (await headers()).get('stripe-signature');
+    const rawBody = await request.text();
+    const sig = request.headers.get('stripe-signature');
 
-    if (!signature) {
+    if (!sig) {
       return NextResponse.json({ error: 'No signature' }, { status: 400 });
     }
 
     let event;
     try {
       event = stripe.webhooks.constructEvent(
-        body,
-        signature,
+        rawBody,
+        sig,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
     } catch (err: any) {
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled event type: ${event.type}`);
     }
 
-    // Return a 200 response to acknowledge receipt of the event
-    return NextResponse.json({ received: true });
+    // Always return a 200 response to acknowledge receipt of the event
+    return Response.json({ received: true }, { status: 200 });
 
   } catch (error) {
     console.error('Webhook error:', error);
