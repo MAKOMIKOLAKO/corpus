@@ -101,8 +101,8 @@ export const authOptions: NextAuthOptions = {
 
         // Fetch user plan from database
         try {
-          const dbUser = await withRetry(() => (prisma as any).user.findUnique({
-            where: { id: (token as any).userId },
+          const dbUser = await withRetry(() => prisma.user.findUnique({
+            where: { id: (token as any).userId as string },
             select: { plan: true }
           }));
           if (dbUser) {
