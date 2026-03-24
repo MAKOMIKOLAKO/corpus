@@ -17,6 +17,8 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    let requestUrl: string = '';
+
     try {
         // Validate API key first
         const validation = await validateApiKey(request);
@@ -24,13 +26,16 @@ export async function POST(request: NextRequest) {
             return validation.response;
         }
 
-        const { url, useAI = true } = await request.json();
-        if (!url) {
+        const requestData = await request.json();
+        requestUrl = requestData.url;
+        const { useAI = true } = requestData;
+
+        if (!requestUrl) {
             return NextResponse.json({ error: 'YouTube URL is required' }, { status: 400 });
         }
 
         // Extract video ID from YouTube URL
-        const videoId = extractYouTubeVideoId(url);
+        const videoId = extractYouTubeVideoId(requestUrl);
         if (!videoId) {
             return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 });
         }
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
         // Initialize YouTube API
         if (!process.env.YOUTUBE_API_KEY) {
             console.warn('YouTube API key not configured, falling back to basic extraction');
-            return NextResponse.json(await basicYouTubeExtraction(url, videoId), {
+            return NextResponse.json(await basicYouTubeExtraction(requestUrl, videoId), {
                 headers: {
                     'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
                     'Vary': 'Origin'
@@ -124,75 +129,87 @@ DURATION: ${basicData.duration}
 VIEWS: ${basicData.viewCount}
         `;
 
-        const systemPrompt = `You are a metadata extraction assistant for YouTube videos. Your job is to extract structured metadata from the provided YouTube video information.
+        const systemPrompt = `You are a metadata extraction assistant for YouTube videos. Your job is to extract structured metadata from provided YouTube video information.
 
 Extract the following fields and return ONLY a JSON object:
-- title (string): The title of the video (use the provided title, but you can clean it up if needed)
+- title (string): The title of the video
 - authors (array of strings): The channel name(s) or creator(s)
 - year (number or null): The year the video was published
 - source (string): Always "YouTube"
-- abstract (string): A concise summary of the video content based on the title, description, and tags
+- abstract (string): A concise summary of the video content
 - contentType (string): Always "VIDEO"
 
 Return exactly this JSON structure with no markdown formatting.`;
 
-        const completion = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `${systemPrompt}\n\nVideo information to analyze:\n${contentForAI}`,
-            config: {
-                responseMimeType: 'application/json',
-                temperature: 0.1,
-            }
-        });
-
-        const resultText = completion.text || '{}';
-        let parsedData: any = {};
         try {
-            parsedData = JSON.parse(resultText);
-        } catch (e) {
-            console.error('Failed to parse AI response:', resultText);
-        }
-
-        // Extract keywords using AI
-        let autoKeywords: string[] = [];
-        try {
-            const keywordCompletion = await ai.models.generateContent({
+            const completion = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
-                contents: `Extract 5 to 8 concise, specific keywords from the following YouTube video information. Focus on topics, themes, and subjects covered. Return only a JSON array of strings, no explanation.\n\nTitle: ${basicData.title}\nDescription: ${basicData.abstract.substring(0, 1000)}\nTags: ${basicData.tags.join(', ')}`,
+                contents: `${systemPrompt}\n\nVideo information to analyze:\n${contentForAI}`,
                 config: {
                     responseMimeType: 'application/json',
+                    temperature: 0.1,
                 }
             });
 
-            const keywordResult = keywordCompletion.text || '[]';
-            const parsedKeywords = JSON.parse(keywordResult);
-            autoKeywords = Array.isArray(parsedKeywords) ? parsedKeywords.slice(0, 8) : [];
-        } catch (e) {
-            console.error('Failed to extract keywords:', e);
-        }
-
-        const finalData = {
-            ...basicData,
-            title: parsedData.title || basicData.title,
-            abstract: parsedData.abstract || basicData.abstract,
-            authors: Array.isArray(parsedData.authors) ? parsedData.authors : basicData.authors,
-            autoKeywords,
-        };
-
-        return NextResponse.json(finalData, {
-            headers: {
-                'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
-                'Vary': 'Origin'
+            const resultText = completion.text || '{}';
+            let parsedData: any = {};
+            try {
+                parsedData = JSON.parse(resultText);
+            } catch (e) {
+                console.error('Failed to parse AI response:', resultText);
             }
-        });
+
+            // Extract keywords using AI
+            let autoKeywords: string[] = [];
+            try {
+                const keywordCompletion = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: `Extract 5 to 8 concise, specific keywords from the following YouTube video information. Return only a JSON array of strings, no explanation.\n\nTitle: ${basicData.title}\nDescription: ${basicData.abstract.substring(0, 1000)}\nTags: ${basicData.tags.join(', ')}`,
+                    config: {
+                        responseMimeType: 'application/json',
+                    }
+                });
+
+                const keywordResult = keywordCompletion.text || '[]';
+                const parsedKeywords = JSON.parse(keywordResult);
+                autoKeywords = Array.isArray(parsedKeywords) ? parsedKeywords.slice(0, 8) : [];
+            } catch (e) {
+                console.error('Failed to extract keywords:', e);
+            }
+
+            const finalData = {
+                ...basicData,
+                title: parsedData.title || basicData.title,
+                abstract: parsedData.abstract || basicData.abstract,
+                authors: Array.isArray(parsedData.authors) ? parsedData.authors : basicData.authors,
+                autoKeywords
+            };
+
+            return NextResponse.json(finalData, {
+                headers: {
+                    'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                    'Vary': 'Origin'
+                }
+            });
+
+        } catch (error) {
+            console.error('Error processing YouTube video with AI:', error);
+            // Return basic metadata on AI failure
+            return NextResponse.json(basicData, {
+                headers: {
+                    'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                    'Vary': 'Origin'
+                }
+            });
+        }
 
     } catch (error) {
         console.error('Error fetching YouTube video:', error);
-        
+
         // Return basic extraction as fallback
-        const videoId = extractYouTubeVideoId(url);
-        if (videoId) {
-            return NextResponse.json(await basicYouTubeExtraction(url, videoId), {
+        const fallbackVideoId = extractYouTubeVideoId(requestUrl);
+        if (fallbackVideoId) {
+            return NextResponse.json(await basicYouTubeExtraction(requestUrl, fallbackVideoId), {
                 headers: {
                     'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
                     'Vary': 'Origin'
@@ -205,7 +222,7 @@ Return exactly this JSON structure with no markdown formatting.`;
             abstract: '',
             authors: [],
             source: 'YouTube',
-            url: url || '',
+            url: requestUrl,
             contentType: 'VIDEO',
             autoKeywords: [],
             userKeywords: [],
@@ -236,7 +253,6 @@ function extractYouTubeVideoId(url: string): string | null {
 }
 
 async function basicYouTubeExtraction(url: string, videoId: string) {
-    // Fallback extraction without API key
     return {
         title: '',
         abstract: '',
