@@ -28,6 +28,28 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'URL is required' }, { status: 400 });
         }
 
+        // Check if this is a YouTube URL and redirect to YouTube-specific handler
+        if (isYouTubeUrl(url)) {
+            const youtubeResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/fetch-youtube`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': request.headers.get('x-api-key') || ''
+                },
+                body: JSON.stringify({ url, useAI })
+            });
+
+            if (youtubeResponse.ok) {
+                const data = await youtubeResponse.json();
+                return NextResponse.json(data, {
+                    headers: {
+                        'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                        'Vary': 'Origin'
+                    }
+                });
+            }
+        }
+
         // Handle partial failure gracefully (never throw)
         const response = await fetch(url, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
@@ -200,11 +222,84 @@ Return exactly this JSON structure with no markdown formatting.`;
             url: '',
             contentType: 'ARTICLE',
             autoKeywords: [],
-            userKeywords: [],
-        }, {
-            headers: {
-                'Access-Control-Allow-Origin': '*',
+        }
+});
+
+    const resultText = completion.text || '{}';
+    let parsedData: any = {};
+    try {
+        parsedData = JSON.parse(resultText);
+    } catch (e) {
+        console.error('Failed to parse AI response:', resultText);
+    }
+
+    // Validate content type
+    const validTypes = ['PAPER', 'BLOG', 'ESSAY', 'ARTICLE', 'POLICY_REPORT', 'BOOK', 'VIDEO', 'SOCIAL_POST', 'OTHER'];
+    let finalContentType = parsedData.contentType;
+    if (!validTypes.includes(finalContentType)) {
+        finalContentType = 'OTHER';
+    }
+
+    // Extract keywords using AI
+    let autoKeywords: string[] = [];
+    try {
+        const keywordCompletion = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Extract 5 to 8 concise, specific keywords from the following text. Return only a JSON array of strings, no explanation.\n\nText: ${parsedData.abstract || basicAbstract} ${parsedData.title || basicTitle}`,
+            config: {
+                responseMimeType: 'application/json',
             }
         });
+
+        const keywordResult = keywordCompletion.text || '[]';
+        const parsedKeywords = JSON.parse(keywordResult);
+        autoKeywords = Array.isArray(parsedKeywords) ? parsedKeywords.slice(0, 8) : [];
+    } catch (e) {
+        console.error('Failed to extract keywords:', e);
     }
+
+    return NextResponse.json({
+        title: parsedData.title || basicTitle.trim(),
+        abstract: parsedData.abstract || basicAbstract.trim(),
+        authors: Array.isArray(parsedData.authors) ? parsedData.authors : basicAuthors,
+        source: parsedData.source || basicSource.trim(),
+        year: typeof parsedData.year === 'number' ? parsedData.year : basicYear,
+        url,
+        contentType: finalContentType,
+        autoKeywords,
+        userKeywords: [],
+    }, {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+    });
+
+} catch (error) {
+    console.error('Error fetching URL:', error);
+    // Return empty but valid data on complete failure to prevent block
+    return NextResponse.json({
+        title: '',
+        abstract: '',
+        authors: [],
+        source: '',
+        url: '',
+        contentType: 'ARTICLE',
+        autoKeywords: [],
+        userKeywords: [],
+    }, {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+    });
+}
+
+function isYouTubeUrl(url: string): boolean {
+    const youtubePatterns = [
+        /youtube\.com\/watch\?v=/,
+        /youtu\.be\//,
+        /youtube\.com\/embed\//,
+        /youtube\.com\/shorts\//
+    ];
+
+    return youtubePatterns.some(pattern => pattern.test(url));
 }

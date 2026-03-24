@@ -1,0 +1,260 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenAI } from '@google/genai';
+import { validateApiKey } from '@/app/api/api-key-middleware';
+import { google } from 'googleapis';
+
+export async function OPTIONS(request: NextRequest) {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
+            'Access-Control-Max-Age': '86400',
+            'Vary': 'Origin'
+        },
+    });
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        // Validate API key first
+        const validation = await validateApiKey(request);
+        if (!validation.valid) {
+            return validation.response;
+        }
+
+        const { url, useAI = true } = await request.json();
+        if (!url) {
+            return NextResponse.json({ error: 'YouTube URL is required' }, { status: 400 });
+        }
+
+        // Extract video ID from YouTube URL
+        const videoId = extractYouTubeVideoId(url);
+        if (!videoId) {
+            return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 });
+        }
+
+        // Initialize YouTube API
+        if (!process.env.YOUTUBE_API_KEY) {
+            console.warn('YouTube API key not configured, falling back to basic extraction');
+            return NextResponse.json(await basicYouTubeExtraction(url, videoId), {
+                headers: {
+                    'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                    'Vary': 'Origin'
+                }
+            });
+        }
+
+        const youtube = google.youtube({
+            version: 'v3',
+            auth: process.env.YOUTUBE_API_KEY
+        });
+
+        // Fetch video details from YouTube API
+        const videoResponse = await youtube.videos.list({
+            part: ['snippet', 'contentDetails', 'statistics'],
+            id: [videoId]
+        });
+
+        if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
+            return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+        }
+
+        const video = videoResponse.data.items[0];
+        const snippet = video.snippet!;
+        const contentDetails = video.contentDetails!;
+        const statistics = video.statistics!;
+
+        // Extract basic metadata
+        const basicData = {
+            title: snippet.title || '',
+            authors: [snippet.channelTitle || ''],
+            year: snippet.publishedAt ? new Date(snippet.publishedAt).getFullYear() : null,
+            source: 'YouTube',
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            contentType: 'VIDEO' as const,
+            abstract: snippet.description || '',
+            autoKeywords: [],
+            userKeywords: [],
+            // Additional YouTube-specific fields
+            videoId,
+            channelTitle: snippet.channelTitle,
+            publishedAt: snippet.publishedAt,
+            duration: contentDetails.duration,
+            viewCount: parseInt(statistics.viewCount || '0'),
+            likeCount: parseInt(statistics.likeCount || '0'),
+            commentCount: parseInt(statistics.commentCount || '0'),
+            thumbnailUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
+            tags: snippet.tags || []
+        };
+
+        // If AI is disabled, return basic metadata
+        if (!useAI) {
+            return NextResponse.json(basicData, {
+                headers: {
+                    'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                    'Vary': 'Origin'
+                }
+            });
+        }
+
+        // Use AI for enhanced metadata extraction
+        if (!process.env.GEMINI_API_KEY) {
+            console.warn('Gemini API key not configured, returning basic YouTube metadata');
+            return NextResponse.json(basicData, {
+                headers: {
+                    'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                    'Vary': 'Origin'
+                }
+            });
+        }
+
+        const ai = new GoogleGenAI({
+            apiKey: process.env.GEMINI_API_KEY,
+        });
+
+        // Prepare content for AI analysis
+        const contentForAI = `
+TITLE: ${basicData.title}
+CHANNEL: ${basicData.channelTitle}
+DESCRIPTION: ${basicData.abstract.substring(0, 2000)}
+TAGS: ${basicData.tags.join(', ')}
+DURATION: ${basicData.duration}
+VIEWS: ${basicData.viewCount}
+        `;
+
+        const systemPrompt = `You are a metadata extraction assistant for YouTube videos. Your job is to extract structured metadata from the provided YouTube video information.
+
+Extract the following fields and return ONLY a JSON object:
+- title (string): The title of the video (use the provided title, but you can clean it up if needed)
+- authors (array of strings): The channel name(s) or creator(s)
+- year (number or null): The year the video was published
+- source (string): Always "YouTube"
+- abstract (string): A concise summary of the video content based on the title, description, and tags
+- contentType (string): Always "VIDEO"
+
+Return exactly this JSON structure with no markdown formatting.`;
+
+        const completion = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `${systemPrompt}\n\nVideo information to analyze:\n${contentForAI}`,
+            config: {
+                responseMimeType: 'application/json',
+                temperature: 0.1,
+            }
+        });
+
+        const resultText = completion.text || '{}';
+        let parsedData: any = {};
+        try {
+            parsedData = JSON.parse(resultText);
+        } catch (e) {
+            console.error('Failed to parse AI response:', resultText);
+        }
+
+        // Extract keywords using AI
+        let autoKeywords: string[] = [];
+        try {
+            const keywordCompletion = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `Extract 5 to 8 concise, specific keywords from the following YouTube video information. Focus on topics, themes, and subjects covered. Return only a JSON array of strings, no explanation.\n\nTitle: ${basicData.title}\nDescription: ${basicData.abstract.substring(0, 1000)}\nTags: ${basicData.tags.join(', ')}`,
+                config: {
+                    responseMimeType: 'application/json',
+                }
+            });
+
+            const keywordResult = keywordCompletion.text || '[]';
+            const parsedKeywords = JSON.parse(keywordResult);
+            autoKeywords = Array.isArray(parsedKeywords) ? parsedKeywords.slice(0, 8) : [];
+        } catch (e) {
+            console.error('Failed to extract keywords:', e);
+        }
+
+        const finalData = {
+            ...basicData,
+            title: parsedData.title || basicData.title,
+            abstract: parsedData.abstract || basicData.abstract,
+            authors: Array.isArray(parsedData.authors) ? parsedData.authors : basicData.authors,
+            autoKeywords,
+        };
+
+        return NextResponse.json(finalData, {
+            headers: {
+                'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                'Vary': 'Origin'
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching YouTube video:', error);
+        
+        // Return basic extraction as fallback
+        const videoId = extractYouTubeVideoId(url);
+        if (videoId) {
+            return NextResponse.json(await basicYouTubeExtraction(url, videoId), {
+                headers: {
+                    'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                    'Vary': 'Origin'
+                }
+            });
+        }
+
+        return NextResponse.json({
+            title: '',
+            abstract: '',
+            authors: [],
+            source: 'YouTube',
+            url: url || '',
+            contentType: 'VIDEO',
+            autoKeywords: [],
+            userKeywords: [],
+        }, {
+            headers: {
+                'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                'Vary': 'Origin'
+            }
+        });
+    }
+}
+
+function extractYouTubeVideoId(url: string): string | null {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+        /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+        /youtube\.com\/shorts\/([^&\n?#]+)/
+    ];
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+
+    return null;
+}
+
+async function basicYouTubeExtraction(url: string, videoId: string) {
+    // Fallback extraction without API key
+    return {
+        title: '',
+        abstract: '',
+        authors: ['Unknown Channel'],
+        source: 'YouTube',
+        year: new Date().getFullYear(),
+        url,
+        contentType: 'VIDEO' as const,
+        autoKeywords: [],
+        userKeywords: [],
+        videoId,
+        channelTitle: 'Unknown Channel',
+        publishedAt: null,
+        duration: null,
+        viewCount: 0,
+        likeCount: 0,
+        commentCount: 0,
+        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        tags: []
+    };
+}
