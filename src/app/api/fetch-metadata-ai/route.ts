@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import * as cheerio from 'cheerio';
 import { GoogleGenAI } from '@google/genai';
+import { validateApiKey } from '../api-key-middleware';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
+        // Validate API key first
+        const validation = await validateApiKey(request);
+        if (!validation.valid) {
+            return validation.response;
+        }
+
         const { url, doi } = await request.json();
 
         if (!url && !doi) {
@@ -64,7 +71,7 @@ export async function POST(request: Request) {
             apiKey: process.env.GEMINI_API_KEY,
         });
 
-        const systemPrompt = `You are a metadata extraction assistant. Your job is to extract structured metadata from the provided raw content (either HTML excerpts or JSON from CrossRef) for a knowledge indexer application.
+        const systemPrompt = `You are a metadata extraction assistant. Your job is to extract structured metadata from the provided raw content (either HTML excerpts or JSON from CrossRef) for a corpus application.
 
 The target URL/DOI is: ${targetUrl}
 

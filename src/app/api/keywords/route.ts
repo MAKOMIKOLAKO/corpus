@@ -1,8 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { validateApiKey } from '../api-key-middleware';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
+        // Validate API key first
+        const validation = await validateApiKey(request);
+        if (!validation.valid) {
+            return validation.response;
+        }
+
         const { text } = await request.json();
         if (!text) {
             return NextResponse.json({ error: 'Text is required for keyword extraction' }, { status: 400 });

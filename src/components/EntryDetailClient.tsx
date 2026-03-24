@@ -1,8 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen } from 'lucide-react';
+import { useApiKey } from '@/hooks/useApiKey';
+
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffInDays === 0) {
+        return 'today';
+    } else if (diffInDays === 1) {
+        return 'yesterday';
+    } else if (diffInDays < 7) {
+        return `${diffInDays} days ago`;
+    } else if (diffInDays < 30) {
+        const weeks = Math.floor(diffInDays / 7);
+        return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    } else if (diffInDays < 365) {
+        const months = Math.floor(diffInDays / 30);
+        return `${months} month${months > 1 ? 's' : ''} ago`;
+    } else {
+        const years = Math.floor(diffInDays / 365);
+        return `${years} year${years > 1 ? 's' : ''} ago`;
+    }
+};
 
 export default function EntryDetailClient({ initialData }: { initialData: any }) {
     const router = useRouter();
@@ -13,12 +37,32 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
     const [newNote, setNewNote] = useState('');
     const [isAddingNote, setIsAddingNote] = useState(false);
 
+    // Collections state
+    const [entryCollections, setEntryCollections] = useState([]);
+    const [availableCollections, setAvailableCollections] = useState([]);
+    const [selectedCollection, setSelectedCollection] = useState('');
+    const [isAddingToCollection, setIsAddingToCollection] = useState(false);
+
+    const apiKey = useApiKey();
+
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this entry?')) return;
 
         try {
-            await fetch(`/api/entries/${initialData.id}`, { method: 'DELETE' });
-            router.push('/');
+            const response = await fetch(`/api/entries/${initialData.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-api-key': apiKey,
+                },
+            });
+
+            if (response.ok) {
+                router.push('/');
+            } else {
+                const errorData = await response.json();
+                console.error('Delete failed:', errorData);
+                alert(`Failed to delete entry: ${errorData.error || 'Unknown error'}`);
+            }
         } catch (e) {
             console.error(e);
             alert('Failed to delete entry');
@@ -30,7 +74,10 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
         try {
             const res = await fetch(`/api/entries/${initialData.id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                },
                 body: JSON.stringify({
                     title: formData.title,
                     authors: Array.isArray(formData.authors) ? formData.authors : formData.authors.split(',').map((a: string) => a.trim()),
@@ -63,7 +110,10 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
         try {
             const res = await fetch(`/api/entries/${initialData.id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                },
                 body: JSON.stringify({
                     notes: { text: newNote }
                 }),
@@ -80,6 +130,80 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
             setIsAddingNote(false);
         }
     };
+
+    // Collections handlers
+    const handleAddToCollection = async () => {
+        if (!selectedCollection) return;
+
+        setIsAddingToCollection(true);
+        try {
+            const response = await fetch(`/api/collections/${selectedCollection}/entries`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                },
+                body: JSON.stringify({ entryId: initialData.id }),
+            });
+
+            if (response.ok) {
+                setSelectedCollection('');
+                fetchCollections();
+            } else {
+                const error = await response.json();
+                alert(`Failed to add to collection: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error adding to collection:', error);
+            alert('Failed to add to collection');
+        } finally {
+            setIsAddingToCollection(false);
+        }
+    };
+
+    const handleRemoveFromCollection = async (collectionId: string) => {
+        if (!confirm('Remove this entry from the collection?')) return;
+
+        try {
+            const response = await fetch(`/api/collections/${collectionId}/entries/${initialData.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-api-key': apiKey,
+                },
+            });
+
+            if (response.ok) {
+                fetchCollections();
+            } else {
+                const error = await response.json();
+                alert(`Failed to remove from collection: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error removing from collection:', error);
+            alert('Failed to remove from collection');
+        }
+    };
+
+    const fetchCollections = async () => {
+        try {
+            // Get all collections
+            const collectionsResponse = await fetch('/api/collections');
+            if (collectionsResponse.ok) {
+                const allCollections = await collectionsResponse.json();
+                setAvailableCollections(allCollections);
+            }
+
+            // Get entry's collections (this would need a new API endpoint or modify existing one)
+            // For now, we'll simulate this
+            setEntryCollections([]);
+        } catch (error) {
+            console.error('Error fetching collections:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCollections();
+    }, []);
 
     const notesList = Array.isArray(formData.notes) ? formData.notes : [];
 
@@ -177,8 +301,8 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 {formData.contentType}
                             </span>
                             <span className={`px-2.5 py-1 rounded ${formData.readingStatus === 'READ' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
-                                    formData.readingStatus === 'READING' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                                        'bg-gray-500/10 text-gray-600 dark:text-gray-400'
+                                formData.readingStatus === 'READING' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                    'bg-gray-500/10 text-gray-600 dark:text-gray-400'
                                 }`}>
                                 {formData.readingStatus}
                             </span>
@@ -190,13 +314,22 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
+                                    <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">added</span>
+                                    <span className="font-medium text-sm">{formatDate(formData.createdAt)}</span>
+                                </div>
+                            </div>
                             {formData.year && (
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
                                         <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-xs text-[var(--muted-foreground)] uppercase">Year</span>
+                                        <span className="text-xs text-[var(--muted-foreground)] uppercase">year</span>
                                         <span className="font-medium text-sm">{formData.year}</span>
                                     </div>
                                 </div>
@@ -247,6 +380,19 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             </div>
                         )}
 
+                        {formData.topics && formData.topics.length > 0 && (
+                            <div className="mb-6">
+                                <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-3">topics</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.topics.map((topic: string, i: number) => (
+                                        <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 font-medium border border-blue-200 dark:border-blue-700">
+                                            {topic}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {(formData.autoKeywords.length > 0 || formData.userKeywords.length > 0) && (
                             <div className="pt-4 border-t border-[var(--border)]">
                                 <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-3">Keywords</h3>
@@ -264,6 +410,60 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            Collections
+                            <span className="bg-[var(--muted)] text-[var(--muted-foreground)] text-xs px-2 py-0.5 rounded-full font-medium">{entryCollections?.length || 0}</span>
+                        </h3>
+
+                        <div className="space-y-4 mb-6">
+                            {entryCollections?.length > 0 ? (
+                                entryCollections.map((collection: any) => (
+                                    <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                                        <div>
+                                            <h4 className="font-medium text-sm">{collection.name}</h4>
+                                            {collection.description && (
+                                                <p className="text-xs text-[var(--muted-foreground)] mt-1">{collection.description}</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveFromCollection(collection.id)}
+                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-[var(--muted-foreground)] text-sm italic">
+                                    Not in any collections yet.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={selectedCollection}
+                                onChange={(e) => setSelectedCollection(e.target.value)}
+                                className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)]"
+                            >
+                                <option value="">Select a collection...</option>
+                                {availableCollections?.map((collection: any) => (
+                                    <option key={collection.id} value={collection.id}>
+                                        {collection.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleAddToCollection}
+                                disabled={!selectedCollection || isAddingToCollection}
+                                className="bg-[var(--foreground)] text-[var(--background)] px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                            >
+                                {isAddingToCollection ? 'Adding...' : 'Add to Collection'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">
