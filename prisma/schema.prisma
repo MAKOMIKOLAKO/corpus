@@ -31,14 +31,41 @@ model Entry {
   authors       String[]
   year          Int?
   contentType   ContentType   @default(PAPER)
-  url           String?
-  doi           String?
+  url           String?       @unique
+  doi           String?       @unique
   source        String?
   abstract      String?
+  publishers    String[]      @default([])
+  publishDate   String?
+  numberOfPages Int?
+  description   String?
+  isbn13        String[]      @default([])
+  cover         String?
   autoKeywords  String[]
   userKeywords  String[]
+  topics        String[]
   summary       String?
   notes         Json          @default("[]")
   readingStatus ReadingStatus @default(UNREAD)
   createdAt     DateTime      @default(now())
+  collections   EntryCollection[]
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  entries     EntryCollection[]
+}
+
+model EntryCollection {
+  id           String   @id @default(cuid())
+  entryId      String
+  collectionId String
+  addedAt      DateTime @default(now())
+  entry        Entry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, collectionId])
 }

@@ -1,45 +1,6 @@
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  --card: #ffffff;
-  --card-foreground: #2d2d2d;
-  --border: #e8e6e3;
-  --primary: #c2544a;
-  /* Muted terracotta accent */
-  --primary-foreground: #ffffff;
-  --muted: #f4f2ef;
-  --muted-foreground: #737373;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --card: #262626;
-    --card-foreground: #e6e6e6;
-    --border: #333333;
-    --primary: #d16b61;
-    --primary-foreground: #ffffff;
-    --muted: #2e2e2e;
-    --muted-foreground: #999999;
-  }
-}
-
-body {
-  font-family: Inter, system-ui, sans-serif;
-}
-
-.claude-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-}
-
-.theme-transition {
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
 
 @layer base {
   :root {
@@ -76,6 +37,7 @@ body {
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
   }
+
   .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
@@ -109,16 +71,21 @@ body {
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+
   .theme {
     --font-sans: var(--font-sans);
   }
+
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
   }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
+
   html {
-    @apply font-sans;
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
 }

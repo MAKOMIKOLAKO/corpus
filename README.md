@@ -1,4 +1,4 @@
-# Knowledge Indexer MVP
+# corpus MVP
 
 A private personal knowledge indexing web application built with Next.js 14, Tailwind CSS, Prisma, and PostgreSQL.
 

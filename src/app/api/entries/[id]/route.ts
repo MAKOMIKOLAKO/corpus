@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { validateApiKey } from '@/app/api/api-key-middleware';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
         const entry = await prisma.entry.findUnique({
             where: { id: params.id },
@@ -13,8 +14,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
     try {
+        // Validate API key first
+        const validation = await validateApiKey(request);
+        if (!validation.valid) {
+            return validation.response;
+        }
+
         const body = await request.json();
 
         // Handle notes specifically
@@ -49,11 +56,38 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        await prisma.entry.delete({ where: { id: params.id } });
-        return NextResponse.json({ success: true });
+        // Validate API key first
+        const validation = await validateApiKey(request);
+        if (!validation.valid) {
+            return validation.response;
+        }
+
+        // First check if the entry exists
+        const existingEntry = await prisma.entry.findUnique({
+            where: { id: params.id },
+        });
+
+        if (!existingEntry) {
+            console.log(`Entry not found for deletion: ${params.id}`);
+            return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
+        }
+
+        console.log(`Attempting to delete entry: ${params.id}`);
+
+        // Delete the entry
+        await prisma.entry.delete({
+            where: { id: params.id }
+        });
+
+        console.log(`Successfully deleted entry: ${params.id}`);
+        return NextResponse.json({ success: true, message: 'Entry deleted successfully' });
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to delete entry' }, { status: 500 });
+        console.error('Error deleting entry:', error);
+        return NextResponse.json({
+            error: 'Failed to delete entry',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
     }
 }
