@@ -17,7 +17,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     let requestUrl: string = '';
-    
+
     try {
         // Validate API key first
         const validation = await validateApiKey(request);
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         const requestData = await request.json();
         requestUrl = requestData.url;
         const { useAI = true } = requestData;
-        
+
         if (!requestUrl) {
             return NextResponse.json({ error: 'YouTube URL is required' }, { status: 400 });
         }
@@ -53,13 +53,13 @@ export async function POST(request: NextRequest) {
         // Fetch video details from YouTube API using direct fetch
         const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
         const videoResponse = await fetch(apiUrl);
-        
+
         if (!videoResponse.ok) {
             return NextResponse.json({ error: 'Failed to fetch video from YouTube API' }, { status: 500 });
         }
 
         const videoData = await videoResponse.json();
-        
+
         if (!videoData.items || videoData.items.length === 0) {
             return NextResponse.json({ error: 'Video not found' }, { status: 404 });
         }
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
         // Extract basic metadata
         const basicData = {
             title: snippet.title || '',
-            authors: [snippet.channelTitle || ''],
-            year: snippet.publishedAt ? new Date(snippet.publishedAt).getFullYear() : null,
+            authors: [snippet.channelTitle || 'Unknown Channel'],
+            year: snippet.publishedAt ? new Date(snippet.publishedAt).getFullYear() : new Date().getFullYear(),
             source: 'YouTube',
             url: `https://www.youtube.com/watch?v=${videoId}`,
             contentType: 'VIDEO' as const,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             userKeywords: [],
             // Additional YouTube-specific fields
             videoId,
-            channelTitle: snippet.channelTitle,
+            channelTitle: snippet.channelTitle || 'Unknown Channel',
             publishedAt: snippet.publishedAt,
             duration: contentDetails.duration,
             viewCount: parseInt(statistics.viewCount || '0'),
@@ -131,13 +131,13 @@ VIEWS: ${basicData.viewCount}
 
 Extract the following fields and return ONLY a JSON object:
 - title (string): The title of the video
-- authors (array of strings): The channel name(s) or creator(s)
-- year (number or null): The year the video was published
+- authors (array of strings): The channel name(s) or creator(s) - prioritize the actual channel name
+- year (number or null): The year the video was published - extract from publishedAt date
 - source (string): Always "YouTube"
 - abstract (string): A concise summary of the video content
 - contentType (string): Always "VIDEO"
 
-Return exactly this JSON structure with no markdown formatting.`;
+IMPORTANT: Always use the channel name as the author and extract the year from the video's publication date. Return exactly this JSON structure with no markdown formatting.`;
 
         try {
             const completion = await ai.models.generateContent({
@@ -203,7 +203,7 @@ Return exactly this JSON structure with no markdown formatting.`;
 
     } catch (error) {
         console.error('Error fetching YouTube video:', error);
-        
+
         // Return basic extraction as fallback
         const fallbackVideoId = extractYouTubeVideoId(requestUrl);
         if (fallbackVideoId) {
