@@ -3,13 +3,14 @@
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState, SyntheticEvent } from "react";
+import Link from "next/link";
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const callbackUrl = searchParams.get("callbackUrl") || "/";
-  
-  const [username, setUsername] = useState("");
+
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +18,7 @@ export default function LoginForm() {
     e.preventDefault();
     setLoading(true);
     await signIn("credentials", {
-      username,
+      email,
       password,
       callbackUrl,
     });
@@ -25,12 +26,12 @@ export default function LoginForm() {
   };
 
   const errorMessage = error === "CredentialsSignin" || error === "CredentialsSignin" || error === "Credentials"
-    ? "Invalid username or password"
+    ? "Invalid email or password"
     : error === "UnauthorizedAccount" || error === "AccessDenied"
-    ? "Unauthorized account"
-    : error
-    ? "An error occurred during sign in"
-    : null;
+      ? "Unauthorized account"
+      : error
+        ? "An error occurred during sign in"
+        : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,7 +41,7 @@ export default function LoginForm() {
       >
         Continue with Google
       </button>
-      
+
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-[var(--border)]" />
@@ -52,14 +53,14 @@ export default function LoginForm() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium leading-none text-[var(--foreground)]">Username</label>
+          <label className="text-sm font-medium leading-none text-[var(--foreground)]">Email</label>
           <input
-            type="text"
+            type="email"
             required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--foreground)] focus:border-transparent"
-            placeholder="Enter username"
+            placeholder="Enter email"
           />
         </div>
         <div className="space-y-2">
@@ -88,6 +89,13 @@ export default function LoginForm() {
           {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
+
+      <div className="text-center text-sm text-[var(--muted-foreground)]">
+        No account?{" "}
+        <Link href="/signup" className="text-[var(--foreground)] hover:underline">
+          Sign up
+        </Link>
+      </div>
     </div>
   );
 }
