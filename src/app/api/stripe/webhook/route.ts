@@ -27,27 +27,55 @@ export async function POST(request: NextRequest) {
     // Handle the event
     switch (event.type) {
       case 'checkout.session.completed': {
+        console.log("Webhook received:", event.type);
         const session = event.data.object as any;
-        const userId = session.metadata?.userId;
+        console.log("Session metadata:", session.metadata);
+        console.log("Customer ID:", session.customer);
 
+        const userId = session.metadata?.userId;
+        const customerId = session.customer as string;
+
+        console.log("User ID from metadata:", userId);
+
+        let user = null;
         if (userId) {
-          // Update user's subscription info
-          await (prisma as any).user.update({
-            where: { id: userId },
+          user = await (prisma as any).user.findUnique({
+            where: { id: userId }
+          });
+          console.log("User found by ID:", user?.id);
+        }
+
+        // Fallback: look up user by Stripe customer ID if metadata.userId is missing
+        if (!user && customerId) {
+          user = await (prisma as any).user.findUnique({
+            where: { stripeCustomerId: customerId }
+          });
+          console.log("User found by customer ID:", user?.id);
+        }
+
+        if (user) {
+          console.log("Updating user plan to PRO");
+          const updatedUser = await (prisma as any).user.update({
+            where: { id: user.id },
             data: {
               plan: 'PRO',
-              stripeSubscriptionId: session.subscription,
+              stripeSubscriptionId: session.subscription as string,
               stripePriceId: session.display_items?.[0]?.price?.id || session.amount_total,
               subscriptionStatus: 'active',
             },
           });
+          console.log("Update result:", updatedUser);
+        } else {
+          console.error("No user found for checkout session");
         }
         break;
       }
 
       case 'customer.subscription.updated': {
+        console.log("Webhook received:", event.type);
         const subscription = event.data.object as any;
         const customerId = subscription.customer;
+        console.log("Customer ID:", customerId);
 
         // Find user by Stripe customer ID
         const user = await (prisma as any).user.findFirst({
@@ -55,6 +83,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (user) {
+          console.log("User found:", user.id);
           const updateData: any = {
             subscriptionStatus: subscription.status,
           };
@@ -64,17 +93,23 @@ export async function POST(request: NextRequest) {
             updateData.subscriptionEndsAt = new Date(subscription.current_period_end * 1000);
           }
 
+          console.log("Updating subscription status to:", updateData);
           await (prisma as any).user.update({
             where: { id: user.id },
             data: updateData,
           });
+          console.log("Update completed");
+        } else {
+          console.error("No user found for customer ID:", customerId);
         }
         break;
       }
 
       case 'customer.subscription.deleted': {
+        console.log("Webhook received:", event.type);
         const subscription = event.data.object as any;
         const customerId = subscription.customer;
+        console.log("Customer ID:", customerId);
 
         // Find user by Stripe customer ID
         const user = await (prisma as any).user.findFirst({
@@ -82,6 +117,8 @@ export async function POST(request: NextRequest) {
         });
 
         if (user) {
+          console.log("User found:", user.id);
+          console.log("Setting user plan back to FREE");
           // Set user back to free plan
           await (prisma as any).user.update({
             where: { id: user.id },
@@ -93,6 +130,9 @@ export async function POST(request: NextRequest) {
               subscriptionEndsAt: null,
             },
           });
+          console.log("Plan update completed");
+        } else {
+          console.error("No user found for customer ID:", customerId);
         }
         break;
       }
