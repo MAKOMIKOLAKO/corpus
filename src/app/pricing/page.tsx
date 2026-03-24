@@ -31,11 +31,7 @@ export default function PricingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          priceId: billingCycle === 'monthly' 
-            ? process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID 
-            : process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID
-        }),
+        body: JSON.stringify({ billingCycle }),
       });
 
       const data = await response.json();
