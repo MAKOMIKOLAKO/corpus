@@ -15,11 +15,20 @@ out/
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+prisma/*.sqlite
+prisma/*.sqlite-journal
 
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+dev-error.log
+tsc_full_output.txt
+tsc_output_debug.txt
+tmp-error.html
 
 # OS files
 .DS_Store
