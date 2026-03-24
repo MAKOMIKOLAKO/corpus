@@ -20,6 +20,7 @@ export default function AccountPage() {
     const [redeeming, setRedeeming] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [portalLoading, setPortalLoading] = useState(false);
+    const [upgradeProcessed, setUpgradeProcessed] = useState(false);
 
     const userPlan = getUserPlan(session?.user ? {
         ...session.user,
@@ -30,11 +31,12 @@ export default function AccountPage() {
 
     // Handle immediate upgrade if coming from Stripe success
     useEffect(() => {
-        if (upgraded && userIdFromUrl && session?.user?.id === userIdFromUrl) {
+        if (upgraded && userIdFromUrl && session?.user?.id === userIdFromUrl && !upgradeProcessed) {
             console.log("🚨 IMMEDIATE UPGRADE TRIGGERED");
+            setUpgradeProcessed(true);
             upgradeUserToPro(userIdFromUrl);
         }
-    }, [upgraded, userIdFromUrl, session?.user?.id]);
+    }, [upgraded, userIdFromUrl, session?.user?.id, upgradeProcessed]);
 
     const upgradeUserToPro = async (userId: string) => {
         try {
@@ -47,8 +49,10 @@ export default function AccountPage() {
 
             if (response.ok) {
                 console.log("🚨 UPGRADE SUCCESSFUL");
-                // Force session refresh to update plan
-                window.location.reload();
+                // Clear URL parameters and force session refresh
+                window.history.replaceState({}, '', '/account/settings');
+                // Refresh session data instead of full page reload
+                router.refresh();
             } else {
                 console.error("🚨 UPGRADE FAILED");
             }
