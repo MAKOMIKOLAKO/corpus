@@ -105,7 +105,7 @@ export async function createEntryWithMetadata(
     try {
         const entryData = validateEntryData({
             title: metadata.title || '',
-            authors: Array.isArray(metadata.authors) ? metadata.authors.join(', ') : '',
+            authors: Array.isArray(metadata.authors) ? metadata.authors[0] || '' : '',
             year: metadata.year ? metadata.year.toString() : '',
             contentType: metadata.contentType || 'ARTICLE',
             url: url.trim(),
