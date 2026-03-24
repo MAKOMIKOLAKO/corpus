@@ -9,10 +9,10 @@
  * 7. Copy the client ID and secret into GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars
  */
 
-import type { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import prisma from "@/lib/prisma";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma, withRetry } from "@/lib/prismaWithRetry";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -45,7 +45,7 @@ export const authOptions: NextAuthOptions = {
         if (!email) return false;
         if (email !== process.env.ALLOWED_GOOGLE_EMAIL) return false;
 
-        await prisma.user.upsert({
+        await withRetry(() => prisma.user.upsert({
           where: { email },
           update: {
             name: profile?.name,
@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
             email,
             name: profile?.name,
           },
-        });
+        }));
 
         return true;
       }
@@ -64,7 +64,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "google") {
         const email = profile?.email ?? token.email;
         if (email && typeof (token as any).userId !== "string") {
-          const user = await prisma.user.findUnique({ where: { email } });
+          const user = await withRetry(() => prisma.user.findUnique({ where: { email } }));
           if (user) (token as any).userId = user.id;
         }
       }
