@@ -66,7 +66,7 @@ export default function AddEntryForm() {
             setFormData(prev => ({
                 ...prev,
                 title: data.title || '',
-                authors: Array.isArray(data.authors) ? data.authors.join(', ') : '',
+                authors: Array.isArray(data.authors) ? data.authors[0] || '' : '',
                 year: data.year ? data.year.toString() : '',
                 source: data.source || '',
                 abstract: data.abstract || '',
