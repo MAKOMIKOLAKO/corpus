@@ -4,11 +4,19 @@ import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/prismaWithRetry';
 
 export async function POST(request: NextRequest) {
+  console.log("🚨 WEBHOOK CALLED - ANY REQUEST!");
+  console.log("URL:", request.url);
+  console.log("Headers:", Object.fromEntries(request.headers.entries()));
+
   try {
     const rawBody = await request.text();
     const sig = request.headers.get('stripe-signature');
 
+    console.log("🚨 RAW BODY:", rawBody);
+    console.log("🚨 SIGNATURE:", sig);
+
     if (!sig) {
+      console.log("🚨 NO SIGNATURE FOUND");
       return NextResponse.json({ error: 'No signature' }, { status: 400 });
     }
 
@@ -19,8 +27,9 @@ export async function POST(request: NextRequest) {
         sig,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
+      console.log("🚨 EVENT CONSTRUCTED:", event.type);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
+      console.error('🚨 Webhook signature verification failed:', err.message);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -143,10 +152,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Always return a 200 response to acknowledge receipt of the event
+    console.log("🚨 WEBHOOK COMPLETED SUCCESSFULLY");
     return Response.json({ received: true }, { status: 200 });
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('🚨 WEBHOOK ERROR:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
