@@ -23,29 +23,50 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: { label: "Username", type: "text" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        name: { label: "Name (optional)", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) return null;
-        if (
-          credentials.username === process.env.ADMIN_USERNAME &&
-          credentials.password === process.env.ADMIN_PASSWORD
-        ) {
-          return { id: "admin", name: "Admin", email: process.env.ADMIN_USERNAME };
+        if (!credentials?.email || !credentials?.password) return null;
+
+        const bcrypt = require("bcryptjs");
+        const saltRounds = 10;
+
+        // Try to find existing user
+        const existingUser = await withRetry(() => prisma.user.findUnique({
+          where: { email: credentials.email },
+        }));
+
+        if (existingUser) {
+          // Sign-in: verify password
+          if (!existingUser.passwordHash) return null; // OAuth user without password
+          const isValid = await bcrypt.compare(credentials.password, existingUser.passwordHash);
+          if (!isValid) return null;
+          return { id: existingUser.id, name: existingUser.name, email: existingUser.email };
+        } else {
+          // Sign-up: only allow if name is provided
+          if (!credentials.name) return null;
+          const passwordHash = await bcrypt.hash(credentials.password, saltRounds);
+          const user = await withRetry(() => prisma.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.name,
+              passwordHash,
+            },
+          }));
+          return { id: user.id, name: user.name, email: user.email };
         }
-        return null;
       },
     }),
   ],
   callbacks: {
     async signIn({ account, profile }) {
-      console.log("signIn callback:", { account, profile });
       if (account?.provider === "google") {
         const email = profile?.email;
         if (!email) return false;
-        if (email !== process.env.ALLOWED_GOOGLE_EMAIL) return false;
 
+        // Allow any Google user; create/update their User record
         await withRetry(() => prisma.user.upsert({
           where: { email },
           update: {
@@ -61,13 +82,16 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile, user }) {
       if (account?.provider === "google") {
         const email = profile?.email ?? token.email;
         if (email && typeof (token as any).userId !== "string") {
-          const user = await withRetry(() => prisma.user.findUnique({ where: { email } }));
-          if (user) (token as any).userId = user.id;
+          const dbUser = await withRetry(() => prisma.user.findUnique({ where: { email } }));
+          if (dbUser) (token as any).userId = dbUser.id;
         }
+      } else if (user?.id) {
+        // Credentials provider
+        (token as any).userId = user.id;
       }
       return token;
     },
