@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Search, Trash2 } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
+import { useScrollPosition } from '@/hooks/useScrollPosition';
 
 interface Collection {
     id: string;
@@ -51,6 +52,9 @@ export default function CollectionDetailPage() {
     const [search, setSearch] = useState('');
     const [removing, setRemoving] = useState<string | null>(null);
 
+    // Use scroll position restoration for collection pages
+    useScrollPosition(`collection-${params.id}`);
+
     useEffect(() => {
         if (params.id) {
             fetchCollection();
@@ -87,7 +91,14 @@ export default function CollectionDetailPage() {
             });
 
             if (response.ok) {
-                fetchCollection();
+                // Update local state to maintain scroll position
+                setCollection(prev => prev ? {
+                    ...prev,
+                    entries: prev.entries.filter(item => item.entry.id !== entryId),
+                    _count: {
+                        entries: prev._count.entries - 1
+                    }
+                } : null);
             } else {
                 const error = await response.json();
                 alert(`Failed to remove entry: ${error.error}`);
