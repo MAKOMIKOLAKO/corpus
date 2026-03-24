@@ -52,6 +52,15 @@ const config: Config = {
                 md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
             },
+            keyframes: {
+                corpusFloat: {
+                    "0%, 100%": { transform: "translate(0, 0)", opacity: "0.35" },
+                    "50%": { transform: "translate(12px, -18px)", opacity: "0.85" },
+                },
+            },
+            animation: {
+                corpusFloat: "corpusFloat 24s ease-in-out infinite",
+            },
         },
     },
     plugins: [],

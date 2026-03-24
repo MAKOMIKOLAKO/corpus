@@ -16,6 +16,7 @@ export interface EntryData {
     abstract: string;
     userKeywords: string;
     readingStatus: ReadingStatus;
+    publishDate?: string;
     skipAI?: boolean; // Optional flag to skip AI generation
 }
 
@@ -44,6 +45,7 @@ export function validateEntryData(data: Partial<EntryData>): EntryData {
         abstract: sanitizeString(data.abstract || ''),
         userKeywords: sanitizeString(data.userKeywords || ''),
         readingStatus: data.readingStatus || 'UNREAD',
+        publishDate: data.publishDate ? sanitizeString(data.publishDate) : '',
     };
 }
 
@@ -114,6 +116,7 @@ export async function createEntryWithMetadata(
             abstract: metadata.abstract || '',
             userKeywords: '',
             readingStatus: 'UNREAD',
+            publishDate: metadata.publishDate || '',
             skipAI: skipAI,
         });
 
@@ -123,18 +126,35 @@ export async function createEntryWithMetadata(
             Object.assign(entryData, fallback);
         }
 
+        const { publishDate, ...rest } = entryData;
         const response = await fetch('/api/entries', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': apiKey,
             },
-            body: JSON.stringify(entryData),
+            body: JSON.stringify({
+                ...rest,
+                ...(publishDate ? { publishDate } : {}),
+            }),
         });
 
         if (response.ok) {
-            const entry = await response.json();
-            return { success: true, entry };
+            let entry: unknown;
+            try {
+                entry = await response.json();
+            } catch {
+                return { success: false, error: 'Invalid response from server' };
+            }
+            if (
+                entry &&
+                typeof entry === 'object' &&
+                'id' in entry &&
+                typeof (entry as { id: unknown }).id === 'string'
+            ) {
+                return { success: true, entry };
+            }
+            return { success: false, error: 'Invalid response from server' };
         } else {
             const errorData = await response.json();
             // Check if it's a duplicate error (status 409)

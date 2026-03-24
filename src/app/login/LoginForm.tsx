@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = searchParams.get("callbackUrl") || "/library";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -102,7 +102,7 @@ export default function QuickAddSmartEntry() {
 
                 const result = await createEntryWithMetadata(value, metadata, apiKey, false);
 
-                if (result.success) {
+                if (result.success && result.entry?.id) {
                     setSuccess(true);
                     setInput('');
                     setTimeout(() => {

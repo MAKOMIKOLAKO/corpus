@@ -170,7 +170,7 @@ export default function CollectionDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredEntries.map(item => (
                         <div key={item.id} className="relative group">
-                            <EntryCard entry={item.entry} />
+                            <EntryCard entry={item.entry} scrollPositionKey={`collection-${params.id}`} />
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
                                     variant="destructive"

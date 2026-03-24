@@ -50,44 +50,68 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Fetch video details from YouTube API using direct fetch
-        const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
-        const videoResponse = await fetch(apiUrl);
+        // YouTube Data API v3 — videos.list
+        // https://developers.google.com/youtube/v3/docs/videos/list
+        const apiUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+        apiUrl.searchParams.set('part', 'snippet,contentDetails,statistics');
+        apiUrl.searchParams.set('id', videoId);
+        apiUrl.searchParams.set('key', process.env.YOUTUBE_API_KEY);
 
-        if (!videoResponse.ok) {
-            return NextResponse.json({ error: 'Failed to fetch video from YouTube API' }, { status: 500 });
+        const videoResponse = await fetch(apiUrl.toString());
+
+        const videoData = await videoResponse.json().catch(() => ({}));
+
+        if (!videoResponse.ok || (videoData as { error?: unknown }).error) {
+            const err = (videoData as { error?: { message?: string; code?: number } }).error;
+            const reason =
+                err?.message ||
+                (videoResponse.status === 403 ? 'YouTube API access denied or quota exceeded' : null) ||
+                'Failed to fetch video from YouTube API';
+            if (err?.message) {
+                console.error('YouTube Data API error:', err.code, err.message);
+            }
+            return NextResponse.json({ error: reason }, { status: videoResponse.ok ? 502 : videoResponse.status });
         }
 
-        const videoData = await videoResponse.json();
-
         if (!videoData.items || videoData.items.length === 0) {
-            return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Video not found or unavailable' }, { status: 404 });
         }
 
         const video = videoData.items[0];
         const snippet = video.snippet;
         const contentDetails = video.contentDetails;
-        const statistics = video.statistics;
+        const statistics = video.statistics ?? {};
 
-        // Extract basic metadata
+        const channelTitle = snippet.channelTitle || 'Unknown Channel';
+        const channelId = snippet.channelId || '';
+        const publishedAtIso = snippet.publishedAt || null;
+        const publishedDate = publishedAtIso ? new Date(publishedAtIso) : null;
+        const yearFromApi =
+            publishedDate && !Number.isNaN(publishedDate.getTime())
+                ? publishedDate.getFullYear()
+                : null;
+
+        // Extract basic metadata (authors + dates come from YouTube Data API snippet)
         const basicData = {
             title: snippet.title || '',
-            authors: [snippet.channelTitle || 'Unknown Channel'],
-            year: snippet.publishedAt ? new Date(snippet.publishedAt).getFullYear() : new Date().getFullYear(),
+            authors: [channelTitle],
+            year: yearFromApi,
+            publishDate: publishedAtIso,
             source: 'YouTube',
             url: `https://www.youtube.com/watch?v=${videoId}`,
             contentType: 'VIDEO' as const,
             abstract: snippet.description || '',
             autoKeywords: [],
             userKeywords: [],
-            // Additional YouTube-specific fields
             videoId,
-            channelTitle: snippet.channelTitle || 'Unknown Channel',
-            publishedAt: snippet.publishedAt,
+            channelId,
+            channelTitle,
+            channelUrl: channelId ? `https://www.youtube.com/channel/${channelId}` : null,
+            publishedAt: publishedAtIso,
             duration: contentDetails.duration,
-            viewCount: parseInt(statistics.viewCount || '0'),
-            likeCount: parseInt(statistics.likeCount || '0'),
-            commentCount: parseInt(statistics.commentCount || '0'),
+            viewCount: parseInt(String(statistics.viewCount ?? '0'), 10),
+            likeCount: parseInt(String(statistics.likeCount ?? '0'), 10),
+            commentCount: parseInt(String(statistics.commentCount ?? '0'), 10),
             thumbnailUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
             tags: snippet.tags || []
         };
@@ -127,17 +151,15 @@ DURATION: ${basicData.duration}
 VIEWS: ${basicData.viewCount}
         `;
 
-        const systemPrompt = `You are a metadata extraction assistant for YouTube videos. Your job is to extract structured metadata from provided YouTube video information.
+        const systemPrompt = `You are a metadata extraction assistant for YouTube videos. The channel name, publication year, and dates are already taken from the YouTube API — do not invent authors or dates.
 
 Extract the following fields and return ONLY a JSON object:
-- title (string): The title of the video
-- authors (array of strings): The channel name(s) or creator(s) - prioritize the actual channel name
-- year (number or null): The year the video was published - extract from publishedAt date
-- source (string): Always "YouTube"
+- title (string): The title of the video (may lightly clean formatting)
 - abstract (string): A concise summary of the video content
+- source (string): Always "YouTube"
 - contentType (string): Always "VIDEO"
 
-IMPORTANT: Always use the channel name as the author and extract the year from the video's publication date. Return exactly this JSON structure with no markdown formatting.`;
+Return exactly this JSON structure with no markdown formatting.`;
 
         try {
             const completion = await ai.models.generateContent({
@@ -179,7 +201,9 @@ IMPORTANT: Always use the channel name as the author and extract the year from t
                 ...basicData,
                 title: parsedData.title || basicData.title,
                 abstract: parsedData.abstract || basicData.abstract,
-                authors: Array.isArray(parsedData.authors) ? parsedData.authors : basicData.authors,
+                authors: basicData.authors,
+                year: basicData.year,
+                publishDate: basicData.publishDate,
                 autoKeywords
             };
 
@@ -256,13 +280,16 @@ async function basicYouTubeExtraction(url: string, videoId: string) {
         abstract: '',
         authors: ['Unknown Channel'],
         source: 'YouTube',
-        year: new Date().getFullYear(),
+        year: null,
+        publishDate: null,
         url,
         contentType: 'VIDEO' as const,
         autoKeywords: [],
         userKeywords: [],
         videoId,
+        channelId: null,
         channelTitle: 'Unknown Channel',
+        channelUrl: null,
         publishedAt: null,
         duration: null,
         viewCount: 0,

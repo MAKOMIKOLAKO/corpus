@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
                 body: JSON.stringify({ url, useAI })
             });
 
+            const data = await youtubeResponse.json().catch(() => ({}));
             if (youtubeResponse.ok) {
-                const data = await youtubeResponse.json();
                 return NextResponse.json(data, {
                     headers: {
                         'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
@@ -60,6 +60,19 @@ export async function POST(request: NextRequest) {
                     }
                 });
             }
+            // Do not scrape youtube.com HTML when the Data API path failed
+            return NextResponse.json(
+                typeof data === 'object' && data !== null && 'error' in data
+                    ? data
+                    : { error: 'Failed to fetch YouTube metadata' },
+                {
+                    status: youtubeResponse.status,
+                    headers: {
+                        'Access-Control-Allow-Origin': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+                        'Vary': 'Origin'
+                    }
+                }
+            );
         }
 
         // Handle partial failure gracefully (never throw)
