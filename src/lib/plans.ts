@@ -21,9 +21,10 @@ export const PLAN_LIMITS = {
 export type PlanType = keyof typeof PLAN_LIMITS
 export type FeatureType = 'collections' | 'graph'
 
-// Extended user type that includes plan field
-interface UserWithPlan extends User {
-  plan?: 'FREE' | 'PRO' | 'LIFETIME_PRO'
+// Standalone user interface with plan field
+interface UserWithPlan {
+  id: string
+  plan: 'FREE' | 'PRO' | 'LIFETIME_PRO'
 }
 
 // Session user type
