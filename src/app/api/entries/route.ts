@@ -4,24 +4,39 @@ import { checkForDuplicates } from '@/lib/duplicateHandler';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
 import { canAddEntry } from '@/lib/plans';
+import { rateLimits } from '@/lib/rate-limit';
 
 // Define types to avoid import issues
 type ContentType = 'PAPER' | 'BLOG' | 'ESSAY' | 'ARTICLE' | 'POLICY_REPORT' | 'BOOK' | 'OTHER';
 type ReadingStatus = 'UNREAD' | 'READING' | 'READ';
 
 export async function OPTIONS(request: NextRequest) {
+    const allowedOrigins = [
+        process.env.NEXTAUTH_URL || 'http://localhost:3000',
+        'http://localhost:3001'
+    ];
+    const origin = request.headers.get('origin');
+    const allowedOrigin = allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0];
+
     return new NextResponse(null, {
         status: 200,
         headers: {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': allowedOrigin || allowedOrigins[0],
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
             'Access-Control-Max-Age': '86400',
+            'Vary': 'Origin'
         },
     });
 }
 
 export async function GET(request: NextRequest) {
+    // Apply rate limiting for read operations
+    const rateLimitResponse = rateLimits.read(request);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
     try {
         const userId = await getCurrentUserId();
         if (!userId) {
@@ -61,23 +76,42 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: 'desc' },
         });
 
+        const allowedOrigins = [
+            process.env.NEXTAUTH_URL || 'http://localhost:3000',
+            'http://localhost:3001'
+        ];
+        const origin = request.headers.get('origin');
+        const allowedOrigin = allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0];
+
         return NextResponse.json(entries, {
             headers: {
-                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': allowedOrigin || allowedOrigins[0],
+                'Vary': 'Origin'
             }
         });
     } catch (error) {
         console.error('Error fetching entries:', error);
+        const allowedOrigins = [
+            process.env.NEXTAUTH_URL || 'http://localhost:3000',
+            'http://localhost:3001'
+        ];
         return NextResponse.json({ error: 'Failed to fetch entries' }, {
             status: 500,
             headers: {
-                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': allowedOrigins[0],
+                'Vary': 'Origin'
             }
         });
     }
 }
 
 export async function POST(request: NextRequest) {
+    // Apply rate limiting for write operations
+    const rateLimitResponse = rateLimits.api(request);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
     try {
         // Validate API key first
         const validation = await validateApiKey(request);

@@ -4,16 +4,21 @@ import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/prismaWithRetry';
 
 export async function POST(request: NextRequest) {
-  console.log("🚨 WEBHOOK CALLED - ANY REQUEST!");
-  console.log("URL:", request.url);
-  console.log("Headers:", Object.fromEntries(request.headers.entries()));
+  // Log only in development, avoid sensitive data exposure
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🚨 WEBHOOK CALLED - ANY REQUEST!");
+    console.log("URL:", request.url);
+    console.log("Headers:", Object.fromEntries(request.headers.entries()));
+  }
 
   try {
     const rawBody = await request.text();
     const sig = request.headers.get('stripe-signature');
 
-    console.log("🚨 RAW BODY:", rawBody);
-    console.log("🚨 SIGNATURE:", sig);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🚨 RAW BODY:", rawBody);
+      console.log("🚨 SIGNATURE:", sig);
+    }
 
     if (!sig) {
       console.log("🚨 NO SIGNATURE FOUND");
@@ -27,7 +32,9 @@ export async function POST(request: NextRequest) {
         sig,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
-      console.log("🚨 EVENT CONSTRUCTED:", event.type);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🚨 EVENT CONSTRUCTED:", event.type);
+      }
     } catch (err: any) {
       console.error('🚨 Webhook signature verification failed:', err.message);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -36,22 +43,31 @@ export async function POST(request: NextRequest) {
     // Handle the event
     switch (event.type) {
       case 'checkout.session.completed': {
-        console.log("Webhook received:", event.type);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Webhook received:", event.type);
+        }
         const session = event.data.object as any;
-        console.log("Session metadata:", session.metadata);
-        console.log("Customer ID:", session.customer);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Session metadata:", session.metadata);
+          console.log("Customer ID:", session.customer);
+        }
 
         const userId = session.metadata?.userId;
         const customerId = session.customer as string;
 
-        console.log("User ID from metadata:", userId);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("User ID from metadata:", userId);
+        }
 
         let user = null;
         if (userId) {
           user = await (prisma as any).user.findUnique({
             where: { id: userId }
           });
-          console.log("User found by ID:", user?.id);
+          if (process.env.NODE_ENV === 'development') {
+            console.log("User found by ID:", user?.id);
+          }
         }
 
         // Fallback: look up user by Stripe customer ID if metadata.userId is missing
@@ -59,11 +75,15 @@ export async function POST(request: NextRequest) {
           user = await (prisma as any).user.findUnique({
             where: { stripeCustomerId: customerId }
           });
-          console.log("User found by customer ID:", user?.id);
+          if (process.env.NODE_ENV === 'development') {
+            console.log("User found by customer ID:", user?.id);
+          }
         }
 
         if (user) {
-          console.log("Updating user plan to PRO");
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Updating user plan to PRO");
+          }
           const updatedUser = await (prisma as any).user.update({
             where: { id: user.id },
             data: {
@@ -73,7 +93,9 @@ export async function POST(request: NextRequest) {
               subscriptionStatus: 'active',
             },
           });
-          console.log("Update result:", updatedUser);
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Update result:", updatedUser);
+          }
         } else {
           console.error("No user found for checkout session");
         }
@@ -81,10 +103,15 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.updated': {
-        console.log("Webhook received:", event.type);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Webhook received:", event.type);
+        }
         const subscription = event.data.object as any;
         const customerId = subscription.customer;
-        console.log("Customer ID:", customerId);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Customer ID:", customerId);
+        }
 
         // Find user by Stripe customer ID
         const user = await (prisma as any).user.findFirst({
@@ -92,7 +119,9 @@ export async function POST(request: NextRequest) {
         });
 
         if (user) {
-          console.log("User found:", user.id);
+          if (process.env.NODE_ENV === 'development') {
+            console.log("User found:", user.id);
+          }
           const updateData: any = {
             subscriptionStatus: subscription.status,
           };
@@ -102,12 +131,16 @@ export async function POST(request: NextRequest) {
             updateData.subscriptionEndsAt = new Date(subscription.current_period_end * 1000);
           }
 
-          console.log("Updating subscription status to:", updateData);
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Updating subscription status to:", updateData);
+          }
           await (prisma as any).user.update({
             where: { id: user.id },
             data: updateData,
           });
-          console.log("Update completed");
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Update completed");
+          }
         } else {
           console.error("No user found for customer ID:", customerId);
         }
@@ -115,10 +148,15 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        console.log("Webhook received:", event.type);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Webhook received:", event.type);
+        }
         const subscription = event.data.object as any;
         const customerId = subscription.customer;
-        console.log("Customer ID:", customerId);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Customer ID:", customerId);
+        }
 
         // Find user by Stripe customer ID
         const user = await (prisma as any).user.findFirst({
@@ -126,8 +164,10 @@ export async function POST(request: NextRequest) {
         });
 
         if (user) {
-          console.log("User found:", user.id);
-          console.log("Setting user plan back to FREE");
+          if (process.env.NODE_ENV === 'development') {
+            console.log("User found:", user.id);
+            console.log("Setting user plan back to FREE");
+          }
           // Set user back to free plan
           await (prisma as any).user.update({
             where: { id: user.id },
@@ -139,7 +179,9 @@ export async function POST(request: NextRequest) {
               subscriptionEndsAt: null,
             },
           });
-          console.log("Plan update completed");
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Plan update completed");
+          }
         } else {
           console.error("No user found for customer ID:", customerId);
         }
@@ -148,15 +190,19 @@ export async function POST(request: NextRequest) {
 
       default:
         // Unexpected event type
-        console.log(`Unhandled event type: ${event.type}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Unhandled event type: ${event.type}`);
+        }
     }
 
     // Always return a 200 response to acknowledge receipt of the event
-    console.log("🚨 WEBHOOK COMPLETED SUCCESSFULLY");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🚨 WEBHOOK COMPLETED SUCCESSFULLY");
+    }
     return Response.json({ received: true }, { status: 200 });
 
   } catch (error) {
-    console.error('🚨 WEBHOOK ERROR:', error);
+    console.error('🚨 WEBHOOK ERROR:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
