@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { validateApiKey } from '@/app/api/api-key-middleware';
 import { checkForDuplicates } from '@/lib/duplicateHandler';
 import { getCurrentUserId } from '@/lib/session';
-
-const prisma = new PrismaClient();
+import { prisma, withRetry } from '@/lib/prismaWithRetry';
 
 // Define types to avoid import issues
 type ContentType = 'PAPER' | 'BLOG' | 'ESSAY' | 'ARTICLE' | 'POLICY_REPORT' | 'BOOK' | 'OTHER';

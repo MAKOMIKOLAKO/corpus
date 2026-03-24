@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 import { validateApiKey } from '@/app/api/api-key-middleware';
 import { getCurrentUserId } from '@/lib/session';
+import { prisma, withRetry } from '@/lib/prismaWithRetry';
 
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {
