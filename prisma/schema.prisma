@@ -25,6 +25,16 @@ enum ReadingStatus {
   READ
 }
 
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String?
+  createdAt DateTime    @default(now())
+
+  entries     Entry[]
+  collections Collection[]
+}
+
 model Entry {
   id            String        @id @default(cuid())
   title         String
@@ -48,6 +58,8 @@ model Entry {
   notes         Json          @default("[]")
   readingStatus ReadingStatus @default(UNREAD)
   createdAt     DateTime      @default(now())
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   collections   EntryCollection[]
 }
 
@@ -56,6 +68,8 @@ model Collection {
   name        String
   description String?
   createdAt   DateTime @default(now())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   entries     EntryCollection[]
 }
 

@@ -6,6 +6,7 @@ import QuickAddSmartEntry from '@/components/QuickAddSmartEntry';
 import { ContentType, ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { getCurrentUserId } from '@/lib/session';
 
 // Loading component for entries
 function EntriesLoading() {
@@ -37,6 +38,15 @@ export default async function Home({
 }: {
     searchParams: { [key: string]: string | string[] | undefined };
 }) {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        return (
+            <div className="max-w-6xl mx-auto p-8">
+                <p className="text-muted-foreground">Please sign in to view your library.</p>
+            </div>
+        );
+    }
+
     const params = searchParams || {};
     const search = typeof params.search === 'string' ? params.search : undefined;
     const contentType = typeof params.contentType === 'string' ? params.contentType : undefined;
@@ -45,7 +55,7 @@ export default async function Home({
     const topic = typeof params.topic === 'string' ? params.topic : undefined;
     const sortBy = typeof params.sortBy === 'string' ? params.sortBy : 'newest';
 
-    const where: any = {};
+    const where: any = { userId };
 
     if (search) {
         where.OR = [
