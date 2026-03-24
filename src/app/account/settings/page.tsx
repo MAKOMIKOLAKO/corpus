@@ -20,7 +20,10 @@ export default function AccountPage() {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [portalLoading, setPortalLoading] = useState(false);
 
-    const userPlan = getUserPlan(session?.user || null);
+    const userPlan = getUserPlan(session?.user ? {
+        ...session.user,
+        plan: session.user.plan as "FREE" | "PRO" | "LIFETIME_PRO"
+    } : null);
     const upgraded = searchParams?.get('upgraded') === 'true';
 
     const handleRedeemPromo = async (e: React.FormEvent) => {
