@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ account, profile }) {
+      console.log("signIn callback:", { account, profile });
       if (account?.provider === "google") {
         const email = profile?.email;
         if (!email) return false;
