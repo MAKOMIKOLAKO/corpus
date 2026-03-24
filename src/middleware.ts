@@ -12,8 +12,8 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ req, token }) => {
-        // /login and /signup are always accessible
-        if (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup") return true;
+        // /login, /signup, and /privacy are always accessible
+        if (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup" || req.nextUrl.pathname === "/privacy") return true;
         // Everything else requires a session token
         return !!token;
       },
