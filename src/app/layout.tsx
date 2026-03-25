@@ -15,10 +15,13 @@ export const metadata: Metadata = {
     default: 'Corpus — Personal Knowledge Indexing for Researchers',
     template: '%s | Corpus'
   },
-  description: 'Corpus indexes everything you read — papers, articles, books, essays — and automatically extracts the ideas that matter. Built for researchers, academics, and students.',
+  description: 'Corpus indexes everything you read — papers, articles, books, essays — and automatically extracts its ideas that matter. Built for researchers, academics, and students.',
   keywords: ['knowledge management', 'research tool', 'academic reading', 'paper organizer', 'personal library', 'knowledge graph', 'research notes', 'DOI lookup', 'citation manager'],
   authors: [{ name: 'Corpus' }],
   creator: 'Corpus',
+  verification: {
+    google: 'iYNYU8hznL0W3Xoiyix9ij1eN_tSPbtKQ7YjezmLE4k'
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
