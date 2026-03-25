@@ -88,6 +88,7 @@ export default function CollectionDetailPage() {
         if (params.id) {
             fetchCollection();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params.id]);
 
     useEffect(() => {
