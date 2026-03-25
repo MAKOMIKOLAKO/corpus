@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -14,6 +15,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function SetupUsernameClient() {
   const router = useRouter();
+  const { update } = useSession();
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [checking, setChecking] = useState(false);
@@ -48,6 +50,7 @@ export default function SetupUsernameClient() {
         body: JSON.stringify({ username, bio }),
       });
       if (res.ok) {
+        await update();
         router.push('/library');
         router.refresh();
       } else {
@@ -117,7 +120,7 @@ export default function SetupUsernameClient() {
             <button
               type="submit"
               disabled={!availability?.available || saving}
-              className="w-full py-2 px-4 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-2 px-4 rounded-md bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving…' : 'Confirm username'}
             </button>
