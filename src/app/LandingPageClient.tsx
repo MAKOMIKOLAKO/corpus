@@ -514,10 +514,10 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="border-t border-white/[0.06] bg-[#080808] py-24 sm:py-32">
+      <section className="border-t border-[var(--border)] bg-[var(--background)] py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Trusted by researchers, academics, and students</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Trusted by researchers, academics, and students</h2>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
@@ -537,11 +537,11 @@ export default function LandingPage() {
               <blockquote
                 key={t.role}
                 data-reveal
-                className={`${reveal} relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/80 p-8`}
+                className={`${reveal} relative rounded-2xl border-[var(--border)] bg-[var(--card)]/50 p-8`}
               >
-                <span className="absolute left-6 top-4 font-serif text-5xl leading-none text-indigo-500/40">&ldquo;</span>
-                <p className="relative z-10 pt-6 text-sm leading-relaxed text-zinc-300">{t.quote}</p>
-                <footer className="mt-6 text-xs text-zinc-500">— {t.role}</footer>
+                <span className="absolute left-6 top-4 font-serif text-5xl leading-none text-[var(--accent)]/40">&ldquo;</span>
+                <p className="relative z-10 pt-6 text-sm leading-relaxed text-[var(--muted-foreground)]">{t.quote}</p>
+                <footer className="mt-6 text-xs text-[var(--muted-foreground)]">— {t.role}</footer>
               </blockquote>
             ))}
           </div>
@@ -552,21 +552,21 @@ export default function LandingPage() {
       <section id="faq" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-3xl px-4">
           <div data-reveal className={`${reveal} text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Frequently asked questions about Corpus</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Frequently asked questions about Corpus</h2>
           </div>
           <div className="mt-12 space-y-2">
             {faqItems.map((item, i) => (
-              <div key={item.q} data-reveal className={`${reveal} overflow-hidden rounded-xl border border-white/[0.08] bg-zinc-900/30`}>
+              <div key={item.q} data-reveal className={`${reveal} overflow-hidden rounded-xl border-[var(--border)] bg-[var(--card)]/30`}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-white transition hover:bg-white/[0.03]"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--muted)]/50"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                 >
                   {item.q}
-                  <span className="text-zinc-500">{openFaq === i ? "−" : "+"}</span>
+                  <span className="text-[var(--muted-foreground)]">{openFaq === i ? "−" : "+"}</span>
                 </button>
-                {openFaq === i && <div className="border-t border-white/[0.06] px-5 py-4 text-sm leading-relaxed text-zinc-400">{item.a}</div>}
+                {openFaq === i && <div className="border-t border-[var(--border)] px-5 py-4 text-sm leading-relaxed text-[var(--muted-foreground)]">{item.a}</div>}
               </div>
             ))}
           </div>
@@ -574,10 +574,10 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section data-reveal className={`${reveal} border-t border-indigo-500/20 bg-indigo-950/40 py-24`}>
+      <section data-reveal className={`${reveal} border-t border-[var(--border)] bg-[var(--background)] py-24`}>
         <div className="mx-auto max-w-3xl px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Start building your personal knowledge base today</h2>
-          <p className="mt-4 text-zinc-400">Free forever. No credit card required.</p>
+          <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Start building your personal knowledge base today</h2>
+          <p className="mt-4 text-[var(--muted-foreground)]">Free forever. No credit card required.</p>
           <Link
             href="/login"
             className={`mt-10 inline-flex min-w-[200px] justify-center rounded-lg px-8 py-4 text-base font-semibold text-white ${accentBg} shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400`}
@@ -593,17 +593,17 @@ export default function LandingPage() {
       </p>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] bg-[#050505] py-12">
+      <footer className="border-t border-[var(--border)] bg-[var(--background)] py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:flex-row">
           <div className="flex flex-col items-center gap-2 sm:items-start">
-            <span className="text-lg font-semibold text-white">Corpus</span>
-            <p className="text-xs text-zinc-600">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
+            <span className="text-lg font-semibold text-[var(--foreground)]">Corpus</span>
+            <p className="text-xs text-[var(--muted-foreground)]">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
           </div>
-          <div className="flex gap-8 text-sm text-zinc-500">
-            <Link href="/privacy" className="transition hover:text-white">
+          <div className="flex gap-8 text-sm text-[var(--muted-foreground)]">
+            <Link href="/privacy" className="transition hover:text-[var(--foreground)]">
               Privacy
             </Link>
-            <Link href="/pricing" className="transition hover:text-white">
+            <Link href="/pricing" className="transition hover:text-[var(--foreground)]">
               Pricing
             </Link>
           </div>

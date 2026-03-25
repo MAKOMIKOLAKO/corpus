@@ -384,10 +384,10 @@ export default function EntryCard({
                                             setIsOpen(!isOpen);
                                         }}
                                         className={`h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-2 py-1 border transition-colors ${statusVariant(currentStatus) === 'success'
-                                            ? 'border-green-200 bg-green-100 text-green-900 hover:bg-green-200 dark:border-green-800 dark:bg-green-900/40 dark:text-green-100 dark:hover:bg-green-900/60'
+                                            ? 'border-[var(--accent)] bg-[var(--accent)]/20 text-[var(--accent)] hover:bg-[var(--accent)]/30'
                                             : statusVariant(currentStatus) === 'default'
-                                                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                                ? 'border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--muted)]'
+                                                : 'border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80'
                                             }`}
                                         disabled={isUpdating}
                                     >
