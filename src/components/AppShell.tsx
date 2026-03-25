@@ -17,6 +17,36 @@ export function AppShell({
   const pathname = usePathname();
   const isLanding = pathname === "/";
   const [pendingCount, setPendingCount] = useState(0);
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch('/api/user/email-status')
+      .then((r) => r.json())
+      .then((d) => setEmailVerified(d.emailVerified ?? true))
+      .catch(() => { });
+  }, [session]);
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    setResendMessage(null);
+    try {
+      const res = await fetch('/api/auth/resend-verification', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setResendMessage('Verification email sent.');
+      } else {
+        setResendMessage(data.error || 'Could not send email.');
+      }
+    } catch {
+      setResendMessage('Could not send email.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!session) return;
@@ -49,6 +79,31 @@ export function AppShell({
 
   return (
     <>
+      {session && !emailVerified && !bannerDismissed && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2.5 text-sm text-yellow-300 flex items-center justify-between gap-4 flex-wrap">
+          <span>
+            Please verify your email address. Check your inbox or{" "}
+            {resendMessage ? (
+              <span className="text-yellow-200">{resendMessage}</span>
+            ) : (
+              <button
+                onClick={handleResend}
+                disabled={resendLoading}
+                className="underline hover:text-yellow-100 disabled:opacity-50 transition-colors"
+              >
+                {resendLoading ? "Sending…" : "Resend verification email"}
+              </button>
+            )}
+          </span>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            className="text-yellow-400 hover:text-yellow-200 transition-colors shrink-0"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <header className="border-b border-[var(--border)] bg-[var(--card)]/50 backdrop-blur-md sticky top-0 z-50" role="banner">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link
