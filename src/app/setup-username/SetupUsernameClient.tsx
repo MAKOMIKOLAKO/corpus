@@ -50,9 +50,12 @@ export default function SetupUsernameClient() {
         body: JSON.stringify({ username, bio }),
       });
       if (res.ok) {
+        // Update session and then redirect
         await update();
-        router.push('/library');
-        router.refresh();
+        // Add a small delay to ensure session is updated
+        setTimeout(() => {
+          window.location.href = '/library';
+        }, 500);
       } else if (res.status === 404) {
         await signOut({ callbackUrl: '/signup' });
       } else {

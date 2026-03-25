@@ -137,6 +137,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = (token as any).userId;
         (session.user as any).plan = (token as any).plan || 'FREE';
         (session.user as any).emailVerified = (token as any).emailVerified;
+        (session.user as any).username = (token as any).username || null;
       }
       return session;
     },

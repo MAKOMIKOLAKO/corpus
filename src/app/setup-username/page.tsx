@@ -10,7 +10,8 @@ export default async function SetupUsernamePage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id as string },
-  }) as any;
+    select: { username: true }
+  });
 
   if (!user) redirect('/api/auth/clear-session');
   if (user?.username) redirect('/library');
