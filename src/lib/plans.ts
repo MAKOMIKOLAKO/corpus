@@ -3,18 +3,24 @@ import { User } from '@prisma/client'
 export const PLAN_LIMITS = {
   FREE: {
     maxEntries: 100,
-    collections: false,
+    collections: true,
     graph: false,
+    sharedCollections: 3,
+    canBeAdmin: false,
   },
   PRO: {
     maxEntries: Infinity,
     collections: true,
     graph: true,
+    sharedCollections: Infinity,
+    canBeAdmin: true,
   },
   LIFETIME_PRO: {
     maxEntries: Infinity,
     collections: true,
     graph: true,
+    sharedCollections: Infinity,
+    canBeAdmin: true,
   },
 } as const
 

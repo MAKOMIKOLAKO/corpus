@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Loader2, CheckCircle, XCircle, CreditCard } from 'lucide-react';
-import { getUserPlan } from '@/lib/plans';
+import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users } from 'lucide-react';
+import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
 
 export default function AccountPage() {
     const { data: session } = useSession();
@@ -21,6 +21,8 @@ export default function AccountPage() {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [portalLoading, setPortalLoading] = useState(false);
     const [upgradeProcessed, setUpgradeProcessed] = useState(false);
+    const [sharedCollectionsCount, setSharedCollectionsCount] = useState(0);
+    const [loadingCollections, setLoadingCollections] = useState(true);
 
     const userPlan = getUserPlan(session?.user ? {
         ...session.user,
@@ -28,6 +30,25 @@ export default function AccountPage() {
     } : null);
     const upgraded = searchParams?.get('upgraded') === 'true';
     const userIdFromUrl = searchParams?.get('userId');
+
+    useEffect(() => {
+        fetchSharedCollectionsCount();
+    }, []);
+
+    const fetchSharedCollectionsCount = async () => {
+        try {
+            const response = await fetch('/api/collections');
+            if (response.ok) {
+                const collections = await response.json();
+                const sharedCount = collections.filter((c: any) => c.isOwner && c._count?.members > 0).length;
+                setSharedCollectionsCount(sharedCount);
+            }
+        } catch (error) {
+            console.error('Error fetching collections:', error);
+        } finally {
+            setLoadingCollections(false);
+        }
+    };
 
     // Handle immediate upgrade if coming from Stripe success
     useEffect(() => {
@@ -311,6 +332,79 @@ export default function AccountPage() {
                 </CardContent>
             </Card>
 
+            {/* Shared Collections */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Users className="w-5 h-5" />
+                        Shared Collections
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {loadingCollections ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Loading...
+                            </div>
+                        ) : (
+                            <>
+                                <div>
+                                    <Label className="text-sm font-medium text-muted-foreground">Shared Collections Usage</Label>
+                                    <div className="mt-2">
+                                        {userPlan === 'FREE' ? (
+                                            <>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-sm font-medium">
+                                                        {sharedCollectionsCount} of {PLAN_LIMITS.FREE.sharedCollections} shared collections used
+                                                    </span>
+                                                    <Badge variant={sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections ? 'destructive' : 'secondary'}>
+                                                        {sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections ? 'Limit Reached' : 'Active'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="w-full bg-muted rounded-full h-2">
+                                                    <div
+                                                        className={`h-2 rounded-full transition-all ${sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections
+                                                                ? 'bg-red-500'
+                                                                : 'bg-primary'
+                                                            }`}
+                                                        style={{ width: `${Math.min((sharedCollectionsCount / PLAN_LIMITS.FREE.sharedCollections) * 100, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-2">
+                                                    Free accounts can share up to 3 collections. Upgrade to Pro for unlimited.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium">
+                                                        {sharedCollectionsCount} shared {sharedCollectionsCount === 1 ? 'collection' : 'collections'}
+                                                    </span>
+                                                    <Badge variant="default">Unlimited</Badge>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-2">
+                                                    Pro users can share unlimited collections with other Corpus users.
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="pt-3 border-t border-border">
+                                    <h4 className="text-sm font-medium mb-2">Sharing Permissions</h4>
+                                    <div className="space-y-1 text-sm text-muted-foreground">
+                                        <p>• <strong>Viewer:</strong> Can view entries in the collection</p>
+                                        <p>• <strong>Contributor:</strong> Can add and remove entries</p>
+                                        <p>• <strong>Admin:</strong> Can manage members and settings (Pro only)</p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* Plan Information */}
             <Card>
                 <CardHeader>
@@ -330,7 +424,13 @@ export default function AccountPage() {
                                 <div className="flex items-center justify-between text-sm">
                                     <span>Collections</span>
                                     <span className="font-medium">
-                                        {userPlan === 'FREE' ? 'Not available' : 'Available'}
+                                        {userPlan === 'FREE' ? 'Available' : 'Available'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span>Shared Collections</span>
+                                    <span className="font-medium">
+                                        {userPlan === 'FREE' ? 'Up to 3' : 'Unlimited'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
@@ -346,7 +446,7 @@ export default function AccountPage() {
                             <div>
                                 <h4 className="font-medium mb-2">Upgrade to Pro</h4>
                                 <p className="text-sm text-muted-foreground mb-3">
-                                    Get unlimited entries, collections, and the knowledge graph visualization.
+                                    Get unlimited entries, collections, shared collections, and the knowledge graph visualization.
                                 </p>
                                 <Button>
                                     <a href="/pricing">Upgrade to Pro</a>

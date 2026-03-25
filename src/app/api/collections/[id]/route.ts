@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateApiKey } from '@/app/api/api-key-middleware';
+import { getCurrentUserId } from '@/lib/session';
+import { canViewCollection } from '@/lib/collectionPermissions';
 
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {
@@ -16,6 +18,8 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
+        const userId = await getCurrentUserId();
+
         const collection = await prisma.collection.findUnique({
             where: { id: params.id },
             include: {
@@ -33,8 +37,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
                     },
                     orderBy: { addedAt: 'desc' }
                 },
+                members: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                            }
+                        }
+                    },
+                    orderBy: { invitedAt: 'desc' }
+                },
                 _count: {
-                    select: { entries: true }
+                    select: { entries: true, members: true }
                 }
             },
         });
@@ -42,6 +58,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         if (!collection) {
             return NextResponse.json({ error: 'Collection not found' }, {
                 status: 404,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                }
+            });
+        }
+
+        if (userId && !canViewCollection(userId, collection)) {
+            return NextResponse.json({ error: 'You do not have permission to view this collection' }, {
+                status: 403,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
                 }
