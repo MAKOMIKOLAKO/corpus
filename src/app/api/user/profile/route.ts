@@ -40,11 +40,15 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Username is already taken' }, { status: 409 });
   }
 
-  const updated = await prisma.user.update({
-    where: { id: session.user.id },
-    data: { username, bio: bio || null },
-    select: { id: true, username: true, name: true, bio: true, plan: true, createdAt: true },
-  });
-
-  return NextResponse.json(updated);
+  try {
+    const updated = await prisma.user.update({
+      where: { id: session.user.id },
+      data: { username, bio: bio || null },
+      select: { id: true, username: true, name: true, bio: true, plan: true, createdAt: true },
+    });
+    return NextResponse.json(updated);
+  } catch (e: any) {
+    if (e?.code === 'P2025') return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    throw e;
+  }
 }

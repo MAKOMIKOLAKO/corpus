@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -53,6 +53,8 @@ export default function SetupUsernameClient() {
         await update();
         router.push('/library');
         router.refresh();
+      } else if (res.status === 404) {
+        await signOut({ callbackUrl: '/signup' });
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to save username');
