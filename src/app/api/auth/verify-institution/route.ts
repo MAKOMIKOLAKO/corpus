@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     if (resend) {
       try {
         await resend.emails.send({
-          from: 'Corpus <noreply@corpus-knowledge.com>',
+          from: process.env.EMAIL_FROM || 'Corpus <noreply@usecorpus.app>',
           to: email,
           subject: 'Your Corpus institution verification code',
           html: `
