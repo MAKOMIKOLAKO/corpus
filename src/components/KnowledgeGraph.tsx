@@ -38,8 +38,10 @@ interface KnowledgeGraphProps {
 
 export default function KnowledgeGraph({ entries, width = 800, height = 500 }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   useEffect(() => {
     if (!entries.length || !svgRef.current) return;
@@ -52,10 +54,52 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
 
     if (graphData.nodes.length === 0) return;
 
-    // Create SVG
+    // Create SVG with zoom behavior
     const svg = d3.select(svgRef.current)
       .attr("width", width)
       .attr("height", height);
+
+    // Create zoom behavior with enhanced controls
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        const { transform } = event;
+        g.attr("transform", transform);
+        setZoomLevel(transform.k);
+      });
+
+    // Store zoom instance in ref
+    zoomRef.current = zoom;
+
+    // Enable keyboard shortcuts
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key) {
+          case '=':
+          case '+':
+            event.preventDefault();
+            svg.transition().duration(300).call(zoom.scaleBy as any, 1.2);
+            break;
+          case '-':
+          case '_':
+            event.preventDefault();
+            svg.transition().duration(300).call(zoom.scaleBy as any, 0.8);
+            break;
+          case '0':
+            event.preventDefault();
+            svg.transition().duration(300).call(zoom.transform as any, d3.zoomIdentity);
+            break;
+        }
+      }
+    };
+
+    // Add keyboard event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    svg.call(zoom);
+
+    // Create main group for zoomable content
+    const g = svg.append("g");
 
     // Create simulation
     const simulation = d3.forceSimulation(graphData.nodes as any)
@@ -80,7 +124,7 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
       .style("opacity", 0);
 
     // Create links
-    const link = svg.append("g")
+    const link = g.append("g")
       .selectAll("line")
       .data(graphData.links)
       .enter().append("line")
@@ -96,7 +140,7 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
       .attr("stroke-width", (d: any) => Math.sqrt(d.value));
 
     // Create node groups
-    const node = svg.append("g")
+    const node = g.append("g")
       .selectAll("g")
       .data(graphData.nodes)
       .enter().append("g")
@@ -201,6 +245,7 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
     return () => {
       tooltip.remove();
       simulation.stop();
+      document.removeEventListener('keydown', handleKeyDown);
     };
 
   }, [entries, width, height]);
@@ -332,6 +377,25 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
     }
   };
 
+  // Zoom control functions
+  const zoomIn = () => {
+    if (zoomRef.current && svgRef.current) {
+      d3.select(svgRef.current).transition().duration(300).call(zoomRef.current.scaleBy as any, 1.2);
+    }
+  };
+
+  const zoomOut = () => {
+    if (zoomRef.current && svgRef.current) {
+      d3.select(svgRef.current).transition().duration(300).call(zoomRef.current.scaleBy as any, 0.8);
+    }
+  };
+
+  const resetZoom = () => {
+    if (zoomRef.current && svgRef.current) {
+      d3.select(svgRef.current).transition().duration(300).call(zoomRef.current.transform as any, d3.zoomIdentity);
+    }
+  };
+
   return (
     <div className="relative">
       <svg
@@ -339,6 +403,34 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
         className="w-full h-full rounded-lg border border-[var(--border)] bg-[var(--card)]/50"
         style={{ minHeight: height }}
       />
+
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-2 flex flex-col gap-2">
+        <button
+          onClick={zoomIn}
+          className="w-8 h-8 rounded bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/80 flex items-center justify-center text-sm font-medium transition-colors"
+          title="Zoom In (Ctrl/Cmd + +)"
+        >
+          +
+        </button>
+        <div className="text-center text-xs text-[var(--muted-foreground)] font-medium">
+          {Math.round(zoomLevel * 100)}%
+        </div>
+        <button
+          onClick={zoomOut}
+          className="w-8 h-8 rounded bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/80 flex items-center justify-center text-sm font-medium transition-colors"
+          title="Zoom Out (Ctrl/Cmd + -)"
+        >
+          −
+        </button>
+        <button
+          onClick={resetZoom}
+          className="w-8 h-8 rounded bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80 flex items-center justify-center text-xs font-medium transition-colors"
+          title="Reset Zoom (Ctrl/Cmd + 0)"
+        >
+          ⟲
+        </button>
+      </div>
 
       {/* Graph Legend */}
       <div className="absolute top-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs">
@@ -359,9 +451,22 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
         </div>
       </div>
 
+      {/* Zoom Instructions */}
+      <div className="absolute bottom-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs max-w-xs">
+        <div className="font-semibold mb-2">Zoom Controls</div>
+        <div className="space-y-1 text-[var(--muted-foreground)]">
+          <div>• Mouse wheel: Zoom in/out</div>
+          <div>• Click & drag: Pan around</div>
+          <div>• Ctrl/Cmd + +: Zoom in</div>
+          <div>• Ctrl/Cmd + -: Zoom out</div>
+          <div>• Ctrl/Cmd + 0: Reset view</div>
+          <div>• Drag nodes: Reposition</div>
+        </div>
+      </div>
+
       {/* Selected Node Info */}
       {selectedNode && (
-        <div className="absolute top-4 right-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 max-w-xs">
+        <div className="absolute top-20 right-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 max-w-xs">
           <div className="font-semibold mb-2">Selected Node</div>
           <div className="text-sm">
             <div className="font-medium">{selectedNode.title}</div>
