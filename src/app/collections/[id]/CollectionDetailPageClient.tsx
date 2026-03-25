@@ -77,6 +77,9 @@ export default function CollectionDetailPage() {
     const [inviteError, setInviteError] = useState('');
     const [inviteSuccess, setInviteSuccess] = useState('');
     const [updatingMember, setUpdatingMember] = useState<string | null>(null);
+    const [contacts, setContacts] = useState<Array<{ id: string; name: string | null; email: string }>>([]);
+    const [contactsLoading, setContactsLoading] = useState(false);
+    const [contactsOpen, setContactsOpen] = useState(false);
 
     // Use scroll position restoration for collection pages
     useScrollPosition(`collection-${params.id}`);
@@ -86,6 +89,25 @@ export default function CollectionDetailPage() {
             fetchCollection();
         }
     }, [params.id]);
+
+    useEffect(() => {
+        if (showInviteModal && contacts.length === 0 && !contactsLoading) {
+            (async () => {
+                setContactsLoading(true);
+                try {
+                    const res = await fetch(`/api/collections/contacts`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setContacts(Array.isArray(data) ? data : []);
+                    }
+                } catch (e) {
+                    // noop
+                } finally {
+                    setContactsLoading(false);
+                }
+            })();
+        }
+    }, [showInviteModal]);
 
     const fetchCollection = async () => {
         try {
@@ -143,6 +165,11 @@ export default function CollectionDetailPage() {
         setInviting(true);
 
         try {
+            if (inviteEmail.trim().toLowerCase() === (session?.user?.email || '').toLowerCase()) {
+                setInviteError('You cannot invite yourself to a collection');
+                setInviting(false);
+                return;
+            }
             const response = await fetch(`/api/collections/${params.id}/members`, {
                 method: 'POST',
                 headers: {
@@ -412,7 +439,7 @@ export default function CollectionDetailPage() {
 
             {/* Invite Modal */}
             {showInviteModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowInviteModal(false)}>
+                <div className="fixed inset-0 bg-black flex items-center justify-center z-50" onClick={() => setShowInviteModal(false)}>
                     <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium">Invite Member</h3>
@@ -424,13 +451,44 @@ export default function CollectionDetailPage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="text-sm font-medium mb-1 block">Email</label>
-                                <input
-                                    type="email"
-                                    value={inviteEmail}
-                                    onChange={(e) => setInviteEmail(e.target.value)}
-                                    placeholder="user@example.com"
-                                    className="w-full px-3 py-2 border rounded-md bg-background text-sm"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="email"
+                                        value={inviteEmail}
+                                        onChange={(e) => { setInviteEmail(e.target.value); setContactsOpen(true); }}
+                                        onFocus={() => setContactsOpen(true)}
+                                        onBlur={() => setTimeout(() => setContactsOpen(false), 150)}
+                                        placeholder="user@example.com"
+                                        className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+                                        autoComplete="off"
+                                    />
+                                    {contactsOpen && (inviteEmail.length === 0 || inviteEmail.length >= 1) && contacts.length > 0 && (
+                                        <div className="absolute z-10 mt-1 w-full bg-background border border-border rounded-md shadow-sm max-h-56 overflow-auto">
+                                            {contacts
+                                                .filter(c =>
+                                                    // Exclude current user and match by email or name
+                                                    c.email.toLowerCase() !== (session?.user?.email || '').toLowerCase() && (
+                                                        c.email.toLowerCase().includes(inviteEmail.toLowerCase()) ||
+                                                        (c.name || '').toLowerCase().includes(inviteEmail.toLowerCase())
+                                                    )
+                                                )
+                                                .slice(0, 8)
+                                                .map(c => (
+                                                    <button
+                                                        type="button"
+                                                        key={c.id}
+                                                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                                                        onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
+                                                    >
+                                                        <span className="font-medium">{c.name || c.email}</span>
+                                                        {c.name && (
+                                                            <span className="text-muted-foreground ml-2">{c.email}</span>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div>

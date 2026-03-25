@@ -58,6 +58,22 @@ export async function POST(
       return NextResponse.json({ error: 'Inviter not found' }, { status: 404 });
     }
 
+    // Prevent inviting yourself
+    if (targetUser.id === inviterUser.id) {
+      return NextResponse.json(
+        { error: 'You cannot invite yourself to a collection' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent attempting to add the collection owner as a member
+    if (targetUser.id === collection.userId) {
+      return NextResponse.json(
+        { error: 'Collection owner is already part of the collection' },
+        { status: 400 }
+      );
+    }
+
     if (role === 'ADMIN' && !canAssignAdmin(inviterUser, targetUser)) {
       return NextResponse.json(
         { error: 'Admin role requires both users to have Pro accounts' },
