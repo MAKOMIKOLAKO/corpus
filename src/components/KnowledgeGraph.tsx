@@ -68,10 +68,22 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
         const { transform } = event;
         g.attr("transform", transform);
         setZoomLevel(transform.k);
+
+        // Update label font sizes based on current zoom level
+        g.selectAll("text")
+          .attr("font-size", function (d: any) {
+            const nodeData = d as GraphNode;
+            const baseSize = nodeData.type === 'entry' ? 12 : nodeData.type === 'topic' ? 10 : 9;
+            const scaledSize = Math.max(baseSize * Math.sqrt(transform.k), 8);
+            return `${scaledSize}px`;
+          });
       });
 
     // Store zoom instance in ref
     zoomRef.current = zoom;
+
+    // Apply zoom behavior to SVG
+    svg.call(zoom);
 
     // Enable keyboard shortcuts
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -458,7 +470,7 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
             className="w-8 h-8 rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/80 flex items-center justify-center text-xs font-medium transition-colors"
             title="Toggle Fullscreen (F)"
           >
-            {isFullscreen ? '⛶' : '⛶'}
+            {isFullscreen ? 'EX' : 'FS'}
           </button>
         </div>
       </div>
