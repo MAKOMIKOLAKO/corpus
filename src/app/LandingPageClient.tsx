@@ -354,18 +354,18 @@ export default function LandingPage() {
       <section id="features" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Everything your research workflow needs</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Everything your research workflow needs</h2>
           </div>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
               <div
                 key={f.title}
                 data-reveal
-                className={`${reveal} group rounded-2xl border border-white/[0.08] bg-zinc-900/30 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-white/[0.12]`}
+                className={`${reveal} group rounded-2xl border-[var(--border)] bg-[var(--card)]/30 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-[var(--accent)]`}
               >
                 <div className="mb-5">{f.icon}</div>
-                <h3 className="text-lg font-semibold text-white">{f.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-400">{f.body}</p>
+                <h3 className="text-lg font-semibold text-[var(--foreground)]">{f.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">{f.body}</p>
               </div>
             ))}
           </div>
@@ -373,14 +373,14 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="border-t border-white/[0.06] bg-[#080808] py-24 sm:py-32">
+      <section className="border-t border-[var(--border)] bg-[var(--background)] py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Save and organize research papers, articles, and books in seconds</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Save and organize research papers, articles, and books in seconds</h2>
           </div>
 
           <div className="relative mt-20 grid gap-12 lg:grid-cols-3 lg:gap-8">
-            <div className="pointer-events-none absolute left-0 right-0 top-12 hidden h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent lg:block" aria-hidden />
+            <div className="pointer-events-none absolute left-0 right-0 top-12 hidden h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent lg:block" aria-hidden />
             {[
               {
                 n: "01",
@@ -403,11 +403,11 @@ export default function LandingPage() {
             ].map((step) => (
               <div key={step.n} data-reveal className={`${reveal} relative text-center lg:text-left`}>
                 <div className="mb-6 flex justify-center lg:justify-start">
-                  <span className="text-5xl font-bold tabular-nums text-zinc-800">{step.n}</span>
+                  <span className="text-5xl font-bold tabular-nums text-[var(--muted-foreground)]">{step.n}</span>
                 </div>
                 <div className="mb-4 flex justify-center lg:justify-start">{step.icon}</div>
-                <h3 className="text-xl font-semibold text-white">{step.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-400">{step.desc}</p>
+                <h3 className="text-xl font-semibold text-[var(--foreground)]">{step.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">{step.desc}</p>
               </div>
             ))}
           </div>
