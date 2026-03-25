@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 
 const GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`;
 
-const accent = "text-indigo-500";
-const accentBg = "bg-indigo-500";
+const accent = "text-[var(--accent)]";
+const accentBg = "bg-[var(--accent)]";
 
 function IconChrome() {
   return (
@@ -19,7 +19,7 @@ function IconChrome() {
 
 function IconSpark() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="AI-powered automatic keyword extraction and topic tagging">
+    <svg className={`h-7 w-7 ${accent} corpus-glow`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="AI-powered automatic keyword extraction and topic tagging">
       <path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" strokeLinecap="round" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -28,7 +28,7 @@ function IconSpark() {
 
 function IconGraph() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Semantic knowledge graph connecting research papers and articles">
+    <svg className={`h-7 w-7 ${accent} corpus-glow`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Semantic knowledge graph connecting research papers and articles">
       <circle cx="6" cy="18" r="2.5" />
       <circle cx="18" cy="6" r="2.5" />
       <circle cx="18" cy="18" r="2.5" />
@@ -189,36 +189,36 @@ export default function LandingPage() {
   const reveal = "opacity-0 translate-y-8 transition-all duration-700 ease-out";
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 antialiased selection:bg-indigo-500/30 selection:text-white">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-[var(--accent)]/30 selection:text-[var(--foreground)] neural-bg">
       {/* Nav */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${navScrolled ? "border-white/[0.06] bg-[#0a0a0a]/75 backdrop-blur-md" : "border-transparent bg-transparent"
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${navScrolled ? "border-[var(--border)] bg-[var(--background)]/75 backdrop-blur-md" : "border-transparent bg-transparent"
           }`}
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-white">
+          <Link href="/" className="text-lg font-semibold tracking-tight font-serif text-[var(--foreground)]">
             Corpus
           </Link>
 
           <nav className="hidden items-center gap-10 md:flex">
-            <a href="#features" className="text-sm text-zinc-400 transition-colors hover:text-white">
+            <a href="#features" className="text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
               Features
             </a>
-            <a href="#pricing" className="text-sm text-zinc-400 transition-colors hover:text-white">
+            <a href="#pricing" className="text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
               Pricing
             </a>
-            <a href="#faq" className="text-sm text-zinc-400 transition-colors hover:text-white">
+            <a href="#faq" className="text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
               FAQ
             </a>
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Link href="/login" className="text-sm font-medium text-zinc-300 transition-colors hover:text-white">
+            <Link href="/login" className="text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
               Sign In
             </Link>
             <Link
               href="/login"
-              className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${accentBg} shadow-sm shadow-indigo-500/20 transition hover:bg-indigo-400`}
+              className={`rounded-lg px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] ${accentBg} shadow-sm corpus-glow transition hover:opacity-90`}
             >
               Get Started
             </Link>
@@ -237,21 +237,21 @@ export default function LandingPage() {
         </div>
 
         {mobileOpen && (
-          <div className="border-t border-white/[0.06] bg-[#0a0a0a]/95 px-4 py-4 backdrop-blur-md md:hidden">
+          <div className="border-t border-[var(--border)] bg-[var(--card)]/95 px-4 py-4 backdrop-blur-md md:hidden">
             <div className="flex flex-col gap-3 text-sm">
-              <a href="#features" className="py-2 text-zinc-300" onClick={() => setMobileOpen(false)}>
+              <a href="#features" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
                 Features
               </a>
-              <a href="#pricing" className="py-2 text-zinc-300" onClick={() => setMobileOpen(false)}>
+              <a href="#pricing" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
                 Pricing
               </a>
-              <a href="#faq" className="py-2 text-zinc-300" onClick={() => setMobileOpen(false)}>
+              <a href="#faq" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
                 FAQ
               </a>
-              <Link href="/login" className="py-2 font-medium text-white" onClick={() => setMobileOpen(false)}>
+              <Link href="/login" className="py-2 font-medium text-[var(--foreground)]" onClick={() => setMobileOpen(false)}>
                 Sign In
               </Link>
-              <Link href="/login" className={`rounded-lg py-3 text-center font-medium text-white ${accentBg}`} onClick={() => setMobileOpen(false)}>
+              <Link href="/login" className={`rounded-lg py-3 text-center font-medium text-[var(--accent-foreground)] ${accentBg}`} onClick={() => setMobileOpen(false)}>
                 Get Started
               </Link>
             </div>
@@ -261,7 +261,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-16">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.15),transparent)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(20,184,166,0.08),transparent)]" />
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.35] mix-blend-overlay"
           style={{ backgroundImage: GRAIN_BG }}
@@ -272,7 +272,7 @@ export default function LandingPage() {
           {[...Array(24)].map((_, i) => (
             <div
               key={i}
-              className="absolute h-1 w-1 animate-corpusFloat rounded-full bg-indigo-400/25"
+              className="absolute h-1 w-1 animate-neuralFloat rounded-full bg-[var(--accent)]/20"
               style={{
                 left: `${(i * 41) % 100}%`,
                 top: `${(i * 67) % 100}%`,
@@ -285,60 +285,60 @@ export default function LandingPage() {
 
         <div className="relative z-10 mx-auto grid max-w-6xl gap-16 px-4 pb-24 pt-12 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
           <div data-reveal className={reveal}>
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Your research, finally organized.
+            <h1 className="text-4xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+              The architecture of insight.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
-              Corpus indexes everything you read — papers, articles, books, essays — and automatically extracts the ideas that matter. Built for researchers, academics, and students who take their reading seriously.
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted-foreground)]">
+              Corpus is the living library that connects what you read. Beyond storage toward discovery—your personal corpus, instantly discoverable.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/login"
-                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white ${accentBg} shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-400`}
+                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90`}
               >
-                Get Started Free
+                Build Your Knowledge Base
               </Link>
               <a
                 href="#features"
-                className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] px-6 py-3 text-sm font-medium text-zinc-200 transition hover:border-white/25 hover:bg-white/[0.06]"
+                className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/5"
               >
-                See how it works
+                Connect the Dots
               </a>
             </div>
           </div>
 
           <div data-reveal className={`${reveal} delay-100`}>
-            <div className="relative rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-5 shadow-2xl shadow-black/50 backdrop-blur-sm">
-              <div className="mb-4 flex items-center gap-2 border-b border-white/[0.06] pb-4">
+            <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--card)]/50 p-5 shadow-2xl backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-2 border-b border-[var(--border)] pb-4">
                 <div className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-600" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-600" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-600" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
                 </div>
-                <span className="ml-2 text-xs text-zinc-500">library</span>
+                <span className="ml-2 text-xs text-[var(--muted-foreground)]">library</span>
               </div>
               <div className="space-y-4">
-                <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0a]/80 p-4">
-                  <p className="text-sm font-medium text-zinc-200">Attention Is All You Need</p>
-                  <p className="mt-1 text-xs text-zinc-500">Vaswani et al. · 2017 · Paper</p>
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/80 p-4 discovery-reveal">
+                  <p className="text-sm font-medium text-[var(--foreground)]">Attention Is All You Need</p>
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Vaswani et al. · 2017 · Paper</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {["transformer", "NLP", "self-attention"].map((k) => (
-                      <span key={k} className="rounded-md border border-indigo-500/25 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-300">
+                      <span key={k} className="rounded-md border border-[var(--accent)]/25 bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--accent)] corpus-glow">
                         {k}
                       </span>
                     ))}
                   </div>
                   <div className="mt-2 flex gap-2">
-                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-zinc-500">ML</span>
-                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-zinc-500">deep learning</span>
+                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">ML</span>
+                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">deep learning</span>
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0a]/60 p-4 opacity-80">
-                  <p className="text-sm font-medium text-zinc-300">The Structure of Scientific Revolutions</p>
-                  <p className="mt-1 text-xs text-zinc-500">Thomas Kuhn · Book</p>
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/60 p-4 opacity-80">
+                  <p className="text-sm font-medium text-[var(--foreground)]">The Structure of Scientific Revolutions</p>
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Thomas Kuhn · Book</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {["paradigm", "history of science"].map((k) => (
-                      <span key={k} className="rounded-md border border-indigo-500/20 bg-indigo-500/5 px-2 py-0.5 text-[10px] text-indigo-200/90">
+                      <span key={k} className="rounded-md border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]/90">
                         {k}
                       </span>
                     ))}

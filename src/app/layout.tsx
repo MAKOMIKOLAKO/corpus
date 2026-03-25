@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -8,6 +8,7 @@ import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { AppShell } from "@/components/AppShell";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://corpus-lemon.vercel.app'),
@@ -117,7 +118,7 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
 
   return (
-    <html lang="en" className={cn("font-sans scroll-smooth", inter.variable)}>
+    <html lang="en" className={cn("font-sans scroll-smooth", inter.variable, playfair.variable)}>
       <head>
         <ExtensionDetection />
       </head>
