@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
-import { hasPaidFeature } from "@/lib/plans";
 
 export function AppShell({
   children,
@@ -49,7 +48,7 @@ export function AppShell({
                 >
                   collections
                 </Link>
-                {hasPaidFeature(session.user, 'graph') && (
+                {false && (
                   <Link
                     href="/graph"
                     className="inline-flex items-center text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"

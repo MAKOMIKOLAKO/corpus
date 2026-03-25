@@ -492,7 +492,7 @@ export default function EntryCard({
             {/* Close dropdown when clicking outside */}
             {(isOpen || isCollectionOpen) && (
                 <div
-                    className="fixed inset-0 z-[50]"
+                    className="fixed inset-0 z-[50] bg-black/20 dark:bg-black/40"
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
