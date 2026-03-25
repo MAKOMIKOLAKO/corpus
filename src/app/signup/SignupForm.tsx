@@ -40,7 +40,7 @@ export default function SignupForm() {
     <div className="flex flex-col gap-6">
       <button
         onClick={() => signIn("google", { callbackUrl })}
-        className="w-full h-10 px-4 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center"
+        className="w-full h-10 px-4 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center"
       >
         Continue with Google
       </button>
@@ -98,7 +98,7 @@ export default function SignupForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10 px-4 mt-2 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50"
+          className="w-full h-10 px-4 mt-2 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Sign Up"}
         </button>
