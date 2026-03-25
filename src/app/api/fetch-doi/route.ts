@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { GoogleGenAI } from '@google/genai';
 
 export async function POST(request: Request) {
     try {
@@ -29,6 +30,32 @@ export async function POST(request: Request) {
         // Parse title
         const title = item.title?.[0] || '';
 
+        // Generate keywords using AI
+        let autoKeywords: string[] = [];
+        if (title || item.abstract) {
+            try {
+                const ai = new GoogleGenAI({
+                    apiKey: process.env.GEMINI_API_KEY || '',
+                });
+
+                const textForAnalysis = `${title}. ${item.abstract || ''}`;
+                const completion = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: `Extract 5 to 8 concise, specific keywords from the following text. Return only a JSON array of strings, no explanation.\n\nText: ${textForAnalysis}`,
+                    config: {
+                        responseMimeType: 'application/json',
+                    }
+                });
+
+                const resultText = completion.text || '[]';
+                const parsedKeywords = JSON.parse(resultText);
+                autoKeywords = Array.isArray(parsedKeywords) ? parsedKeywords.slice(0, 8) : [];
+            } catch (error) {
+                console.error('Failed to generate keywords for DOI:', error);
+                // Continue without keywords if generation fails
+            }
+        }
+
         return NextResponse.json({
             title,
             authors,
@@ -37,6 +64,8 @@ export async function POST(request: Request) {
             abstract: item.abstract || null,
             doi: cleanDoi,
             contentType: 'PAPER',
+            autoKeywords,
+            userKeywords: [],
         });
     } catch (error) {
         console.error('Error fetching DOI:', error);
