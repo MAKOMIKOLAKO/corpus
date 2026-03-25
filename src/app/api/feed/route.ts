@@ -36,9 +36,11 @@ export async function GET(request: Request) {
     }
 
     // Get connected user IDs
+    const receivedConnections = user.receivedConnections || [];
+    const sentConnections = user.sentConnections || [];
     const connectedUserIds = [
-      ...user.receivedConnections.map(c => c.requesterId),
-      ...user.sentConnections.map(c => c.receiverId)
+      ...receivedConnections.map(c => c.requesterId),
+      ...sentConnections.map(c => c.receiverId)
     ];
 
     // Build the where clause based on filter
@@ -57,7 +59,7 @@ export async function GET(request: Request) {
     }
 
     // Also respect privacy settings
-    if (filter !== "mine") {
+    if (filter !== "mine" && whereClause.OR) {
       whereClause.OR = whereClause.OR.map((condition: any) => ({
         ...condition,
         user: {
@@ -117,7 +119,7 @@ export async function GET(request: Request) {
     }
 
     // Filter out signals about private collections for non-members
-    const filteredSignals = signals.filter(signal => {
+    const filteredSignals = (signals || []).filter(signal => {
       if (signal.type === "COLLECTION_MADE_PUBLIC") {
         return true; // Public collection signals are always visible
       }
@@ -136,7 +138,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       signals: filteredSignals,
       unreadCount,
-      hasMore: signals.length === limit
+      hasMore: (signals || []).length === limit
     });
   } catch (error) {
     console.error("Error fetching feed:", error);
