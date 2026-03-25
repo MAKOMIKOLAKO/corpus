@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +74,17 @@ export default function CollectionsPage() {
     const [respondingToInvite, setRespondingToInvite] = useState<string | null>(null);
     const apiKey = useApiKey();
     const { data: session } = useSession();
+    const router = useRouter();
+
+    const NAME_MAX = 80;
+    const NAME_MIN = 3;
+    const DESC_MAX = 280;
+    const [formError, setFormError] = useState<string | null>(null);
+    const [touched, setTouched] = useState<{ name: boolean; description: boolean }>({ name: false, description: false });
+    const nameTooShort = newCollection.name.trim().length > 0 && newCollection.name.trim().length < NAME_MIN;
+    const nameTooLong = newCollection.name.trim().length > NAME_MAX;
+    const descTooLong = newCollection.description.trim().length > DESC_MAX;
+    const isValid = newCollection.name.trim().length >= NAME_MIN && !nameTooLong && !descTooLong;
 
     useEffect(() => {
         fetchCollections();
@@ -133,7 +145,11 @@ export default function CollectionsPage() {
     };
 
     const handleCreateCollection = async () => {
-        if (!newCollection.name.trim()) return;
+        setFormError(null);
+        if (!isValid) {
+            setTouched({ name: true, description: touched.description });
+            return;
+        }
 
         setCreating(true);
         try {
@@ -143,20 +159,28 @@ export default function CollectionsPage() {
                     'Content-Type': 'application/json',
                     'x-api-key': apiKey,
                 },
-                body: JSON.stringify(newCollection),
+                body: JSON.stringify({
+                    name: newCollection.name.trim().slice(0, NAME_MAX),
+                    description: newCollection.description.trim().slice(0, DESC_MAX),
+                }),
             });
 
-            if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data?.id) {
+                // Reset and navigate to the newly created collection
                 setNewCollection({ name: '', description: '' });
                 setShowCreateModal(false);
+                // Optimistically update list
                 fetchCollections();
+                router.push(`/collections/${data.id}`);
             } else {
-                const error = await response.json();
-                alert(`Failed to create collection: ${error.error}`);
+                const message = data?.error || 'Failed to create collection';
+                setFormError(message);
             }
-        } catch (error) {
-            console.error('Error creating collection:', error);
-            alert('Failed to create collection');
+        } catch (error: any) {
+            const message = error?.message || 'Failed to create collection';
+            setFormError(message);
         } finally {
             setCreating(false);
         }
@@ -302,9 +326,16 @@ export default function CollectionsPage() {
             )}
 
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
                     <div className="bg-background border rounded-lg p-6 max-w-md w-full">
                         <h3 className="text-lg font-medium mb-4">Create New Collection</h3>
+
+                        {formError && (
+                            <div className="mb-4 p-2 border border-red-300 text-red-700 rounded text-sm">
+                                {formError}
+                            </div>
+                        )}
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">Name</label>
@@ -312,28 +343,56 @@ export default function CollectionsPage() {
                                     type="text"
                                     value={newCollection.name}
                                     onChange={(e) => setNewCollection({ ...newCollection, name: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-md bg-background"
+                                    onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
+                                    className={`w-full px-3 py-2 border rounded-md bg-background ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-red-500' : ''
+                                        }`}
                                     placeholder="Enter collection name"
+                                    aria-invalid={touched.name && (nameTooShort || nameTooLong)}
+                                    aria-describedby="name-help"
                                     autoFocus
                                 />
+                                <div id="name-help" className="mt-1 flex items-center justify-between text-xs">
+                                    <span className={`${touched.name && nameTooShort ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                        {touched.name && nameTooShort ? `Name must be at least ${NAME_MIN} characters` : 'A short, descriptive name'}
+                                    </span>
+                                    <span className={`${nameTooLong ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                        {newCollection.name.trim().length}/{NAME_MAX}
+                                    </span>
+                                </div>
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium mb-1">Description (optional)</label>
                                 <textarea
                                     value={newCollection.description}
                                     onChange={(e) => setNewCollection({ ...newCollection, description: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-md bg-background resize-none"
+                                    onBlur={() => setTouched(prev => ({ ...prev, description: true }))}
+                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(touched.description && descTooLong) ? 'border-red-500' : ''
+                                        }`}
                                     rows={3}
                                     placeholder="Enter collection description"
+                                    aria-invalid={touched.description && descTooLong}
+                                    aria-describedby="desc-help"
                                 />
+                                <div id="desc-help" className="mt-1 flex items-center justify-end text-xs">
+                                    <span className={`${descTooLong ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                        {newCollection.description.trim().length}/{DESC_MAX}
+                                    </span>
+                                </div>
                             </div>
                         </div>
+
                         <div className="flex justify-end gap-2 mt-6">
-                            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                            <Button variant="outline" onClick={() => setShowCreateModal(false)} disabled={creating}>
                                 Cancel
                             </Button>
-                            <Button onClick={handleCreateCollection} disabled={creating || !newCollection.name.trim()}>
-                                {creating ? 'Creating...' : 'Create'}
+                            <Button onClick={handleCreateCollection} disabled={creating || !isValid}>
+                                {creating ? (
+                                    <span className="inline-flex items-center gap-2">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Creating...
+                                    </span>
+                                ) : 'Create'}
                             </Button>
                         </div>
                     </div>

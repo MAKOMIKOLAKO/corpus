@@ -1,15 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+// Re-export the retry-enabled Prisma client to ensure a single robust client
+// instance is used across the application (avoids connection storms in dev
+// and adds simple retries for transient errors).
+import { prisma as prismaWithRetry } from './prismaWithRetry'
 
-const prismaClientSingleton = () => {
-    return new PrismaClient()
-}
-
-declare global {
-    var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
-}
-
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
-
-export default prisma
-
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma
+export default prismaWithRetry
