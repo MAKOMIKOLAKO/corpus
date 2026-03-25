@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import AddEntryForm from '@/components/AddEntryForm';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AddPage() {
     return (

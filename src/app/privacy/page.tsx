@@ -1,6 +1,11 @@
-export const metadata = {
-  title: 'Privacy Policy - Corpus Web Clipper',
-  description: 'Privacy policy for the Corpus Web Clipper Chrome extension',
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  robots: {
+    index: true,
+    follow: false,
+  },
 };
 
 export default function PrivacyPage() {

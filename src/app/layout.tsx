@@ -10,9 +10,49 @@ import { AppShell } from "@/components/AppShell";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "corpus",
-  description: "private personal knowledge indexing web app",
-};
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://corpus-lemon.vercel.app'),
+  title: {
+    default: 'Corpus — Personal Knowledge Indexing for Researchers',
+    template: '%s | Corpus'
+  },
+  description: 'Corpus indexes everything you read — papers, articles, books, essays — and automatically extracts the ideas that matter. Built for researchers, academics, and students.',
+  keywords: ['knowledge management', 'research tool', 'academic reading', 'paper organizer', 'personal library', 'knowledge graph', 'research notes', 'DOI lookup', 'citation manager'],
+  authors: [{ name: 'Corpus' }],
+  creator: 'Corpus',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'Corpus',
+    title: 'Corpus — Personal Knowledge Indexing for Researchers',
+    description: 'Index everything you read. Automatically organized, instantly searchable.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Corpus — Personal Knowledge Indexing'
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Corpus — Personal Knowledge Indexing for Researchers',
+    description: 'Index everything you read. Automatically organized, instantly searchable.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+}
 
 export default async function RootLayout({
   children,
