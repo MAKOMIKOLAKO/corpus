@@ -46,7 +46,7 @@ export async function GET(
       const membership = lab.members.find(m => m.userId === session.user.id);
       if (membership) {
         userRole = membership.role;
-        joinedAt = membership.joinedAt;
+        joinedAt = membership.joinedAt.toISOString();
       }
     }
 

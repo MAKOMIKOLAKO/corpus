@@ -94,8 +94,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
         // Create signal for entry added to collection (fire-and-forget)
         try {
-            // Get the user ID from the API key validation
-            const userId = validation.userId;
+            // Use collection owner as signal actor for API-key initiated actions
+            const userId = collection.userId;
             if (userId) {
                 // Don't await this signal creation
                 prisma.signal.create({

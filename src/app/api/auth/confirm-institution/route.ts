@@ -23,9 +23,6 @@ export async function POST(request: Request) {
         code,
         usedAt: null,
         expiresAt: { gt: new Date() }
-      },
-      include: {
-        // We need to find the institution from the email domain
       }
     });
 

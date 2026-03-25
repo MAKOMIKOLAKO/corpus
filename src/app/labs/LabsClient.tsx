@@ -339,10 +339,8 @@ export default function LabsClient() {
                     </div>
                   </div>
 
-                  <Button asChild>
-                    <a href={`/labs/${lab.id}`}>
-                      View Lab
-                    </a>
+                  <Button onClick={() => window.location.href = `/labs/${lab.id}`}>
+                    View Lab
                   </Button>
                 </div>
               </CardContent>

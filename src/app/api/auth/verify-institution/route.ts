@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      institutionName: institution.name,
+      institutionName: institution?.name ?? domain,
       codeSent: true,
       ...(isNewInstitution && { newInstitution: true })
     });

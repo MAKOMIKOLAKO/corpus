@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
@@ -119,18 +119,7 @@ export default function FeedClient() {
   const [suggestedConnections, setSuggestedConnections] = useState<SuggestedConnection[]>([]);
   const [activeCollections, setActiveCollections] = useState<ActiveCollection[]>([]);
 
-  useEffect(() => {
-    fetchSignals();
-    fetchSidebarData();
-  }, [filter]);
-
-  useEffect(() => {
-    if (page > 1) {
-      fetchMoreSignals();
-    }
-  }, [page]);
-
-  const fetchSignals = async () => {
+  const fetchSignals = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/feed?filter=${filter}&limit=20`);
@@ -153,9 +142,9 @@ export default function FeedClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
-  const fetchMoreSignals = async () => {
+  const fetchMoreSignals = useCallback(async () => {
     try {
       const response = await fetch(`/api/feed?filter=${filter}&limit=20&page=${page}`);
       if (response.ok) {
@@ -166,7 +155,18 @@ export default function FeedClient() {
     } catch (error) {
       console.error("Failed to load more signals");
     }
-  };
+  }, [filter, page]);
+
+  useEffect(() => {
+    fetchSignals();
+    fetchSidebarData();
+  }, [fetchSignals]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchMoreSignals();
+    }
+  }, [page, fetchMoreSignals]);
 
   const fetchSidebarData = async () => {
     // TODO: Implement suggested connections and active collections
@@ -348,7 +348,7 @@ export default function FeedClient() {
 
                   {signal.metadata?.publicDescription && (
                     <p className="text-sm text-[var(--muted-foreground)] mb-2 italic">
-                      "{signal.metadata.publicDescription}"
+                      &quot;{signal.metadata.publicDescription}&quot;
                     </p>
                   )}
 
@@ -360,12 +360,10 @@ export default function FeedClient() {
                     <Button
                       size="sm"
                       variant="outline"
-                      asChild
+                      onClick={() => window.open(`/c/${signal.metadata.publicSlug}`, '_blank', 'noopener,noreferrer')}
                     >
-                      <a href={`/c/${signal.metadata.publicSlug}`} target="_blank" rel="noopener noreferrer">
-                        <Globe className="w-4 h-4 mr-2" />
-                        View Collection
-                      </a>
+                      <Globe className="w-4 h-4 mr-2" />
+                      View Collection
                     </Button>
                   )}
                 </div>
@@ -392,7 +390,7 @@ export default function FeedClient() {
 
       case "REFERENCE_REQUESTED":
         // Only show to sender and receiver
-        if (!isOwnSignal && signal.metadata?.receiverUsername !== session?.user?.username) {
+        if (!isOwnSignal && signal.metadata?.receiverUsername !== session?.user?.email?.split('@')[0]) {
           return null;
         }
         return (
@@ -406,7 +404,7 @@ export default function FeedClient() {
 
               {signal.metadata?.message && (
                 <p className="text-sm text-[var(--muted-foreground)] mb-2 italic">
-                  "{signal.metadata.message}"
+                  &quot;{signal.metadata.message}&quot;
                 </p>
               )}
 
@@ -553,10 +551,8 @@ export default function FeedClient() {
                           by @{collection.ownerUsername} · {collection.entryCount} entries · {collection.viewCount} views
                         </p>
                       </div>
-                      <Button size="sm" variant="outline" asChild>
-                        <a href={`/c/${collection.publicSlug}`} target="_blank" rel="noopener noreferrer">
-                          View
-                        </a>
+                      <Button size="sm" variant="outline" onClick={() => window.open(`/c/${collection.publicSlug}`, '_blank', 'noopener,noreferrer')}>
+                        View
                       </Button>
                     </div>
                   ))}
