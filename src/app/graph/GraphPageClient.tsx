@@ -154,7 +154,7 @@ export default function GraphPage() {
 
             <div className="flex justify-between items-start">
                 <div>
-                    <h2 className="text-xl font-medium tracking-tight">knowledge graph</h2>
+                    <h1 className="text-2xl font-semibold tracking-tight">knowledge graph</h1>
                     <p className="text-sm text-muted-foreground">visualize connections between your entries and topics.</p>
                 </div>
             </div>

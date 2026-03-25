@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, UserCheck, Clock, Search, X, Check, Trash2, BookOpen, ChevronRight } from 'lucide-react';
@@ -18,6 +19,8 @@ type Tab = typeof TABS[number];
 
 export default function ConnectionsPageClient() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const sessionUserId = session?.user?.id ?? null;
   const [tab, setTab] = useState<Tab>('connections');
 
   // Connections state
@@ -130,7 +133,7 @@ export default function ConnectionsPageClient() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Connections</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">connections</h1>
         <p className="text-sm text-[var(--muted-foreground)] mt-1">Find people, manage requests, and shared entries.</p>
       </div>
 
@@ -190,7 +193,7 @@ export default function ConnectionsPageClient() {
                         {u.username && <p className="text-xs text-[var(--muted-foreground)]">@{u.username}</p>}
                       </div>
                     </Link>
-                    <ConnectionActionButton user={u} onConnect={sendRequest} onRespond={respondToConnection} />
+                    <ConnectionActionButton user={u} currentUserId={sessionUserId} onConnect={sendRequest} onRespond={respondToConnection} />
                   </li>
                 ))}
               </ul>
@@ -413,13 +416,16 @@ function StatusBadge({ status }: { status: string }) {
 
 function ConnectionActionButton({
   user,
+  currentUserId,
   onConnect,
   onRespond,
 }: {
   user: any;
+  currentUserId: string | null;
   onConnect: (id: string) => void;
   onRespond: (id: string, status: 'ACCEPTED' | 'DECLINED') => void;
 }) {
+  if (currentUserId && user.id === currentUserId) return null;
   if (!user.connectionStatus) {
     return (
       <button

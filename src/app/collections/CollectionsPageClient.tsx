@@ -254,7 +254,7 @@ export default function CollectionsPage() {
 
             <div className="flex justify-between items-start">
                 <div>
-                    <h2 className="text-xl font-medium tracking-tight">collections</h2>
+                    <h1 className="text-2xl font-semibold tracking-tight">collections</h1>
                     <p className="text-sm text-muted-foreground">organize your entries into custom collections.</p>
                 </div>
                 <Button
@@ -326,8 +326,8 @@ export default function CollectionsPage() {
             )}
 
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-                    <div className="bg-background border rounded-lg p-6 max-w-md w-full">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                    <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full">
                         <h3 className="text-lg font-medium mb-4">Create New Collection</h3>
 
                         {formError && (
