@@ -140,11 +140,10 @@ export default function ConnectionsPageClient() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium capitalize transition-colors relative flex items-center gap-2 ${
-              tab === t
+            className={`px-4 py-2 text-sm font-medium capitalize transition-colors relative flex items-center gap-2 ${tab === t
                 ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)] -mb-px'
                 : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-            }`}
+              }`}
           >
             {t}
             {t === 'requests' && pendingCount > 0 && (
@@ -334,7 +333,7 @@ export default function ConnectionsPageClient() {
                       <p className="text-xs text-[var(--muted-foreground)]">
                         From <span className="font-medium">@{s.sender?.username || s.sender?.name}</span>
                       </p>
-                      {s.message && <p className="text-xs italic text-[var(--muted-foreground)]">"{s.message}"</p>}
+                      {s.message && <p className="text-xs italic text-[var(--muted-foreground)]">&quot;{s.message}&quot;</p>}
                       <StatusBadge status={s.status} />
                     </div>
                     {s.status === 'PENDING' && (
@@ -385,7 +384,7 @@ export default function ConnectionsPageClient() {
                       <p className="text-xs text-[var(--muted-foreground)]">
                         To <span className="font-medium">@{s.receiver?.username || s.receiver?.name}</span>
                       </p>
-                      {s.message && <p className="text-xs italic text-[var(--muted-foreground)]">"{s.message}"</p>}
+                      {s.message && <p className="text-xs italic text-[var(--muted-foreground)]">&quot;{s.message}&quot;</p>}
                       <StatusBadge status={s.status} />
                     </div>
                   </li>

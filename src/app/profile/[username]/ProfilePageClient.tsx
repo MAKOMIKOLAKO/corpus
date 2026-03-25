@@ -41,6 +41,7 @@ export default function ProfilePageClient({
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchProfile(); }, [username]);
 
   const sendRequest = async () => {
@@ -106,7 +107,7 @@ export default function ProfilePageClient({
         </button>
         <div className="glass-card rounded-xl border border-[var(--border)] p-8 text-center">
           <p className="font-medium">User not found</p>
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">@{username} doesn't exist.</p>
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">@{username} doesn&apos;t exist.</p>
         </div>
       </div>
     );
