@@ -5,7 +5,7 @@
  * 3. Enable the Google+ API
  * 4. Create OAuth credentials (Web application type)
  * 5. Add http://localhost:3000/api/auth/callback/google as an authorized redirect URI for development
- * 6. Add https://your-vercel-url/api/auth/callback/google for production
+ * 6. Add https://usecorpus.app/api/auth/callback/google for production
  * 7. Copy the client ID and secret into GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars
  */
 
@@ -159,7 +159,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? 'corpus-lemon.vercel.app'
+          ? process.env.NEXTAUTH_URL?.includes('usecorpus.app') ? 'usecorpus.app' : 'corpus-lemon.vercel.app'
           : 'localhost'
       }
     },
@@ -171,7 +171,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? 'corpus-lemon.vercel.app'
+          ? process.env.NEXTAUTH_URL?.includes('usecorpus.app') ? 'usecorpus.app' : 'corpus-lemon.vercel.app'
           : 'localhost'
       }
     },
@@ -183,7 +183,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? 'corpus-lemon.vercel.app'
+          ? process.env.NEXTAUTH_URL?.includes('usecorpus.app') ? 'usecorpus.app' : 'corpus-lemon.vercel.app'
           : 'localhost'
       }
     }

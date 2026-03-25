@@ -38,6 +38,12 @@ interface Collection {
     members?: any[];
     isPublic?: boolean;
     publicViewCount?: number;
+    publicDescription?: string | null;
+    user?: {
+        name?: string | null;
+        username?: string | null;
+    } | null;
+    isDiscovery?: boolean;
     _count: {
         entries: number;
         members?: number;
@@ -200,6 +206,10 @@ export default function CollectionsPage() {
         return <div className="text-center py-12">Loading collections...</div>;
     }
 
+    // Separate collections into my collections and discovery
+    const myCollections = collections.filter(c => !c.isDiscovery);
+    const discoveryCollections = collections.filter(c => c.isDiscovery);
+
     return (
         <div className="space-y-6">
             {/* Upgrade Banner for Collections Feature */}
@@ -270,73 +280,141 @@ export default function CollectionsPage() {
 
             {loading ? (
                 <div className="text-center py-12">loading collections...</div>
-            ) : collections.length === 0 ? (
-                <div className="text-center py-24 rounded-lg bg-[var(--background)]">
-                    <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-[var(--muted-foreground)] mb-4">no collections yet.</p>
-                    <p className="text-sm text-muted-foreground">create your first collection to start organizing your entries.</p>
-                </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {collections.map(collection => (
-                        <Link key={collection.id} href={`/collections/${collection.id}`}>
-                            <Card className="h-full hover:border-foreground/30 transition-colors cursor-pointer">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <CardTitle className="font-medium text-[15px] leading-snug group-hover:text-primary transition-colors flex-1">
-                                            {collection.name}
-                                        </CardTitle>
-                                        <div className="flex gap-1 flex-shrink-0">
-                                            {collection.isPublic && (
-                                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 border-green-200 dark:border-green-700">
-                                                    <Globe className="w-3 h-3 mr-1" />
-                                                    Public
-                                                </Badge>
-                                            )}
-                                            {!collection.isOwner && (
-                                                <Badge variant="outline" className="text-xs">Member</Badge>
-                                            )}
-                                            {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
-                                                <Badge variant="secondary" className="text-xs">Shared</Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {collection.description && (
-                                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                            {collection.description}
-                                        </p>
-                                    )}
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1">
-                                                <FileText className="w-3 h-3" />
-                                                {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
-                                            </div>
-                                            {collection.isPublic && (
-                                                <div className="flex items-center gap-1">
-                                                    <Eye className="w-3 h-3" />
-                                                    {collection.publicViewCount || 0} views
+                <>
+                    {/* My Collections - Owned and Member */}
+                    <div className="space-y-4">
+                        <h2 className="text-lg font-medium text-foreground">My Collections</h2>
+                        {myCollections.length === 0 ? (
+                            <div className="text-center py-12 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                                <FileText className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                                <p className="text-[var(--muted-foreground)] mb-2">no collections yet.</p>
+                                <p className="text-sm text-muted-foreground">create your first collection to start organizing your entries.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {myCollections.map(collection => (
+                                    <Link key={collection.id} href={`/collections/${collection.id}`}>
+                                        <Card className="h-full hover:border-foreground/30 transition-colors cursor-pointer">
+                                            <CardHeader className="pb-3">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <CardTitle className="font-medium text-[15px] leading-snug group-hover:text-primary transition-colors flex-1">
+                                                        {collection.name}
+                                                    </CardTitle>
+                                                    <div className="flex gap-1 flex-shrink-0">
+                                                        {collection.isPublic && (
+                                                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 border-green-200 dark:border-green-700">
+                                                                <Globe className="w-3 h-3 mr-1" />
+                                                                Public
+                                                            </Badge>
+                                                        )}
+                                                        {!collection.isOwner && (
+                                                            <Badge variant="outline" className="text-xs">Member</Badge>
+                                                        )}
+                                                        {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
+                                                            <Badge variant="secondary" className="text-xs">Shared</Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            )}
-                                            {collection._count?.members !== undefined && collection._count.members > 0 && (
-                                                <div className="flex items-center gap-1">
-                                                    <Users className="w-3 h-3" />
-                                                    {collection._count.members + 1} {collection._count.members + 1 === 1 ? 'member' : 'members'}
+                                                {collection.description && (
+                                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                                        {collection.description}
+                                                    </p>
+                                                )}
+                                            </CardHeader>
+                                            <CardContent className="pt-0">
+                                                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-1">
+                                                            <FileText className="w-3 h-3" />
+                                                            {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                                                        </div>
+                                                        {collection.isPublic && (
+                                                            <div className="flex items-center gap-1">
+                                                                <Eye className="w-3 h-3" />
+                                                                {collection.publicViewCount || 0} views
+                                                            </div>
+                                                        )}
+                                                        {collection._count?.members !== undefined && collection._count.members > 0 && (
+                                                            <div className="flex items-center gap-1">
+                                                                <Users className="w-3 h-3" />
+                                                                {collection._count.members + 1} {collection._count.members + 1 === 1 ? 'member' : 'members'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar className="w-3 h-3" />
+                                                        {formatDate(collection.createdAt)}
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            {formatDate(collection.createdAt)}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Discovery Collections - Public Collections */}
+                    {discoveryCollections.length > 0 && (
+                        <div className="space-y-4 pt-8 border-t border-[var(--border)]">
+                            <h2 className="text-lg font-medium text-foreground">Discover Public Collections</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {discoveryCollections.map(collection => (
+                                    <Link key={collection.id} href={`/collections/${collection.id}`}>
+                                        <Card className="h-full hover:border-foreground/30 transition-colors cursor-pointer opacity-90 hover:opacity-100">
+                                            <CardHeader className="pb-3">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <CardTitle className="font-medium text-[15px] leading-snug group-hover:text-primary transition-colors flex-1">
+                                                        {collection.name}
+                                                    </CardTitle>
+                                                    <div className="flex gap-1 flex-shrink-0">
+                                                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 border-green-200 dark:border-green-700">
+                                                            <Globe className="w-3 h-3 mr-1" />
+                                                            Public
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                {collection.publicDescription && (
+                                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                                        {collection.publicDescription}
+                                                    </p>
+                                                )}
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    by @{collection.user?.username || 'anonymous'}
+                                                </p>
+                                            </CardHeader>
+                                            <CardContent className="pt-0">
+                                                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-1">
+                                                            <FileText className="w-3 h-3" />
+                                                            {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <Eye className="w-3 h-3" />
+                                                            {collection.publicViewCount || 0} views
+                                                        </div>
+                                                        {collection._count?.members !== undefined && collection._count.members > 0 && (
+                                                            <div className="flex items-center gap-1">
+                                                                <Users className="w-3 h-3" />
+                                                                {collection._count.members + 1} {collection._count.members + 1 === 1 ? 'member' : 'members'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar className="w-3 h-3" />
+                                                        {formatDate(collection.createdAt)}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {showCreateModal && (
