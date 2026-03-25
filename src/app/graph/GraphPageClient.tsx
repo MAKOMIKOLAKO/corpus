@@ -25,6 +25,7 @@ export default function GraphPage() {
 
     useEffect(() => {
         fetchEntries();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

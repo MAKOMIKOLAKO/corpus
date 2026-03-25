@@ -24,6 +24,7 @@ export default function HomePageClient({
             updateUrl();
         }, 400);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, contentType, readingStatus, year, topic, sortBy]);
 
     const updateUrl = () => {

@@ -275,6 +275,7 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, hid
       document.removeEventListener('keydown', handleKeyDown);
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, width, height]);
 
   const processEntriesToGraph = (entries: any[]): GraphData => {
