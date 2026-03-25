@@ -103,6 +103,7 @@ export default function AccountPage() {
             setUpgradeProcessed(true);
             upgradeUserToPro(userIdFromUrl);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [upgraded, userIdFromUrl, session?.user?.id, upgradeProcessed]);
 
     const upgradeUserToPro = async (userId: string) => {
