@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "backfill-owner": "node scripts/backfill-owner.js"
+    "backfill-owner": "node scripts/backfill-owner.js",
+    "add-keywords": "node scripts/add-keywords-to-entries.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
