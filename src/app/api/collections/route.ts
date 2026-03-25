@@ -3,6 +3,8 @@ import { validateApiKey } from '@/app/api/api-key-middleware';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
 
+export const dynamic = 'force-dynamic';
+
 export async function OPTIONS(request: NextRequest) {
     const allowedOrigins = [
         process.env.NEXTAUTH_URL || 'http://localhost:3000',
@@ -74,7 +76,41 @@ export async function GET(request: NextRequest) {
             userRole: m.role,
         }));
 
-        const allCollections = [...ownedWithRole, ...memberWithRole];
+        // Fetch public collections for discovery (excluding ones user already owns or is a member of)
+        const publicCollections = await prisma.collection.findMany({
+            where: {
+                isPublic: true,
+                userId: { not: userId },
+                members: {
+                    none: {
+                        userId: userId,
+                        status: 'ACCEPTED'
+                    }
+                }
+            },
+            include: {
+                _count: {
+                    select: { entries: true, members: true }
+                },
+                members: {
+                    where: { status: 'ACCEPTED' }
+                },
+                user: {
+                    select: { name: true, username: true }
+                }
+            },
+            orderBy: { publicViewCount: 'desc' },
+            take: 12 // Limit for discovery
+        });
+
+        const publicWithRole = publicCollections.map(c => ({
+            ...c,
+            isOwner: false,
+            userRole: 'VIEWER' as const,
+            isDiscovery: true
+        }));
+
+        const allCollections = [...ownedWithRole, ...memberWithRole, ...publicWithRole];
 
         const allowedOrigins = [
             process.env.NEXTAUTH_URL || 'http://localhost:3000',

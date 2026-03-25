@@ -33,6 +33,14 @@ export default function AccountPage() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    // Institution verification state
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
+    const [verificationEmail, setVerificationEmail] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
+    const [verifying, setVerifying] = useState(false);
+    const [sendingCode, setSendingCode] = useState(false);
+    const [verificationMsg, setVerificationMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
     const userPlan = getUserPlan(session?.user ? {
         ...session.user,
         plan: session.user.plan as "FREE" | "PRO" | "LIFETIME_PRO"
@@ -190,6 +198,60 @@ export default function AccountPage() {
         } catch (error) {
             console.error('Error creating portal session:', error);
             setPortalLoading(false);
+        }
+    };
+
+    const handleSendVerificationCode = async () => {
+        if (!verificationEmail.trim()) return;
+
+        setSendingCode(true);
+        setVerificationMsg(null);
+        try {
+            const response = await fetch('/api/auth/verify-institution', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: verificationEmail.trim() }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setVerificationMsg({ type: 'success', text: `Verification code sent to ${verificationEmail}` });
+            } else {
+                setVerificationMsg({ type: 'error', text: data.error || 'Failed to send verification code' });
+            }
+        } catch (error) {
+            setVerificationMsg({ type: 'error', text: 'Failed to send verification code' });
+        } finally {
+            setSendingCode(false);
+        }
+    };
+
+    const handleVerifyCode = async () => {
+        if (!verificationCode.trim()) return;
+
+        setVerifying(true);
+        setVerificationMsg(null);
+        try {
+            const response = await fetch('/api/auth/confirm-institution', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: verificationCode.trim() }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setVerificationMsg({ type: 'success', text: `Successfully verified with ${data.institutionName}` });
+                setShowVerificationModal(false);
+                setVerificationEmail('');
+                setVerificationCode('');
+                fetchProfile(); // Refresh profile data
+            } else {
+                setVerificationMsg({ type: 'error', text: data.error || 'Invalid verification code' });
+            }
+        } catch (error) {
+            setVerificationMsg({ type: 'error', text: 'Failed to verify code' });
+        } finally {
+            setVerifying(false);
         }
     };
 
@@ -377,6 +439,32 @@ export default function AccountPage() {
                                 <Badge variant={getPlanBadgeVariant(userPlan)}>
                                     {getPlanDisplay(userPlan)}
                                 </Badge>
+                            </div>
+                        </div>
+                        <div>
+                            <Label className="text-sm font-medium text-muted-foreground">Institution</Label>
+                            <div className="mt-1 flex items-center gap-2">
+                                {profile?.institution ? (
+                                    <>
+                                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                                            <Shield className="w-3 h-3 mr-1" />
+                                            {profile.institution.name}
+                                        </Badge>
+                                        <span className="text-xs text-green-600">Verified</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-sm text-muted-foreground">Not verified</span>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setShowVerificationModal(true)}
+                                        >
+                                            <Shield className="w-3 h-3 mr-1" />
+                                            Verify .edu
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -625,6 +713,125 @@ export default function AccountPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Institution Verification Modal */}
+            {showVerificationModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="bg-background border border-border rounded-lg shadow-lg p-6 max-w-md w-full">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-medium">Verify Institution</h3>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setShowVerificationModal(false);
+                                    setVerificationEmail('');
+                                    setVerificationCode('');
+                                    setVerificationMsg(null);
+                                }}
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="verificationEmail">Institution Email</Label>
+                                <Input
+                                    id="verificationEmail"
+                                    type="email"
+                                    placeholder="your.name@university.edu"
+                                    value={verificationEmail}
+                                    onChange={(e) => setVerificationEmail(e.target.value)}
+                                    disabled={sendingCode}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Use your institutional email address (.edu, .ac.uk, etc.)
+                                </p>
+                            </div>
+
+                            {!sendingCode && !verificationCode && (
+                                <Button
+                                    onClick={handleSendVerificationCode}
+                                    disabled={!verificationEmail.trim()}
+                                    className="w-full"
+                                >
+                                    Send Verification Code
+                                </Button>
+                            )}
+
+                            {sendingCode && (
+                                <Button disabled className="w-full">
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Sending...
+                                </Button>
+                            )}
+
+                            {verificationCode && (
+                                <>
+                                    <div>
+                                        <Label htmlFor="verificationCode">Verification Code</Label>
+                                        <Input
+                                            id="verificationCode"
+                                            type="text"
+                                            placeholder="123456"
+                                            value={verificationCode}
+                                            onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                                            disabled={verifying}
+                                            maxLength={6}
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Enter the 6-digit code sent to your email
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setVerificationCode('');
+                                                setVerificationMsg(null);
+                                            }}
+                                            disabled={verifying}
+                                            className="flex-1"
+                                        >
+                                            Back
+                                        </Button>
+                                        <Button
+                                            onClick={handleVerifyCode}
+                                            disabled={verificationCode.length !== 6 || verifying}
+                                            className="flex-1"
+                                        >
+                                            {verifying ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Verifying...
+                                                </>
+                                            ) : (
+                                                'Verify'
+                                            )}
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
+
+                            {verificationMsg && (
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${verificationMsg.type === 'success'
+                                        ? 'bg-green-50 text-green-800 border border-green-200'
+                                        : 'bg-red-50 text-red-800 border border-red-200'
+                                    }`}>
+                                    {verificationMsg.type === 'success' ? (
+                                        <CheckCircle className="w-4 h-4" />
+                                    ) : (
+                                        <XCircle className="w-4 h-4" />
+                                    )}
+                                    {verificationMsg.text}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
