@@ -47,17 +47,39 @@ export default function GraphPage() {
             const response = await fetch('/api/entries');
             if (response.ok) {
                 const data = await response.json();
-                setEntries(data);
-                calculateGraphStats(data);
+                if (data && Array.isArray(data)) {
+                    setEntries(data);
+                    calculateGraphStats(data);
+                } else {
+                    console.error('Invalid API response:', data);
+                    setEntries([]);
+                    calculateGraphStats([]);
+                }
+            } else {
+                console.error('API response not ok:', response.status);
+                setEntries([]);
+                calculateGraphStats([]);
             }
         } catch (error) {
             console.error('Error fetching entries:', error);
+            setEntries([]);
+            calculateGraphStats([]);
         } finally {
             setLoading(false);
         }
     };
 
     const calculateGraphStats = (entries: any[]) => {
+        if (!entries || !Array.isArray(entries)) {
+            setGraphStats({
+                totalEntries: 0,
+                totalKeywords: 0,
+                totalTopics: 0,
+                totalConnections: 0
+            });
+            return;
+        }
+
         const keywordSet = new Set<string>();
         const topicSet = new Set<string>();
         let connections = 0;
