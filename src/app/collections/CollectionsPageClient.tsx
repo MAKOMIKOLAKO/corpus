@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2, Users, Check, X } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -36,6 +36,8 @@ interface Collection {
     isOwner?: boolean;
     userRole?: 'OWNER' | 'VIEWER' | 'CONTRIBUTOR' | 'ADMIN';
     members?: any[];
+    isPublic?: boolean;
+    publicViewCount?: number;
     _count: {
         entries: number;
         members?: number;
@@ -285,6 +287,12 @@ export default function CollectionsPage() {
                                             {collection.name}
                                         </CardTitle>
                                         <div className="flex gap-1 flex-shrink-0">
+                                            {collection.isPublic && (
+                                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 border-green-200 dark:border-green-700">
+                                                    <Globe className="w-3 h-3 mr-1" />
+                                                    Public
+                                                </Badge>
+                                            )}
                                             {!collection.isOwner && (
                                                 <Badge variant="outline" className="text-xs">Member</Badge>
                                             )}
@@ -306,6 +314,12 @@ export default function CollectionsPage() {
                                                 <FileText className="w-3 h-3" />
                                                 {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
                                             </div>
+                                            {collection.isPublic && (
+                                                <div className="flex items-center gap-1">
+                                                    <Eye className="w-3 h-3" />
+                                                    {collection.publicViewCount || 0} views
+                                                </div>
+                                            )}
                                             {collection._count.members !== undefined && collection._count.members > 0 && (
                                                 <div className="flex items-center gap-1">
                                                     <Users className="w-3 h-3" />

@@ -300,6 +300,26 @@ export async function POST(request: NextRequest) {
             data: entryCreateData,
         });
 
+        // Create signal for entry saved (fire-and-forget)
+        try {
+            // Don't await this signal creation
+            prisma.signal.create({
+                data: {
+                    userId: userId,
+                    type: "ENTRY_SAVED",
+                    entryId: entry.id,
+                    metadata: {
+                        title: entry.title,
+                        contentType: entry.contentType,
+                        topics: entry.topics || []
+                    }
+                }
+            }).catch(err => console.error("Failed to create signal:", err));
+        } catch (error) {
+            // Fire-and-forget signal creation
+            console.error("Failed to create signal:", error);
+        }
+
         return NextResponse.json(entry, {
             status: 201,
             headers: {

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X } from 'lucide-react';
+import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff, Shield } from 'lucide-react';
 import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
 
 export default function AccountPage() {
@@ -25,10 +25,11 @@ export default function AccountPage() {
     const [loadingCollections, setLoadingCollections] = useState(true);
 
     // Profile state
-    const [profile, setProfile] = useState<{ username: string | null; bio: string | null } | null>(null);
+    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; institution?: any } | null>(null);
     const [editingProfile, setEditingProfile] = useState(false);
     const [profileUsername, setProfileUsername] = useState('');
     const [profileBio, setProfileBio] = useState('');
+    const [showSignals, setShowSignals] = useState(true);
     const [savingProfile, setSavingProfile] = useState(false);
     const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -52,6 +53,7 @@ export default function AccountPage() {
                 setProfile(data);
                 setProfileUsername(data.username || '');
                 setProfileBio(data.bio || '');
+                setShowSignals(data.showSignals !== false);
             }
         } catch { }
     };
@@ -64,7 +66,7 @@ export default function AccountPage() {
             const res = await fetch('/api/user/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: profileUsername, bio: profileBio }),
+                body: JSON.stringify({ username: profileUsername, bio: profileBio, showSignals }),
             });
             const data = await res.json();
             if (res.ok) {
@@ -280,6 +282,28 @@ export default function AccountPage() {
                                 />
                                 <p className="text-xs text-[var(--muted-foreground)] text-right">{profileBio.length}/160</p>
                             </div>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <Label className="flex items-center gap-2">
+                                            <Eye className="w-4 h-4" />
+                                            Show activity in feed
+                                        </Label>
+                                        <p className="text-xs text-[var(--muted-foreground)]">Allow your connections to see your saved papers and collection activity</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSignals(!showSignals)}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showSignals ? 'bg-[var(--primary)]' : 'bg-[var(--muted)]'
+                                            }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showSignals ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
                             {profileMsg && (
                                 <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
                                     {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -304,6 +328,22 @@ export default function AccountPage() {
                             <div>
                                 <Label className="text-sm font-medium text-muted-foreground">Bio</Label>
                                 <p className="text-sm mt-0.5">{profile?.bio || <span className="text-[var(--muted-foreground)] italic">Not set</span>}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Privacy</Label>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    {profile?.showSignals !== false ? (
+                                        <>
+                                            <Eye className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                            <span className="text-sm">Activity visible to connections</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <EyeOff className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                            <span className="text-sm">Activity hidden from feed</span>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                             {profileMsg && (
                                 <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>

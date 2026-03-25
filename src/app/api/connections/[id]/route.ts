@@ -30,6 +30,47 @@ export async function PATCH(
     data: { status },
   });
 
+  // Create signal for connection made (fire-and-forget)
+  if (status === 'ACCEPTED') {
+    try {
+      // Get both users' information
+      const [requester, receiver] = await Promise.all([
+        prisma.user.findUnique({ where: { id: connection.requesterId } }),
+        prisma.user.findUnique({ where: { id: connection.receiverId } })
+      ]);
+
+      if (requester && receiver) {
+        // Create signal for both users
+        const signalPromises = [
+          prisma.signal.create({
+            data: {
+              userId: connection.requesterId,
+              type: "CONNECTION_MADE",
+              metadata: {
+                connectedUsername: receiver.username || receiver.email
+              }
+            }
+          }),
+          prisma.signal.create({
+            data: {
+              userId: connection.receiverId,
+              type: "CONNECTION_MADE",
+              metadata: {
+                connectedUsername: requester.username || requester.email
+              }
+            }
+          })
+        ];
+
+        // Don't await these signal creations
+        Promise.all(signalPromises).catch(err => console.error("Failed to create signals:", err));
+      }
+    } catch (error) {
+      // Fire-and-forget signal creation
+      console.error("Failed to create signal:", error);
+    }
+  }
+
   return NextResponse.json(updated);
 }
 

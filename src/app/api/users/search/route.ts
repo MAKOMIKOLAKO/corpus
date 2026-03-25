@@ -8,6 +8,36 @@ export async function GET(request: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const q = request.nextUrl.searchParams.get('q') || '';
+  const email = request.nextUrl.searchParams.get('email') || '';
+
+  // Handle email search for lab invitations
+  if (email) {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        institutionId: true,
+        institutionVerifiedAt: true,
+        institution: {
+          select: {
+            id: true,
+            name: true,
+            domain: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(user);
+  }
+
+  // Handle name/username search for connections
   if (!q.trim()) return NextResponse.json([]);
 
   const userId = session.user.id as string;
@@ -49,7 +79,7 @@ export async function GET(request: NextRequest) {
   const enriched = users.map(u => {
     const conn = connections.find(
       c => (c.requesterId === userId && c.receiverId === u.id) ||
-           (c.receiverId === userId && c.requesterId === u.id)
+        (c.receiverId === userId && c.requesterId === u.id)
     );
     return {
       ...u,

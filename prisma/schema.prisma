@@ -56,6 +56,26 @@ enum SharedEntryStatus {
   DECLINED
 }
 
+enum SignalType {
+  ENTRY_SAVED
+  ENTRY_ADDED_TO_COLLECTION
+  COLLECTION_MADE_PUBLIC
+  CONNECTION_MADE
+  PAPER_SHARED
+  REFERENCE_REQUESTED
+}
+
+enum LabRole {
+  MEMBER
+  ADMIN
+}
+
+enum ReferenceRequestStatus {
+  PENDING
+  ACKNOWLEDGED
+  DISMISSED
+}
+
 model User {
   id                    String      @id @default(cuid())
   email                 String      @unique
@@ -71,6 +91,10 @@ model User {
   subscriptionEndsAt    DateTime?
   emailVerified         DateTime?
   createdAt             DateTime    @default(now())
+  showSignals           Boolean     @default(true)
+  lastFeedViewedAt      DateTime?
+  institutionId         String?
+  institutionVerifiedAt DateTime?
 
   entries               Entry[]
   collections           Collection[]
@@ -83,6 +107,12 @@ model User {
   receivedSharedEntries SharedEntry[]       @relation("SharedEntryReceiver")
   passwordResetTokens   PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  signals               Signal[]
+  institution           Institution?       @relation(fields: [institutionId], references: [id])
+  labMemberships        LabMember[]
+  createdLabs           Lab[]              @relation("LabCreator")
+  sentReferenceRequests ReferenceRequest[] @relation("ReferenceRequester")
+  receivedReferenceRequests ReferenceRequest[] @relation("ReferenceOwner")
 }
 
 model PasswordResetToken {
@@ -132,18 +162,25 @@ model Entry {
   user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   collections   EntryCollection[]
   sharedEntries SharedEntry[]
+  signals       Signal[]
+  referenceRequests ReferenceRequest[]
 }
 
 model Collection {
-  id          String             @id @default(cuid())
-  name        String
-  description String?
-  isShared    Boolean            @default(false)
-  createdAt   DateTime           @default(now())
-  userId      String?
-  user        User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  entries     EntryCollection[]
-  members     CollectionMember[]
+  id               String             @id @default(cuid())
+  name             String
+  description      String?
+  isShared         Boolean            @default(false)
+  isPublic         Boolean            @default(false)
+  publicSlug       String?            @unique
+  publicDescription String?           @db.Text
+  publicViewCount  Int                @default(0)
+  createdAt        DateTime           @default(now())
+  userId           String?
+  user             User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  entries          EntryCollection[]
+  members          CollectionMember[]
+  signals          Signal[]
 }
 
 model EntryCollection {
@@ -209,4 +246,81 @@ model SharedEntry {
   receiver    User              @relation("SharedEntryReceiver", fields: [receiverId], references: [id])
 
   @@unique([entryId, senderId, receiverId])
+}
+
+model Signal {
+  id           String      @id @default(cuid())
+  userId       String
+  type         SignalType
+  entryId      String?
+  collectionId String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+  isPublic     Boolean     @default(true)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry        Entry?      @relation(fields: [entryId], references: [id], onDelete: SetNull)
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+}
+
+model Institution {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String   @unique
+  shortName   String
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  members     User[]
+  labs        Lab[]
+}
+
+model InstitutionVerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Lab {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  institutionId String
+  createdBy     String
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  members       LabMember[]
+  creator       User     @relation("LabCreator", fields: [createdBy], references: [id])
+}
+
+model LabMember {
+  id       String   @id @default(cuid())
+  labId    String
+  userId   String
+  role     LabRole  @default(MEMBER)
+  joinedAt DateTime @default(now())
+  lab      Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([labId, userId])
+}
+
+model ReferenceRequest {
+  id           String               @id @default(cuid())
+  requesterId  String
+  ownerId      String
+  entryId      String
+  message      String?
+  status       ReferenceRequestStatus @default(PENDING)
+  createdAt    DateTime             @default(now())
+  respondedAt  DateTime?
+  requester    User                 @relation("ReferenceRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  owner        User                 @relation("ReferenceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  entry        Entry                @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, ownerId, entryId])
 }

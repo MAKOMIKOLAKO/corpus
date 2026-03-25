@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
+import { Activity, Building2 } from "lucide-react";
 
 export function AppShell({
   children,
@@ -21,6 +22,7 @@ export function AppShell({
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [unreadSignalCount, setUnreadSignalCount] = useState(0);
 
   useEffect(() => {
     if (!session) return;
@@ -52,9 +54,10 @@ export function AppShell({
     if (!session) return;
     const fetchPending = async () => {
       try {
-        const [connRes, sharedRes] = await Promise.all([
+        const [connRes, sharedRes, feedRes] = await Promise.all([
           fetch('/api/connections'),
           fetch('/api/entries/shared'),
+          fetch('/api/feed?limit=1')
         ]);
         let count = 0;
         if (connRes.ok) {
@@ -64,6 +67,10 @@ export function AppShell({
         if (sharedRes.ok) {
           const d = await sharedRes.json();
           count += (d.received || []).filter((e: any) => e.status === 'PENDING').length;
+        }
+        if (feedRes.ok) {
+          const d = await feedRes.json();
+          setUnreadSignalCount(d.unreadCount || 0);
         }
         setPendingCount(count);
       } catch { }
@@ -129,6 +136,27 @@ export function AppShell({
                   aria-current={pathname === "/collections" ? "page" : undefined}
                 >
                   collections
+                </Link>
+                <Link
+                  href="/feed"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                  aria-current={pathname === "/feed" ? "page" : undefined}
+                >
+                  <Activity className="w-4 h-4" />
+                  feed
+                  {unreadSignalCount > 0 && (
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] font-bold">
+                      {unreadSignalCount > 9 ? '9+' : unreadSignalCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  href="/labs"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                  aria-current={pathname === "/labs" ? "page" : undefined}
+                >
+                  <Building2 className="w-4 h-4" />
+                  labs
                 </Link>
                 <Link
                   href="/connections"
