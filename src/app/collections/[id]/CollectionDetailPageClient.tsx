@@ -108,6 +108,7 @@ export default function CollectionDetailPage() {
                 }
             })();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showInviteModal]);
 
     const fetchCollection = async () => {
