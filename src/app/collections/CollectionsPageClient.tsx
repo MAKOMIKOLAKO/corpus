@@ -93,7 +93,7 @@ export default function CollectionsPage() {
 
     const fetchCollections = async () => {
         try {
-            const response = await fetch('/api/collections');
+            const response = await fetch(`/api/collections?t=${Date.now()}`, { cache: 'no-store' as RequestCache });
             if (response.ok) {
                 const data = await response.json();
                 setCollections(data);
@@ -107,7 +107,7 @@ export default function CollectionsPage() {
 
     const fetchInvites = async () => {
         try {
-            const response = await fetch('/api/collections/invites');
+            const response = await fetch(`/api/collections/invites?t=${Date.now()}`, { cache: 'no-store' as RequestCache });
             if (response.ok) {
                 const data = await response.json();
                 setInvites(data);

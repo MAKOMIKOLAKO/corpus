@@ -131,10 +131,15 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        // Attach ownership to the authenticated user when available so
+        // the collection appears in their list. Fallback to null for
+        // API-key only use cases (e.g., browser extension without session).
+        const userId = await getCurrentUserId();
         const collection = await prisma.collection.create({
             data: {
                 name: name.trim(),
                 description: description?.trim() || null,
+                ...(userId ? { userId } : {}),
             },
         });
 
