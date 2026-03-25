@@ -13,6 +13,8 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma, withRetry } from "@/lib/prismaWithRetry";
+import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -59,8 +61,6 @@ export const authOptions: NextAuthOptions = {
           // Send verification email asynchronously — do not block sign-up
           (async () => {
             try {
-              const crypto = require("crypto");
-              const { sendVerificationEmail } = require("@/lib/email");
               const token = crypto.randomBytes(32).toString("hex");
               const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
               await prisma.emailVerificationToken.create({
@@ -104,11 +104,12 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: user.id },
-            select: { plan: true, username: true }
+            select: { plan: true, username: true, emailVerified: true }
           }));
           if (dbUser) {
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).username = (dbUser as any).username ?? null;
+            (token as any).emailVerified = dbUser.emailVerified;
           }
         } catch (error) {
           console.error('Error fetching user plan:', error);
@@ -120,11 +121,12 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: (token as any).userId },
-            select: { username: true, plan: true }
+            select: { username: true, plan: true, emailVerified: true }
           }));
           if (dbUser) {
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).plan = dbUser.plan || 'FREE';
+            (token as any).emailVerified = dbUser.emailVerified;
           }
         } catch { }
       }
@@ -134,6 +136,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user && typeof (token as any).userId === "string") {
         (session.user as any).id = (token as any).userId;
         (session.user as any).plan = (token as any).plan || 'FREE';
+        (session.user as any).emailVerified = (token as any).emailVerified;
       }
       return session;
     },
