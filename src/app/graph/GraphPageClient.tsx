@@ -31,16 +31,70 @@ export default function GraphPage() {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'f' || event.key === 'F') {
                 event.preventDefault();
-                setIsFullscreen(!isFullscreen);
+                toggleFullscreen();
             }
             if (event.key === 'Escape' && isFullscreen) {
-                setIsFullscreen(false);
+                event.preventDefault();
+                exitFullscreen();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isFullscreen]);
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isCurrentlyFullscreen = !!(
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).mozFullScreenElement ||
+                (document as any).msFullscreenElement
+            );
+            setIsFullscreen(isCurrentlyFullscreen);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        };
+    }, []);
+
+    const toggleFullscreen = () => {
+        if (!isFullscreen) {
+            enterFullscreen();
+        } else {
+            exitFullscreen();
+        }
+    };
+
+    const enterFullscreen = () => {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if ((elem as any).webkitRequestFullscreen) {
+            (elem as any).webkitRequestFullscreen();
+        } else if ((elem as any).msRequestFullscreen) {
+            (elem as any).msRequestFullscreen();
+        }
+    };
+
+    const exitFullscreen = () => {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+            (document as any).msExitFullscreen();
+        }
+    };
 
     const fetchEntries = async () => {
         try {
