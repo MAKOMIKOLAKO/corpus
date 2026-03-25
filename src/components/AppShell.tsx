@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
@@ -15,6 +16,32 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const isLanding = pathname === "/";
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!session) return;
+    const fetchPending = async () => {
+      try {
+        const [connRes, sharedRes] = await Promise.all([
+          fetch('/api/connections'),
+          fetch('/api/entries/shared'),
+        ]);
+        let count = 0;
+        if (connRes.ok) {
+          const d = await connRes.json();
+          count += (d.pending_received || []).length;
+        }
+        if (sharedRes.ok) {
+          const d = await sharedRes.json();
+          count += (d.received || []).filter((e: any) => e.status === 'PENDING').length;
+        }
+        setPendingCount(count);
+      } catch { }
+    };
+    fetchPending();
+    const interval = setInterval(fetchPending, 60_000);
+    return () => clearInterval(interval);
+  }, [session]);
 
   if (isLanding) {
     return <>{children}</>;
@@ -47,6 +74,18 @@ export function AppShell({
                   aria-current={pathname === "/collections" ? "page" : undefined}
                 >
                   collections
+                </Link>
+                <Link
+                  href="/connections"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                  aria-current={pathname === "/connections" ? "page" : undefined}
+                >
+                  connections
+                  {pendingCount > 0 && (
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] font-bold">
+                      {pendingCount > 9 ? '9+' : pendingCount}
+                    </span>
+                  )}
                 </Link>
                 {false && (
                   <Link

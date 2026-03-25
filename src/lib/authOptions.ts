@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, account, profile, user }) {
+    async jwt({ token, account, profile, user, trigger }) {
       if (account?.provider === "google") {
         const email = profile?.email ?? token.email;
         if (email && typeof (token as any).userId !== "string") {
@@ -90,24 +90,37 @@ export const authOptions: NextAuthOptions = {
           if (dbUser) {
             (token as any).userId = dbUser.id;
             (token as any).plan = dbUser.plan || 'FREE';
+            (token as any).username = dbUser.username ?? null;
           }
         }
       } else if (user?.id) {
-        // Credentials provider
         (token as any).userId = user.id;
-        // Fetch user plan from database
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: user.id },
-            select: { plan: true }
+            select: { plan: true, username: true }
           }));
           if (dbUser) {
             (token as any).plan = dbUser.plan || 'FREE';
+            (token as any).username = (dbUser as any).username ?? null;
           }
         } catch (error) {
           console.error('Error fetching user plan:', error);
           (token as any).plan = 'FREE';
         }
+      }
+      // Re-fetch username when session is updated (e.g. after /setup-username)
+      if (trigger === 'update' && (token as any).userId) {
+        try {
+          const dbUser = await withRetry(() => prisma.user.findUnique({
+            where: { id: (token as any).userId },
+            select: { username: true, plan: true }
+          }));
+          if (dbUser) {
+            (token as any).username = (dbUser as any).username ?? null;
+            (token as any).plan = dbUser.plan || 'FREE';
+          }
+        } catch { }
       }
       return token;
     },

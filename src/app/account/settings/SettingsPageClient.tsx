@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users } from 'lucide-react';
+import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X } from 'lucide-react';
 import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
 
 export default function AccountPage() {
@@ -24,6 +24,14 @@ export default function AccountPage() {
     const [sharedCollectionsCount, setSharedCollectionsCount] = useState(0);
     const [loadingCollections, setLoadingCollections] = useState(true);
 
+    // Profile state
+    const [profile, setProfile] = useState<{ username: string | null; bio: string | null } | null>(null);
+    const [editingProfile, setEditingProfile] = useState(false);
+    const [profileUsername, setProfileUsername] = useState('');
+    const [profileBio, setProfileBio] = useState('');
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
     const userPlan = getUserPlan(session?.user ? {
         ...session.user,
         plan: session.user.plan as "FREE" | "PRO" | "LIFETIME_PRO"
@@ -33,7 +41,45 @@ export default function AccountPage() {
 
     useEffect(() => {
         fetchSharedCollectionsCount();
+        fetchProfile();
     }, []);
+
+    const fetchProfile = async () => {
+        try {
+            const res = await fetch('/api/user/profile');
+            if (res.ok) {
+                const data = await res.json();
+                setProfile(data);
+                setProfileUsername(data.username || '');
+                setProfileBio(data.bio || '');
+            }
+        } catch { }
+    };
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSavingProfile(true);
+        setProfileMsg(null);
+        try {
+            const res = await fetch('/api/user/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: profileUsername, bio: profileBio }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setProfile(data);
+                setEditingProfile(false);
+                setProfileMsg({ type: 'success', text: 'Profile updated successfully.' });
+            } else {
+                setProfileMsg({ type: 'error', text: data.error || 'Failed to save profile' });
+            }
+        } catch {
+            setProfileMsg({ type: 'error', text: 'Failed to save profile' });
+        } finally {
+            setSavingProfile(false);
+        }
+    };
 
     const fetchSharedCollectionsCount = async () => {
         try {
@@ -186,6 +232,88 @@ export default function AccountPage() {
                 <h2 className="text-xl font-medium tracking-tight">account settings</h2>
                 <p className="text-sm text-muted-foreground">manage your account and subscription.</p>
             </div>
+
+            {/* Profile */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2"><User className="w-5 h-5" /> Profile</span>
+                        {!editingProfile && (
+                            <button
+                                onClick={() => { setEditingProfile(true); setProfileMsg(null); }}
+                                className="inline-flex items-center gap-1 text-sm font-normal text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                            >
+                                <Edit2 className="w-4 h-4" /> Edit
+                            </button>
+                        )}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {editingProfile ? (
+                        <form onSubmit={handleSaveProfile} className="space-y-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="settingsUsername">Username</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] text-sm select-none">@</span>
+                                    <Input
+                                        id="settingsUsername"
+                                        value={profileUsername}
+                                        onChange={e => setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                        maxLength={20}
+                                        className="pl-7"
+                                        placeholder="yourhandle"
+                                    />
+                                </div>
+                                <p className="text-xs text-[var(--muted-foreground)]">3–20 characters: lowercase letters, numbers, underscores</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="settingsBio">Bio <span className="font-normal text-[var(--muted-foreground)]">(optional)</span></Label>
+                                <textarea
+                                    id="settingsBio"
+                                    value={profileBio}
+                                    onChange={e => setProfileBio(e.target.value)}
+                                    maxLength={160}
+                                    rows={3}
+                                    className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    placeholder="A short description about you…"
+                                />
+                                <p className="text-xs text-[var(--muted-foreground)] text-right">{profileBio.length}/160</p>
+                            </div>
+                            {profileMsg && (
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                    {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                    {profileMsg.text}
+                                </div>
+                            )}
+                            <div className="flex gap-2">
+                                <Button type="submit" disabled={savingProfile}>
+                                    {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                                </Button>
+                                <Button type="button" variant="outline" onClick={() => { setEditingProfile(false); setProfileUsername(profile?.username || ''); setProfileBio(profile?.bio || ''); setProfileMsg(null); }}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="space-y-3">
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Username</Label>
+                                <p className="text-sm mt-0.5">{profile?.username ? `@${profile.username}` : <span className="text-[var(--muted-foreground)] italic">Not set</span>}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Bio</Label>
+                                <p className="text-sm mt-0.5">{profile?.bio || <span className="text-[var(--muted-foreground)] italic">Not set</span>}</p>
+                            </div>
+                            {profileMsg && (
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                    {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                    {profileMsg.text}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Account Information */}
             <Card>
@@ -365,8 +493,8 @@ export default function AccountPage() {
                                                 <div className="w-full bg-muted rounded-full h-2">
                                                     <div
                                                         className={`h-2 rounded-full transition-all ${sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections
-                                                                ? 'bg-red-500'
-                                                                : 'bg-primary'
+                                                            ? 'bg-red-500'
+                                                            : 'bg-primary'
                                                             }`}
                                                         style={{ width: `${Math.min((sharedCollectionsCount / PLAN_LIMITS.FREE.sharedCollections) * 100, 100)}%` }}
                                                     />

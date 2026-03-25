@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen } from 'lucide-react';
+import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, X } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 
 const formatDate = (dateString: string) => {
@@ -42,6 +42,14 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
     const [availableCollections, setAvailableCollections] = useState([]);
     const [selectedCollection, setSelectedCollection] = useState('');
     const [isAddingToCollection, setIsAddingToCollection] = useState(false);
+
+    // Share state
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [connections, setConnections] = useState<any[]>([]);
+    const [shareReceiverId, setShareReceiverId] = useState('');
+    const [shareMessage, setShareMessage] = useState('');
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareResult, setShareResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const apiKey = useApiKey();
 
@@ -205,6 +213,44 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
         fetchCollections();
     }, []);
 
+    const openShareModal = async () => {
+        setShareResult(null);
+        setShareReceiverId('');
+        setShareMessage('');
+        setShowShareModal(true);
+        try {
+            const res = await fetch('/api/connections');
+            if (res.ok) {
+                const data = await res.json();
+                setConnections(data.accepted || []);
+            }
+        } catch { }
+    };
+
+    const handleShare = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!shareReceiverId) return;
+        setIsSharing(true);
+        setShareResult(null);
+        try {
+            const res = await fetch('/api/entries/share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entryId: initialData.id, receiverId: shareReceiverId, message: shareMessage }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setShareResult({ type: 'success', text: 'Entry shared successfully!' });
+                setShareReceiverId('');
+                setShareMessage('');
+            } else {
+                setShareResult({ type: 'error', text: data.error || 'Failed to share entry' });
+            }
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
     const notesList = Array.isArray(formData.notes) ? formData.notes : [];
 
     return (
@@ -288,6 +334,9 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                 <div className="space-y-8">
                     <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
                         <div className="absolute top-0 right-0 p-4 flex gap-2">
+                            <button onClick={openShareModal} className="p-2 text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors" title="Share Entry">
+                                <Share2 className="w-4 h-4" />
+                            </button>
                             <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors" title="Edit Entry">
                                 <Edit2 className="w-4 h-4" />
                             </button>
@@ -506,6 +555,77 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Share Modal */}
+            {showShareModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">Share Entry</h2>
+                            <button onClick={() => setShowShareModal(false)} className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <p className="text-sm text-[var(--muted-foreground)] truncate">
+                            Sharing: <span className="font-medium text-[var(--foreground)]">{initialData.title}</span>
+                        </p>
+
+                        {connections.length === 0 ? (
+                            <p className="text-sm text-[var(--muted-foreground)] py-4 text-center">
+                                You have no accepted connections yet. Connect with people first from the{' '}
+                                <a href="/connections" className="text-[var(--primary)] hover:underline">Connections</a> page.
+                            </p>
+                        ) : (
+                            <form onSubmit={handleShare} className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium">Share with</label>
+                                    <select
+                                        value={shareReceiverId}
+                                        onChange={e => setShareReceiverId(e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    >
+                                        <option value="">Select a connection…</option>
+                                        {connections.map((c: any) => (
+                                            <option key={c.id} value={c.otherUser.id}>
+                                                {c.otherUser.name || c.otherUser.username}
+                                                {c.otherUser.username ? ` (@${c.otherUser.username})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium">
+                                        Message <span className="font-normal text-[var(--muted-foreground)]">(optional)</span>
+                                    </label>
+                                    <textarea
+                                        value={shareMessage}
+                                        onChange={e => setShareMessage(e.target.value)}
+                                        maxLength={280}
+                                        rows={3}
+                                        placeholder="Add a note for the recipient…"
+                                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    />
+                                    <p className="text-xs text-[var(--muted-foreground)] text-right">{shareMessage.length}/280</p>
+                                </div>
+                                {shareResult && (
+                                    <div className={`p-3 rounded-lg text-sm ${shareResult.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                        {shareResult.text}
+                                    </div>
+                                )}
+                                <div className="flex gap-2 justify-end pt-2">
+                                    <button type="button" onClick={() => setShowShareModal(false)} className="px-4 py-2 rounded-md text-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors">
+                                        Close
+                                    </button>
+                                    <button type="submit" disabled={!shareReceiverId || isSharing} className="px-4 py-2 rounded-md text-sm font-medium bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
+                                        {isSharing ? 'Sharing…' : 'Share'}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}
