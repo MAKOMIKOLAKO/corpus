@@ -296,7 +296,7 @@ export default function CollectionsPage() {
                                             {!collection.isOwner && (
                                                 <Badge variant="outline" className="text-xs">Member</Badge>
                                             )}
-                                            {collection.isOwner && collection._count.members && collection._count.members > 0 && (
+                                            {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
                                                 <Badge variant="secondary" className="text-xs">Shared</Badge>
                                             )}
                                         </div>
@@ -320,7 +320,7 @@ export default function CollectionsPage() {
                                                     {collection.publicViewCount || 0} views
                                                 </div>
                                             )}
-                                            {collection._count.members !== undefined && collection._count.members > 0 && (
+                                            {collection._count?.members !== undefined && collection._count.members > 0 && (
                                                 <div className="flex items-center gap-1">
                                                     <Users className="w-3 h-3" />
                                                     {collection._count.members + 1} {collection._count.members + 1 === 1 ? 'member' : 'members'}
