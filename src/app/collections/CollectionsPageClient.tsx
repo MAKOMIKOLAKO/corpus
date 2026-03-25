@@ -5,19 +5,39 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2 } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Users, Check, X } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
+
+interface CollectionInvite {
+    id: string;
+    role: 'VIEWER' | 'CONTRIBUTOR' | 'ADMIN';
+    invitedAt: string;
+    collection: {
+        id: string;
+        name: string;
+        description: string | null;
+    };
+    inviter: {
+        id: string;
+        name: string | null;
+        email: string;
+    };
+}
 
 interface Collection {
     id: string;
     name: string;
     description: string | null;
     createdAt: string;
+    isOwner?: boolean;
+    userRole?: 'OWNER' | 'VIEWER' | 'CONTRIBUTOR' | 'ADMIN';
+    members?: any[];
     _count: {
         entries: number;
+        members?: number;
     };
 }
 
@@ -45,15 +65,18 @@ function CollectionsLoading() {
 
 export default function CollectionsPage() {
     const [collections, setCollections] = useState<Collection[]>([]);
+    const [invites, setInvites] = useState<CollectionInvite[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newCollection, setNewCollection] = useState({ name: '', description: '' });
     const [creating, setCreating] = useState(false);
+    const [respondingToInvite, setRespondingToInvite] = useState<string | null>(null);
     const apiKey = useApiKey();
     const { data: session } = useSession();
 
     useEffect(() => {
         fetchCollections();
+        fetchInvites();
     }, []);
 
     const fetchCollections = async () => {
@@ -67,6 +90,45 @@ export default function CollectionsPage() {
             console.error('Error fetching collections:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchInvites = async () => {
+        try {
+            const response = await fetch('/api/collections/invites');
+            if (response.ok) {
+                const data = await response.json();
+                setInvites(data);
+            }
+        } catch (error) {
+            console.error('Error fetching invites:', error);
+        }
+    };
+
+    const handleRespondToInvite = async (inviteId: string, status: 'ACCEPTED' | 'DECLINED') => {
+        setRespondingToInvite(inviteId);
+        try {
+            const response = await fetch(`/api/collections/${invites.find(i => i.id === inviteId)?.collection.id}/members/${inviteId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status }),
+            });
+
+            if (response.ok) {
+                setInvites(invites.filter(i => i.id !== inviteId));
+                if (status === 'ACCEPTED') {
+                    fetchCollections();
+                }
+            } else {
+                const error = await response.json();
+                alert(`Failed to respond to invite: ${error.error}`);
+            }
+        } catch (error) {
+            alert('Failed to respond to invite');
+        } finally {
+            setRespondingToInvite(null);
         }
     };
 
@@ -122,6 +184,50 @@ export default function CollectionsPage() {
                 />
             )}
 
+            {/* Pending Invites Section */}
+            {invites.length > 0 && (
+                <Card className="border-primary/50 bg-primary/5">
+                    <CardHeader>
+                        <CardTitle className="text-base">
+                            You have {invites.length} pending collection {invites.length === 1 ? 'invite' : 'invites'}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {invites.map((invite) => (
+                                <div key={invite.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                                    <div className="flex-1">
+                                        <p className="font-medium text-sm">{invite.collection.name}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Invited by {invite.inviter.name || invite.inviter.email} as {invite.role.toLowerCase()}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleRespondToInvite(invite.id, 'ACCEPTED')}
+                                            disabled={respondingToInvite === invite.id}
+                                        >
+                                            <Check className="w-4 h-4 mr-1" />
+                                            Accept
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleRespondToInvite(invite.id, 'DECLINED')}
+                                            disabled={respondingToInvite === invite.id}
+                                        >
+                                            <X className="w-4 h-4 mr-1" />
+                                            Decline
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-xl font-medium tracking-tight">collections</h2>
@@ -150,9 +256,19 @@ export default function CollectionsPage() {
                         <Link key={collection.id} href={`/collections/${collection.id}`}>
                             <Card className="h-full hover:border-foreground/30 transition-colors cursor-pointer">
                                 <CardHeader className="pb-3">
-                                    <CardTitle className="font-medium text-[15px] leading-snug group-hover:text-primary transition-colors">
-                                        {collection.name}
-                                    </CardTitle>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <CardTitle className="font-medium text-[15px] leading-snug group-hover:text-primary transition-colors flex-1">
+                                            {collection.name}
+                                        </CardTitle>
+                                        <div className="flex gap-1 flex-shrink-0">
+                                            {!collection.isOwner && (
+                                                <Badge variant="outline" className="text-xs">Member</Badge>
+                                            )}
+                                            {collection.isOwner && collection._count.members && collection._count.members > 0 && (
+                                                <Badge variant="secondary" className="text-xs">Shared</Badge>
+                                            )}
+                                        </div>
+                                    </div>
                                     {collection.description && (
                                         <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                                             {collection.description}
@@ -161,9 +277,17 @@ export default function CollectionsPage() {
                                 </CardHeader>
                                 <CardContent className="pt-0">
                                     <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                            <FileText className="w-3 h-3" />
-                                            {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-1">
+                                                <FileText className="w-3 h-3" />
+                                                {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                                            </div>
+                                            {collection._count.members !== undefined && collection._count.members > 0 && (
+                                                <div className="flex items-center gap-1">
+                                                    <Users className="w-3 h-3" />
+                                                    {collection._count.members + 1} {collection._count.members + 1 === 1 ? 'member' : 'members'}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Calendar className="w-3 h-3" />

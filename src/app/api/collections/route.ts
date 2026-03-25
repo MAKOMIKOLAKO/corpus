@@ -30,15 +30,51 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const collections = await prisma.collection.findMany({
+        const ownedCollections = await prisma.collection.findMany({
             where: { userId },
             include: {
                 _count: {
-                    select: { entries: true }
+                    select: { entries: true, members: true }
+                },
+                members: {
+                    where: { status: 'ACCEPTED' }
                 }
             },
             orderBy: { createdAt: 'desc' },
         });
+
+        const memberCollections = await prisma.collectionMember.findMany({
+            where: {
+                userId,
+                status: 'ACCEPTED',
+            },
+            include: {
+                collection: {
+                    include: {
+                        _count: {
+                            select: { entries: true, members: true }
+                        },
+                        members: {
+                            where: { status: 'ACCEPTED' }
+                        }
+                    }
+                }
+            }
+        });
+
+        const ownedWithRole = ownedCollections.map(c => ({
+            ...c,
+            isOwner: true,
+            userRole: 'OWNER' as const,
+        }));
+
+        const memberWithRole = memberCollections.map(m => ({
+            ...m.collection,
+            isOwner: false,
+            userRole: m.role,
+        }));
+
+        const allCollections = [...ownedWithRole, ...memberWithRole];
 
         const allowedOrigins = [
             process.env.NEXTAUTH_URL || 'http://localhost:3000',
@@ -47,10 +83,10 @@ export async function GET(request: NextRequest) {
         const origin = request.headers.get('origin');
         const allowedOrigin = allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0];
 
-        return NextResponse.json(collections, {
+        return NextResponse.json(allCollections, {
             headers: {
                 'Access-Control-Allow-Origin': allowedOrigin || allowedOrigins[0],
-                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300', // Cache for 1 minute, serve stale for 5 minutes
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
                 'Vary': 'Origin'
             },
         });
