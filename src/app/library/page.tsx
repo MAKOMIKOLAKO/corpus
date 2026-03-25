@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from 'react';
 import prisma from '@/lib/prisma';
 import HomePageClient from '@/components/HomePageClient';
@@ -8,6 +9,13 @@ import { ContentType, ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getCurrentUserId } from '@/lib/session';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 // Loading component for entries
 function EntriesLoading() {
