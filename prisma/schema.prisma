@@ -69,6 +69,7 @@ model User {
   stripePriceId         String?
   subscriptionStatus    String?
   subscriptionEndsAt    DateTime?
+  emailVerified         DateTime?
   createdAt             DateTime    @default(now())
 
   entries               Entry[]
@@ -80,6 +81,28 @@ model User {
   receivedConnections   Connection[]        @relation("ConnectionReceiver")
   sentSharedEntries     SharedEntry[]       @relation("SharedEntrySender")
   receivedSharedEntries SharedEntry[]       @relation("SharedEntryReceiver")
+  passwordResetTokens   PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Entry {

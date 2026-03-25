@@ -55,6 +55,23 @@ export const authOptions: NextAuthOptions = {
               passwordHash,
             },
           }));
+
+          // Send verification email asynchronously — do not block sign-up
+          (async () => {
+            try {
+              const crypto = require("crypto");
+              const { sendVerificationEmail } = require("@/lib/email");
+              const token = crypto.randomBytes(32).toString("hex");
+              const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+              await prisma.emailVerificationToken.create({
+                data: { token, userId: user.id, expiresAt },
+              });
+              await sendVerificationEmail(user.email, token, user.name || "");
+            } catch (err) {
+              console.error("Failed to send verification email:", err);
+            }
+          })();
+
           return { id: user.id, name: user.name, email: user.email };
         }
       },

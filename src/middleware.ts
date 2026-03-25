@@ -2,7 +2,8 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/privacy", "/pricing"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/privacy", "/pricing", "/forgot-password"]);
+const PUBLIC_PREFIXES = ["/reset-password/", "/verify-email/"];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -17,7 +18,7 @@ export default async function middleware(req: NextRequest) {
   }) as any;
 
   // Public paths: pass through, but bounce logged-in users away from auth pages
-  if (PUBLIC_PATHS.has(pathname)) {
+  if (PUBLIC_PATHS.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
     if ((pathname === "/login" || pathname === "/signup") && token) {
       return NextResponse.redirect(new URL("/library", req.url));
     }
