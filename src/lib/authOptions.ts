@@ -87,30 +87,34 @@ export const authOptions: NextAuthOptions = {
         const email = profile?.email ?? token.email;
         if (email && typeof (token as any).userId !== "string") {
           const dbUser = await withRetry(() => prisma.user.findUnique({ where: { email } }));
-          if (dbUser) (token as any).userId = dbUser.id;
+          if (dbUser) {
+            (token as any).userId = dbUser.id;
+            (token as any).plan = dbUser.plan || 'FREE';
+          }
         }
       } else if (user?.id) {
         // Credentials provider
         (token as any).userId = user.id;
+        // Fetch user plan from database
+        try {
+          const dbUser = await withRetry(() => prisma.user.findUnique({
+            where: { id: user.id },
+            select: { plan: true }
+          }));
+          if (dbUser) {
+            (token as any).plan = dbUser.plan || 'FREE';
+          }
+        } catch (error) {
+          console.error('Error fetching user plan:', error);
+          (token as any).plan = 'FREE';
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && typeof (token as any).userId === "string") {
         (session.user as any).id = (token as any).userId;
-
-        // Fetch user plan from database
-        try {
-          const dbUser = await withRetry(() => prisma.user.findUnique({
-            where: { id: (token as any).userId as string },
-            select: { plan: true }
-          }));
-          if (dbUser) {
-            (session.user as any).plan = dbUser.plan;
-          }
-        } catch (error) {
-          console.error('Error fetching user plan:', error);
-        }
+        (session.user as any).plan = (token as any).plan || 'FREE';
       }
       return session;
     },
@@ -122,6 +126,44 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: false, // IMPORTANT: Allow JavaScript access for Chrome extension
+        sameSite: 'lax', // Allow cross-site access
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production'
+          ? 'corpus-lemon.vercel.app'
+          : 'localhost'
+      }
+    },
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: {
+        httpOnly: false,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production'
+          ? 'corpus-lemon.vercel.app'
+          : 'localhost'
+      }
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: false,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production'
+          ? 'corpus-lemon.vercel.app'
+          : 'localhost'
+      }
+    }
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

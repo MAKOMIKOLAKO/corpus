@@ -12,16 +12,23 @@ type ReadingStatus = 'UNREAD' | 'READING' | 'READ';
 
 export async function OPTIONS(request: NextRequest) {
     const allowedOrigins = [
+        'chrome-extension://*',
         process.env.NEXTAUTH_URL || 'http://localhost:3000',
-        'http://localhost:3001'
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://corpus-lemon.vercel.app'
     ];
     const origin = request.headers.get('origin');
-    const allowedOrigin = allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0];
+    const isAllowedOrigin = allowedOrigins.some(allowed =>
+        allowed === 'chrome-extension://*' || allowedOrigins.includes(origin || '')
+    );
+    const allowedOrigin = isAllowedOrigin ? (origin || allowedOrigins[1]) : allowedOrigins[1];
 
     return new NextResponse(null, {
         status: 200,
         headers: {
-            'Access-Control-Allow-Origin': allowedOrigin || allowedOrigins[0],
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Origin': allowedOrigin,
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
             'Access-Control-Max-Age': '86400',
@@ -77,15 +84,22 @@ export async function GET(request: NextRequest) {
         });
 
         const allowedOrigins = [
+            'chrome-extension://*',
             process.env.NEXTAUTH_URL || 'http://localhost:3000',
-            'http://localhost:3001'
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'https://corpus-lemon.vercel.app'
         ];
         const origin = request.headers.get('origin');
-        const allowedOrigin = allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0];
+        const isAllowedOrigin = allowedOrigins.some(allowed =>
+            allowed === 'chrome-extension://*' || allowedOrigins.includes(origin || '')
+        );
+        const allowedOrigin = isAllowedOrigin ? (origin || allowedOrigins[1]) : allowedOrigins[1];
 
         return NextResponse.json(entries, {
             headers: {
-                'Access-Control-Allow-Origin': allowedOrigin || allowedOrigins[0],
+                'Access-Control-Allow-Credentials': 'true',
+                'Access-Control-Allow-Origin': allowedOrigin,
                 'Vary': 'Origin'
             }
         });

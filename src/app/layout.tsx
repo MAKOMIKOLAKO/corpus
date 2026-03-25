@@ -57,6 +57,32 @@ export const metadata: Metadata = {
   },
 }
 
+// Extension detection component
+function ExtensionDetection() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromExtension = urlParams.get('from_extension');
+            
+            if (fromExtension === 'true') {
+              console.log('User arrived from Chrome extension');
+              localStorage.setItem('from_extension', 'true');
+              
+              // Optionally show a welcome message or trigger extension-specific UI
+              window.dispatchEvent(new CustomEvent('fromExtension', { 
+                detail: { fromExtension: true } 
+              }));
+            }
+          })();
+        `,
+      }}
+    />
+  );
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -66,6 +92,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={cn("font-sans scroll-smooth", inter.variable)}>
+      <head>
+        <ExtensionDetection />
+      </head>
       <body className="antialiased min-h-screen bg-[var(--background)] text-[var(--foreground)] theme-transition">
         <NextAuthProvider>
           <AppShell session={session}>{children}</AppShell>
