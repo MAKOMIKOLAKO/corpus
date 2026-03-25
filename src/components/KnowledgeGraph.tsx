@@ -34,11 +34,10 @@ interface KnowledgeGraphProps {
   entries: any[];
   width?: number;
   height?: number;
-  isFullscreen?: boolean;
-  onFullscreenChange?: (isFullscreen: boolean) => void;
+  hideControls?: boolean;
 }
 
-export default function KnowledgeGraph({ entries, width = 800, height = 500, isFullscreen = false, onFullscreenChange }: KnowledgeGraphProps) {
+export default function KnowledgeGraph({ entries, width = 800, height = 500, hideControls = false }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -73,8 +72,8 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
         g.selectAll("text")
           .attr("font-size", function (d: any) {
             const nodeData = d as GraphNode;
-            const baseSize = nodeData.type === 'entry' ? 12 : nodeData.type === 'topic' ? 10 : 9;
-            const scaledSize = Math.max(baseSize * Math.sqrt(transform.k), 8);
+            const baseSize = nodeData.type === 'entry' ? 16 : nodeData.type === 'topic' ? 14 : 12;
+            const scaledSize = Math.max(baseSize * Math.sqrt(transform.k), 10);
             return `${scaledSize}px`;
           });
       });
@@ -167,10 +166,10 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
     node.append("circle")
       .attr("r", (d: GraphNode) => {
         switch (d.type) {
-          case 'entry': return 12;
-          case 'keyword': return 8;
-          case 'topic': return 10;
-          default: return 8;
+          case 'entry': return 20;
+          case 'keyword': return 12;
+          case 'topic': return 16;
+          default: return 12;
         }
       })
       .attr("fill", (d: GraphNode) => {
@@ -214,17 +213,17 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
       .attr("x", 0)
       .attr("y", (d: GraphNode) => {
         switch (d.type) {
-          case 'entry': return 20;
-          case 'keyword': return 15;
-          case 'topic': return 18;
-          default: return 15;
+          case 'entry': return 30;
+          case 'keyword': return 20;
+          case 'topic': return 25;
+          default: return 20;
         }
       })
       .attr("text-anchor", "middle")
       .attr("font-size", (d: GraphNode) => {
         // Dynamic font size based on zoom level and node type
-        const baseSize = d.type === 'entry' ? 12 : d.type === 'topic' ? 10 : 9;
-        const scaledSize = Math.max(baseSize * Math.sqrt(zoomLevel), 8); // Minimum 8px
+        const baseSize = d.type === 'entry' ? 16 : d.type === 'topic' ? 14 : 12;
+        const scaledSize = Math.max(baseSize * Math.sqrt(zoomLevel), 10); // Minimum 10px
         return `${scaledSize}px`;
       })
       .attr("fill", "var(--foreground)")
@@ -424,10 +423,8 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
     }
   };
 
-  const toggleFullscreen = () => {
-    if (onFullscreenChange) {
-      onFullscreenChange(!isFullscreen);
-    }
+  const toggleControls = () => {
+    // This will be handled by the parent component
   };
 
   return (
@@ -439,74 +436,70 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500, isF
       />
 
       {/* Zoom Controls */}
-      <div className="absolute top-4 right-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-2 flex flex-col gap-2">
-        <button
-          onClick={zoomIn}
-          className="w-8 h-8 rounded bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/80 flex items-center justify-center text-sm font-medium transition-colors"
-          title="Zoom In (Ctrl/Cmd + +)"
-        >
-          +
-        </button>
-        <div className="text-center text-xs text-[var(--muted-foreground)] font-medium">
-          {Math.round(zoomLevel * 100)}%
-        </div>
-        <button
-          onClick={zoomOut}
-          className="w-8 h-8 rounded bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/80 flex items-center justify-center text-sm font-medium transition-colors"
-          title="Zoom Out (Ctrl/Cmd + -)"
-        >
-          −
-        </button>
-        <button
-          onClick={resetZoom}
-          className="w-8 h-8 rounded bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80 flex items-center justify-center text-xs font-medium transition-colors"
-          title="Reset Zoom (Ctrl/Cmd + 0)"
-        >
-          ⟲
-        </button>
-        <div className="border-t border-[var(--border)] pt-2">
+      {!hideControls && (
+        <div className="absolute top-4 right-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-2 flex flex-col gap-2">
           <button
-            onClick={toggleFullscreen}
-            className="w-8 h-8 rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/80 flex items-center justify-center text-xs font-medium transition-colors"
-            title="Toggle Fullscreen (F)"
+            onClick={zoomIn}
+            className="w-8 h-8 rounded bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/80 flex items-center justify-center text-sm font-medium transition-colors"
+            title="Zoom In (Ctrl/Cmd + +)"
           >
-            {isFullscreen ? 'EX' : 'FS'}
+            +
+          </button>
+          <div className="text-center text-xs text-[var(--muted-foreground)] font-medium">
+            {Math.round(zoomLevel * 100)}%
+          </div>
+          <button
+            onClick={zoomOut}
+            className="w-8 h-8 rounded bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/80 flex items-center justify-center text-sm font-medium transition-colors"
+            title="Zoom Out (Ctrl/Cmd + -)"
+          >
+            −
+          </button>
+          <button
+            onClick={resetZoom}
+            className="w-8 h-8 rounded bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80 flex items-center justify-center text-xs font-medium transition-colors"
+            title="Reset Zoom (Ctrl/Cmd + 0)"
+          >
+            ⟲
           </button>
         </div>
-      </div>
+      )}
 
       {/* Graph Legend */}
-      <div className="absolute top-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs">
-        <div className="font-semibold mb-2">Graph Legend</div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[var(--accent)]"></div>
-            <span>Entries</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[var(--primary)]"></div>
-            <span>Keywords</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[var(--secondary)]"></div>
-            <span>Topics</span>
+      {!hideControls && (
+        <div className="absolute top-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs">
+          <div className="font-semibold mb-2">Graph Legend</div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[var(--accent)]"></div>
+              <span>Entries</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[var(--primary)]"></div>
+              <span>Keywords</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[var(--secondary)]"></div>
+              <span>Topics</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Zoom Instructions */}
-      <div className="absolute bottom-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs max-w-xs">
-        <div className="font-semibold mb-2">Graph Controls</div>
-        <div className="space-y-1 text-[var(--muted-foreground)]">
-          <div>• Mouse wheel: Zoom in/out</div>
-          <div>• Click & drag: Pan around</div>
-          <div>• Ctrl/Cmd + +: Zoom in</div>
-          <div>• Ctrl/Cmd + -: Zoom out</div>
-          <div>• Ctrl/Cmd + 0: Reset view</div>
-          <div>• F key: Toggle fullscreen</div>
-          <div>• Drag nodes: Reposition</div>
+      {!hideControls && (
+        <div className="absolute bottom-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs max-w-xs">
+          <div className="font-semibold mb-2">Graph Controls</div>
+          <div className="space-y-1 text-[var(--muted-foreground)]">
+            <div>• Mouse wheel: Zoom in/out</div>
+            <div>• Click & drag: Pan around</div>
+            <div>• Ctrl/Cmd + +: Zoom in</div>
+            <div>• Ctrl/Cmd + -: Zoom out</div>
+            <div>• Ctrl/Cmd + 0: Reset view</div>
+            <div>• Drag nodes: Reposition</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Selected Node Info */}
       {selectedNode && (
