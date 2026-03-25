@@ -76,13 +76,15 @@ export default function GraphPage() {
     };
 
     const enterFullscreen = () => {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-        } else if ((elem as any).webkitRequestFullscreen) {
-            (elem as any).webkitRequestFullscreen();
-        } else if ((elem as any).msRequestFullscreen) {
-            (elem as any).msRequestFullscreen();
+        const elem = document.getElementById('graph-fullscreen-container');
+        if (elem) {
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if ((elem as any).webkitRequestFullscreen) {
+                (elem as any).webkitRequestFullscreen();
+            } else if ((elem as any).msRequestFullscreen) {
+                (elem as any).msRequestFullscreen();
+            }
         }
     };
 
@@ -252,8 +254,14 @@ export default function GraphPage() {
                     <p className="text-sm text-muted-foreground">add some entries to see their connections in the knowledge graph.</p>
                 </div>
             ) : (
-                <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-[var(--background)]' : ''}`}>
-                    <div className={`grid ${isFullscreen ? 'grid-cols-12 h-full' : 'grid-cols-1 lg:grid-cols-3'} gap-6 h-full`}>
+                <div id="graph-fullscreen-container" style={isFullscreen ? {
+                    width: '100vw',
+                    height: '100vh',
+                    backgroundColor: 'var(--background)',
+                    padding: '0',
+                    margin: '0'
+                } : {}}>
+                    <div className={`grid ${isFullscreen ? 'grid-cols-12 h-screen' : 'grid-cols-1 lg:grid-cols-3'} gap-6 ${isFullscreen ? 'h-screen' : ''}`}>
                         <div className={isFullscreen ? 'col-span-10' : 'lg:col-span-2'}>
                             <Card className={isFullscreen ? 'h-full border-0 shadow-none bg-transparent' : ''}>
                                 {!isFullscreen && (
