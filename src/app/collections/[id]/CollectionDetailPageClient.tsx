@@ -362,10 +362,10 @@ export default function CollectionDetailPage() {
                             ))}
 
                             {/* Pending Invites */}
-                            {collection.members?.filter(m => m.status === 'PENDING').length > 0 && (
+                            {collection.members && collection.members.filter(m => m.status === 'PENDING').length > 0 && (
                                 <div className="pt-3 border-t border-border">
                                     <p className="text-xs text-muted-foreground mb-2">Pending Invites</p>
-                                    {collection.members?.filter(m => m.status === 'PENDING').map((member) => (
+                                    {collection.members.filter(m => m.status === 'PENDING').map((member) => (
                                         <div key={member.id} className="flex items-center justify-between py-2">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-sm font-medium opacity-50">
