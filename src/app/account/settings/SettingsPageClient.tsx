@@ -230,7 +230,7 @@ export default function AccountPage() {
             )}
 
             <div>
-                <h2 className="text-xl font-medium tracking-tight">account settings</h2>
+                <h1 className="text-2xl font-semibold tracking-tight">account settings</h1>
                 <p className="text-sm text-muted-foreground">manage your account and subscription.</p>
             </div>
 
