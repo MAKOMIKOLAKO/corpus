@@ -37,7 +37,7 @@ export default function LoginForm() {
     <div className="flex flex-col gap-6">
       <button
         onClick={() => signIn("google", { callbackUrl })}
-        className="w-full h-10 px-4 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        className="w-full h-10 px-4 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 corpus-glow"
         aria-describedby="signin-description"
       >
         Continue with Google
@@ -108,7 +108,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10 px-4 mt-2 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="w-full h-10 px-4 mt-2 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 corpus-glow"
           aria-describedby="signin-description"
         >
           {loading ? "Signing in..." : "Sign In"}
