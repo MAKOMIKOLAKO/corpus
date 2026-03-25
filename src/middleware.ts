@@ -1,46 +1,48 @@
-import { withAuth } from "next-auth/middleware";
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/privacy", "/pricing"]);
 
-export default withAuth(
-  function middleware(req) {
-    const { pathname } = req.nextUrl;
-    const token = req.nextauth.token as any;
+export default async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-    // Redirect logged-in users away from /login or /signup
+  // Use getToken with our explicit cookie name so it works in both dev and
+  // production (withAuth uses __Secure- prefix in prod which mismatches our
+  // custom cookie name 'next-auth.session-token').
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+    cookieName: "next-auth.session-token",
+  }) as any;
+
+  // Public paths: pass through, but bounce logged-in users away from auth pages
+  if (PUBLIC_PATHS.has(pathname)) {
     if ((pathname === "/login" || pathname === "/signup") && token) {
       return NextResponse.redirect(new URL("/library", req.url));
     }
-
-    // Redirect username-less authenticated users to /setup-username
-    // (skip if already on setup-username or on public/api paths)
-    if (
-      token &&
-      !token.username &&
-      pathname !== "/setup-username" &&
-      !pathname.startsWith("/api/") &&
-      !pathname.startsWith("/_next/") &&
-      !PUBLIC_PATHS.has(pathname)
-    ) {
-      return NextResponse.redirect(new URL("/setup-username", req.url));
-    }
-
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ req, token }) => {
-        const { pathname } = req.nextUrl;
-        if (PUBLIC_PATHS.has(pathname)) return true;
-        return !!token;
-      },
-    },
-    pages: {
-      signIn: "/login",
-    },
   }
-);
+
+  // Protected path: require a valid token
+  if (!token) {
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Redirect username-less users to /setup-username
+  if (
+    !token.username &&
+    pathname !== "/setup-username" &&
+    !pathname.startsWith("/api/") &&
+    !pathname.startsWith("/_next/")
+  ) {
+    return NextResponse.redirect(new URL("/setup-username", req.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/((?!api/auth|api/fetch-youtube|api/fetch-url|api/fetch-metadata-ai|api/collections|api/entries|api/stripe|api/topics|api/keywords|api/users|api/connections|api/user|api/profile|_next/static|_next/image|favicon.ico).*)"],
