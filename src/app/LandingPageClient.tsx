@@ -10,7 +10,7 @@ const accentBg = "bg-indigo-500";
 
 function IconChrome() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Save research papers and articles with one click">
       <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M12 22V12M3 7l9 5 9-5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -19,7 +19,7 @@ function IconChrome() {
 
 function IconSpark() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="AI-powered automatic keyword extraction and topic tagging">
       <path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" strokeLinecap="round" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -28,7 +28,7 @@ function IconSpark() {
 
 function IconGraph() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Semantic knowledge graph connecting research papers and articles">
       <circle cx="6" cy="18" r="2.5" />
       <circle cx="18" cy="6" r="2.5" />
       <circle cx="18" cy="18" r="2.5" />
@@ -39,7 +39,7 @@ function IconGraph() {
 
 function IconFolder() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Research collections and reading lists">
       <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" strokeLinejoin="round" />
     </svg>
   );
@@ -47,7 +47,7 @@ function IconFolder() {
 
 function IconLayers() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Save papers by DOI, articles by URL, books by ISBN">
       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinejoin="round" />
     </svg>
   );
@@ -55,7 +55,7 @@ function IconLayers() {
 
 function IconShield() {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Personal knowledge base that scales with your research">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinejoin="round" />
     </svg>
   );
@@ -123,28 +123,36 @@ const features = [
 
 const faqItems = [
   {
-    q: "Is Corpus free to use?",
-    a: "Yes — Corpus has a generous free tier with up to 100 entries and all core features. Upgrade to Pro for unlimited entries, collections, and the knowledge graph.",
+    q: "How do I organize my research papers and articles?",
+    a: "Corpus lets you save any research paper by DOI, article by URL, or book by ISBN. It automatically extracts keywords and topic tags so everything is organized the moment you save it — no manual categorization required.",
   },
   {
-    q: "Does Corpus store my full documents?",
-    a: "No. Corpus is metadata-first — it stores structured information about what you've read, not the content itself. Think of it as a smart index, not a document archive.",
+    q: "Is Corpus a good Zotero or Mendeley alternative?",
+    a: "Corpus takes a different approach to reference management. Instead of storing full PDFs, it indexes structured metadata and lets you search across everything you've read instantly. It's built for speed and retrieval, not document storage.",
   },
   {
-    q: "How does the Chrome extension work?",
-    a: "Install the Corpus Web Clipper from the Chrome Web Store. Click the icon on any webpage, confirm the details, and it's saved to your library instantly.",
+    q: "Can I use Corpus to build a personal knowledge base?",
+    a: "Yes — Corpus is designed exactly for this. Save articles, papers, books, and essays over time and use the knowledge graph to discover connections between ideas across your entire reading history.",
   },
   {
-    q: "What types of content can I save?",
-    a: "Articles, blog posts, research papers (via DOI), books (via ISBN), essays, policy reports, and more. Corpus fetches metadata automatically for all of them.",
+    q: "Does Corpus work as a read-it-later app?",
+    a: "Corpus complements read-it-later tools like Pocket or Instapaper. Use those to queue things to read, then save to Corpus once you've read something and want to remember and retrieve it later.",
   },
   {
-    q: "Can I cancel my subscription anytime?",
-    a: "Yes. Cancel anytime from your account settings. You'll keep Pro access until the end of your billing period.",
+    q: "How does Corpus compare to Notion for research organization?",
+    a: "Notion is a general purpose workspace. Corpus is purpose-built for indexing what you read — with automatic metadata fetching, AI keyword extraction, and a semantic knowledge graph that Notion can't match for research workflows.",
   },
   {
-    q: "Is my data private?",
-    a: "Your library is completely private. Only you can see your entries, collections, and reading history.",
+    q: "Can I save research papers with a DOI to Corpus?",
+    a: "Yes. Paste any DOI and Corpus fetches the full citation metadata automatically from CrossRef — title, authors, journal, year, and abstract — with no manual entry required.",
+  },
+  {
+    q: "Is there a browser extension for saving articles to Corpus?",
+    a: "Yes — the Corpus Web Clipper is available on the Chrome Web Store. Click the extension icon on any webpage to save it to your library instantly with automatic metadata capture.",
+  },
+  {
+    q: "What is a personal knowledge management system?",
+    a: "A personal knowledge management (PKM) system is a tool for capturing, organizing, and retrieving information you've encountered. Corpus is a PKM system focused specifically on written works — papers, articles, books, and essays — with AI-powered organization built in.",
   },
 ];
 
@@ -184,9 +192,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 antialiased selection:bg-indigo-500/30 selection:text-white">
       {/* Nav */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
-          navScrolled ? "border-white/[0.06] bg-[#0a0a0a]/75 backdrop-blur-md" : "border-transparent bg-transparent"
-        }`}
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${navScrolled ? "border-white/[0.06] bg-[#0a0a0a]/75 backdrop-blur-md" : "border-transparent bg-transparent"
+          }`}
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="text-lg font-semibold tracking-tight text-white">
@@ -347,7 +354,7 @@ export default function LandingPage() {
       <section id="features" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Everything your reading workflow needs</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Everything your research workflow needs</h2>
           </div>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
@@ -369,7 +376,7 @@ export default function LandingPage() {
       <section className="border-t border-white/[0.06] bg-[#080808] py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">From reading to organized in seconds</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Save and organize research papers, articles, and books in seconds</h2>
           </div>
 
           <div className="relative mt-20 grid gap-12 lg:grid-cols-3 lg:gap-8">
@@ -411,7 +418,7 @@ export default function LandingPage() {
       <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Simple, honest pricing</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Simple pricing for researchers and students</h2>
             <p className="mt-4 text-zinc-400">Start free. Upgrade when you&apos;re ready.</p>
           </div>
 
@@ -510,7 +517,7 @@ export default function LandingPage() {
       <section className="border-t border-white/[0.06] bg-[#080808] py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">What researchers are saying</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Trusted by researchers, academics, and students</h2>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
@@ -545,7 +552,7 @@ export default function LandingPage() {
       <section id="faq" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-3xl px-4">
           <div data-reveal className={`${reveal} text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Frequently asked questions</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Frequently asked questions about Corpus</h2>
           </div>
           <div className="mt-12 space-y-2">
             {faqItems.map((item, i) => (
@@ -569,7 +576,7 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section data-reveal className={`${reveal} border-t border-indigo-500/20 bg-indigo-950/40 py-24`}>
         <div className="mx-auto max-w-3xl px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Start building your knowledge library today.</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Start building your personal knowledge base today</h2>
           <p className="mt-4 text-zinc-400">Free forever. No credit card required.</p>
           <Link
             href="/login"
@@ -579,6 +586,11 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+
+      {/* Hidden SEO paragraph */}
+      <p className="sr-only">
+        Corpus is a personal knowledge management tool and research paper organizer built for academics, researchers, and students. Save research papers by DOI, web articles by URL, and books by ISBN. Automatically extract keywords and topics with AI. Build a semantic knowledge graph of your reading history. Use as a Zotero alternative, Mendeley alternative, or Readwise alternative for organizing your academic reading list. Available as a Chrome extension for one-click saving from any webpage. Free personal knowledge base software with a Pro plan for unlimited entries and advanced features.
+      </p>
 
       {/* Footer */}
       <footer className="border-t border-white/[0.06] bg-[#050505] py-12">
