@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { 
-  ExternalLink, 
-  Eye, 
-  FileText, 
-  Bookmark, 
-  Copy, 
+import {
+  ExternalLink,
+  Eye,
+  FileText,
+  Bookmark,
+  Copy,
   Check,
   User,
   Calendar,
@@ -37,6 +37,7 @@ interface Entry {
 interface Collection {
   id: string;
   name: string;
+  publicSlug?: string;
   publicDescription?: string;
   publicViewCount: number;
   createdAt: string;
@@ -139,7 +140,7 @@ export default function PublicCollectionClient({ initialCollection }: PublicColl
                 </p>
               )}
               <div className="flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
-                <Link 
+                <Link
                   href={`/profile/${collection.owner.username}`}
                   className="flex items-center gap-1 hover:text-[var(--foreground)] transition-colors"
                 >
@@ -176,13 +177,13 @@ export default function PublicCollectionClient({ initialCollection }: PublicColl
         {/* Entries List */}
         <div className="space-y-4">
           {collection.entries.map((entry) => (
-            <div 
+            <div
               key={entry.id}
               className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h3 
+                  <h3
                     className="font-semibold text-[var(--foreground)] mb-2 cursor-pointer hover:text-[var(--primary)] transition-colors"
                     onClick={() => setSelectedEntry(entry)}
                   >
@@ -240,7 +241,7 @@ export default function PublicCollectionClient({ initialCollection }: PublicColl
                   {selectedEntry.authors.join(", ")}
                   {selectedEntry.year && ` (${selectedEntry.year})`}
                 </p>
-                
+
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary">
                     {contentTypeLabels[selectedEntry.contentType] || selectedEntry.contentType}
@@ -259,9 +260,9 @@ export default function PublicCollectionClient({ initialCollection }: PublicColl
                 )}
 
                 {selectedEntry.url && (
-                  <a 
-                    href={selectedEntry.url} 
-                    target="_blank" 
+                  <a
+                    href={selectedEntry.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm text-[var(--primary)] hover:underline"
                   >

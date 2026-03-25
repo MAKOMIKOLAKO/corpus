@@ -437,15 +437,9 @@ export default function CollectionDetailPage() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                asChild
+                                                onClick={() => window.open(`/c/${collection.publicSlug}`, '_blank', 'noopener,noreferrer')}
                                             >
-                                                <a
-                                                    href={`/c/${collection.publicSlug}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <ExternalLink className="w-4 h-4" />
-                                                </a>
+                                                <ExternalLink className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     </div>

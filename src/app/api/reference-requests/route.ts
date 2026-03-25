@@ -190,7 +190,7 @@ export async function POST(request: Request) {
           entryId,
           metadata: {
             entryTitle: referenceRequest.entry.title,
-            receiverUsername: owner?.username || owner?.name
+            receiverUsername: owner?.username
           }
         }
       }).catch(err => console.error("Failed to create signal:", err));

@@ -127,7 +127,8 @@ export async function GET(request: Request) {
       }
       if (signal.type === "REFERENCE_REQUESTED") {
         // Only show to sender and receiver
-        return signal.userId === user.id || signal.metadata?.receiverUsername === user.username;
+        const metadata = signal.metadata as { receiverUsername?: string } | null;
+        return signal.userId === user.id || metadata?.receiverUsername === user.username;
       }
       return true;
     });
