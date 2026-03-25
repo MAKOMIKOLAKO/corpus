@@ -37,46 +37,70 @@ export default function LoginForm() {
     <div className="flex flex-col gap-6">
       <button
         onClick={() => signIn("google", { callbackUrl })}
-        className="w-full h-10 px-4 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center"
+        className="w-full h-10 px-4 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        aria-describedby="signin-description"
       >
         Continue with Google
       </button>
 
-      <div className="relative">
+      <div className="relative" role="separator" aria-orientation="horizontal">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-[var(--border)]" />
+          <span className="w-full border-t border-[var(--border)]" aria-hidden="true" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-[var(--card)] px-2 text-[var(--muted-foreground)]">or</span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <div className="space-y-2">
-          <label className="text-sm font-medium leading-none text-[var(--foreground)]">Email</label>
+          <label
+            htmlFor="email"
+            className="text-sm font-medium leading-none text-[var(--foreground)]"
+          >
+            Email
+          </label>
           <input
+            id="email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--foreground)] focus:border-transparent"
+            className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--foreground)] focus:border-transparent disabled:opacity-50"
             placeholder="Enter email"
+            autoComplete="email"
+            aria-describedby={errorMessage ? "error-message" : undefined}
+            aria-invalid={errorMessage ? "true" : "false"}
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium leading-none text-[var(--foreground)]">Password</label>
+          <label
+            htmlFor="password"
+            className="text-sm font-medium leading-none text-[var(--foreground)]"
+          >
+            Password
+          </label>
           <input
+            id="password"
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--foreground)] focus:border-transparent"
+            className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--foreground)] focus:border-transparent disabled:opacity-50"
             placeholder="Enter password"
+            autoComplete="current-password"
+            aria-describedby={errorMessage ? "error-message" : undefined}
+            aria-invalid={errorMessage ? "true" : "false"}
           />
         </div>
 
         {errorMessage && (
-          <div className="text-sm font-medium text-red-500">
+          <div
+            id="error-message"
+            className="text-sm font-medium text-red-500 bg-red-50 border border-red-200 rounded-md p-3"
+            role="alert"
+            aria-live="polite"
+          >
             {errorMessage}
           </div>
         )}
@@ -84,7 +108,8 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10 px-4 mt-2 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50"
+          className="w-full h-10 px-4 mt-2 rounded-md bg-[var(--foreground)] text-[var(--background)] font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          aria-describedby="signin-description"
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>
@@ -92,9 +117,16 @@ export default function LoginForm() {
 
       <div className="text-center text-sm text-[var(--muted-foreground)]">
         No account?{" "}
-        <Link href="/signup" className="text-[var(--foreground)] hover:underline">
+        <Link
+          href="/signup"
+          className="text-[var(--foreground)] hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded"
+        >
           Sign up
         </Link>
+      </div>
+
+      <div id="signin-description" className="sr-only">
+        Sign in to your Corpus account to access your personal knowledge library
       </div>
     </div>
   );
