@@ -505,7 +505,7 @@ export default function LandingPage() {
               <div className="mt-auto">
                 <Link
                   href="/pricing"
-                  className={`block w-full rounded-lg bg-[var(--accent)] py-3 text-center font-medium text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent)]/90 corpus-glow`}
+                  className={`block w-full rounded-lg bg-[var(--accent)] py-3 text-center font-medium text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent)]/90`}
                 >
                   Start Pro Trial
                 </Link>
