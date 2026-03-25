@@ -90,69 +90,69 @@ function IconSearch() {
 
 const features = [
   {
-    icon: <IconChrome />,
-    title: "One-Click Saving",
-    body: "Save any article, paper, or webpage instantly with the Corpus Chrome extension. No copying, no pasting, no friction.",
+    icon: <IconLayers />,
+    title: "Save Any Research Source",
+    body: "Add papers by DOI, preprints by URL, or books by ISBN. Corpus fetches full citation metadata automatically — title, authors, abstract, journal, and year — with no manual entry.",
   },
   {
     icon: <IconSpark />,
     title: "AI-Powered Organization",
-    body: "Corpus automatically extracts keywords and assigns topic tags to everything you save. Your library organizes itself.",
-  },
-  {
-    icon: <IconGraph />,
-    title: "Knowledge Graph",
-    body: "Visualize connections between your entries as an interactive graph. Discover relationships between ideas you never noticed.",
+    body: "Every source you save is automatically tagged with keywords and topic labels by AI. Your library organizes itself so you can focus on the research.",
   },
   {
     icon: <IconFolder />,
-    title: "Collections",
-    body: "Group entries around projects, papers, or themes. Build focused reading lists for any research goal.",
-  },
-  {
-    icon: <IconLayers />,
-    title: "Every Format",
-    body: "Papers via DOI, articles via URL, books via ISBN. Corpus fetches full metadata automatically for all of them.",
+    title: "Collaborative Collections",
+    body: "Build shared reading lists with your lab, study group, or research collaborators. Everyone contributes, everyone benefits.",
   },
   {
     icon: <IconShield />,
-    title: "Built to Last",
-    body: "Your library grows with you. Corpus is designed to hold thousands of entries and retrieve any of them instantly.",
+    title: "Research Connections",
+    body: "Connect with other researchers on Corpus. Share papers directly with your network and discover what your connections are reading and saving.",
+  },
+  {
+    icon: <IconGraph />,
+    title: "Semantic Knowledge Graph",
+    body: "Visualize deep connections between your sources using semantic AI. Discover relationships between papers you never knew were related.",
+  },
+  {
+    icon: <IconChrome />,
+    title: "Chrome Extension",
+    body: "Save any paper or article from the web in one click with the Corpus Web Clipper. Works on journal websites, ArXiv, PubMed, and anywhere else you find research.",
   },
 ];
 
 const faqItems = [
   {
-    q: "How do I organize my research papers and articles?",
-    a: "Corpus lets you save any research paper by DOI, article by URL, or book by ISBN. It automatically extracts keywords and topic tags so everything is organized the moment you save it — no manual categorization required.",
+    q: "How is Corpus different from Zotero or Mendeley?",
+    a: "Zotero and Mendeley are powerful reference managers built around storing and citing PDFs. Corpus takes a different approach — it indexes the metadata and ideas from what you read, adds AI-powered organization, and layers a social network on top so you can share and discover research with your academic network.",
   },
   {
-    q: "Is Corpus a good Zotero or Mendeley alternative?",
-    a: "Corpus takes a different approach to reference management. Instead of storing full PDFs, it indexes structured metadata and lets you search across everything you've read instantly. It's built for speed and retrieval, not document storage.",
+    q: "Can I save ArXiv preprints and PubMed papers?",
+    a: "Yes. Any paper with a DOI can be saved via CrossRef metadata fetch. ArXiv preprints and other sources without DOIs can be saved via URL. Corpus captures whatever metadata is available automatically.",
   },
   {
-    q: "Can I use Corpus to build a personal knowledge base?",
-    a: "Yes — Corpus is designed exactly for this. Save articles, papers, books, and essays over time and use the knowledge graph to discover connections between ideas across your entire reading history.",
+    q: "How do research connections work?",
+    a: "Connect with other Corpus users by searching their username or email. Once connected, you can share individual papers directly with them and they appear in their inbox to accept or decline. You can also build shared collections together.",
   },
   {
-    q: "Does Corpus work as a read-it-later app?",
-    a: "Corpus complements read-it-later tools like Pocket or Instapaper. Use those to queue things to read, then save to Corpus once you've read something and want to remember and retrieve it later.",
+    q: "Does Corpus store my PDFs?",
+    a: "No. Corpus is metadata-first — it stores structured information about your sources, not the files themselves. This keeps your library fast, lightweight, and legally clean.",
   },
   {
-    q: "How does Corpus compare to Notion for research organization?",
-    a: "Notion is a general purpose workspace. Corpus is purpose-built for indexing what you read — with automatic metadata fetching, AI keyword extraction, and a semantic knowledge graph that Notion can't match for research workflows.",
+    q: "Can I use Corpus with my research lab or study group?",
+    a: "Yes — shared collections are built for exactly this. Create a collection, invite your collaborators, and everyone can add papers and browse the shared library together.",
   },
   {
-    q: "Can I save research papers with a DOI to Corpus?",
-    a: "Yes. Paste any DOI and Corpus fetches the full citation metadata automatically from CrossRef — title, authors, journal, year, and abstract — with no manual entry required.",
+    q: "Is my library private?",
+    a: "Your personal library is completely private. Only content you explicitly share with connections or add to shared collections is visible to others.",
   },
   {
-    q: "Is there a browser extension for saving articles to Corpus?",
-    a: "Yes — the Corpus Web Clipper is available on the Chrome Web Store. Click the extension icon on any webpage to save it to your library instantly with automatic metadata capture.",
+    q: "Is there a browser extension?",
+    a: "Yes — the Corpus Web Clipper is available on the Chrome Web Store. Click the icon on any page to save it to your library instantly.",
   },
   {
-    q: "What is a personal knowledge management system?",
-    a: "A personal knowledge management (PKM) system is a tool for capturing, organizing, and retrieving information you've encountered. Corpus is a PKM system focused specifically on written works — papers, articles, books, and essays — with AI-powered organization built in.",
+    q: "How much does Corpus cost?",
+    a: "Corpus is free for up to 100 saved sources with full access to core features including the Chrome extension, AI organization, and research connections. Pro is $6/month or $48/year for unlimited sources, collaborative collections, and the knowledge graph.",
   },
 ];
 
@@ -286,23 +286,23 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto grid max-w-6xl gap-16 px-4 pb-24 pt-12 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
           <div data-reveal className={reveal}>
             <h1 className="text-4xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              The architecture of insight.
+              Where research gets done together.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted-foreground)]">
-              Corpus is the living library that connects what you read. Beyond storage toward discovery—your personal corpus, instantly discoverable.
+              Corpus is the collaborative research platform for academics, researchers, and students. Save papers, discover connections, and build knowledge with your network — all in one place.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/login"
                 className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90`}
               >
-                Build Your Knowledge Base
+                Get Started Free
               </Link>
               <a
                 href="#features"
                 className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/5"
               >
-                Connect the Dots
+                See how it works
               </a>
             </div>
           </div>
@@ -319,25 +319,25 @@ export default function LandingPage() {
               </div>
               <div className="space-y-4">
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/80 p-4 discovery-reveal">
-                  <p className="text-sm font-medium text-[var(--foreground)]">Attention Is All You Need</p>
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Vaswani et al. · 2017 · Paper</p>
+                  <p className="text-sm font-medium text-[var(--foreground)]">Attention Mechanisms in Neural Language Models</p>
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Chen et al. · 2023 · Paper</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {["transformer", "NLP", "self-attention"].map((k) => (
+                    {["transformer architecture", "neural plasticity", "self-attention"].map((k) => (
                       <span key={k} className="rounded-md border border-[var(--accent)]/25 bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--accent)] corpus-glow">
                         {k}
                       </span>
                     ))}
                   </div>
                   <div className="mt-2 flex gap-2">
-                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">ML</span>
-                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">deep learning</span>
+                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">Machine Learning</span>
+                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">Neuroscience</span>
                   </div>
                 </div>
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/60 p-4 opacity-80">
-                  <p className="text-sm font-medium text-[var(--foreground)]">The Structure of Scientific Revolutions</p>
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Thomas Kuhn · Book</p>
+                  <p className="text-sm font-medium text-[var(--foreground)]">Regional Climate Sensitivity and Feedback Loops</p>
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Smith et al. · 2022 · Paper</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {["paradigm", "history of science"].map((k) => (
+                    {["climate modeling", "feedback mechanisms"].map((k) => (
                       <span key={k} className="rounded-md border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]/90">
                         {k}
                       </span>
@@ -354,7 +354,7 @@ export default function LandingPage() {
       <section id="features" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Everything your research workflow needs</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Built for how researchers actually work</h2>
           </div>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
@@ -376,7 +376,7 @@ export default function LandingPage() {
       <section className="border-t border-[var(--border)] bg-[var(--background)] py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Save and organize research papers, articles, and books in seconds</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">From paper to organized in seconds</h2>
           </div>
 
           <div className="relative mt-20 grid gap-12 lg:grid-cols-3 lg:gap-8">
@@ -386,19 +386,19 @@ export default function LandingPage() {
                 n: "01",
                 icon: <IconSave />,
                 title: "Save",
-                desc: "Paste a DOI, URL, or ISBN. Or use the Chrome extension on any page.",
+                desc: "Paste a DOI, URL, or ISBN. Or clip any page with the Chrome extension. Corpus fetches full citation metadata automatically.",
               },
               {
                 n: "02",
                 icon: <IconOrganize />,
-                title: "Organize",
-                desc: "Corpus extracts keywords and topics automatically. Edit anything.",
+                title: "Collaborate",
+                desc: "Share papers with connections, build collections with your lab, and see what your research network is reading.",
               },
               {
                 n: "03",
                 icon: <IconSearch />,
-                title: "Retrieve",
-                desc: "Search, filter, browse by topic, or explore the knowledge graph.",
+                title: "Discover",
+                desc: "Search your library, explore the knowledge graph, and surface unexpected connections between your sources.",
               },
             ].map((step) => (
               <div key={step.n} data-reveal className={`${reveal} relative text-center lg:text-left`}>
@@ -418,8 +418,8 @@ export default function LandingPage() {
       <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Simple, transparent pricing</h2>
-            <p className="mt-4 text-[var(--muted-foreground)]">Start free, upgrade when you need more power</p>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Simple pricing for researchers and students</h2>
+            <p className="mt-4 text-[var(--muted-foreground)]">Start free. Upgrade when your research grows.</p>
           </div>
 
           <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-2`}>
@@ -436,19 +436,29 @@ export default function LandingPage() {
 
               <ul className="mb-8 space-y-4">
                 {[
-                  "Up to 100 entries",
-                  "All content types supported",
-                  "AI-powered keyword extraction",
-                  "Full search and filtering",
-                  "Chrome extension included"
+                  { text: "Up to 100 saved sources", included: true },
+                  { text: "Papers, articles, books, and preprints", included: true },
+                  { text: "AI keyword and topic extraction", included: true },
+                  { text: "Full search and filtering", included: true },
+                  { text: "Chrome extension", included: true },
+                  { text: "Research connections", included: true },
+                  { text: "Collaborative collections", included: false },
+                  { text: "Knowledge graph", included: false },
+                  { text: "Unlimited sources", included: false },
                 ].map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
-                      <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
+                  <li key={feature.text} className="flex items-center gap-3">
+                    <div className={`flex h-5 w-5 items-center justify-center rounded-full ${feature.included ? "bg-[var(--accent)]/20" : "bg-[var(--muted)]/30"}`}>
+                      {feature.included ? (
+                        <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-3 w-3 text-[var(--muted-foreground)]" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      )}
                     </div>
-                    <span className="text-[var(--foreground)]">{feature}</span>
+                    <span className={feature.included ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}>{feature.text}</span>
                   </li>
                 ))}
               </ul>
@@ -484,12 +494,12 @@ export default function LandingPage() {
 
               <ul className="mb-8 space-y-4">
                 {[
-                  "Unlimited entries",
+                  "Unlimited saved sources",
                   "Everything in Free",
-                  "Collections & organization",
-                  "Knowledge graph visualization",
+                  "Collaborative collections",
+                  "Semantic knowledge graph",
                   "Priority support",
-                  "Advanced AI features"
+                  "Early access to new features"
                 ].map((feature) => (
                   <li key={feature} className="flex items-center gap-3">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
@@ -535,21 +545,21 @@ export default function LandingPage() {
       <section className="border-t border-[var(--border)] bg-[var(--background)] py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Trusted by researchers, academics, and students</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">What researchers are saying</h2>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
               {
-                quote: "Corpus replaced my chaotic folder of bookmarks and PDFs. I can actually find things now.",
-                role: "PhD Student, Computer Science",
+                quote: "Corpus replaced Zotero for me. The social layer means I actually discover papers I would have missed — my connections share things I never would have searched for.",
+                role: "PhD Candidate, Computational Neuroscience",
               },
               {
-                quote: "The knowledge graph alone is worth it. I discovered connections between papers I'd saved months apart.",
-                role: "Research Associate, Cognitive Science",
+                quote: "Our lab uses shared collections for every project now. It's the reading list tool we always wished existed.",
+                role: "Postdoctoral Researcher, Molecular Biology",
               },
               {
-                quote: "I save everything with the Chrome extension now. The AI tagging means I never have to categorize anything manually.",
-                role: "Undergraduate Researcher, Biology",
+                quote: "The knowledge graph showed me a connection between two papers I'd saved six months apart. That connection ended up being the core argument of my thesis chapter.",
+                role: "Graduate Student, Political Theory",
               },
             ].map((t) => (
               <blockquote
@@ -594,8 +604,8 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section data-reveal className={`${reveal} border-t border-[var(--border)] bg-[var(--background)] py-24`}>
         <div className="mx-auto max-w-3xl px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Start building your personal knowledge base today</h2>
-          <p className="mt-4 text-[var(--muted-foreground)]">Free forever. No credit card required.</p>
+          <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Start building your research network today.</h2>
+          <p className="mt-4 text-[var(--muted-foreground)]">Free forever. No credit card required. Join researchers from leading universities.</p>
           <Link
             href="/login"
             className={`mt-10 inline-flex min-w-[200px] justify-center rounded-lg px-8 py-4 text-base font-semibold text-white ${accentBg} shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400`}
@@ -607,7 +617,7 @@ export default function LandingPage() {
 
       {/* Hidden SEO paragraph */}
       <p className="sr-only">
-        Corpus is a personal knowledge management tool and research paper organizer built for academics, researchers, and students. Save research papers by DOI, web articles by URL, and books by ISBN. Automatically extract keywords and topics with AI. Build a semantic knowledge graph of your reading history. Use as a Zotero alternative, Mendeley alternative, or Readwise alternative for organizing your academic reading list. Available as a Chrome extension for one-click saving from any webpage. Free personal knowledge base software with a Pro plan for unlimited entries and advanced features.
+        Corpus is a collaborative research platform and academic reference manager for researchers, academics, and students. Save research papers by DOI, ArXiv preprints by URL, and books by ISBN. Share papers with your research network, build collaborative reading lists with your lab or study group, and discover connections between sources using a semantic AI knowledge graph. A modern alternative to Zotero, Mendeley, and Readwise for collaborative academic research. Free personal research library with Pro plan for unlimited sources and advanced collaboration features. Used by graduate students, PhD candidates, postdoctoral researchers, and faculty at research universities.
       </p>
 
       {/* Footer */}
