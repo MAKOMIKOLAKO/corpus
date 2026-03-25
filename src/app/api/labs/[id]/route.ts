@@ -3,6 +3,81 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    // Find lab by id
+    const lab = await prisma.lab.findUnique({
+      where: { id: params.id },
+      include: {
+        institution: true,
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                institutionVerifiedAt: true
+              }
+            }
+          },
+          orderBy: { joinedAt: 'asc' }
+        },
+        _count: {
+          select: { members: true }
+        }
+      }
+    });
+
+    if (!lab) {
+      return NextResponse.json({ error: "Lab not found" }, { status: 404 });
+    }
+
+    // Check if user is a member
+    let userRole: 'MEMBER' | 'ADMIN' | null = null;
+    let joinedAt: string | undefined;
+
+    if (session?.user?.id) {
+      const membership = lab.members.find(m => m.userId === session.user.id);
+      if (membership) {
+        userRole = membership.role;
+        joinedAt = membership.joinedAt;
+      }
+    }
+
+    // Remove sensitive info if not a member
+    if (!userRole) {
+      // Only show basic info for non-members
+      const publicLab = {
+        id: lab.id,
+        name: lab.name,
+        slug: lab.slug,
+        description: lab.description,
+        isVerified: lab.isVerified,
+        createdAt: lab.createdAt,
+        institution: lab.institution,
+        _count: lab._count,
+        userRole: null
+      };
+      return NextResponse.json(publicLab);
+    }
+
+    return NextResponse.json({
+      ...lab,
+      userRole,
+      joinedAt
+    });
+  } catch (error) {
+    console.error("Error fetching lab:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }

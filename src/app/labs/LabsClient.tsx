@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { 
-  Building2, 
-  Plus, 
-  Users, 
-  Check, 
-  X, 
-  Mail, 
+import {
+  Building2,
+  Plus,
+  Users,
+  Check,
+  X,
+  Mail,
   Shield,
   Calendar,
   Loader2,
@@ -318,11 +318,11 @@ export default function LabsClient() {
                         )}
                       </Badge>
                     </div>
-                    
+
                     {lab.description && (
                       <p className="text-[var(--muted-foreground)] mb-3">{lab.description}</p>
                     )}
-                    
+
                     <div className="flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
                       <span className="flex items-center gap-1">
                         <Building2 className="w-4 h-4" />
@@ -338,9 +338,9 @@ export default function LabsClient() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <Button asChild>
-                    <a href={`/labs/${lab.slug}`}>
+                    <a href={`/labs/${lab.id}`}>
                       View Lab
                     </a>
                   </Button>
@@ -400,7 +400,7 @@ export default function LabsClient() {
             <p className="text-sm text-[var(--muted-foreground)]">
               Use your institutional email address to verify your affiliation
             </p>
-            
+
             {!verifyingEmail && !confirmingCode && (
               <>
                 <div>
