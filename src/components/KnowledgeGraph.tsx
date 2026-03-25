@@ -34,9 +34,11 @@ interface KnowledgeGraphProps {
   entries: any[];
   width?: number;
   height?: number;
+  isFullscreen?: boolean;
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
-export default function KnowledgeGraph({ entries, width = 800, height = 500 }: KnowledgeGraphProps) {
+export default function KnowledgeGraph({ entries, width = 800, height = 500, isFullscreen = false, onFullscreenChange }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -207,7 +209,12 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
         }
       })
       .attr("text-anchor", "middle")
-      .attr("font-size", "10px")
+      .attr("font-size", (d: GraphNode) => {
+        // Dynamic font size based on zoom level and node type
+        const baseSize = d.type === 'entry' ? 12 : d.type === 'topic' ? 10 : 9;
+        const scaledSize = Math.max(baseSize * Math.sqrt(zoomLevel), 8); // Minimum 8px
+        return `${scaledSize}px`;
+      })
       .attr("fill", "var(--foreground)")
       .style("pointer-events", "none");
 
@@ -221,6 +228,15 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
 
       node
         .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+
+      // Update label font sizes based on current zoom level
+      node.selectAll("text")
+        .attr("font-size", function (d: any) {
+          const nodeData = d as GraphNode;
+          const baseSize = nodeData.type === 'entry' ? 12 : nodeData.type === 'topic' ? 10 : 9;
+          const scaledSize = Math.max(baseSize * Math.sqrt(zoomLevel), 8);
+          return `${scaledSize}px`;
+        });
     });
 
     // Drag functions
@@ -396,6 +412,12 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
     }
   };
 
+  const toggleFullscreen = () => {
+    if (onFullscreenChange) {
+      onFullscreenChange(!isFullscreen);
+    }
+  };
+
   return (
     <div className="relative">
       <svg
@@ -430,6 +452,15 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
         >
           ⟲
         </button>
+        <div className="border-t border-[var(--border)] pt-2">
+          <button
+            onClick={toggleFullscreen}
+            className="w-8 h-8 rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/80 flex items-center justify-center text-xs font-medium transition-colors"
+            title="Toggle Fullscreen (F)"
+          >
+            {isFullscreen ? '⛶' : '⛶'}
+          </button>
+        </div>
       </div>
 
       {/* Graph Legend */}
@@ -453,13 +484,14 @@ export default function KnowledgeGraph({ entries, width = 800, height = 500 }: K
 
       {/* Zoom Instructions */}
       <div className="absolute bottom-4 left-4 bg-[var(--background)]/90 backdrop-blur-sm rounded-lg border border-[var(--border)] p-3 text-xs max-w-xs">
-        <div className="font-semibold mb-2">Zoom Controls</div>
+        <div className="font-semibold mb-2">Graph Controls</div>
         <div className="space-y-1 text-[var(--muted-foreground)]">
           <div>• Mouse wheel: Zoom in/out</div>
           <div>• Click & drag: Pan around</div>
           <div>• Ctrl/Cmd + +: Zoom in</div>
           <div>• Ctrl/Cmd + -: Zoom out</div>
           <div>• Ctrl/Cmd + 0: Reset view</div>
+          <div>• F key: Toggle fullscreen</div>
           <div>• Drag nodes: Reposition</div>
         </div>
       </div>
