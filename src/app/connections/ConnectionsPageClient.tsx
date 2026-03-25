@@ -141,8 +141,8 @@ export default function ConnectionsPageClient() {
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-sm font-medium capitalize transition-colors relative flex items-center gap-2 ${tab === t
-                ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)] -mb-px'
-                : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+              ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)] -mb-px'
+              : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
               }`}
           >
             {t}
@@ -367,11 +367,11 @@ export default function ConnectionsPageClient() {
           </div>
 
           <div className="glass-card rounded-xl border border-[var(--border)] p-4 space-y-3">
-            <h2 className="text-sm font-semibold">Entries you've shared</h2>
+            <h2 className="text-sm font-semibold">Entries you&apos;ve shared</h2>
             {loadingShared ? (
               <p className="text-sm text-[var(--muted-foreground)]">Loading…</p>
             ) : sentEntries.length === 0 ? (
-              <p className="text-sm text-[var(--muted-foreground)]">You haven't shared any entries yet.</p>
+              <p className="text-sm text-[var(--muted-foreground)]">You haven&apos;t shared any entries yet.</p>
             ) : (
               <ul className="space-y-3">
                 {sentEntries.map(s => (
