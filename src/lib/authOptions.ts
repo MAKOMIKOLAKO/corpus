@@ -63,35 +63,24 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ account, profile }) {
       if (account?.provider === "google") {
-        const email = profile?.email;
-        if (!email) return false;
-
-        // Allow any Google user; create/update their User record
-        await withRetry(() => prisma.user.upsert({
-          where: { email },
-          update: {
-            name: profile?.name,
-          },
-          create: {
-            email,
-            name: profile?.name,
-          },
-        }));
-
-        return true;
+        // Validate email is present; actual user creation happens in jwt callback
+        if (!profile?.email) return false;
       }
       return true;
     },
     async jwt({ token, account, profile, user, trigger }) {
       if (account?.provider === "google") {
-        const email = profile?.email ?? token.email;
+        const email = (profile?.email ?? token.email) as string | undefined;
         if (email && typeof (token as any).userId !== "string") {
-          const dbUser = await withRetry(() => prisma.user.findUnique({ where: { email } }));
-          if (dbUser) {
-            (token as any).userId = dbUser.id;
-            (token as any).plan = dbUser.plan || 'FREE';
-            (token as any).username = dbUser.username ?? null;
-          }
+          // Upsert so creation and read are atomic — avoids race with signIn callback
+          const dbUser = await withRetry(() => prisma.user.upsert({
+            where: { email },
+            update: { name: (profile?.name ?? token.name ?? undefined) as string | undefined },
+            create: { email, name: (profile?.name ?? token.name ?? null) as string | null },
+          })) as any;
+          (token as any).userId = dbUser.id;
+          (token as any).plan = dbUser.plan || 'FREE';
+          (token as any).username = dbUser.username ?? null;
         }
       } else if (user?.id) {
         (token as any).userId = user.id;
