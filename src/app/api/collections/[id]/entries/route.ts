@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         const { entryId } = body;
 
         if (!entryId) {
-            return NextResponse.json({ error: 'Entry ID is required' }, { 
+            return NextResponse.json({ error: 'Entry ID is required' }, {
                 status: 400,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         });
 
         if (!collection) {
-            return NextResponse.json({ error: 'Collection not found' }, { 
+            return NextResponse.json({ error: 'Collection not found' }, {
                 status: 404,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         });
 
         if (!entry) {
-            return NextResponse.json({ error: 'Entry not found' }, { 
+            return NextResponse.json({ error: 'Entry not found' }, {
                 status: 404,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         });
 
         if (existingEntry) {
-            return NextResponse.json({ error: 'Entry already in collection' }, { 
+            return NextResponse.json({ error: 'Entry already in collection' }, {
                 status: 409,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
@@ -91,6 +91,31 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
                 collection: true,
             },
         });
+
+        // Create signal for entry added to collection (fire-and-forget)
+        try {
+            // Get the user ID from the API key validation
+            const userId = validation.userId;
+            if (userId) {
+                // Don't await this signal creation
+                prisma.signal.create({
+                    data: {
+                        userId: userId,
+                        type: "ENTRY_ADDED_TO_COLLECTION",
+                        entryId: entryId,
+                        collectionId: params.id,
+                        metadata: {
+                            entryTitle: entry.title,
+                            collectionName: collection.name,
+                            collectionIsPublic: collection.isPublic || false
+                        }
+                    }
+                }).catch(err => console.error("Failed to create signal:", err));
+            }
+        } catch (error) {
+            // Fire-and-forget signal creation
+            console.error("Failed to create signal:", error);
+        }
 
         return NextResponse.json(entryCollection, {
             status: 201,

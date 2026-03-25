@@ -6,11 +6,13 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
 interface CollectionMember {
     id: string;
@@ -32,6 +34,10 @@ interface Collection {
     description: string | null;
     userId: string | null;
     createdAt: string;
+    isPublic?: boolean;
+    publicSlug?: string | null;
+    publicDescription?: string | null;
+    publicViewCount?: number;
     entries: Array<{
         id: string;
         addedAt: string;
@@ -81,6 +87,12 @@ export default function CollectionDetailPage() {
     const [contactsLoading, setContactsLoading] = useState(false);
     const [contactsOpen, setContactsOpen] = useState(false);
 
+    // Share settings state
+    const [isPublic, setIsPublic] = useState(false);
+    const [publicDescription, setPublicDescription] = useState('');
+    const [updatingVisibility, setUpdatingVisibility] = useState(false);
+    const [copiedSlug, setCopiedSlug] = useState(false);
+
     // Use scroll position restoration for collection pages
     useScrollPosition(`collection-${params.id}`);
 
@@ -90,6 +102,13 @@ export default function CollectionDetailPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params.id]);
+
+    useEffect(() => {
+        if (collection) {
+            setIsPublic(collection.isPublic || false);
+            setPublicDescription(collection.publicDescription || '');
+        }
+    }, [collection]);
 
     useEffect(() => {
         if (showInviteModal && contacts.length === 0 && !contactsLoading) {
@@ -246,7 +265,6 @@ export default function CollectionDetailPage() {
 
     const handleLeaveCollection = async () => {
         if (!confirm('Are you sure you want to leave this collection?')) return;
-
         const userMembership = collection?.members?.find(m => m.user.id === session?.user?.id);
         if (!userMembership) return;
 
@@ -263,6 +281,48 @@ export default function CollectionDetailPage() {
             }
         } catch (error) {
             alert('Failed to leave collection');
+        }
+    };
+
+    const handleUpdateVisibility = async () => {
+        setUpdatingVisibility(true);
+        try {
+            const response = await fetch(`/api/collections/${params.id}/visibility`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    isPublic,
+                    publicDescription: isPublic ? publicDescription : null
+                }),
+            });
+
+            if (response.ok) {
+                const updatedCollection = await response.json();
+                setCollection(prev => prev ? { ...prev, ...updatedCollection } : null);
+                toast.success(isPublic ? 'Collection is now public' : 'Collection is now private');
+            } else {
+                const error = await response.json();
+                toast.error(error.error || 'Failed to update visibility');
+            }
+        } catch (error) {
+            toast.error('Failed to update visibility');
+        } finally {
+            setUpdatingVisibility(false);
+        }
+    };
+
+    const handleCopyPublicUrl = async () => {
+        if (!collection?.publicSlug) return;
+        const url = `${window.location.origin}/c/${collection.publicSlug}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedSlug(true);
+            setTimeout(() => setCopiedSlug(false), 2000);
+            toast.success('Public URL copied to clipboard');
+        } catch (error) {
+            toast.error('Failed to copy URL');
         }
     };
 
@@ -313,8 +373,120 @@ export default function CollectionDetailPage() {
                 )}
                 <p className="text-sm text-muted-foreground mt-2">
                     {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                    {collection.isPublic && (
+                        <span className="ml-2 inline-flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            {collection.publicViewCount || 0} views
+                        </span>
+                    )}
                 </p>
             </div>
+
+            {/* Share Settings Section - Only visible to owner */}
+            {isOwner && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Share Settings
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <label className="text-sm font-medium">Make this collection public</label>
+                                <p className="text-xs text-muted-foreground">
+                                    Anyone with the link can view this collection
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsPublic(!isPublic)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPublic ? 'bg-primary' : 'bg-muted'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
+                        </div>
+
+                        {isPublic && (
+                            <>
+                                {collection.publicSlug && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Public URL</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={`${window.location.origin}/c/${collection.publicSlug}`}
+                                                className="flex-1 px-3 py-2 text-sm bg-muted border rounded-md"
+                                            />
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={handleCopyPublicUrl}
+                                            >
+                                                {copiedSlug ? (
+                                                    <Check className="w-4 h-4" />
+                                                ) : (
+                                                    <Copy className="w-4 h-4" />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                asChild
+                                            >
+                                                <a
+                                                    href={`/c/${collection.publicSlug}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Public description</label>
+                                    <Textarea
+                                        placeholder="Describe this collection for visitors..."
+                                        value={publicDescription}
+                                        onChange={(e) => setPublicDescription(e.target.value)}
+                                        maxLength={280}
+                                        rows={3}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        {publicDescription.length}/280 characters
+                                    </p>
+                                </div>
+
+                                <Button
+                                    onClick={handleUpdateVisibility}
+                                    disabled={updatingVisibility}
+                                    size="sm"
+                                >
+                                    {updatingVisibility ? 'Updating...' : 'Save Changes'}
+                                </Button>
+                            </>
+                        )}
+
+                        {!isPublic && collection.isPublic !== isPublic && (
+                            <Button
+                                onClick={handleUpdateVisibility}
+                                disabled={updatingVisibility}
+                                size="sm"
+                            >
+                                {updatingVisibility ? 'Updating...' : 'Make Private'}
+                            </Button>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Members Section */}
             {(isOwner || (collection.members && collection.members.length > 0)) && (

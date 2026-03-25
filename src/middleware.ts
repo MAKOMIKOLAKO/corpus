@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/privacy", "/pricing", "/forgot-password"]);
-const PUBLIC_PREFIXES = ["/reset-password/", "/verify-email/"];
+const PUBLIC_PREFIXES = ["/reset-password/", "/verify-email/", "/c/"];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

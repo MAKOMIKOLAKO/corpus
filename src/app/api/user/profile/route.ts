@@ -11,7 +11,25 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, username: true, name: true, bio: true, plan: true, createdAt: true, email: true },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      bio: true,
+      plan: true,
+      createdAt: true,
+      email: true,
+      showSignals: true,
+      institutionId: true,
+      institutionVerifiedAt: true,
+      institution: {
+        select: {
+          id: true,
+          name: true,
+          domain: true
+        }
+      }
+    },
   });
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -22,7 +40,7 @@ export async function PATCH(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { username, bio } = await request.json();
+  const { username, bio, showSignals } = await request.json();
 
   if (!username) return NextResponse.json({ error: 'Username is required' }, { status: 400 });
   if (!USERNAME_REGEX.test(username)) {
@@ -43,8 +61,20 @@ export async function PATCH(request: NextRequest) {
   try {
     const updated = await prisma.user.update({
       where: { id: session.user.id },
-      data: { username, bio: bio || null },
-      select: { id: true, username: true, name: true, bio: true, plan: true, createdAt: true },
+      data: {
+        username,
+        bio: bio || null,
+        ...(showSignals !== undefined && { showSignals })
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        bio: true,
+        plan: true,
+        createdAt: true,
+        showSignals: true
+      },
     });
     return NextResponse.json(updated);
   } catch (e: any) {

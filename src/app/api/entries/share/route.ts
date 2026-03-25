@@ -58,5 +58,24 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  // Create signal for paper shared (fire-and-forget)
+  try {
+    // Don't await this signal creation
+    prisma.signal.create({
+      data: {
+        userId: userId,
+        type: "PAPER_SHARED",
+        entryId: entryId,
+        metadata: {
+          entryTitle: shared.entry.title,
+          receiverUsername: shared.receiver.username || shared.receiver.name
+        }
+      }
+    }).catch(err => console.error("Failed to create signal:", err));
+  } catch (error) {
+    // Fire-and-forget signal creation
+    console.error("Failed to create signal:", error);
+  }
+
   return NextResponse.json(shared, { status: 201 });
 }
