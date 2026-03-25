@@ -13,6 +13,7 @@ import KnowledgeGraph from '@/components/KnowledgeGraph';
 export default function GraphPage() {
     const [loading, setLoading] = useState(true);
     const [entries, setEntries] = useState<any[]>([]);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [graphStats, setGraphStats] = useState({
         totalEntries: 0,
         totalKeywords: 0,
@@ -25,6 +26,21 @@ export default function GraphPage() {
     useEffect(() => {
         fetchEntries();
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'f' || event.key === 'F') {
+                event.preventDefault();
+                setIsFullscreen(!isFullscreen);
+            }
+            if (event.key === 'Escape' && isFullscreen) {
+                setIsFullscreen(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isFullscreen]);
 
     const fetchEntries = async () => {
         try {
@@ -160,66 +176,121 @@ export default function GraphPage() {
                     <p className="text-sm text-muted-foreground">add some entries to see their connections in the knowledge graph.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Knowledge Graph Visualization</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <KnowledgeGraph entries={entries} />
-                            </CardContent>
-                        </Card>
-                    </div>
+                <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-[var(--background)]' : ''}`}>
+                    <div className={`grid ${isFullscreen ? 'grid-cols-12 h-full' : 'grid-cols-1 lg:grid-cols-3'} gap-6 h-full`}>
+                        <div className={isFullscreen ? 'col-span-10' : 'lg:col-span-2'}>
+                            <Card className={isFullscreen ? 'h-full border-0 shadow-none bg-transparent' : ''}>
+                                {!isFullscreen && (
+                                    <CardHeader>
+                                        <CardTitle>Knowledge Graph Visualization</CardTitle>
+                                    </CardHeader>
+                                )}
+                                <CardContent className={isFullscreen ? 'h-full p-0' : ''}>
+                                    <KnowledgeGraph
+                                        entries={entries}
+                                        isFullscreen={isFullscreen}
+                                        onFullscreenChange={setIsFullscreen}
+                                        height={isFullscreen ? window.innerHeight : 500}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                    <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Graph Statistics</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div>
-                                        <div className="text-2xl font-bold">{graphStats.totalEntries}</div>
-                                        <div className="text-sm text-muted-foreground">Total Entries</div>
+                        <div className={isFullscreen ? 'col-span-2' : 'space-y-6'}>
+                            {isFullscreen ? (
+                                <div className="h-full overflow-y-auto space-y-4 p-4">
+                                    <div className="bg-[var(--card)] rounded-lg border border-[var(--border)] p-4">
+                                        <h3 className="font-semibold mb-3">Graph Statistics</h3>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <div className="text-xl font-bold">{graphStats.totalEntries}</div>
+                                                <div className="text-xs text-muted-foreground">Total Entries</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xl font-bold">{graphStats.totalConnections}</div>
+                                                <div className="text-xs text-muted-foreground">Connections</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xl font-bold">{graphStats.totalKeywords}</div>
+                                                <div className="text-xs text-muted-foreground">Unique Keywords</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xl font-bold">{graphStats.totalTopics}</div>
+                                                <div className="text-xs text-muted-foreground">Topics</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div className="text-2xl font-bold">{graphStats.totalConnections}</div>
-                                        <div className="text-sm text-muted-foreground">Connections</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold">{graphStats.totalKeywords}</div>
-                                        <div className="text-sm text-muted-foreground">Unique Keywords</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold">{graphStats.totalTopics}</div>
-                                        <div className="text-sm text-muted-foreground">Topics</div>
+
+                                    <div className="bg-[var(--card)] rounded-lg border border-[var(--border)] p-4">
+                                        <h3 className="font-semibold mb-3">Graph Controls</h3>
+                                        <div className="space-y-2">
+                                            <Button variant="outline" className="w-full" onClick={handleResetView}>
+                                                <RotateCcw className="w-4 h-4 mr-2" />
+                                                Reset View
+                                            </Button>
+                                            <Button variant="outline" className="w-full" onClick={handleExportGraph}>
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Export Graph
+                                            </Button>
+                                            <Button variant="outline" className="w-full" onClick={handleFilterByTopic}>
+                                                <Filter className="w-4 h-4 mr-2" />
+                                                Filter by Topic
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            ) : (
+                                <div className="space-y-6">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Graph Statistics</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="text-2xl font-bold">{graphStats.totalEntries}</div>
+                                                    <div className="text-sm text-muted-foreground">Total Entries</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-2xl font-bold">{graphStats.totalConnections}</div>
+                                                    <div className="text-sm text-muted-foreground">Connections</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-2xl font-bold">{graphStats.totalKeywords}</div>
+                                                    <div className="text-sm text-muted-foreground">Unique Keywords</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-2xl font-bold">{graphStats.totalTopics}</div>
+                                                    <div className="text-sm text-muted-foreground">Topics</div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Graph Controls</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    <Button variant="outline" className="w-full" onClick={handleResetView}>
-                                        <RotateCcw className="w-4 h-4 mr-2" />
-                                        Reset View
-                                    </Button>
-                                    <Button variant="outline" className="w-full" onClick={handleExportGraph}>
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Export Graph
-                                    </Button>
-                                    <Button variant="outline" className="w-full" onClick={handleFilterByTopic}>
-                                        <Filter className="w-4 h-4 mr-2" />
-                                        Filter by Topic
-                                    </Button>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Graph Controls</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3">
+                                                <Button variant="outline" className="w-full" onClick={handleResetView}>
+                                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                                    Reset View
+                                                </Button>
+                                                <Button variant="outline" className="w-full" onClick={handleExportGraph}>
+                                                    <Download className="w-4 h-4 mr-2" />
+                                                    Export Graph
+                                                </Button>
+                                                <Button variant="outline" className="w-full" onClick={handleFilterByTopic}>
+                                                    <Filter className="w-4 h-4 mr-2" />
+                                                    Filter by Topic
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
