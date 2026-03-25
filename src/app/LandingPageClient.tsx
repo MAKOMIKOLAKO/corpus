@@ -416,99 +416,117 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
-        <div className="mx-auto max-w-6xl px-4">
+        <div className="mx-auto max-w-4xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Simple pricing for researchers and students</h2>
-            <p className="mt-4 text-zinc-400">Start free. Upgrade when you&apos;re ready.</p>
+            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Simple, transparent pricing</h2>
+            <p className="mt-4 text-[var(--muted-foreground)]">Start free, upgrade when you need more power</p>
           </div>
 
-          <div data-reveal className={`${reveal} mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row`}>
-            <span className="text-sm text-zinc-500">Billing</span>
-            <div className="inline-flex rounded-full border border-white/10 bg-zinc-900/50 p-1">
-              <button
-                type="button"
-                onClick={() => setBilling("monthly")}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${billing === "monthly" ? `${accentBg} text-white` : "text-zinc-400 hover:text-white"}`}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setBilling("annual")}
-                className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition ${billing === "annual" ? `${accentBg} text-white` : "text-zinc-400 hover:text-white"}`}
-              >
-                Annual
-                <span className="absolute -right-1 -top-2 rounded-full border border-indigo-400/40 bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-200">2 months free</span>
-              </button>
-            </div>
-          </div>
+          <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-2`}>
+            {/* Free Plan */}
+            <div className="relative flex flex-col rounded-2xl border-[var(--border)] bg-[var(--card)] p-8">
+              <div className="mb-8">
+                <h3 className="text-2xl font-semibold text-[var(--foreground)]">Free</h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-5xl font-bold text-[var(--foreground)]">$0</span>
+                  <span className="text-[var(--muted-foreground)]">/month</span>
+                </div>
+                <p className="mt-2 text-sm text-[var(--muted-foreground)]">Perfect for getting started</p>
+              </div>
 
-          <div className="mt-14 grid gap-8 lg:grid-cols-2 lg:items-stretch">
-            <div data-reveal className={`${reveal} flex flex-col rounded-2xl border border-white/[0.08] bg-zinc-900/25 p-8`}>
-              <h3 className="text-lg font-semibold text-white">Free</h3>
-              <p className="mt-4">
-                <span className="text-4xl font-bold text-white">$0</span>
-                <span className="text-zinc-500">/month</span>
-              </p>
-              <ul className="mt-8 flex-1 space-y-3 text-sm">
+              <ul className="mb-8 space-y-4">
                 {[
-                  { ok: true, t: "Up to 100 entries" },
-                  { ok: true, t: "All content types" },
-                  { ok: true, t: "AI keyword extraction" },
-                  { ok: true, t: "Full search and filtering" },
-                  { ok: true, t: "Chrome extension" },
-                  { ok: false, t: "Collections" },
-                  { ok: false, t: "Knowledge graph" },
-                ].map((item) => (
-                  <li key={item.t} className={`flex items-start gap-2 ${!item.ok ? "text-zinc-600" : "text-zinc-300"}`}>
-                    <span className={item.ok ? "text-indigo-400" : "text-zinc-600"}>{item.ok ? "✓" : "✗"}</span>
-                    {item.t}
+                  "Up to 100 entries",
+                  "All content types supported",
+                  "AI-powered keyword extraction",
+                  "Full search and filtering",
+                  "Chrome extension included"
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center gap-3">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
+                      <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-[var(--foreground)]">{feature}</span>
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/login"
-                className="mt-10 inline-flex justify-center rounded-lg border border-white/15 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.05]"
-              >
-                Get Started Free
-              </Link>
+
+              <div className="mt-auto">
+                <Link
+                  href="/login"
+                  className="block w-full rounded-lg border-[var(--border)] bg-[var(--background)] py-3 text-center font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+                >
+                  Get Started Free
+                </Link>
+              </div>
             </div>
 
-            <div
-              data-reveal
-              className={`${reveal} relative flex flex-col rounded-2xl border-2 border-indigo-500/50 bg-zinc-900/40 p-8 shadow-xl shadow-indigo-500/10 lg:scale-[1.02]`}
-            >
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-indigo-400/40 bg-indigo-500/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">Most popular</span>
-              <h3 className="text-lg font-semibold text-white">Pro</h3>
-              <p className="mt-4">
-                {billing === "monthly" ? (
-                  <>
-                    <span className="text-4xl font-bold text-white">$6</span>
-                    <span className="text-zinc-500">/month</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-4xl font-bold text-white">$4</span>
-                    <span className="text-zinc-500">/month</span>
-                    <span className="mt-2 block text-sm text-zinc-500">billed annually</span>
-                  </>
-                )}
-              </p>
-              <ul className="mt-8 flex-1 space-y-3 text-sm text-zinc-300">
-                {["Unlimited entries", "Everything in Free", "Collections", "Knowledge graph", "Priority support"].map((t) => (
-                  <li key={t} className="flex items-start gap-2">
-                    <span className="text-indigo-400">✓</span>
-                    {t}
+            {/* Pro Plan */}
+            <div className="relative flex flex-col rounded-2xl border-2 border-[var(--accent)] bg-[var(--card)] p-8 shadow-lg">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-4 py-1 text-xs font-semibold text-[var(--accent-foreground)]">
+                Most Popular
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-2xl font-semibold text-[var(--foreground)]">Pro</h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-5xl font-bold text-[var(--foreground)]">
+                    {billing === "monthly" ? "$6" : "$4"}
+                  </span>
+                  <span className="text-[var(--muted-foreground)]">/month</span>
+                </div>
+                <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                  {billing === "monthly" ? "Billed monthly" : "Billed annually (save 33%)"}
+                </p>
+              </div>
+
+              <ul className="mb-8 space-y-4">
+                {[
+                  "Unlimited entries",
+                  "Everything in Free",
+                  "Collections & organization",
+                  "Knowledge graph visualization",
+                  "Priority support",
+                  "Advanced AI features"
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center gap-3">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
+                      <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-[var(--foreground)]">{feature}</span>
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/pricing"
-                className={`mt-10 inline-flex justify-center rounded-lg py-3 text-sm font-semibold text-white ${accentBg} shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-400`}
-              >
-                Upgrade to Pro
-              </Link>
+
+              <div className="mt-auto">
+                <Link
+                  href="/pricing"
+                  className={`block w-full rounded-lg bg-[var(--accent)] py-3 text-center font-medium text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent)]/90 corpus-glow`}
+                >
+                  Start Pro Trial
+                </Link>
+              </div>
             </div>
+          </div>
+
+          <div data-reveal className={`${reveal} mt-8 flex justify-center gap-4 text-sm text-[var(--muted-foreground)]`}>
+            <button
+              onClick={() => setBilling("monthly")}
+              className={`rounded-full px-4 py-2 font-medium transition ${billing === "monthly" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling("annual")}
+              className={`rounded-full px-4 py-2 font-medium transition ${billing === "annual" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Annual
+              <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save 33%</span>
+            </button>
           </div>
         </div>
       </section>
