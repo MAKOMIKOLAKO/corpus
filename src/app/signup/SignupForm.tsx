@@ -13,10 +13,12 @@ export default function SignupForm() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSignupError(null);
     const result = await signIn("credentials", {
       email,
       password,
@@ -25,7 +27,7 @@ export default function SignupForm() {
       redirect: false,
     });
     if (result?.error) {
-      console.error("Signup error:", result.error);
+      setSignupError("Could not create account. The email may already be registered — try signing in instead.");
     } else {
       window.location.href = callbackUrl;
     }
@@ -89,9 +91,9 @@ export default function SignupForm() {
           />
         </div>
 
-        {errorMessage && (
-          <div className="text-sm font-medium text-red-500">
-            {errorMessage}
+        {(errorMessage || signupError) && (
+          <div className="text-sm font-medium text-red-500 bg-red-50 border border-red-200 rounded-md p-3">
+            {signupError || errorMessage}
           </div>
         )}
 
