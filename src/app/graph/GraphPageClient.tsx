@@ -3,15 +3,22 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Network, Loader2 } from 'lucide-react';
+import { Network, Loader2, Download, Filter, RotateCcw } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
+import KnowledgeGraph from '@/components/KnowledgeGraph';
 
 export default function GraphPage() {
     const [loading, setLoading] = useState(true);
     const [entries, setEntries] = useState<any[]>([]);
+    const [graphStats, setGraphStats] = useState({
+        totalEntries: 0,
+        totalKeywords: 0,
+        totalTopics: 0,
+        totalConnections: 0
+    });
     const apiKey = useApiKey();
     const { data: session } = useSession();
 
@@ -25,12 +32,78 @@ export default function GraphPage() {
             if (response.ok) {
                 const data = await response.json();
                 setEntries(data);
+                calculateGraphStats(data);
             }
         } catch (error) {
             console.error('Error fetching entries:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const calculateGraphStats = (entries: any[]) => {
+        const keywordSet = new Set<string>();
+        const topicSet = new Set<string>();
+        let connections = 0;
+
+        entries.forEach(entry => {
+            // Count keywords
+            (entry.autoKeywords || []).forEach((keyword: string) => keywordSet.add(keyword));
+
+            // Count topics (if available)
+            (entry.topics || []).forEach((topic: string) => topicSet.add(topic));
+        });
+
+        // Calculate potential connections (entries with 2+ shared keywords)
+        for (let i = 0; i < entries.length; i++) {
+            for (let j = i + 1; j < entries.length; j++) {
+                const keywords1 = new Set(entries[i].autoKeywords || []);
+                const keywords2 = new Set(entries[j].autoKeywords || []);
+                const intersection = new Set(Array.from(keywords1).filter(x => keywords2.has(x)));
+                if (intersection.size > 1) connections++;
+            }
+        }
+
+        setGraphStats({
+            totalEntries: entries.length,
+            totalKeywords: keywordSet.size,
+            totalTopics: topicSet.size,
+            totalConnections: connections
+        });
+    };
+
+    const handleResetView = () => {
+        // Force re-render of the graph component
+        setEntries([...entries]);
+    };
+
+    const handleExportGraph = () => {
+        // Create a simple text export of the graph data
+        const exportData = {
+            entries: entries.map(e => ({
+                title: e.title,
+                keywords: e.autoKeywords,
+                authors: e.authors,
+                year: e.year
+            })),
+            statistics: graphStats,
+            exportedAt: new Date().toISOString()
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'knowledge-graph-export.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleFilterByTopic = () => {
+        // This could open a modal or filter UI - for now just reload
+        fetchEntries();
     };
 
     if (loading) {
@@ -45,12 +118,12 @@ export default function GraphPage() {
         <div className="space-y-6">
             {/* Upgrade Banner for Graph Feature */}
             {!hasPaidFeature(session?.user || null, 'graph') && (
-                <UpgradeBanner 
+                <UpgradeBanner
                     message="The knowledge graph is a Pro feature. Upgrade to unlock visual connections between your entries."
                     ctaText="Upgrade to Pro"
                 />
             )}
-            
+
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-xl font-medium tracking-tight">knowledge graph</h2>
@@ -94,19 +167,11 @@ export default function GraphPage() {
                                 <CardTitle>Knowledge Graph Visualization</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="h-[500px] bg-muted/20 rounded-lg flex items-center justify-center">
-                                    <div className="text-center">
-                                        <Network className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                                        <p className="text-muted-foreground">Interactive graph visualization coming soon</p>
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            Found {entries.length} entries to visualize
-                                        </p>
-                                    </div>
-                                </div>
+                                <KnowledgeGraph entries={entries} />
                             </CardContent>
                         </Card>
                     </div>
-                    
+
                     <div className="space-y-6">
                         <Card>
                             <CardHeader>
@@ -115,15 +180,19 @@ export default function GraphPage() {
                             <CardContent>
                                 <div className="space-y-4">
                                     <div>
-                                        <div className="text-2xl font-bold">{entries.length}</div>
+                                        <div className="text-2xl font-bold">{graphStats.totalEntries}</div>
                                         <div className="text-sm text-muted-foreground">Total Entries</div>
                                     </div>
                                     <div>
-                                        <div className="text-2xl font-bold">0</div>
+                                        <div className="text-2xl font-bold">{graphStats.totalConnections}</div>
                                         <div className="text-sm text-muted-foreground">Connections</div>
                                     </div>
                                     <div>
-                                        <div className="text-2xl font-bold">0</div>
+                                        <div className="text-2xl font-bold">{graphStats.totalKeywords}</div>
+                                        <div className="text-sm text-muted-foreground">Unique Keywords</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold">{graphStats.totalTopics}</div>
                                         <div className="text-sm text-muted-foreground">Topics</div>
                                     </div>
                                 </div>
@@ -136,13 +205,16 @@ export default function GraphPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
-                                    <Button variant="outline" className="w-full">
+                                    <Button variant="outline" className="w-full" onClick={handleResetView}>
+                                        <RotateCcw className="w-4 h-4 mr-2" />
                                         Reset View
                                     </Button>
-                                    <Button variant="outline" className="w-full">
+                                    <Button variant="outline" className="w-full" onClick={handleExportGraph}>
+                                        <Download className="w-4 h-4 mr-2" />
                                         Export Graph
                                     </Button>
-                                    <Button variant="outline" className="w-full">
+                                    <Button variant="outline" className="w-full" onClick={handleFilterByTopic}>
+                                        <Filter className="w-4 h-4 mr-2" />
                                         Filter by Topic
                                     </Button>
                                 </div>
