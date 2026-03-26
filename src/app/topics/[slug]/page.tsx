@@ -1,10 +1,8 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import TopicPage from './TopicPage'
 import SEOLayoutWrapper from '@/components/SEOLayoutWrapper'
-
-const prisma = new PrismaClient()
 
 interface Props {
   params: { slug: string }
