@@ -143,7 +143,7 @@ export async function GET(request: Request) {
       unreadCount = 0;
     }
 
-    // Filter out signals about private collections for non-members
+    // Filter out signals about private collections for non-members and connection signals
     const filteredSignals = (signals || []).filter(signal => {
       if (signal.type === "COLLECTION_MADE_PUBLIC") {
         return true; // Public collection signals are always visible
@@ -156,6 +156,20 @@ export async function GET(request: Request) {
         // Only show to sender and receiver
         const metadata = signal.metadata as { receiverUsername?: string } | null;
         return signal.userId === user.id || metadata?.receiverUsername === user.username;
+      }
+      if (signal.type === "CONNECTION_MADE") {
+        // Only show CONNECTION_MADE signals when the current user's connection request was accepted
+        // This means the current user should be the one who sent the request
+        const metadata = signal.metadata as { connectedUserId?: string, requesterId?: string, receiverId?: string } | null;
+
+        // Check if this signal is about the current user's sent connection being accepted
+        // The signal should be from the person who accepted the request (receiver) 
+        // and the metadata should indicate the current user was the requester
+        if (signal.userId !== user.id && metadata?.requesterId === user.id) {
+          return true;
+        }
+
+        return false;
       }
       return true;
     });

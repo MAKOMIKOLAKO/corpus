@@ -16,7 +16,7 @@ export async function OPTIONS(request: NextRequest) {
         process.env.NEXTAUTH_URL || 'http://localhost:3000',
         'http://localhost:3000',
         'http://localhost:3001',
-        'https://corpus-lemon.vercel.app'
+        'https://usecorpus.app'
     ];
     const origin = request.headers.get('origin');
     const isAllowedOrigin = allowedOrigins.some(allowed =>
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
             process.env.NEXTAUTH_URL || 'http://localhost:3000',
             'http://localhost:3000',
             'http://localhost:3001',
-            'https://corpus-lemon.vercel.app'
+            'https://usecorpus.app'
         ];
         const origin = request.headers.get('origin');
         const isAllowedOrigin = allowedOrigins.some(allowed =>

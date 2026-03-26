@@ -164,7 +164,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? process.env.NEXTAUTH_URL?.includes('usecorpus.app') ? 'usecorpus.app' : 'corpus-lemon.vercel.app'
+          ? 'usecorpus.app'
           : 'localhost'
       }
     },
@@ -176,7 +176,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? process.env.NEXTAUTH_URL?.includes('usecorpus.app') ? 'usecorpus.app' : 'corpus-lemon.vercel.app'
+          ? 'usecorpus.app'
           : 'localhost'
       }
     },
@@ -188,7 +188,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? process.env.NEXTAUTH_URL?.includes('usecorpus.app') ? 'usecorpus.app' : 'corpus-lemon.vercel.app'
+          ? 'usecorpus.app'
           : 'localhost'
       }
     }

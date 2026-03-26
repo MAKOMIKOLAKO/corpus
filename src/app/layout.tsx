@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://corpus-lemon.vercel.app'),
+  metadataBase: new URL('https://usecorpus.app'),
   title: {
     default: 'Corpus — Personal Knowledge Indexing for Researchers',
     template: '%s | Corpus'
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Corpus' }],
   creator: 'Corpus',
   verification: {
-    google: 'iYNYU8hznL0W3Xoiyix9ij1eN_tSPbtKQ7YjezmLE4k'
+    google: 'PASTE_YOUR_VERIFICATION_CODE_HERE'
   },
   openGraph: {
     type: 'website',
