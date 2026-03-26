@@ -86,6 +86,8 @@ export default function CollectionDetailPage() {
     const [contacts, setContacts] = useState<Array<{ id: string; name: string | null; email: string; username: string | null }>>([]);
     const [contactsLoading, setContactsLoading] = useState(false);
     const [contactsOpen, setContactsOpen] = useState(false);
+    const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string | null; email: string; username: string | null }>>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
 
     // Share settings state
     const [isPublic, setIsPublic] = useState(false);
@@ -144,6 +146,33 @@ export default function CollectionDetailPage() {
             console.error('Error fetching collection:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const searchUsers = async (query: string) => {
+        if (!query.trim()) {
+            setSearchResults([]);
+            return;
+        }
+
+        setSearchLoading(true);
+        try {
+            const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+            if (res.ok) {
+                const data = await res.json();
+                // Transform the search results to match our contact structure
+                const transformedResults = data.map((user: any) => ({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email || `${user.username}@example.com`, // Add placeholder email if missing
+                    username: user.username
+                }));
+                setSearchResults(transformedResults);
+            }
+        } catch (e) {
+            console.error('Error searching users:', e);
+        } finally {
+            setSearchLoading(false);
         }
     };
 
@@ -623,42 +652,83 @@ export default function CollectionDetailPage() {
                                     <input
                                         type="text"
                                         value={inviteEmail}
-                                        onChange={(e) => { setInviteEmail(e.target.value); setContactsOpen(true); }}
+                                        onChange={(e) => {
+                                            setInviteEmail(e.target.value);
+                                            setContactsOpen(true);
+                                            searchUsers(e.target.value);
+                                        }}
                                         onFocus={() => setContactsOpen(true)}
                                         onBlur={() => setTimeout(() => setContactsOpen(false), 150)}
                                         placeholder="user@example.com or @username"
                                         className="w-full px-3 py-2 border rounded-md bg-background text-sm"
                                         autoComplete="off"
                                     />
-                                    {contactsOpen && (inviteEmail.length === 0 || inviteEmail.length >= 1) && contacts.length > 0 && (
+                                    {contactsOpen && (
                                         <div className="absolute z-10 mt-1 w-full bg-background border border-border rounded-md shadow-sm max-h-56 overflow-auto">
-                                            {contacts
-                                                .filter(c =>
-                                                    // Exclude current user and match by email, name, or username
-                                                    c.email.toLowerCase() !== (session?.user?.email || '').toLowerCase() && (
-                                                        c.email.toLowerCase().includes(inviteEmail.toLowerCase()) ||
-                                                        (c.name || '').toLowerCase().includes(inviteEmail.toLowerCase()) ||
-                                                        (c.username || '').toLowerCase().includes(inviteEmail.toLowerCase())
-                                                    )
-                                                )
-                                                .slice(0, 8)
-                                                .map(c => (
-                                                    <button
-                                                        type="button"
-                                                        key={c.id}
-                                                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
-                                                        onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
-                                                    >
-                                                        <div className="flex flex-col">
-                                                            <span className="font-medium">{c.name || c.email}</span>
-                                                            <div className="text-muted-foreground text-xs">
-                                                                {c.username && <span>@{c.username}</span>}
-                                                                {c.username && c.email && <span className="mx-1">•</span>}
-                                                                {c.email && <span>{c.email}</span>}
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                ))}
+                                            {/* Show loading indicator */}
+                                            {searchLoading && (
+                                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                                    Searching...
+                                                </div>
+                                            )}
+
+                                            {/* Show search results if query is typed */}
+                                            {inviteEmail.length >= 1 && !searchLoading && (
+                                                <>
+                                                    {searchResults
+                                                        .filter(c =>
+                                                            // Exclude current user
+                                                            c.email.toLowerCase() !== (session?.user?.email || '').toLowerCase() &&
+                                                            c.id !== session?.user?.id
+                                                        )
+                                                        .slice(0, 5)
+                                                        .map(c => (
+                                                            <button
+                                                                type="button"
+                                                                key={`search-${c.id}`}
+                                                                className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                                                                onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
+                                                            >
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-medium">{c.name || c.email}</span>
+                                                                    <div className="text-muted-foreground text-xs">
+                                                                        {c.username && <span>@{c.username}</span>}
+                                                                        {c.username && c.email && <span className="mx-1">•</span>}
+                                                                        {c.email && <span>{c.email}</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                </>
+                                            )}
+
+                                            {/* Show existing contacts if no query or as fallback */}
+                                            {inviteEmail.length === 0 && contacts.length > 0 && (
+                                                <>
+                                                    <div className="px-3 py-2 text-xs text-muted-foreground font-medium border-b">
+                                                        Recent Contacts
+                                                    </div>
+                                                    {contacts
+                                                        .slice(0, 5)
+                                                        .map(c => (
+                                                            <button
+                                                                type="button"
+                                                                key={`contact-${c.id}`}
+                                                                className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                                                                onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
+                                                            >
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-medium">{c.name || c.email}</span>
+                                                                    <div className="text-muted-foreground text-xs">
+                                                                        {c.username && <span>@{c.username}</span>}
+                                                                        {c.username && c.email && <span className="mx-1">•</span>}
+                                                                        {c.email && <span>{c.email}</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
