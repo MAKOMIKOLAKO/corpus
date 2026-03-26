@@ -25,10 +25,11 @@ export default function AccountPage() {
     const [loadingCollections, setLoadingCollections] = useState(true);
 
     // Profile state
-    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; institution?: any } | null>(null);
+    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; name: string | null; institution?: any } | null>(null);
     const [editingProfile, setEditingProfile] = useState(false);
     const [profileUsername, setProfileUsername] = useState('');
     const [profileBio, setProfileBio] = useState('');
+    const [profileName, setProfileName] = useState('');
     const [showSignals, setShowSignals] = useState(true);
     const [savingProfile, setSavingProfile] = useState(false);
     const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -62,6 +63,7 @@ export default function AccountPage() {
                 setProfile(data);
                 setProfileUsername(data.username || '');
                 setProfileBio(data.bio || '');
+                setProfileName(data.name || '');
                 setShowSignals(data.showSignals !== false);
             }
         } catch { }
@@ -75,7 +77,7 @@ export default function AccountPage() {
             const res = await fetch('/api/user/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: profileUsername, bio: profileBio, showSignals }),
+                body: JSON.stringify({ username: profileUsername, bio: profileBio, name: profileName, showSignals }),
             });
             const data = await res.json();
             if (res.ok) {
@@ -320,6 +322,17 @@ export default function AccountPage() {
                     {editingProfile ? (
                         <form onSubmit={handleSaveProfile} className="space-y-4">
                             <div className="space-y-1">
+                                <Label htmlFor="settingsName">Name</Label>
+                                <Input
+                                    id="settingsName"
+                                    type="text"
+                                    value={profileName}
+                                    onChange={e => setProfileName(e.target.value)}
+                                    placeholder="Your name"
+                                    maxLength={100}
+                                />
+                            </div>
+                            <div className="space-y-1">
                                 <Label htmlFor="settingsUsername">Username</Label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] text-sm select-none">@</span>
@@ -379,13 +392,17 @@ export default function AccountPage() {
                                 <Button type="submit" disabled={savingProfile}>
                                     {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
                                 </Button>
-                                <Button type="button" variant="outline" onClick={() => { setEditingProfile(false); setProfileUsername(profile?.username || ''); setProfileBio(profile?.bio || ''); setProfileMsg(null); }}>
+                                <Button type="button" variant="outline" onClick={() => { setEditingProfile(false); setProfileUsername(profile?.username || ''); setProfileBio(profile?.bio || ''); setProfileName(profile?.name || ''); setProfileMsg(null); }}>
                                     Cancel
                                 </Button>
                             </div>
                         </form>
                     ) : (
                         <div className="space-y-3">
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Name</Label>
+                                <p className="text-sm mt-0.5">{profile?.name || <span className="text-[var(--muted-foreground)] italic">Not set</span>}</p>
+                            </div>
                             <div>
                                 <Label className="text-sm font-medium text-muted-foreground">Username</Label>
                                 <p className="text-sm mt-0.5">{profile?.username ? `@${profile.username}` : <span className="text-[var(--muted-foreground)] italic">Not set</span>}</p>

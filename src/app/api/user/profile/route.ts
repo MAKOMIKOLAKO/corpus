@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { username, bio, showSignals } = await request.json();
+  const { username, bio, showSignals, name } = await request.json();
 
   if (!username) return NextResponse.json({ error: 'Username is required' }, { status: 400 });
   if (!USERNAME_REGEX.test(username)) {
@@ -52,6 +52,9 @@ export async function PATCH(request: NextRequest) {
   }
   if (bio && bio.length > 160) {
     return NextResponse.json({ error: 'Bio must be 160 characters or fewer' }, { status: 400 });
+  }
+  if (name && name.length > 100) {
+    return NextResponse.json({ error: 'Name must be 100 characters or fewer' }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { username }, select: { id: true } });
@@ -65,6 +68,7 @@ export async function PATCH(request: NextRequest) {
       data: {
         username,
         bio: bio || null,
+        ...(name !== undefined && { name }),
         ...(showSignals !== undefined && { showSignals })
       },
       select: {
