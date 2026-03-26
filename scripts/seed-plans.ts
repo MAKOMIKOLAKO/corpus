@@ -30,14 +30,9 @@ async function seedPlans() {
       where: { plan: 'PRO' }
     });
 
-    const lifetimeProUsers = await (prisma as any).user.count({
-      where: { plan: 'LIFETIME_PRO' }
-    });
-
     console.log(`Plan distribution:`);
     console.log(`- FREE: ${freeUsers} users`);
     console.log(`- PRO: ${proUsers} users`);
-    console.log(`- LIFETIME_PRO: ${lifetimeProUsers} users`);
 
   } catch (error) {
     console.error('Error seeding plans:', error);

@@ -21,8 +21,6 @@ export async function POST(request: NextRequest) {
       actualPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
     } else if (billingCycle === 'annual') {
       actualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID;
-    } else if (billingCycle === 'lifetime') {
-      actualPriceId = process.env.STRIPE_LIFETIME_PRICE_ID;
     }
 
     console.log("Using price ID:", actualPriceId);
@@ -69,7 +67,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
-      mode: billingCycle === 'lifetime' ? 'payment' : 'subscription',
+      mode: 'subscription',
       line_items: [
         {
           price: actualPriceId,

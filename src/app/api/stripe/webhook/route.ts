@@ -88,17 +88,10 @@ export async function POST(request: NextRequest) {
 
           const updateData: any = {
             subscriptionStatus: 'active',
+            plan: 'PRO',
+            stripeSubscriptionId: session.subscription as string,
+            stripePriceId: session.display_items?.[0]?.price?.id || session.amount_total,
           };
-
-          if (billingCycle === 'lifetime') {
-            updateData.plan = 'LIFETIME_PRO';
-            updateData.stripePriceId = session.display_items?.[0]?.price?.id || session.amount_total;
-            // No subscription ID for one-time payments
-          } else {
-            updateData.plan = 'PRO';
-            updateData.stripeSubscriptionId = session.subscription as string;
-            updateData.stripePriceId = session.display_items?.[0]?.price?.id || session.amount_total;
-          }
 
           const updatedUser = await (prisma as any).user.update({
             where: { id: user.id },

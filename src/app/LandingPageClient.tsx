@@ -153,14 +153,14 @@ const faqItems = [
   },
   {
     q: "How much does Corpus cost?",
-    a: "Corpus is free for up to 100 saved sources with full access to core features including the Chrome extension, AI organization, and research connections. Pro is $6/month or $48/year for unlimited sources, collaborative collections, and the knowledge graph. Lifetime Premium is $30/year for lifetime access to all features plus exclusive benefits.",
+    a: "Corpus is free for up to 100 saved sources with full access to core features including the Chrome extension, AI organization, and research connections. Pro is $6/month or $30/month (billed annually) for unlimited sources, collaborative collections, and the knowledge graph.",
   },
 ];
 
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [billing, setBilling] = useState<"monthly" | "annual" | "lifetime">("monthly");
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
@@ -424,7 +424,7 @@ export default function LandingPage() {
             <p className="mt-4 text-[var(--muted-foreground)]">Start free. Upgrade when your research grows.</p>
           </div>
 
-          <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-3 md:grid-cols-2`}>
+          <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-2 md:grid-cols-1`}>
             {/* Free Plan */}
             <div className="relative flex flex-col rounded-2xl border-[var(--border)] bg-[var(--card)] p-8">
               <div className="mb-8">
@@ -485,12 +485,12 @@ export default function LandingPage() {
                 <h3 className="text-2xl font-semibold text-[var(--foreground)]">Pro</h3>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-5xl font-bold text-[var(--foreground)]">
-                    {billing === "monthly" ? "$6" : "$4"}
+                    {billing === "monthly" ? "$6" : "$30"}
                   </span>
                   <span className="text-[var(--muted-foreground)]">/month</span>
                 </div>
                 <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                  {billing === "monthly" ? "Billed monthly" : "Billed annually (save 33%)"}
+                  {billing === "monthly" ? "Billed monthly" : "Billed annually"}
                 </p>
               </div>
 
@@ -524,49 +524,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Lifetime Premium Plan */}
-            <div className="relative flex flex-col rounded-2xl border-2 border-purple-200 bg-purple-50/50 p-8 lg:mt-0">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-purple-100 px-4 py-1 text-xs font-semibold text-purple-800">
-                Best Value
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-[var(--foreground)]">Lifetime Premium</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-5xl font-bold text-[var(--foreground)]">$30</span>
-                  <span className="text-[var(--muted-foreground)]">/once</span>
-                </div>
-                <p className="mt-2 text-sm text-[var(--muted-foreground)]">Pay once, use forever</p>
-              </div>
-
-              <ul className="mb-8 space-y-4">
-                {[
-                  "Everything in Pro",
-                  "Lifetime access to all features",
-                  "Priority feature requests",
-                  "VIP support channel",
-                  "Exclusive beta access",
-                ].map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
-                      <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <span className="text-[var(--foreground)]">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto">
-                <Link
-                  href="/pricing"
-                  className="block w-full rounded-lg bg-purple-600 py-3 text-center font-medium text-white transition-colors hover:bg-purple-700"
-                >
-                  Get Lifetime Premium
-                </Link>
-              </div>
-            </div>
           </div>
 
           <div data-reveal className={`${reveal} mt-8 flex justify-center gap-4 text-sm text-[var(--muted-foreground)]`}>
@@ -581,14 +538,7 @@ export default function LandingPage() {
               className={`rounded-full px-4 py-2 font-medium transition ${billing === "annual" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:text-[var(--foreground)]"}`}
             >
               Annual
-              <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save 33%</span>
-            </button>
-            <button
-              onClick={() => setBilling("lifetime")}
-              className={`rounded-full px-4 py-2 font-medium transition ${billing === "lifetime" ? "bg-purple-600 text-white" : "hover:text-[var(--foreground)]"}`}
-            >
-              Lifetime
-              <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-600">$30</span>
+              <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save $6/month</span>
             </button>
           </div>
         </div>

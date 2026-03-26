@@ -4,15 +4,13 @@ import Stripe from 'stripe';
  * Stripe client initialization
  * 
  * IMPORTANT: Before using this Stripe integration, you must:
- * 1. Create three products in your Stripe dashboard:
+ * 1. Create two products in your Stripe dashboard:
  *    - Monthly subscription: $6/month
- *    - Annual subscription: $48/year (billed annually)
- *    - Lifetime Premium: $30 one-time payment
+ *    - Annual subscription: $30/month (billed annually)
  * 2. Copy the Price IDs from the Stripe dashboard
  * 3. Add them to your environment variables:
  *    - STRIPE_MONTHLY_PRICE_ID=price_xxxxxxxxxxxxxx
  *    - STRIPE_ANNUAL_PRICE_ID=price_xxxxxxxxxxxxxx
- *    - STRIPE_LIFETIME_PRICE_ID=price_xxxxxxxxxxxxxx
  * 
  * The Price IDs should look like: price_1Oxxxxxx... (starting with "price_")
  */
