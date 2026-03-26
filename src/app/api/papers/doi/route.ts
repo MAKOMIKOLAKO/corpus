@@ -60,7 +60,18 @@ export async function POST(request: NextRequest) {
         // If no abstract from CrossRef, try OpenAlex
         if (!metadata.abstract) {
             try {
-                const openalexResponse = await fetch(`https://api.openalex.org/works?filter=doi:${encodeURIComponent(cleanDoi)}&select=abstract,open_access`, {
+                const baseUrl = 'https://api.openalex.org/works';
+                const params = new URLSearchParams({
+                    filter: `doi:${encodeURIComponent(cleanDoi)}`,
+                    select: 'abstract,open_access'
+                });
+
+                // Add API key if available
+                if (process.env.OPENALEX_API_KEY) {
+                    params.append('api_key', process.env.OPENALEX_API_KEY);
+                }
+
+                const openalexResponse = await fetch(`${baseUrl}?${params}`, {
                     headers: {
                         'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
                     }

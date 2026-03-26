@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
-        // Search via OpenAlex (no API key required, higher rate limits)
+        // Search via OpenAlex (API key recommended for production)
         try {
             // OpenAlex API URL
             const baseUrl = 'https://api.openalex.org/works';
@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
                 sort: 'cited_by_count:desc'
             });
 
+            // Add API key if available
+            if (process.env.OPENALEX_API_KEY) {
+                params.append('api_key', process.env.OPENALEX_API_KEY);
+            }
+
             const response = await fetch(`${baseUrl}?${params}`, {
                 headers: {
                     'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
@@ -36,6 +41,17 @@ export async function GET(request: NextRequest) {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('OpenAlex API error:', response.status, errorText);
+
+                // If we get a 401 or 403, it's likely an API key issue
+                if (response.status === 401 || response.status === 403) {
+                    return NextResponse.json({
+                        results: [],
+                        error: 'Search requires an OpenAlex API key. Please add OPENALEX_API_KEY to your environment variables.'
+                    });
+                }
+
                 return NextResponse.json({
                     results: [],
                     error: `Search failed (${response.status}). Please try again or use DOI lookup.`
