@@ -158,6 +158,8 @@ model Entry {
   isbn13        String[]      @default([])
   cover         String?
   summary       String?
+  userKeywords  String[]      @default([])
+  autoKeywords  String[]      @default([])
   notes         Json          @default("[]")
   readingStatus ReadingStatus @default(UNREAD)
   createdAt     DateTime      @default(now())

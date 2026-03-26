@@ -71,7 +71,6 @@ export async function POST(request: Request) {
             year: entry.year || null,
             doi: entry.doi || null,
             url: entry.url || null,
-            topics: entry.topics || [],
             contentType: 'PAPER',
             collections: {
               create: {
