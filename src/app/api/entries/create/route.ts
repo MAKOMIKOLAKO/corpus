@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -59,7 +59,6 @@ export async function POST(request: Request) {
         year: year || null,
         doi: doi || null,
         url: url || null,
-        topics: topics || [],
         contentType: 'PAPER'
       }
     })

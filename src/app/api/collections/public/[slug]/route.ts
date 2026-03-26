@@ -60,7 +60,6 @@ export async function GET(
         authors: ec.entry.authors,
         year: ec.entry.year,
         contentType: ec.entry.contentType,
-        topics: ec.entry.topics,
         source: ec.entry.source,
         url: ec.entry.url,
         doi: ec.entry.doi,
@@ -144,7 +143,6 @@ export async function POST(
         isbn13: entryData.isbn13,
         cover: entryData.cover,
         autoKeywords: entryData.autoKeywords,
-        topics: entryData.topics,
         userId: user.id
       }
     });
