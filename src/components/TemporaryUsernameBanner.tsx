@@ -10,6 +10,7 @@ export default function TemporaryUsernameBanner() {
   const { data: session } = useSession();
   const [dismissed, setDismissed] = useState(false);
   const [bannerShown, setBannerShown] = useState(false);
+  const [usernameJustChanged, setUsernameJustChanged] = useState(false);
 
   // Check if user has a random username or no username
   const isRandomUsername = session?.user?.username?.startsWith('user_');
@@ -25,9 +26,18 @@ export default function TemporaryUsernameBanner() {
       try {
         const res = await fetch('/api/user/username-banner-status');
         const data = await res.json();
+
+        // Check if username was just changed (not random and banner was shown)
+        if (!session.user.username?.startsWith('user_') && data.bannerShown) {
+          setUsernameJustChanged(true);
+          // Mark banner as dismissed on server since user now has a proper username
+          await fetch('/api/user/username-banner-dismiss', { method: 'POST' });
+          return;
+        }
+
         if (data.bannerShown) {
           setDismissed(true);
-        } else if (shouldShow && !data.bannerShown) {
+        } else if (shouldShow && !data.bannerShown && !usernameJustChanged) {
           setBannerShown(true);
         }
       } catch (error) {
@@ -36,14 +46,14 @@ export default function TemporaryUsernameBanner() {
         const dismissedState = localStorage.getItem('temp-username-banner-dismissed');
         if (dismissedState === 'true') {
           setDismissed(true);
-        } else if (shouldShow) {
+        } else if (shouldShow && !usernameJustChanged) {
           setBannerShown(true);
         }
       }
     };
 
     checkBannerStatus();
-  }, [session, shouldShow]);
+  }, [session, shouldShow, usernameJustChanged]);
 
   // Handle dismissal
   const handleDismiss = async () => {
