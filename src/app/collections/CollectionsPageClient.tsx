@@ -94,7 +94,20 @@ export default function CollectionsPage() {
 
     useEffect(() => {
         fetchCollections();
+        fetchInvites();
     }, []);
+
+    const fetchInvites = async () => {
+        try {
+            const response = await fetch('/api/collections/invites');
+            if (response.ok) {
+                const data = await response.json();
+                setInvites(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch invites:', error);
+        }
+    };
 
     const fetchCollections = async () => {
         try {
@@ -155,6 +168,30 @@ export default function CollectionsPage() {
         }
     };
 
+    const handleRespondToInvite = async (inviteId: string, action: 'accept' | 'decline') => {
+        setRespondingToInvite(inviteId);
+        try {
+            const response = await fetch(`/api/collections/invites/${inviteId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }),
+            });
+
+            if (response.ok) {
+                // Refresh both collections and invites
+                await Promise.all([fetchCollections(), fetchInvites()]);
+            } else {
+                const data = await response.json();
+                alert(data?.error || `Failed to ${action} invite`);
+            }
+        } catch (error) {
+            console.error(`Failed to ${action} invite:`, error);
+            alert(`Failed to ${action} invite`);
+        } finally {
+            setRespondingToInvite(null);
+        }
+    };
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -192,6 +229,57 @@ export default function CollectionsPage() {
                     New Collection
                 </Button>
             </div>
+
+            {/* Pending Collection Invites */}
+            {invites.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-semibold mb-4">Pending Invites</h2>
+                    <div className="space-y-3">
+                        {invites.map((invite) => (
+                            <Card key={invite.id} className="p-4">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <h3 className="font-medium text-lg">{invite.collection.name}</h3>
+                                        {invite.collection.description && (
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                {invite.collection.description}
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            Invited by {invite.inviter.name || invite.inviter.email}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 ml-4">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleRespondToInvite(invite.id, 'accept')}
+                                            disabled={respondingToInvite === invite.id}
+                                        >
+                                            {respondingToInvite === invite.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                'Accept'
+                                            )}
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleRespondToInvite(invite.id, 'decline')}
+                                            disabled={respondingToInvite === invite.id}
+                                        >
+                                            {respondingToInvite === invite.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                'Decline'
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* My Collections */}
             {myCollections.length > 0 && (

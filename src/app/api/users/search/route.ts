@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         { name: { contains: q, mode: 'insensitive' } },
       ],
     },
-    select: { id: true, username: true, name: true, bio: true, plan: true },
+    select: { id: true, username: true, name: true, bio: true, plan: true, email: true },
     take: 10,
   });
 
