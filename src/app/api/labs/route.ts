@@ -23,9 +23,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lab name must be at least 3 characters" }, { status: 400 });
     }
 
-    // Get user with institution using direct SQL to check structure
+    // Get user with institution using direct SQL
     const users = await prisma.$queryRaw`
-      SELECT * FROM "User" WHERE email = ${session.user.email} LIMIT 1
+      SELECT id, "institutionId", "institutionVerifiedAt" 
+      FROM "User" 
+      WHERE email = ${session.user.email}
     ` as any[];
 
     const user = users[0];
@@ -33,18 +35,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check what fields actually exist
-    console.log("User fields:", Object.keys(user));
-    console.log("User data:", user);
-
-    // Try different possible field names
-    const institutionId = user.institutionId || user.institutionid || user["institutionId"] || user["institutionid"];
-    const institutionVerifiedAt = user.institutionVerifiedAt || user.institutionverifiedat || user["institutionVerifiedAt"] || user["institutionverifiedat"];
-
-    console.log("institutionId:", institutionId);
-    console.log("institutionVerifiedAt:", institutionVerifiedAt);
-
-    if (!institutionId || !institutionVerifiedAt) {
+    if (!user.institutionId || !user.institutionVerifiedAt) {
       return NextResponse.json({ error: "You must verify your institution before creating a lab" }, { status: 403 });
     }
 
@@ -63,18 +54,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not generate unique slug" }, { status: 500 });
     }
 
-    // Create lab using raw query with detected column names
+    // Create lab using raw query with correct quoted column names
     const labs = await prisma.$queryRaw`
-      INSERT INTO "Lab" (name, slug, description, institutionid, createdby, isverified, createdat)
-      VALUES (${name}, ${slug}, ${description || null}, ${institutionId}, ${user.id}, false, NOW())
-      RETURNING id, name, slug, description, isverified, createdat
+      INSERT INTO "Lab" (name, slug, description, "institutionId", "createdBy", "isVerified", "createdAt")
+      VALUES (${name}, ${slug}, ${description || null}, ${user.institutionId}, ${user.id}, false, NOW())
+      RETURNING id, name, slug, description, "isVerified", "createdAt"
     ` as any[];
 
     const lab = labs[0];
 
     // Add creator as admin
     await prisma.$queryRaw`
-      INSERT INTO "LabMember" (labid, userid, role, joinedat)
+      INSERT INTO "LabMember" ("labId", "userId", "role", "joinedAt")
       VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
     `;
 
@@ -82,7 +73,7 @@ export async function POST(request: Request) {
     const institutions = await prisma.$queryRaw`
       SELECT id, name, domain 
       FROM "Institution" 
-      WHERE id = ${institutionId}
+      WHERE id = ${user.institutionId}
     ` as any[];
 
     const institution = institutions[0];
@@ -90,7 +81,7 @@ export async function POST(request: Request) {
     // Return lab with userRole and joinedAt
     const labWithRole = {
       ...lab,
-      createdAt: lab.createdat.toISOString(),
+      createdAt: lab.createdAt.toISOString(),
       institution: institution,
       userRole: 'ADMIN' as const,
       joinedAt: new Date().toISOString(),
@@ -129,16 +120,16 @@ export async function GET(request: Request) {
         l.name,
         l.slug,
         l.description,
-        l.isverified,
-        l.createdat,
+        l."isVerified",
+        l."createdAt",
         i.name as "institutionName",
         i.domain as "institutionDomain",
         lm.role as "userRole",
-        lm.joinedat
+        lm."joinedAt"
       FROM "LabMember" lm
-      JOIN "Lab" l ON lm.labid = l.id
-      JOIN "Institution" i ON l.institutionid = i.id
-      WHERE lm.userid = ${user.id}
+      JOIN "Lab" l ON lm."labId" = l.id
+      JOIN "Institution" i ON l."institutionId" = i.id
+      WHERE lm."userId" = ${user.id}
     ` as any[];
 
     // Convert dates to strings and format response
@@ -147,15 +138,15 @@ export async function GET(request: Request) {
       name: lab.name,
       slug: lab.slug,
       description: lab.description,
-      isVerified: lab.isverified,
-      createdAt: lab.createdat.toISOString(),
+      isVerified: lab.isVerified,
+      createdAt: lab.createdAt.toISOString(),
       institution: {
         id: lab.id, // We'll use lab.id as placeholder since we don't have institution.id
         name: lab.institutionName,
         domain: lab.institutionDomain
       },
       userRole: lab.userRole,
-      joinedAt: lab.joinedat.toISOString(),
+      joinedAt: lab.joinedAt.toISOString(),
       _count: {
         members: 0 // We'll count this separately if needed
       }
