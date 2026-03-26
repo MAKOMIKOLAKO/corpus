@@ -89,8 +89,8 @@ export default function AddEntryForm() {
                 publishDate: data.publishDate ? String(data.publishDate) : '',
                 source: data.source || '',
                 abstract: data.abstract || '',
-                url: tab === 'URL' ? fetchInput : (data.url || ''),
-                doi: tab === 'DOI' ? fetchInput : (data.doi || ''),
+                url: fetchInput,
+                doi: data.doi || '',
                 contentType: 'PAPER',
                 autoKeywords: data.autoKeywords || [],
             }));
