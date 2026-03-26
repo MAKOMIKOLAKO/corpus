@@ -21,15 +21,15 @@ export async function checkForDuplicates(
     try {
         // Build search criteria
         const searchCriteria = [];
-        
+
         if (url) {
             searchCriteria.push({ url });
         }
-        
+
         if (doi) {
             searchCriteria.push({ doi });
         }
-        
+
         if (title) {
             searchCriteria.push({ title });
         }
@@ -59,7 +59,7 @@ export async function checkForDuplicates(
                     reason: 'Exact URL match'
                 };
             }
-            
+
             if (doi && entry.doi === doi) {
                 return {
                     isDuplicate: true,
@@ -68,7 +68,7 @@ export async function checkForDuplicates(
                     reason: 'Exact DOI match'
                 };
             }
-            
+
             if (title && entry.title.toLowerCase() === title.toLowerCase()) {
                 return {
                     isDuplicate: true,
@@ -94,12 +94,12 @@ export async function checkForDuplicates(
             }
         }
 
-        // Return the first possible match (low confidence)
+        // Low confidence matches should not block entry creation
+        // They can be shown as suggestions but shouldn't prevent saving
         return {
-            isDuplicate: true,
-            duplicateEntry: duplicates[0],
+            isDuplicate: false,
             confidence: 'low',
-            reason: 'Possible match based on available criteria'
+            reason: 'No high-confidence duplicates found'
         };
 
     } catch (error) {
@@ -111,16 +111,16 @@ export async function checkForDuplicates(
 function calculateTitleSimilarity(title1: string, title2: string): number {
     const t1 = title1.toLowerCase().trim();
     const t2 = title2.toLowerCase().trim();
-    
+
     if (t1 === t2) return 1.0;
-    
+
     // Simple similarity based on common words
     const words1 = t1.split(/\s+/);
     const words2 = t2.split(/\s+/);
-    
+
     const commonWords = words1.filter(word => words2.includes(word));
     const totalWords = new Set([...words1, ...words2]).size;
-    
+
     return commonWords.length / totalWords;
 }
 
@@ -135,7 +135,7 @@ export async function getDuplicateSuggestions(
 
     try {
         const searchCriteria = [];
-        
+
         if (url) searchCriteria.push({ url });
         if (doi) searchCriteria.push({ doi });
         if (title) searchCriteria.push({ title });
@@ -172,23 +172,23 @@ export async function getDuplicateSuggestions(
 
 function getMatchReason(entry: any, searchParams: { url?: string | null, doi?: string | null, title?: string | null }): string {
     const reasons = [];
-    
+
     if (searchParams.url && entry.url === searchParams.url) {
         reasons.push('URL match');
     }
-    
+
     if (searchParams.doi && entry.doi === searchParams.doi) {
         reasons.push('DOI match');
     }
-    
+
     if (searchParams.title) {
         if (entry.title.toLowerCase() === searchParams.title.toLowerCase()) {
             reasons.push('Exact title match');
-        } else if (entry.title.toLowerCase().includes(searchParams.title.toLowerCase()) || 
-                  searchParams.title.toLowerCase().includes(entry.title.toLowerCase())) {
+        } else if (entry.title.toLowerCase().includes(searchParams.title.toLowerCase()) ||
+            searchParams.title.toLowerCase().includes(entry.title.toLowerCase())) {
             reasons.push('Similar title');
         }
     }
-    
+
     return reasons.join(', ') || 'Possible match';
 }
