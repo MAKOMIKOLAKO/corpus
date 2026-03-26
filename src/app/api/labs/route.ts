@@ -31,10 +31,16 @@ export async function POST(request: Request) {
       LIMIT 1
     ` as any[];
 
+    console.log("User query result:", users);
+
     const user = users[0];
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    console.log("User data:", user);
+    console.log("institutionId:", user.institutionId);
+    console.log("institutionVerifiedAt:", user.institutionVerifiedAt);
 
     if (!user.institutionId || !user.institutionVerifiedAt) {
       return NextResponse.json({ error: "You must verify your institution before creating a lab" }, { status: 403 });
