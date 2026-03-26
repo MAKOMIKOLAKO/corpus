@@ -298,7 +298,7 @@ export default function EntryCard({
                 onClick={() => {
                     // Save scroll position for library page restoration
                     if (typeof window !== 'undefined') {
-                        sessionStorage.setItem('libraryScrollPos', window.scrollY.toString());
+                        sessionStorage.setItem('lib_scroll', window.scrollY.toString());
                     }
                     // Also save using the existing hook for compatibility
                     saveScrollPositionForKey(scrollPositionKey);
