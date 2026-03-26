@@ -23,7 +23,7 @@ export type FeatureType = 'collections' | 'graph'
 // Standalone user interface with plan field
 interface UserWithPlan {
   id: string
-  plan: 'FREE' | 'PRO'
+  plan: 'FREE' | 'PRO' | 'LIFETIME_PRO'
 }
 
 // Session user type
@@ -31,11 +31,13 @@ interface SessionUser {
   name?: string | null;
   email?: string | null;
   image?: string | null;
-  plan?: 'FREE' | 'PRO';
+  plan?: 'FREE' | 'PRO' | 'LIFETIME_PRO';
 }
 
 export function getUserPlan(user: UserWithPlan | SessionUser | null): PlanType {
   if (!user || !('plan' in user) || !user.plan) return 'FREE'
+  // Treat LIFETIME_PRO as PRO for plan limits
+  if (user.plan === 'LIFETIME_PRO') return 'PRO'
   return user.plan
 }
 
