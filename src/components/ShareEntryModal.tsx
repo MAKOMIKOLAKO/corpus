@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, SolidDialogContent, DialogHeader, DialogTitle } from '@/components/ui/solid-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -43,14 +43,14 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
     }, [isOpen]);
 
     useEffect(() => {
-        const searchUsers = async () => {
+        const searchConnections = async () => {
             if (!searchQuery.trim() || !apiKey) {
                 setUsers([]);
                 return;
             }
 
             try {
-                const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery.trim())}`, {
+                const response = await fetch(`/api/connections/search?q=${encodeURIComponent(searchQuery.trim())}`, {
                     headers: { 'x-api-key': apiKey },
                 });
 
@@ -61,12 +61,12 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                     setUsers([]);
                 }
             } catch (error) {
-                console.error('Error searching users:', error);
+                console.error('Error searching connections:', error);
                 setUsers([]);
             }
         };
 
-        const timeoutId = setTimeout(searchUsers, 300);
+        const timeoutId = setTimeout(searchConnections, 300);
         return () => clearTimeout(timeoutId);
     }, [searchQuery, apiKey]);
 
@@ -161,7 +161,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md">
+            <SolidDialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Share2 className="w-5 h-5" />
@@ -217,7 +217,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <Users className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Share with users</span>
+                            <span className="text-sm font-medium">Share with connections</span>
                         </div>
 
                         {/* Search Input */}
@@ -225,7 +225,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 ref={searchInputRef}
-                                placeholder="Search users by name or email..."
+                                placeholder="Search connections by name or username..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-9"
@@ -291,15 +291,15 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                         {/* Share Message */}
                         {shareMessage && (
                             <div className={`p-3 rounded-lg text-sm ${shareMessage.type === 'success'
-                                    ? 'bg-green-50 text-green-800 border border-green-200'
-                                    : 'bg-red-50 text-red-800 border border-red-200'
+                                ? 'bg-green-50 text-green-800 border border-green-200'
+                                : 'bg-red-50 text-red-800 border border-red-200'
                                 }`}>
                                 {shareMessage.text}
                             </div>
                         )}
                     </div>
                 </div>
-            </DialogContent>
+            </SolidDialogContent>
         </Dialog>
     );
 }
