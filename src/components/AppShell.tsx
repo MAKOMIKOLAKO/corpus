@@ -165,6 +165,9 @@ export function AppShell({
                 aria-label="Corpus - Go to homepage"
               >
                 corpus
+                <span className="text-xs font-normal text-[var(--muted-foreground)] bg-[var(--muted)] px-1.5 py-0.5 rounded-sm">
+                  beta
+                </span>
               </Link>
               <nav className="flex items-center gap-4" role="navigation" aria-label="Main navigation">
                 {session ? (

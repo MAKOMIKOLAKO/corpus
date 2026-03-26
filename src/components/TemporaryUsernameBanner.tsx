@@ -11,6 +11,7 @@ export default function TemporaryUsernameBanner() {
   const [dismissed, setDismissed] = useState(false);
   const [bannerShown, setBannerShown] = useState(false);
   const [usernameJustChanged, setUsernameJustChanged] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Check if user has a random username or no username
   const isRandomUsername = session?.user?.username?.startsWith('user_');
@@ -32,6 +33,7 @@ export default function TemporaryUsernameBanner() {
           setUsernameJustChanged(true);
           // Mark banner as dismissed on server since user now has a proper username
           await fetch('/api/user/username-banner-dismiss', { method: 'POST' });
+          setLoading(false);
           return;
         }
 
@@ -49,6 +51,8 @@ export default function TemporaryUsernameBanner() {
         } else if (shouldShow && !usernameJustChanged) {
           setBannerShown(true);
         }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -72,8 +76,8 @@ export default function TemporaryUsernameBanner() {
     }
   };
 
-  // Don't show if not authenticated, has a proper username, or dismissed
-  if (!session || !shouldShow || dismissed) {
+  // Don't show if not authenticated, has a proper username, or dismissed, or still loading
+  if (!session || !shouldShow || dismissed || loading) {
     return null;
   }
 
