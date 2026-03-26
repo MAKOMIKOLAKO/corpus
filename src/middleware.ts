@@ -32,7 +32,7 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // No longer redirect to setup-username - handled by modal
+  // All authenticated users can access protected routes
   return NextResponse.next();
 }
 

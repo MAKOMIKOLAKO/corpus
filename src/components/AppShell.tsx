@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
-import UsernameSetupModal from "@/components/UsernameSetupModal";
 import { Activity, Building2 } from "lucide-react";
 
 export function AppShell({
@@ -205,7 +204,6 @@ export function AppShell({
       >
         {children}
       </main>
-      <UsernameSetupModal />
     </>
   );
 }

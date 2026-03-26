@@ -55,6 +55,7 @@ export const authOptions: NextAuthOptions = {
               email: credentials.email,
               name: credentials.name,
               passwordHash,
+              username: `user_${Math.random().toString(36).substring(2, 10)}`, // Random username
             },
           }));
 
@@ -93,7 +94,11 @@ export const authOptions: NextAuthOptions = {
           const dbUser = await withRetry(() => prisma.user.upsert({
             where: { email },
             update: { name: (profile?.name ?? token.name ?? undefined) as string | undefined },
-            create: { email, name: (profile?.name ?? token.name ?? null) as string | null },
+            create: {
+              email,
+              name: (profile?.name ?? token.name ?? null) as string | null,
+              username: `user_${Math.random().toString(36).substring(2, 10)}` // Random username
+            },
           })) as any;
           (token as any).userId = dbUser.id;
           (token as any).plan = dbUser.plan || 'FREE';
@@ -145,7 +150,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
     error: "/login",
-    newUser: "/library", // New users go directly to library (modal will handle username)
   },
   session: {
     strategy: "jwt",

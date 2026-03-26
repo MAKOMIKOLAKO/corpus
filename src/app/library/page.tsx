@@ -5,16 +5,17 @@ import HomePageClient from '@/components/HomePageClient';
 import EntryCard from '@/components/EntryCard';
 import QuickAddSmartEntry from '@/components/QuickAddSmartEntry';
 import LibraryPageWrapper from '@/components/LibraryPageWrapper';
+import UsernameSuggestion from '@/components/UsernameSuggestion';
 import { ContentType, ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getCurrentUserId } from '@/lib/session';
 
 export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
+    robots: {
+        index: false,
+        follow: false,
+    },
 };
 
 // Loading component for entries
@@ -108,6 +109,8 @@ export default async function LibraryPage({
         <LibraryPageWrapper>
             <div className="max-w-6xl mx-auto overflow-visible">
                 <div className="space-y-8">
+                    <UsernameSuggestion />
+
                     {/* Page Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="space-y-1">
