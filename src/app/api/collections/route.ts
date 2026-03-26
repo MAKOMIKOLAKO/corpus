@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        const labIds = [...new Set(userLabMemberships.map(lm => lm.labId))];
+        const labIds = Array.from(new Set(userLabMemberships.map(lm => lm.labId)));
 
         const labMemberCollections = labIds.length > 0 ? await prisma.collection.findMany({
             where: {
