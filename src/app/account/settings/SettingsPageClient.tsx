@@ -49,6 +49,7 @@ export default function AccountPage() {
     } : null);
     const upgraded = searchParams?.get('upgraded') === 'true';
     const userIdFromUrl = searchParams?.get('userId');
+    const isLifetimePro = session?.user?.plan === 'LIFETIME_PRO';
 
     useEffect(() => {
         fetchSharedCollectionsCount();
@@ -519,7 +520,7 @@ export default function AccountPage() {
                             </div>
                         )}
 
-                        {userPlan === 'LIFETIME_PRO' && (
+                        {isLifetimePro && (
                             <div>
                                 <p className="text-sm text-green-600 font-medium">
                                     Lifetime Pro — no billing required

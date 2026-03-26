@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { MetricsChart } from '@/components/admin/MetricsChart';
+import { FeedbackList } from '@/components/admin/FeedbackList';
 
 interface Metrics {
   userOnboarding: {
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'metrics' | 'feedback'>('metrics');
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: '',
@@ -166,11 +168,35 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Tab Navigation */}
+          <div className="border-t border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('metrics')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'metrics'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                Metrics
+              </button>
+              <button
+                onClick={() => setActiveTab('feedback')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'feedback'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                Feedback
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Date Filter */}
+        {/* Date Filter - Show on both tabs */}
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-lg font-medium mb-4">Date Range Filter</h2>
           <div className="flex items-center space-x-4">
@@ -206,197 +232,190 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* User Onboarding Card */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">User Onboarding</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Signups:</span>
-                <span className="font-medium">{metrics.userOnboarding.totalSignups}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Username Setups:</span>
-                <span className="font-medium">{metrics.userOnboarding.usernameSetups}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Email Verified:</span>
-                <span className="font-medium">{metrics.userOnboarding.emailVerifications}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Entry Actions Card */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Entry Actions</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Entries:</span>
-                <span className="font-medium">{metrics.entryActions.totalEntries}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Avg Per User:</span>
-                <span className="font-medium">{metrics.entryActions.avgEntriesPerUser}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Collections Card */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Collections</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Created:</span>
-                <span className="font-medium">{metrics.collections.collectionsCreated}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shared:</span>
-                <span className="font-medium">{metrics.collections.sharedCollections}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shares Accepted:</span>
-                <span className="font-medium">{metrics.collections.collectionSharesAccepted}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Engagement Card */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Engagement</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Feed Views:</span>
-                <span className="font-medium">{metrics.engagement.feedCardViews}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Library Clicks:</span>
-                <span className="font-medium">{metrics.engagement.addToLibraryClicks}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Multi-save Users:</span>
-                <span className="font-medium">{metrics.engagement.multipleSavesUsers}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Multi-save %:</span>
-                <span className="font-medium">{metrics.engagement.multipleSavePercentage.toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Reading Status Distribution */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Reading Status</h3>
-            <div className="space-y-2">
-              {metrics.entryActions.readingStatusDistribution.map((status) => (
-                <div key={status.status} className="flex justify-between">
-                  <span className="text-gray-600 capitalize">{status.status.toLowerCase()}:</span>
-                  <span className="font-medium">{status.count}</span>
+        {/* Tab Content */}
+        {activeTab === 'metrics' ? (
+          <>
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {/* User Onboarding Card */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">User Onboarding</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Signups:</span>
+                    <span className="font-medium">{metrics.userOnboarding.totalSignups}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Username Setups:</span>
+                    <span className="font-medium">{metrics.userOnboarding.usernameSetups}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email Verified:</span>
+                    <span className="font-medium">{metrics.userOnboarding.emailVerifications}</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Collection Stats */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Collection Stats</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Avg Entries/Coll:</span>
-                <span className="font-medium">{metrics.collections.avgEntriesPerCollection}</span>
+              {/* Entry Actions Card */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Entry Actions</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Entries:</span>
+                    <span className="font-medium">{metrics.entryActions.totalEntries}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Avg Per User:</span>
+                    <span className="font-medium">{metrics.entryActions.avgEntriesPerUser}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections Card */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Collections</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Created:</span>
+                    <span className="font-medium">{metrics.collections.collectionsCreated}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Shared:</span>
+                    <span className="font-medium">{metrics.collections.sharedCollections}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Shares Accepted:</span>
+                    <span className="font-medium">{metrics.collections.collectionSharesAccepted}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Engagement Card */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Engagement</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Feed Views:</span>
+                    <span className="font-medium">{metrics.engagement.feedCardViews}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Library Clicks:</span>
+                    <span className="font-medium">{metrics.engagement.addToLibraryClicks}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Multi-save Users:</span>
+                    <span className="font-medium">{metrics.engagement.multipleSavesUsers}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Multi-save %:</span>
+                    <span className="font-medium">{metrics.engagement.multipleSavePercentage.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reading Status Distribution */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Reading Status</h3>
+                <div className="space-y-2">
+                  {metrics.entryActions.readingStatusDistribution.map((status) => (
+                    <div key={status.status} className="flex justify-between">
+                      <span className="text-gray-600 capitalize">{status.status.toLowerCase()}:</span>
+                      <span className="font-medium">{status.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Collection Stats */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Collection Stats</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Avg Entries/Coll:</span>
+                    <span className="font-medium">{metrics.collections.avgEntriesPerCollection}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Signups Trend */}
-          {metrics.userOnboarding.signupsPerDay.length > 0 && (
-            <MetricsChart
-              type="line"
-              title="Signups Trend (Last 30 Days)"
-              data={metrics.userOnboarding.signupsPerDay}
-              xAxisKey="date"
-              yAxisKey="count"
-            />
-          )}
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Signups Trend */}
+              {metrics.userOnboarding.signupsPerDay.length > 0 && (
+                <MetricsChart
+                  type="line"
+                  title="Signups Trend (Last 30 Days)"
+                  data={metrics.userOnboarding.signupsPerDay}
+                  xAxisKey="date"
+                  yAxisKey="count"
+                />
+              )}
 
-          {/* Reading Status Distribution */}
-          {metrics.entryActions.readingStatusDistribution.length > 0 && (
-            <MetricsChart
-              type="pie"
-              title="Reading Status Distribution"
-              data={metrics.entryActions.readingStatusDistribution.map(r => ({
-                name: r.status.charAt(0) + r.status.slice(1).toLowerCase(),
-                value: r.count
-              }))}
-              dataKey="value"
-              nameKey="name"
-            />
-          )}
-        </div>
-
-        {/* Top Users Chart */}
-        {metrics.entryActions.topUsers.length > 0 && (
-          <MetricsChart
-            type="bar"
-            title="Top Users by Entries Saved"
-            data={metrics.entryActions.topUsers.map(u => ({
-              name: u.email.split('@')[0], // Show only username part
-              entries: u.entryCount
-            }))}
-            dataKey="entries"
-            nameKey="name"
-          />
-        )}
-
-        {/* Top Users Table */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Users by Entries Saved</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Entries Saved
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {metrics.entryActions.topUsers.map((user, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.entryCount}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Signups Per Day */}
-        {metrics.userOnboarding.signupsPerDay.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mt-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Signups Per Day (Last 30 Days)</h3>
-            <div className="space-y-2">
-              {metrics.userOnboarding.signupsPerDay.map((day) => (
-                <div key={day.date.toString()} className="flex justify-between">
-                  <span className="text-gray-600">{new Date(day.date).toLocaleDateString()}</span>
-                  <span className="font-medium">{day.count}</span>
-                </div>
-              ))}
+              {/* Reading Status Distribution */}
+              {metrics.entryActions.readingStatusDistribution.length > 0 && (
+                <MetricsChart
+                  type="pie"
+                  title="Reading Status Distribution"
+                  data={metrics.entryActions.readingStatusDistribution.map(r => ({
+                    name: r.status.charAt(0) + r.status.slice(1).toLowerCase(),
+                    value: r.count
+                  }))}
+                  dataKey="value"
+                  nameKey="name"
+                />
+              )}
             </div>
-          </div>
+
+            {/* Top Users Table */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Top Users by Entries Saved</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Entries Saved
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {metrics.entryActions.topUsers.map((user, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {user.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {user.entryCount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Signups Per Day List */}
+            {metrics.userOnboarding.signupsPerDay.length > 0 && (
+              <div className="bg-white shadow rounded-lg p-6 mt-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Signups Per Day (Last 30 Days)</h3>
+                <div className="space-y-2">
+                  {metrics.userOnboarding.signupsPerDay.map((day) => (
+                    <div key={day.date.toString()} className="flex justify-between">
+                      <span className="text-gray-600">{new Date(day.date).toLocaleDateString()}</span>
+                      <span className="font-medium">{day.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <FeedbackList dateRange={dateRange} />
         )}
       </div>
-    </div>
+    </div >
   );
 }

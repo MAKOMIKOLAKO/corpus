@@ -1,54 +1,105 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { adminAuth } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prismaWithRetry";
 
 export async function GET(request: NextRequest) {
+  // Check admin authentication
+  const authResult = adminAuth(request);
+  if (authResult) {
+    return authResult;
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // Build date filter
+    const dateFilter: any = {};
+    if (startDate) {
+      dateFilter.gte = new Date(startDate);
+    }
+    if (endDate) {
+      dateFilter.lte = new Date(endDate);
     }
 
-    // Check if user is admin (you might want to add an isAdmin field to User model)
-    // For now, we'll check if the user's email is in a list of admin emails
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true, plan: true }
-    });
-
-    if (!user || (!adminEmails.includes(user.email || "") && user.plan !== "PRO" && user.plan !== "LIFETIME_PRO")) {
-      return NextResponse.json(
-        { error: "Forbidden - Admin access required" },
-        { status: 403 }
-      );
-    }
-
-    // Fetch feedback with user information
-    const feedback = await prisma.feedback.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    // Get feedback entries with pagination
+    const [feedback, totalCount] = await Promise.all([
+      prisma.feedback.findMany({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              username: true,
+            },
           },
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.feedback.count({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+        },
+      }),
+    ]);
+
+    // Get rating distribution
+    const ratingDistribution = await prisma.feedback.groupBy({
+      by: ['rating'],
+      where: {
+        rating: { not: null },
+        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },
-      take: 100, // Limit to last 100 feedback entries
+      _count: true,
     });
 
-    return NextResponse.json({ feedback });
+    // Calculate average rating
+    const avgRatingResult = await prisma.feedback.aggregate({
+      where: {
+        rating: { not: null },
+        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+      },
+      _avg: {
+        rating: true,
+      },
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      feedback,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+      stats: {
+        totalCount,
+        averageRating: avgRatingResult._avg.rating || 0,
+        ratingDistribution: ratingDistribution.map((r: { rating: number; _count: number }) => ({
+          rating: r.rating,
+          count: r._count,
+        })),
+      },
+    });
   } catch (error) {
-    console.error("Failed to fetch feedback:", error);
+    console.error('Error fetching feedback:', error);
     return NextResponse.json(
-      { error: "Failed to fetch feedback" },
+      { error: 'Failed to fetch feedback' },
       { status: 500 }
     );
   }
