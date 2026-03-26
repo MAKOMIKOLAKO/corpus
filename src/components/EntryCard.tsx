@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardTitle } from '@/components/ui/card';
-import { Check, ChevronDown, Copy, ExternalLink, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 
 interface Entry {
@@ -201,6 +201,32 @@ export default function EntryCard({
             window.setTimeout(() => setDidCopyUrl(false), 1200);
         } catch {
             // ignore
+        }
+    };
+
+    const handleShare = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const shareData = {
+            title: entry.title,
+            text: `${entry.title}${entry.authors.length > 0 ? ` - ${entry.authors.slice(0, 3).join(', ')}` : ''}`,
+            url: entry.url || window.location.href
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                // Fallback: copy to clipboard
+                const textToCopy = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
+                if (navigator?.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(textToCopy);
+                }
+                // Could show a toast here
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
         }
     };
 
@@ -470,6 +496,15 @@ export default function EntryCard({
                                                 <ExternalLink className="w-3 h-3" />
                                             </Button>
                                         ) : null}
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                                            onClick={handleShare}
+                                        >
+                                            <Share className="w-3 h-3" />
+                                        </Button>
                                         {entry.url ? (
                                             <Button
                                                 type="button"
