@@ -45,6 +45,20 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // Check if this institutional email is already verified by another user
+    const existingVerification = await prisma.user.findFirst({
+      where: {
+        institutionVerificationEmail: email,
+        institutionVerifiedAt: { not: null }
+      }
+    });
+
+    if (existingVerification) {
+      return NextResponse.json({
+        error: "This institutional email has already been used for verification"
+      }, { status: 409 });
+    }
+
     // Find or create institution
     let institution = await prisma.institution.findUnique({
       where: { domain }

@@ -22,6 +22,7 @@ export async function GET() {
       showSignals: true,
       institutionId: true,
       institutionVerifiedAt: true,
+      institutionVerificationEmail: true,
       institution: {
         select: {
           id: true,
