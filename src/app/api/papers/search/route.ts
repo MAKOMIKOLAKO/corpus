@@ -19,26 +19,29 @@ export async function GET(request: NextRequest) {
 
         // Search via OpenAlex (API key recommended for production)
         try {
-            // OpenAlex API URL
+            // OpenAlex API URL - using correct parameter format
             const baseUrl = 'https://api.openalex.org/works';
-            const params = new URLSearchParams({
-                search: query,
-                filter: 'type:journal-article',
-                select: 'id,display_name,authorships,publication_year,abstract,primary_location,doi,open_access',
-                per_page: limit.toString(),
-                sort: 'cited_by_count:desc'
-            });
 
-            // Add API key if available
-            if (process.env.OPENALEX_API_KEY) {
-                params.append('api_key', process.env.OPENALEX_API_KEY);
-            }
+            // Build the URL with proper encoding
+            const url = new URL(baseUrl);
+            url.searchParams.append('search', query);
+            url.searchParams.append('filter', 'type:journal-article');
+            url.searchParams.append('select', 'id,display_name,authorships,publication_year,abstract,primary_location,doi,open_access');
+            url.searchParams.append('per-page', limit.toString());
+            url.searchParams.append('sort', 'cited_by_count:desc');
 
-            const url = `${baseUrl}?${params}`;
-            console.error('DEBUG: OpenAlex URL:', url);
+            // Add API key if available (as email parameter for OpenAlex)
+            // Note: Try without API key first as it might not be needed
+            // if (process.env.OPENALEX_API_KEY) {
+            //     url.searchParams.append('api_key', process.env.OPENALEX_API_KEY);
+            // }
 
-            const response = await fetch(url, {
+            const urlString = url.toString();
+            console.error('DEBUG: OpenAlex URL:', urlString);
+
+            const response = await fetch(urlString, {
                 headers: {
+                    'Accept': 'application/json',
                     'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
                 }
             });
