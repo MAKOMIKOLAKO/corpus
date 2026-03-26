@@ -90,7 +90,7 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
 
   return (
     <>
-      {trigger ? (
+      {trigger !== undefined ? (
         trigger
       ) : (
         <Button variant="ghost" size="sm" onClick={() => handleOpenChange(true)}>
