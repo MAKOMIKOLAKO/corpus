@@ -17,16 +17,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        username: true,
-        institutionId: true,
-        institutionVerifiedAt: true,
-        institution: {
-          select: {
-            id: true,
-            name: true,
-            domain: true
-          }
-        }
+        username: true
       }
     });
 
