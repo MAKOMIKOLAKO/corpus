@@ -1,8 +1,14 @@
 'use client'
 
+import React, { useState } from 'react'
 import { Entry, Topic } from '@prisma/client'
 import Link from 'next/link'
 import { ExternalLink, Calendar, Users, FileText, BookOpen, ArrowRight } from 'lucide-react'
+import SaveButton from '@/components/SaveButton'
+import SignupPrompt from '@/components/SignupPrompt'
+import { useSession } from 'next-auth/react'
+import { useSavedEntries } from '@/hooks/useSavedEntries'
+import { useScrollDepth } from '@/hooks/useScrollDepth'
 
 interface RelatedPaper {
   id: string
@@ -52,6 +58,23 @@ const jsonLd = (entry: Entry) => {
 }
 
 export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props) {
+  const { data: session } = useSession()
+  const { syncToBackend } = useSavedEntries()
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false)
+
+  // Track scroll depth for signup trigger
+  useScrollDepth(60, () => {
+    if (!session?.user) {
+      setShowSignupPrompt(true)
+    }
+  })
+
+  // Sync saved entries when user logs in
+  React.useEffect(() => {
+    if (session?.user) {
+      syncToBackend().catch(console.error)
+    }
+  }, [session, syncToBackend])
   return (
     <>
       <script
@@ -101,17 +124,29 @@ export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props
               )}
             </div>
 
-            {entry.doi && (
-              <a
-                href={`https://doi.org/${entry.doi}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                View Original Paper
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+              {entry.doi && (
+                <a
+                  href={`https://doi.org/${entry.doi}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  View Original Paper
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+
+              <SaveButton
+                title={entry.title}
+                authors={entry.authors || []}
+                year={entry.year || undefined}
+                doi={entry.doi || undefined}
+                url={entry.url || undefined}
+                topics={entry.topics || []}
+                onSignupTrigger={() => setShowSignupPrompt(true)}
+              />
+            </div>
           </header>
 
           {/* Abstract */}
@@ -198,20 +233,35 @@ export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Similar Papers</h2>
               <div className="space-y-4">
                 {relatedPapers.filter(paper => paper.slug).map((paper) => (
-                  <Link
-                    key={paper.id}
-                    href={`/paper/${paper.slug}`}
-                    className="block p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-colors"
-                  >
-                    <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{paper.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {paper.authors.slice(0, 3).join(', ')}
-                      {paper.authors.length > 3 && ' et al.'} • {paper.year || 'n.d.'}
-                    </p>
-                    {paper.summary && (
-                      <p className="text-sm text-gray-700 line-clamp-2">{paper.summary}</p>
-                    )}
-                  </Link>
+                  <div key={paper.id} className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-colors">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/paper/${paper.slug}`}
+                          className="block group"
+                        >
+                          <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                            {paper.title}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {paper.authors.slice(0, 3).join(', ')}
+                          {paper.authors.length > 3 && ' et al.'} • {paper.year || 'n.d.'}
+                        </p>
+                        {paper.summary && (
+                          <p className="text-sm text-gray-700 line-clamp-2">{paper.summary}</p>
+                        )}
+                      </div>
+                      <SaveButton
+                        title={paper.title}
+                        authors={paper.authors}
+                        year={paper.year || undefined}
+                        topics={[]}
+                        className="flex-shrink-0"
+                        onSignupTrigger={() => setShowSignupPrompt(true)}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
@@ -236,6 +286,11 @@ export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props
           </section>
         </div>
       </div>
+
+      <SignupPrompt
+        isOpen={showSignupPrompt}
+        onClose={() => setShowSignupPrompt(false)}
+      />
     </>
   )
 }
