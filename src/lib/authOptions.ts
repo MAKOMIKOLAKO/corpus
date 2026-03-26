@@ -145,6 +145,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
     error: "/login",
+    newUser: "/library", // New users go directly to library (modal will handle username)
   },
   session: {
     strategy: "jwt",

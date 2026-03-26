@@ -32,18 +32,7 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Special case: Allow access to setup-username page even if user has username
-  // This prevents redirect loops when the token is stale
-  if (pathname === "/setup-username") {
-    return NextResponse.next();
-  }
-
-  // For other protected paths, check if user needs to set up username
-  // Only redirect if we're certain they don't have a username
-  if (!token.username && pathname !== "/setup-username") {
-    return NextResponse.redirect(new URL("/setup-username", req.url));
-  }
-
+  // No longer redirect to setup-username - handled by modal
   return NextResponse.next();
 }
 
