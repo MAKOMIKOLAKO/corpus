@@ -77,17 +77,16 @@ export async function GET(request: NextRequest) {
         });
 
         // Get lab collections from labs the user is a member of
-        const labCollections = await prisma.collectionMember.findMany({
+        const userLabMemberships = await prisma.labMember.findMany({
             where: {
                 userId,
-                status: 'ACCEPTED',
             },
             select: {
                 labId: true
             }
         });
 
-        const labIds = [...new Set(labCollections.map(lc => lc.labId).filter(Boolean))];
+        const labIds = [...new Set(userLabMemberships.map(lm => lm.labId))];
 
         const labMemberCollections = labIds.length > 0 ? await prisma.collection.findMany({
             where: {
