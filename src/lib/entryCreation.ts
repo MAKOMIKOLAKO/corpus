@@ -143,7 +143,18 @@ export async function createEntryWithMetadata(
         if (response.ok) {
             let entry: unknown;
             try {
-                entry = await response.json();
+                const responseText = await response.text();
+                console.log('Raw response from server:', responseText);
+
+                if (!responseText) {
+                    return {
+                        success: false,
+                        error: 'Invalid response from server',
+                        details: 'The server returned an empty response. This may indicate a server error.'
+                    };
+                }
+
+                entry = JSON.parse(responseText);
             } catch (parseError) {
                 console.error('Failed to parse response JSON:', parseError);
                 return {
@@ -178,25 +189,31 @@ export async function createEntryWithMetadata(
                 };
             }
 
-            // Check if it's a duplicate error (status 409)
-            if (response.status === 409 && errorData.duplicateEntry) {
-                return {
-                    success: false,
-                    error: errorData.error || 'Duplicate entry detected',
-                    existingEntry: errorData.duplicateEntry,
-                    confidence: errorData.confidence,
-                    reason: errorData.reason
-                };
+            // Handle specific error cases
+            if (response.status === 409) {
+                if (errorData?.duplicateEntry) {
+                    return {
+                        success: false,
+                        error: 'Duplicate entry detected',
+                        existingEntry: errorData.duplicateEntry,
+                        confidence: errorData.confidence || 'high',
+                        reason: errorData.reason || 'An existing entry with similar content was found'
+                    };
+                } else {
+                    // Handle case where 409 is returned but no duplicate entry data
+                    return {
+                        success: false,
+                        error: 'Duplicate entry detected',
+                        details: 'An existing entry with similar content was found, but the entry details could not be retrieved.'
+                    };
+                }
             }
-            // Check if it's an entry limit error (status 403)
-            if (response.status === 403 && errorData.error === 'entry_limit_reached') {
-                return {
-                    success: false,
-                    error: 'entry_limit_reached',
-                    limit: errorData.limit
-                };
-            }
-            return { success: false, error: errorData.error || `Failed to create entry (${response.status})` };
+
+            return {
+                success: false,
+                error: errorData?.error || `Server error (${response.status})`,
+                details: errorData?.details || errorData?.message || `The server returned an error (${response.status} ${response.statusText})`
+            };
         }
     } catch (error: any) {
         console.error('Entry creation error:', error);
