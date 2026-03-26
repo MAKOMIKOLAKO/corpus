@@ -128,17 +128,17 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error('Error fetching collections:', error);
-        const allowedOrigins = [
-            process.env.NEXTAUTH_URL || 'http://localhost:3000',
-            'http://localhost:3001'
-        ];
-        return NextResponse.json({ error: 'Failed to fetch collections' }, {
-            status: 500,
-            headers: {
-                'Access-Control-Allow-Origin': allowedOrigins[0],
-                'Vary': 'Origin'
+
+        // Ensure we always return JSON, never HTML
+        return NextResponse.json(
+            { error: 'Failed to fetch collections' },
+            {
+                status: 500,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }
-        });
+        );
     }
 }
 
