@@ -23,11 +23,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lab name must be at least 3 characters" }, { status: 400 });
     }
 
-    // Get user with institution using raw query
+    // Get user with institution using direct SQL to check structure
     const users = await prisma.$queryRaw`
-      SELECT id, "institutionId", "institutionVerifiedAt" 
-      FROM "User" 
-      WHERE email = ${session.user.email}
+      SELECT * FROM "User" WHERE email = ${session.user.email} LIMIT 1
     ` as any[];
 
     const user = users[0];
@@ -35,7 +33,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user["institutionId"] || !user["institutionVerifiedAt"]) {
+    // Check what fields actually exist
+    console.log("User fields:", Object.keys(user));
+
+    if (!user.institutionid || !user.institutionverifiedat) {
       return NextResponse.json({ error: "You must verify your institution before creating a lab" }, { status: 403 });
     }
 
@@ -54,18 +55,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not generate unique slug" }, { status: 500 });
     }
 
-    // Create lab using raw query
+    // Create lab using raw query with lowercase column names
     const labs = await prisma.$queryRaw`
-      INSERT INTO "Lab" (name, slug, description, "institutionId", "createdBy", "isVerified", "createdAt")
-      VALUES (${name}, ${slug}, ${description || null}, ${user["institutionId"]}, ${user.id}, false, NOW())
-      RETURNING id, name, slug, description, "isVerified", "createdAt"
+      INSERT INTO "Lab" (name, slug, description, institutionid, createdby, isverified, createdat)
+      VALUES (${name}, ${slug}, ${description || null}, ${user.institutionid}, ${user.id}, false, NOW())
+      RETURNING id, name, slug, description, isverified, createdat
     ` as any[];
 
     const lab = labs[0];
 
     // Add creator as admin
     await prisma.$queryRaw`
-      INSERT INTO "LabMember" ("labId", "userId", "role", "joinedAt")
+      INSERT INTO "LabMember" (labid, userid, role, joinedat)
       VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
     `;
 
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
     const institutions = await prisma.$queryRaw`
       SELECT id, name, domain 
       FROM "Institution" 
-      WHERE id = ${user["institutionId"]}
+      WHERE id = ${user.institutionid}
     ` as any[];
 
     const institution = institutions[0];
@@ -81,12 +82,12 @@ export async function POST(request: Request) {
     // Return lab with userRole and joinedAt
     const labWithRole = {
       ...lab,
-      createdAt: lab.createdAt.toISOString(),
+      createdAt: lab.createdat.toISOString(),
       institution: institution,
       userRole: 'ADMIN' as const,
       joinedAt: new Date().toISOString(),
       _count: {
-        members: 0 // We'll count this separately if needed
+        members: 0
       }
     };
 
@@ -120,16 +121,16 @@ export async function GET(request: Request) {
         l.name,
         l.slug,
         l.description,
-        l."isVerified",
-        l."createdAt",
+        l.isverified,
+        l.createdat,
         i.name as "institutionName",
         i.domain as "institutionDomain",
         lm.role as "userRole",
-        lm."joinedAt"
+        lm.joinedat
       FROM "LabMember" lm
-      JOIN "Lab" l ON lm."labId" = l.id
-      JOIN "Institution" i ON l."institutionId" = i.id
-      WHERE lm."userId" = ${user.id}
+      JOIN "Lab" l ON lm.labid = l.id
+      JOIN "Institution" i ON l.institutionid = i.id
+      WHERE lm.userid = ${user.id}
     ` as any[];
 
     // Convert dates to strings and format response
@@ -138,15 +139,15 @@ export async function GET(request: Request) {
       name: lab.name,
       slug: lab.slug,
       description: lab.description,
-      isVerified: lab.isVerified,
-      createdAt: lab.createdAt.toISOString(),
+      isVerified: lab.isverified,
+      createdAt: lab.createdat.toISOString(),
       institution: {
         id: lab.id, // We'll use lab.id as placeholder since we don't have institution.id
         name: lab.institutionName,
         domain: lab.institutionDomain
       },
       userRole: lab.userRole,
-      joinedAt: lab.joinedAt.toISOString(),
+      joinedAt: lab.joinedat.toISOString(),
       _count: {
         members: 0 // We'll count this separately if needed
       }
