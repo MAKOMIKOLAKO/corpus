@@ -34,11 +34,17 @@ export async function GET(request: NextRequest) {
                 params.append('api_key', process.env.OPENALEX_API_KEY);
             }
 
-            const response = await fetch(`${baseUrl}?${params}`, {
+            const url = `${baseUrl}?${params}`;
+            console.error('DEBUG: OpenAlex URL:', url);
+
+            const response = await fetch(url, {
                 headers: {
                     'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
                 }
             });
+
+            console.error('DEBUG: Response status:', response.status);
+            console.error('DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -49,6 +55,14 @@ export async function GET(request: NextRequest) {
                     return NextResponse.json({
                         results: [],
                         error: 'Search requires an OpenAlex API key. Please add OPENALEX_API_KEY to your environment variables.'
+                    });
+                }
+
+                // If we get a 400, it's a bad request - show the actual error
+                if (response.status === 400) {
+                    return NextResponse.json({
+                        results: [],
+                        error: `Invalid request to OpenAlex: ${errorText}`
                     });
                 }
 
