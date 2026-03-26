@@ -67,7 +67,9 @@ export default function PricingPage() {
           <Card className="relative min-h-[600px] flex flex-col">
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-2xl">Free</CardTitle>
-              <div className="text-4xl font-bold">$0<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+              <div className="space-y-2">
+                <div className="text-4xl font-bold">$0<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6 flex-1 flex flex-col">
               <ul className="space-y-3">
@@ -106,14 +108,7 @@ export default function PricingPage() {
 
           {/* Pro Tier */}
           <Card className="relative border-primary shadow-lg min-h-[600px] flex flex-col">
-            {billingCycle === 'annual' && (
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                <Badge className="bg-green-100 text-green-800 border-green-200 shadow-sm">
-                  Save $6/month
-                </Badge>
-              </div>
-            )}
-            <CardHeader className="text-center pb-8 pt-6">
+            <CardHeader className="text-center pb-8">
               <CardTitle className="text-2xl">Pro</CardTitle>
               <div className="space-y-2">
                 {billingCycle === 'monthly' ? (
