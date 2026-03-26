@@ -233,20 +233,24 @@ export default function AddEntryForm() {
             {/* Fetch Section */}
             <Card>
                 <CardHeader>
-                    <div className="flex gap-6 border-b border-[var(--border)]">
+                    <CardTitle>Add Academic Paper or Book</CardTitle>
+                    <CardDescription>
+                        Automatically extract metadata from DOIs, arXiv, PubMed, ISBNs, or academic publisher URLs.
+                    </CardDescription>
+                    <div className="flex gap-6 border-b border-[var(--border)] mt-4">
                         <button
                             type="button"
                             className={`font-medium text-[15px] pb-3 transition-colors relative ${tab === 'DOI' ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'}`}
                             onClick={() => { setTab('DOI'); setFetchInput(''); setError(null); }}
                         >
-                            Fetch by DOI
+                            DOI / ISBN
                         </button>
                         <button
                             type="button"
                             className={`font-medium text-[15px] pb-3 transition-colors relative ${tab === 'URL' ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'}`}
                             onClick={() => { setTab('URL'); setFetchInput(''); setError(null); }}
                         >
-                            Fetch by URL
+                            Academic URL
                         </button>
                     </div>
                 </CardHeader>
@@ -257,7 +261,7 @@ export default function AddEntryForm() {
                             {tab === 'DOI' ? <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> : <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
                             <Input
                                 type="text"
-                                placeholder={tab === 'DOI' ? "e.g., 10.1038/nphys1170" : "e.g., arXiv URL, PubMed, or academic publisher"}
+                                placeholder={tab === 'DOI' ? "10.1038/nature12373 or 978-0-262-03384-8" : "https://arxiv.org/abs/2103.00020"}
                                 value={fetchInput}
                                 onChange={e => setFetchInput(e.target.value)}
                                 className="pl-10"
@@ -269,13 +273,14 @@ export default function AddEntryForm() {
                             disabled={!fetchInput.trim() || isFetching}
                         >
                             {isFetching && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Fetch
+                            {isFetching ? 'Fetching...' : 'Fetch Metadata'}
                         </Button>
                     </div>
 
                     {error && (
                         <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-md">
                             <div className="flex flex-col gap-2">
+                                <p className="font-medium">Error</p>
                                 <p>{error}</p>
                                 {existingDuplicate && (
                                     <div className="flex gap-2 mt-2">
@@ -349,13 +354,10 @@ export default function AddEntryForm() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="PAPER">Paper</SelectItem>
-                                            <SelectItem value="BLOG">Blog</SelectItem>
-                                            <SelectItem value="ESSAY">Essay</SelectItem>
-                                            <SelectItem value="ARTICLE">Article</SelectItem>
-                                            <SelectItem value="POLICY_REPORT">Policy Report</SelectItem>
                                             <SelectItem value="BOOK">Book</SelectItem>
-                                            <SelectItem value="VIDEO">Video</SelectItem>
-                                            <SelectItem value="SOCIAL_POST">Social Post</SelectItem>
+                                            <SelectItem value="ARTICLE">Article</SelectItem>
+                                            <SelectItem value="ESSAY">Essay</SelectItem>
+                                            <SelectItem value="POLICY_REPORT">Policy Report</SelectItem>
                                             <SelectItem value="OTHER">Other</SelectItem>
                                         </SelectContent>
                                     </Select>
