@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, CheckCircle, AlertCircle, BookOpen, ExternalLink, Plus, Share, ChevronDown } from 'lucide-react';
+import { Search, Loader2, AlertCircle, BookOpen, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,23 +47,24 @@ interface Candidate {
 export default function AddPaperForm() {
     const router = useRouter();
     const apiKey = useApiKey();
-    
+    const inputRef = useRef<HTMLInputElement>(null);
+
     // Input and detection
     const [input, setInput] = useState('');
     const [detectedType, setDetectedType] = useState<InputType>('');
     const [isDetecting, setIsDetecting] = useState(false);
-    
+
     // Loading states
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStep, setLoadingStep] = useState<LoadingStep>('detecting');
     const [loadingMessage, setLoadingMessage] = useState('');
-    
+
     // Results
     const [metadata, setMetadata] = useState<PaperMetadata | null>(null);
     const [source, setSource] = useState<string>('');
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [showCandidates, setShowCandidates] = useState(false);
-    
+
     // Form state
     const [formData, setFormData] = useState({
         title: '',
@@ -79,67 +80,62 @@ export default function AddPaperForm() {
         notes: '',
         readingStatus: 'BACKLOG' as const
     });
-    
+
     // UI states
     const [error, setError] = useState<string | null>(null);
     const [duplicate, setDuplicate] = useState<DuplicateEntry | null>(null);
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(true);
-    const [isSaved, setIsSaved] = useState(false);
-    const [savedEntryId, setSavedEntryId] = useState<string>('');
-    const [showCollectionsDropdown, setShowCollectionsDropdown] = useState(false);
-    const [collections, setCollections] = useState<any[]>([]);
-    const [addedToCollections, setAddedToCollections] = useState<Set<string>>(new Set());
-    
+
     // Abstract expansion
     const [showFullAbstract, setShowFullAbstract] = useState(false);
-    
+
     // Detect input type as user types
     useEffect(() => {
         if (!input.trim()) {
             setDetectedType('');
             return;
         }
-        
+
         const timer = setTimeout(() => {
             const clean = input.trim();
-            
+
             // DOI detection
             if (/^10\.\d{4,}[\/.].+$/.test(clean.replace(/^(doi:|DOI:|https?:\/\/(dx\.)?doi\.org\/)/, ''))) {
                 setDetectedType('doi');
                 return;
             }
-            
+
             // ArXiv detection
             if (/^\d{4}\.\d{4,5}(v\d+)?$/.test(clean) || /arxiv\.org\/(?:abs|pdf)\/(\d{4}\.\d{4,5}(v\d+)?)/.test(clean)) {
                 setDetectedType('arxiv');
                 return;
             }
-            
+
             // PubMed detection
             if (/^\d{6,8}$/.test(clean) || /pubmed\.ncbi\.nlm\.nih\.gov\/(?:entry\/)?(\d+)/.test(clean)) {
                 setDetectedType('pubmed');
                 return;
             }
-            
+
             // URL detection
             if (/^https?:\/\//.test(clean)) {
                 setDetectedType('url');
                 return;
             }
-            
+
             // Citation detection
             if (clean.length > 40 && (/\(\d{4}\)/.test(clean) || /et\s+al\./i.test(clean))) {
                 setDetectedType('citation');
                 return;
             }
-            
+
             // Default to title search
             setDetectedType('title');
         }, 300);
-        
+
         return () => clearTimeout(timer);
     }, [input]);
-    
+
     // Loading messages
     useEffect(() => {
         const messages: Record<LoadingStep, string> = {
@@ -150,17 +146,17 @@ export default function AddPaperForm() {
         };
         setLoadingMessage(messages[loadingStep]);
     }, [loadingStep, source]);
-    
+
     // Simulate loading steps
     useEffect(() => {
         if (!isLoading) return;
-        
+
         const steps: LoadingStep[] = ['detecting', 'fetching'];
         if (source.includes('unpaywall')) {
             steps.push('checking_oa');
         }
         steps.push('finalizing');
-        
+
         let currentStep = 0;
         const interval = setInterval(() => {
             currentStep++;
@@ -170,19 +166,19 @@ export default function AddPaperForm() {
                 clearInterval(interval);
             }
         }, 800);
-        
+
         return () => clearInterval(interval);
     }, [isLoading, source]);
-    
+
     // Handle form submission
     const handleSubmit = async () => {
         if (!input.trim()) return;
-        
+
         setIsLoading(true);
         setError(null);
         setDuplicate(null);
         setShowCandidates(false);
-        
+
         try {
             // Fetch metadata
             const response = await fetch('/api/papers/detect-and-fetch', {
@@ -193,20 +189,20 @@ export default function AddPaperForm() {
                 },
                 body: JSON.stringify({ input })
             });
-            
+
             const data = await response.json();
-            
+
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to fetch metadata');
             }
-            
+
             if (data.responseType === 'candidates') {
                 setCandidates(data.candidates);
                 setShowCandidates(true);
                 setIsLoading(false);
                 return;
             }
-            
+
             // Check for duplicates
             const duplicateResponse = await fetch(
                 `/api/papers/check-duplicate?doi=${encodeURIComponent(data.metadata.doi || '')}&title=${encodeURIComponent(data.metadata.title || '')}`,
@@ -214,14 +210,14 @@ export default function AddPaperForm() {
                     headers: { 'x-api-key': apiKey }
                 }
             );
-            
+
             if (duplicateResponse.ok) {
                 const duplicateData = await duplicateResponse.json();
                 if (duplicateData.exists) {
                     setDuplicate(duplicateData.entry);
                 }
             }
-            
+
             // Set metadata and form data
             setMetadata(data.metadata);
             setSource(data.source);
@@ -239,21 +235,21 @@ export default function AddPaperForm() {
                 notes: '',
                 readingStatus: 'BACKLOG'
             });
-            
+
         } catch (err: any) {
             setError(err.message || 'An error occurred');
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     // Handle candidate selection
     const handleCandidateSelect = async (candidate: Candidate) => {
         if (!candidate.doi) return;
-        
+
         setIsLoading(true);
         setSource('crossref');
-        
+
         try {
             const response = await fetch('/api/papers/detect-and-fetch', {
                 method: 'POST',
@@ -263,13 +259,13 @@ export default function AddPaperForm() {
                 },
                 body: JSON.stringify({ input: candidate.doi })
             });
-            
+
             const data = await response.json();
-            
+
             if (!response.ok || data.responseType === 'candidates') {
                 throw new Error('Failed to fetch candidate metadata');
             }
-            
+
             setMetadata(data.metadata);
             setFormData({
                 title: data.metadata.title || '',
@@ -285,23 +281,23 @@ export default function AddPaperForm() {
                 notes: '',
                 readingStatus: 'BACKLOG'
             });
-            
+
             setShowCandidates(false);
-            
+
         } catch (err: any) {
             setError(err.message || 'Failed to fetch candidate metadata');
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     // Save entry
     const handleSave = async () => {
         if (!formData.title.trim()) {
             setError('Title is required');
             return;
         }
-        
+
         try {
             const result = await createEntryWithMetadata(
                 formData.url || input,
@@ -327,13 +323,40 @@ export default function AddPaperForm() {
                 apiKey,
                 true // Skip AI generation for papers
             );
-            
+
             if (result.success && result.entry?.id) {
-                setSavedEntryId(result.entry.id);
-                setIsSaved(true);
-                
-                // Load collections for the dropdown
-                loadCollections();
+                // Show brief success message then reset for next entry
+                setError(null);
+
+                // Reset form for next entry
+                setInput('');
+                setDetectedType('');
+                setMetadata(null);
+                setSource('');
+                setCandidates([]);
+                setShowCandidates(false);
+                setDuplicate(null);
+                setFormData({
+                    title: '',
+                    authors: '',
+                    year: '',
+                    abstract: '',
+                    source: '',
+                    doi: '',
+                    url: '',
+                    openAccessUrl: '',
+                    userKeywords: '',
+                    summary: '',
+                    notes: '',
+                    readingStatus: 'BACKLOG'
+                });
+
+                // Focus back to input after a brief delay
+                setTimeout(() => {
+                    if (inputRef.current) {
+                        inputRef.current.focus();
+                    }
+                }, 100);
             } else {
                 setError(result.error || 'Failed to save entry');
             }
@@ -341,137 +364,8 @@ export default function AddPaperForm() {
             setError(err.message || 'Failed to save entry');
         }
     };
-    
-    // Load user collections
-    const loadCollections = async () => {
-        try {
-            const response = await fetch('/api/collections', {
-                headers: { 'x-api-key': apiKey }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                setCollections(data);
-            }
-        } catch (error) {
-            console.error('Failed to load collections:', error);
-        }
-    };
-    
-    // Add to collection
-    const handleAddToCollection = async (collectionId: string) => {
-        try {
-            const response = await fetch(`/api/collections/${collectionId}/entries`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey
-                },
-                body: JSON.stringify({ entryId: savedEntryId })
-            });
-            
-            if (response.ok) {
-                setAddedToCollections(prev => new Set(prev).add(collectionId));
-            }
-        } catch (error) {
-            console.error('Failed to add to collection:', error);
-        }
-    };
-    
-    // Reset form
-    const handleAddAnother = () => {
-        setInput('');
-        setDetectedType('');
-        setMetadata(null);
-        setSource('');
-        setCandidates([]);
-        setShowCandidates(false);
-        setFormData({
-            title: '',
-            authors: '',
-            year: '',
-            abstract: '',
-            source: '',
-            doi: '',
-            url: '',
-            openAccessUrl: '',
-            userKeywords: '',
-            summary: '',
-            notes: '',
-            readingStatus: 'BACKLOG'
-        });
-        setError(null);
-        setDuplicate(null);
-        setIsSaved(false);
-        setSavedEntryId('');
-        setShowCollectionsDropdown(false);
-        setAddedToCollections(new Set());
-    };
-    
-    // If saved, show confirmation
-    if (isSaved) {
-        return (
-            <div className="max-w-2xl mx-auto space-y-6">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="text-center space-y-4">
-                            <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-                            <h2 className="text-xl font-semibold">Saved to your library</h2>
-                            <p className="text-sm text-muted-foreground">{formData.title}</p>
-                            
-                            <div className="flex justify-center gap-2 pt-4">
-                                {/* Add to Collection Dropdown */}
-                                <div className="relative">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setShowCollectionsDropdown(!showCollectionsDropdown)}
-                                        className="gap-2"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        Add to Collection
-                                        <ChevronDown className="w-4 h-4" />
-                                    </Button>
-                                    
-                                    {showCollectionsDropdown && collections.length > 0 && (
-                                        <div className="absolute top-full mt-1 w-64 bg-popover border rounded-md shadow-lg z-10">
-                                            <div className="p-2">
-                                                {collections.map(collection => (
-                                                    <button
-                                                        key={collection.id}
-                                                        onClick={() => handleAddToCollection(collection.id)}
-                                                        disabled={addedToCollections.has(collection.id)}
-                                                        className="w-full text-left px-2 py-1.5 rounded hover:bg-accent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        {collection.name}
-                                                        {addedToCollections.has(collection.id) && (
-                                                            <span className="ml-2 text-xs text-green-600">Added!</span>
-                                                        )}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <Button variant="outline" onClick={() => router.push(`/entries/${savedEntryId}`)}>
-                                    View Entry
-                                    <ExternalLink className="w-4 h-4 ml-2" />
-                                </Button>
-                            </div>
-                            
-                            <button
-                                onClick={handleAddAnother}
-                                className="text-sm text-primary hover:underline"
-                            >
-                                Add another paper
-                            </button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-    
+
+
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             {/* Universal Input Section */}
@@ -484,6 +378,7 @@ export default function AddPaperForm() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
+                                ref={inputRef}
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
                                 placeholder="Paste a DOI, ArXiv ID, PubMed ID, URL, or citation..."
@@ -515,11 +410,11 @@ export default function AddPaperForm() {
                             )}
                         </Button>
                     </div>
-                    
+
                     <p className="text-xs text-muted-foreground">
                         DOI: 10.1038/nature12345  ·  ArXiv: 2301.07041  ·  PubMed: 12345678  ·  URL: arxiv.org/abs/...  ·  Citation: paste any reference string
                     </p>
-                    
+
                     {error && (
                         <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-md">
                             {error}
@@ -527,7 +422,7 @@ export default function AddPaperForm() {
                     )}
                 </CardContent>
             </Card>
-            
+
             {/* Candidates UI */}
             {showCandidates && (
                 <Card>
@@ -552,7 +447,7 @@ export default function AddPaperForm() {
                                 )}
                             </div>
                         ))}
-                        
+
                         <div className="pt-2">
                             <Input
                                 placeholder="Not what you were looking for? Refine search..."
@@ -560,7 +455,7 @@ export default function AddPaperForm() {
                                     if (e.key === 'Enter') {
                                         const query = e.currentTarget.value;
                                         if (!query) return;
-                                        
+
                                         try {
                                             const response = await fetch(`/api/papers/search-crossref?q=${encodeURIComponent(query)}`, {
                                                 headers: { 'x-api-key': apiKey }
@@ -579,7 +474,7 @@ export default function AddPaperForm() {
                     </CardContent>
                 </Card>
             )}
-            
+
             {/* Duplicate Warning */}
             {duplicate && showDuplicateWarning && (
                 <Card className="border-yellow-200 bg-yellow-50/50 dark:bg-yellow-900/10">
@@ -611,7 +506,7 @@ export default function AddPaperForm() {
                     </CardContent>
                 </Card>
             )}
-            
+
             {/* Preview Form */}
             {metadata && !showCandidates && (
                 <Card>
@@ -636,7 +531,7 @@ export default function AddPaperForm() {
                                     required
                                 />
                             </div>
-                            
+
                             <div>
                                 <Label>Authors</Label>
                                 <Input
@@ -645,7 +540,7 @@ export default function AddPaperForm() {
                                     placeholder="Author One, Author Two, Author Three"
                                 />
                             </div>
-                            
+
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <Label>Year</Label>
@@ -669,7 +564,7 @@ export default function AddPaperForm() {
                                     </Select>
                                 </div>
                             </div>
-                            
+
                             {formData.abstract && (
                                 <div>
                                     <Label>Abstract</Label>
@@ -692,7 +587,7 @@ export default function AddPaperForm() {
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* Section 2 - Collapsible */}
                         <Collapsible>
                             <CollapsibleTrigger asChild>
@@ -709,7 +604,7 @@ export default function AddPaperForm() {
                                         onChange={e => setFormData({ ...formData, source: e.target.value })}
                                     />
                                 </div>
-                                
+
                                 <div>
                                     <Label>DOI</Label>
                                     <Input
@@ -718,7 +613,7 @@ export default function AddPaperForm() {
                                         placeholder="10.1000/xyz123"
                                     />
                                 </div>
-                                
+
                                 <div>
                                     <Label>URL</Label>
                                     <Input
@@ -726,7 +621,7 @@ export default function AddPaperForm() {
                                         onChange={e => setFormData({ ...formData, url: e.target.value })}
                                     />
                                 </div>
-                                
+
                                 {formData.openAccessUrl && (
                                     <div>
                                         <Label>Open Access</Label>
@@ -741,7 +636,7 @@ export default function AddPaperForm() {
                                         </a>
                                     </div>
                                 )}
-                                
+
                                 <div>
                                     <Label>User Keywords</Label>
                                     <Input
@@ -750,7 +645,7 @@ export default function AddPaperForm() {
                                         placeholder="keyword1, keyword2, keyword3"
                                     />
                                 </div>
-                                
+
                                 <div>
                                     <Label>Summary</Label>
                                     <Textarea
@@ -761,7 +656,7 @@ export default function AddPaperForm() {
                                 </div>
                             </CollapsibleContent>
                         </Collapsible>
-                        
+
                         <Button onClick={handleSave} className="w-full">
                             Save to Library
                         </Button>
