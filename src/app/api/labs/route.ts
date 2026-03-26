@@ -35,8 +35,16 @@ export async function POST(request: Request) {
 
     // Check what fields actually exist
     console.log("User fields:", Object.keys(user));
+    console.log("User data:", user);
 
-    if (!user.institutionid || !user.institutionverifiedat) {
+    // Try different possible field names
+    const institutionId = user.institutionId || user.institutionid || user["institutionId"] || user["institutionid"];
+    const institutionVerifiedAt = user.institutionVerifiedAt || user.institutionverifiedat || user["institutionVerifiedAt"] || user["institutionverifiedat"];
+
+    console.log("institutionId:", institutionId);
+    console.log("institutionVerifiedAt:", institutionVerifiedAt);
+
+    if (!institutionId || !institutionVerifiedAt) {
       return NextResponse.json({ error: "You must verify your institution before creating a lab" }, { status: 403 });
     }
 
@@ -55,10 +63,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not generate unique slug" }, { status: 500 });
     }
 
-    // Create lab using raw query with lowercase column names
+    // Create lab using raw query with detected column names
     const labs = await prisma.$queryRaw`
       INSERT INTO "Lab" (name, slug, description, institutionid, createdby, isverified, createdat)
-      VALUES (${name}, ${slug}, ${description || null}, ${user.institutionid}, ${user.id}, false, NOW())
+      VALUES (${name}, ${slug}, ${description || null}, ${institutionId}, ${user.id}, false, NOW())
       RETURNING id, name, slug, description, isverified, createdat
     ` as any[];
 
@@ -74,7 +82,7 @@ export async function POST(request: Request) {
     const institutions = await prisma.$queryRaw`
       SELECT id, name, domain 
       FROM "Institution" 
-      WHERE id = ${user.institutionid}
+      WHERE id = ${institutionId}
     ` as any[];
 
     const institution = institutions[0];
