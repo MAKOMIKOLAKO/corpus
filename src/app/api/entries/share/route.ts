@@ -8,13 +8,19 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const userId = session.user.id as string;
 
-  const { entryId, receiverId, message } = await request.json();
-  if (!entryId || !receiverId) {
-    return NextResponse.json({ error: 'entryId and receiverId are required' }, { status: 400 });
+  const { entryId, receiverId, userIds, message } = await request.json();
+
+  // Support both single receiver (backward compatibility) and multiple users
+  const receivers = userIds || (receiverId ? [receiverId] : []);
+
+  if (!entryId || receivers.length === 0) {
+    return NextResponse.json({ error: 'entryId and at least one receiverId are required' }, { status: 400 });
   }
-  if (receiverId === userId) {
+
+  if (receivers.includes(userId)) {
     return NextResponse.json({ error: 'You cannot share an entry with yourself' }, { status: 400 });
   }
+
   if (message && message.length > 280) {
     return NextResponse.json({ error: 'Message must be 280 characters or fewer' }, { status: 400 });
   }
@@ -25,57 +31,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Entry not found or does not belong to you' }, { status: 404 });
   }
 
-  // Verify they are accepted connections
-  const connection = await prisma.connection.findFirst({
+  // Verify they are accepted connections for all receivers
+  const connections = await prisma.connection.findMany({
     where: {
       status: 'ACCEPTED',
       OR: [
-        { requesterId: userId, receiverId },
-        { requesterId: receiverId, receiverId: userId },
+        { requesterId: userId, receiverId: { in: receivers } },
+        { requesterId: { in: receivers }, receiverId: userId },
       ],
     },
   });
-  if (!connection) {
+
+  if (connections.length !== receivers.length) {
     return NextResponse.json({ error: 'You can only share entries with accepted connections' }, { status: 403 });
   }
 
-  // Check duplicate
-  const existing = await prisma.sharedEntry.findUnique({
-    where: { entryId_senderId_receiverId: { entryId, senderId: userId, receiverId } },
-  });
-  if (existing) {
-    return NextResponse.json(
-      { error: "You've already shared this entry with that user" },
-      { status: 409 }
-    );
+  // Check duplicates and create shares
+  const results = [];
+  for (const receiverId of receivers) {
+    const existing = await prisma.sharedEntry.findUnique({
+      where: { entryId_senderId_receiverId: { entryId, senderId: userId, receiverId } },
+    });
+
+    if (existing) {
+      continue; // Skip duplicates
+    }
+
+    const shared = await prisma.sharedEntry.create({
+      data: { entryId, senderId: userId, receiverId, message: message || null },
+      include: {
+        entry: { select: { id: true, title: true, contentType: true } },
+        receiver: { select: { id: true, username: true, name: true } },
+      },
+    });
+
+    results.push(shared);
   }
 
-  const shared = await prisma.sharedEntry.create({
-    data: { entryId, senderId: userId, receiverId, message: message || null },
-    include: {
-      entry: { select: { id: true, title: true, contentType: true } },
-      receiver: { select: { id: true, username: true, name: true } },
-    },
-  });
-
-  // Create signal for paper shared (fire-and-forget)
-  try {
-    // Don't await this signal creation
-    prisma.signal.create({
-      data: {
-        userId: userId,
-        type: "PAPER_SHARED",
-        entryId: entryId,
-        metadata: {
-          entryTitle: shared.entry.title,
-          receiverUsername: shared.receiver.username || shared.receiver.name
-        }
-      }
-    }).catch(err => console.error("Failed to create signal:", err));
-  } catch (error) {
-    // Fire-and-forget signal creation
-    console.error("Failed to create signal:", error);
-  }
-
-  return NextResponse.json(shared, { status: 201 });
+  return NextResponse.json({ shared: results, count: results.length }, { status: 201 });
 }

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff, Shield } from 'lucide-react';
+import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff } from 'lucide-react';
 import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
 
 export default function AccountPage() {
@@ -441,7 +441,10 @@ export default function AccountPage() {
             {/* Account Information */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Account Information</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5" />
+                        Account & Billing
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -461,32 +464,49 @@ export default function AccountPage() {
                                 </Badge>
                             </div>
                         </div>
-                        <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Institution</Label>
-                            <div className="mt-1 flex items-center gap-2">
-                                {profile?.institution ? (
-                                    <>
-                                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                                            <Shield className="w-3 h-3 mr-1" />
-                                            {profile.institution.name}
-                                        </Badge>
-                                        <span className="text-xs text-green-600">Verified</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="text-sm text-muted-foreground">Not verified</span>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setShowVerificationModal(true)}
-                                        >
-                                            <Shield className="w-3 h-3 mr-1" />
-                                            Verify .edu
-                                        </Button>
-                                    </>
-                                )}
+
+                        {userPlan === 'PRO' && (
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Manage your subscription, update payment methods, or cancel your plan.
+                                </p>
+                                <Button
+                                    onClick={handleManageSubscription}
+                                    disabled={portalLoading}
+                                >
+                                    {portalLoading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        'Manage Subscription'
+                                    )}
+                                </Button>
                             </div>
-                        </div>
+                        )}
+
+                        {userPlan === 'FREE' && (
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Upgrade to Pro to unlock unlimited entries and premium features.
+                                </p>
+                                <Button>
+                                    <a href="/pricing">Upgrade to Pro</a>
+                                </Button>
+                            </div>
+                        )}
+
+                        {userPlan === 'LIFETIME_PRO' && (
+                            <div>
+                                <p className="text-sm text-green-600 font-medium">
+                                    Lifetime Pro — no billing required
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    You have lifetime access to all Pro features.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -541,71 +561,6 @@ export default function AccountPage() {
                             <span className="text-sm">{message.text}</span>
                         </div>
                     )}
-                </CardContent>
-            </Card>
-
-            {/* Billing Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5" />
-                        Billing
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Current Plan</Label>
-                            <div className="mt-1">
-                                <Badge variant={getPlanBadgeVariant(userPlan)}>
-                                    {getPlanDisplay(userPlan)}
-                                </Badge>
-                            </div>
-                        </div>
-
-                        {userPlan === 'PRO' && (
-                            <div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    Manage your subscription, update payment methods, or cancel your plan.
-                                </p>
-                                <Button
-                                    onClick={handleManageSubscription}
-                                    disabled={portalLoading}
-                                >
-                                    {portalLoading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Loading...
-                                        </>
-                                    ) : (
-                                        'Manage Subscription'
-                                    )}
-                                </Button>
-                            </div>
-                        )}
-
-                        {userPlan === 'FREE' && (
-                            <div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    Upgrade to Pro to unlock unlimited entries and premium features.
-                                </p>
-                                <Button>
-                                    <a href="/pricing">Upgrade to Pro</a>
-                                </Button>
-                            </div>
-                        )}
-
-                        {userPlan === 'LIFETIME_PRO' && (
-                            <div>
-                                <p className="text-sm text-green-600 font-medium">
-                                    Lifetime Pro — no billing required
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    You have lifetime access to all Pro features.
-                                </p>
-                            </div>
-                        )}
-                    </div>
                 </CardContent>
             </Card>
 

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { CardTitle } from '@/components/ui/card';
 import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
+import ShareEntryModal from '@/components/ShareEntryModal';
 
 interface Entry {
     id: string;
@@ -85,6 +86,7 @@ export default function EntryCard({
     const [isUpdating, setIsUpdating] = useState(false);
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
     const apiKey = useApiKey();
 
     const [assignedCollectionIds, setAssignedCollectionIds] = useState<string[]>(
@@ -207,27 +209,7 @@ export default function EntryCard({
     const handleShare = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-
-        const shareData = {
-            title: entry.title,
-            text: `${entry.title}${entry.authors.length > 0 ? ` - ${entry.authors.slice(0, 3).join(', ')}` : ''}`,
-            url: entry.url || window.location.href
-        };
-
-        try {
-            if (navigator.share) {
-                await navigator.share(shareData);
-            } else {
-                // Fallback: copy to clipboard
-                const textToCopy = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
-                if (navigator?.clipboard?.writeText) {
-                    await navigator.clipboard.writeText(textToCopy);
-                }
-                // Could show a toast here
-            }
-        } catch (error) {
-            console.error('Error sharing:', error);
-        }
+        setShowShareModal(true);
     };
 
     const removeFromAllCollections = async () => {
@@ -523,6 +505,18 @@ export default function EntryCard({
                     </CardContent>
                 </Card>
             </Link>
+
+            {/* Share Modal */}
+            <ShareEntryModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                entry={{
+                    id: entry.id,
+                    title: entry.title,
+                    authors: entry.authors,
+                    url: entry.url,
+                }}
+            />
 
             {/* Close dropdown when clicking outside */}
             {(isOpen || isCollectionOpen) && (
