@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
                     const openalexData = await openalexResponse.json();
                     if (openalexData.results?.[0]) {
                         const work = openalexData.results[0];
-                        if (work.abstract?.length > 2) {
-                            metadata.abstract = work.abstract;
+                        if (work.abstract && work.abstract.startsWith('<Abstract>')) {
+                            metadata.abstract = work.abstract.replace(/<\/?[^>]+(>|$)/g, '').trim();
                             metadata.metadataSources.push('OpenAlex');
                         }
                         if (work.open_access?.oa_url) {

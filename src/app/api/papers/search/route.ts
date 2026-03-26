@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
             });
 
             if (!response.ok) {
-                console.error('OpenAlex API error:', response.status, await response.text());
+                const errorText = await response.text();
+                console.error('OpenAlex API error:', response.status, errorText);
                 return NextResponse.json({
                     results: [],
                     error: 'Search temporarily unavailable. Please try entering a DOI instead.'
@@ -58,7 +59,9 @@ export async function GET(request: NextRequest) {
                     title: item.display_name,
                     authors: authors,
                     year: item.publication_year || null,
-                    abstract: item.abstract?.length > 2 ? item.abstract : null,
+                    abstract: item.abstract && item.abstract.startsWith('<Abstract>')
+                        ? item.abstract.replace(/<\/?[^>]+(>|$)/g, '').trim() // Remove HTML tags
+                        : (item.abstract || null),
                     source: source,
                     doi: doi,
                     openAccessUrl: openAccessUrl
