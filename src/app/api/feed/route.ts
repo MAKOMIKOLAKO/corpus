@@ -19,7 +19,10 @@ export async function GET(request: Request) {
     // Get the current user
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: {
+      select: {
+        id: true,
+        username: true,
+        lastFeedViewedAt: true,
         receivedConnections: {
           where: { status: "ACCEPTED" },
           select: { requesterId: true }
@@ -104,15 +107,37 @@ export async function GET(request: Request) {
       take: limit
     });
 
-    // Get unread count
+    // Get unread count (only from connections, not own activity)
     let unreadCount = 0;
     if (user.lastFeedViewedAt) {
-      unreadCount = await prisma.signal.count({
-        where: {
-          ...whereClause,
-          createdAt: { gt: user.lastFeedViewedAt }
-        }
-      });
+      // Create a separate where clause for unread count that excludes user's own signals
+      let unreadWhereClause: any = {};
+
+      if (filter === "mine") {
+        // For "mine" filter, don't show any unread notifications since it's all own activity
+        unreadCount = 0;
+      } else if (filter === "connections") {
+        unreadWhereClause.userId = { in: connectedUserIds };
+      } else {
+        // "all" - only count connections' signals for unread notifications
+        unreadWhereClause.userId = { in: connectedUserIds };
+      }
+
+      // Apply privacy settings for unread count
+      if (filter !== "mine" && unreadWhereClause.userId) {
+        unreadWhereClause.user = {
+          showSignals: true
+        };
+      }
+
+      if (Object.keys(unreadWhereClause).length > 0) {
+        unreadCount = await prisma.signal.count({
+          where: {
+            ...unreadWhereClause,
+            createdAt: { gt: user.lastFeedViewedAt }
+          }
+        });
+      }
     } else {
       // If never viewed, all signals are considered read
       unreadCount = 0;
