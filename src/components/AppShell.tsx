@@ -182,13 +182,6 @@ export function AppShell({
                     graph
                   </Link>
                 )}
-                <Link
-                  href="/add"
-                  className="inline-flex items-center text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
-                  aria-current={pathname === "/add" ? "page" : undefined}
-                >
-                  add entry
-                </Link>
                 <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
                 <AccountHoverMenu
                   displayName={session.user?.name || session.user?.email || "Account"}
