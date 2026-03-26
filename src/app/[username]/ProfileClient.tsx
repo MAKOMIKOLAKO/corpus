@@ -34,7 +34,7 @@ interface Props {
 export default function ProfileClient({ user, totalConnections }: Props) {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'none' | 'sent' | 'received' | 'accepted'>('none');
+  const [connectionStatus, setConnectionStatus] = useState<"none" | "sent" | "received" | "accepted">("none");
   const [loading, setLoading] = useState(false);
 
   const isOwnProfile = session?.user?.id === user.id;
@@ -51,7 +51,7 @@ export default function ProfileClient({ user, totalConnections }: Props) {
       if (response.ok) {
         const data = await response.json();
         setConnectionStatus(data.status);
-        setIsConnected(data.status === 'accepted');
+        setIsConnected(data.status === "accepted");
       }
     } catch (error) {
       console.error("Failed to check connection status");
@@ -169,9 +169,8 @@ export default function ProfileClient({ user, totalConnections }: Props) {
               </Button>
             </Link>
           )}
-        </div>
-      </CardContent>
-    </Card>
-  </div >
-);
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
