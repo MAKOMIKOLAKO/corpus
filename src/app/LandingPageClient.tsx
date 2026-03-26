@@ -561,7 +561,7 @@ export default function LandingPage() {
                 role: "Postdoctoral Researcher, Molecular Biology",
               },
               {
-                quote: "The knowledge graph showed me a connection between two papers I'd saved six months apart. That connection ended up being the core argument of my thesis chapter.",
+                quote: "The AI tagging saves me hours every week. My papers organize themselves automatically — I just search for a topic and everything relevant appears instantly.",
                 role: "Graduate Student, Political Theory",
               },
             ].map((t) => (
