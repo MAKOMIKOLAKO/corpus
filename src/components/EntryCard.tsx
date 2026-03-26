@@ -72,10 +72,13 @@ const formatDate = (date: string | Date) => {
 export default function EntryCard({
     entry,
     scrollPositionKey = 'library',
+    fromPath,
 }: {
     entry: Entry;
     /** Session key for scroll restore (must match useScrollPosition on that page, e.g. `collection-${id}`). */
     scrollPositionKey?: string;
+    /** Optional path to include in the from query parameter for back navigation */
+    fromPath?: string;
 }) {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
@@ -290,7 +293,7 @@ export default function EntryCard({
     return (
         <>
             <Link
-                href={`/entries/${entry.id}`}
+                href={`/entries/${entry.id}${fromPath ? `?from=${fromPath}` : ''}`}
                 scroll={false}
                 onClick={() => saveScrollPositionForKey(scrollPositionKey)}
             >

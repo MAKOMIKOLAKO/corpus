@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, X } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 
@@ -30,6 +30,7 @@ const formatDate = (dateString: string) => {
 
 export default function EntryDetailClient({ initialData }: { initialData: any }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState(initialData);
@@ -52,6 +53,22 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
     const [shareResult, setShareResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const apiKey = useApiKey();
+
+    // Scroll to top on mount
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    const handleBack = () => {
+        const from = searchParams.get('from');
+        if (from) {
+            // If we have a 'from' parameter, navigate back to that page
+            router.push(from);
+        } else {
+            // Otherwise use browser back
+            router.back();
+        }
+    };
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this entry?')) return;
@@ -255,7 +272,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <button onClick={() => router.back()} className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1">
+            <button onClick={handleBack} className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1">
                 <ChevronLeft className="w-4 h-4" /> Back
             </button>
 
