@@ -15,13 +15,20 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function SetupUsernameClient() {
   const router = useRouter();
-  const { update } = useSession();
+  const { data: session, update } = useSession();
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [availability, setAvailability] = useState<{ available: boolean; valid: boolean; message: string } | null>(null);
   const debouncedUsername = useDebounce(username, 400);
+
+  // If user already has username (from session), redirect immediately
+  useEffect(() => {
+    if (session?.user?.username) {
+      router.push('/library');
+    }
+  }, [session, router]);
 
   const checkAvailability = useCallback(async (val: string) => {
     if (!val) { setAvailability(null); return; }
@@ -50,12 +57,11 @@ export default function SetupUsernameClient() {
         body: JSON.stringify({ username, bio }),
       });
       if (res.ok) {
-        // Update session and then redirect
-        await update();
-        // Add a small delay to ensure session is updated
-        setTimeout(() => {
-          window.location.href = '/library';
-        }, 500);
+        // Update session to get the new username in the token
+        await update(true);
+        // Use router.push instead of window.location.href to avoid hard redirect
+        router.push('/library');
+        router.refresh();
       } else if (res.status === 404) {
         await signOut({ callbackUrl: '/signup' });
       } else {

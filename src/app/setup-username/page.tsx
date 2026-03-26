@@ -14,7 +14,12 @@ export default async function SetupUsernamePage() {
   });
 
   if (!user) redirect('/api/auth/clear-session');
-  if (user?.username) redirect('/library');
+
+  // If user already has username, redirect to library
+  // This handles the case where the token was stale but user has since set username
+  if (user?.username) {
+    redirect('/library');
+  }
 
   return <SetupUsernameClient />;
 }
