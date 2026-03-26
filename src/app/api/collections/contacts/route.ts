@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         members: {
           where: { status: 'ACCEPTED' },
           include: {
-            user: { select: { id: true, name: true, email: true } },
+            user: { select: { id: true, name: true, email: true, username: true } },
           },
         },
       },
@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
       include: {
         collection: {
           select: {
-            user: { select: { id: true, name: true, email: true } },
+            user: { select: { id: true, name: true, email: true, username: true } },
             members: {
               where: { status: 'ACCEPTED' },
-              include: { user: { select: { id: true, name: true, email: true } } },
+              include: { user: { select: { id: true, name: true, email: true, username: true } } },
             },
           },
         },
@@ -49,18 +49,18 @@ export async function GET(request: NextRequest) {
     const invitedByMe = await prisma.collectionMember.findMany({
       where: { invitedBy: userId },
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true, email: true, username: true } },
       },
       take: 100,
     });
 
-    const byEmail = new Map<string, { id: string; name: string | null; email: string }>();
+    const byEmail = new Map<string, { id: string; name: string | null; email: string; username: string | null }>();
 
     // From A
     for (const col of ownedWithMembers) {
       for (const m of col.members) {
         if (m.user?.email && m.user.id !== userId) {
-          byEmail.set(m.user.email, { id: m.user.id, name: m.user.name, email: m.user.email });
+          byEmail.set(m.user.email, { id: m.user.id, name: m.user.name, email: m.user.email, username: m.user.username });
         }
       }
     }
@@ -69,11 +69,11 @@ export async function GET(request: NextRequest) {
     for (const mem of myMemberships) {
       const owner = mem.collection.user;
       if (owner?.email && owner.id !== userId) {
-        byEmail.set(owner.email, { id: owner.id, name: owner.name, email: owner.email });
+        byEmail.set(owner.email, { id: owner.id, name: owner.name, email: owner.email, username: owner.username });
       }
       for (const m of mem.collection.members) {
         if (m.user?.email && m.user.id !== userId) {
-          byEmail.set(m.user.email, { id: m.user.id, name: m.user.name, email: m.user.email });
+          byEmail.set(m.user.email, { id: m.user.id, name: m.user.name, email: m.user.email, username: m.user.username });
         }
       }
     }
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     // From C
     for (const inv of invitedByMe) {
       if (inv.user?.email && inv.user.id !== userId) {
-        byEmail.set(inv.user.email, { id: inv.user.id, name: inv.user.name, email: inv.user.email });
+        byEmail.set(inv.user.email, { id: inv.user.id, name: inv.user.name, email: inv.user.email, username: inv.user.username });
       }
     }
 
