@@ -75,7 +75,7 @@ export function useEntryQueue({ apiKey, onSuccess, onError, onQueueComplete }: U
    * Clear all completed/failed items from the queue
    */
   const clearCompleted = useCallback(() => {
-    setQueue(prev => prev.filter(item => 
+    setQueue(prev => prev.filter(item =>
       item.status === 'pending' || item.status === 'processing'
     ));
   }, []);
@@ -93,7 +93,7 @@ export function useEntryQueue({ apiKey, onSuccess, onError, onQueueComplete }: U
    * Retry a failed item
    */
   const retryItem = useCallback((itemId: string) => {
-    setQueue(prev => prev.map(item => 
+    setQueue(prev => prev.map(item =>
       item.id === itemId && item.status === 'failed'
         ? { ...item, status: 'pending' as QueueItemStatus, error: undefined }
         : item
@@ -110,7 +110,7 @@ export function useEntryQueue({ apiKey, onSuccess, onError, onQueueComplete }: U
     if (!nextItem) {
       setIsProcessing(false);
       processingRef.current = false;
-      
+
       // Check if queue is complete (no pending or processing items)
       const hasActiveItems = currentQueue.some(
         item => item.status === 'pending' || item.status === 'processing'
@@ -143,34 +143,55 @@ export function useEntryQueue({ apiKey, onSuccess, onError, onQueueComplete }: U
             ? { ...item, status: 'success' as QueueItemStatus, entryId: result.entry.id }
             : item
         ));
-        
+
         if (onSuccess) {
           onSuccess(nextItem, result.entry.id);
         }
       } else {
-        // Failed
+        // Failed - provide detailed error information
         const errorMessage = result.error || 'Failed to create entry';
+        const errorDetails = result.details || `Could not save entry: "${nextItem.metadata.title || 'Untitled'}". Please check the entry details and try again.`;
+
         setQueue(prev => prev.map(item =>
           item.id === nextItem.id
-            ? { ...item, status: 'failed' as QueueItemStatus, error: errorMessage }
+            ? { ...item, status: 'failed' as QueueItemStatus, error: `${errorMessage}: ${errorDetails}` }
             : item
         ));
-        
+
         if (onError) {
-          onError(nextItem, errorMessage);
+          onError(nextItem, `${errorMessage}: ${errorDetails}`);
         }
       }
     } catch (error: any) {
-      // Exception during processing
-      const errorMessage = error.message || 'An error occurred';
+      // Exception during processing - provide detailed error information
+      let errorMessage = 'An error occurred';
+      let errorDetails = '';
+
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      // Add contextual information
+      errorDetails = `Failed to process entry: "${nextItem.metadata.title || 'Untitled'}". `;
+
+      if (error?.name === 'TypeError') {
+        errorDetails += 'There may be a network connectivity issue.';
+      } else if (error?.name === 'AbortError') {
+        errorDetails += 'The request timed out. Please try again.';
+      } else {
+        errorDetails += 'Please check your internet connection and try again.';
+      }
+
+      const fullErrorMessage = `${errorMessage}: ${errorDetails}`;
+
       setQueue(prev => prev.map(item =>
         item.id === nextItem.id
-          ? { ...item, status: 'failed' as QueueItemStatus, error: errorMessage }
+          ? { ...item, status: 'failed' as QueueItemStatus, error: fullErrorMessage }
           : item
       ));
-      
+
       if (onError) {
-        onError(nextItem, errorMessage);
+        onError(nextItem, fullErrorMessage);
       }
     }
 
@@ -183,7 +204,7 @@ export function useEntryQueue({ apiKey, onSuccess, onError, onQueueComplete }: U
    */
   const startProcessing = useCallback(() => {
     if (processingRef.current) return;
-    
+
     processingRef.current = true;
     setIsProcessing(true);
     processNextItem();

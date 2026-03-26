@@ -326,9 +326,64 @@ export async function POST(request: NextRequest) {
                 'Access-Control-Allow-Origin': '*',
             }
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating entry:', error);
-        return NextResponse.json({ error: 'Failed to create entry' }, {
+
+        // Provide detailed error message based on error type
+        let errorMessage = 'Failed to create entry';
+        let errorDetails = '';
+
+        if (error?.code === 'P2002') {
+            // Unique constraint violation
+            const field = error?.meta?.target?.[0] || 'unknown field';
+            errorMessage = `Entry already exists`;
+            errorDetails = `An entry with this ${field} already exists in your library`;
+        } else if (error?.code === 'P2025') {
+            // Record not found
+            errorMessage = 'Referenced data not found';
+            errorDetails = 'The entry references data that no longer exists';
+        } else if (error?.code === 'P2003') {
+            // Foreign key constraint
+            errorMessage = 'Invalid reference';
+            errorDetails = 'The entry contains invalid reference data';
+        } else if (error?.name === 'PrismaClientKnownRequestError') {
+            errorMessage = 'Database error';
+            errorDetails = `Database operation failed: ${error.message || 'Unknown database error'}`;
+        } else if (error?.name === 'PrismaClientUnknownRequestError') {
+            errorMessage = 'Database connection error';
+            errorDetails = 'Unable to connect to the database. Please try again later.';
+        } else if (error?.name === 'PrismaClientRustPanicError') {
+            errorMessage = 'Database system error';
+            errorDetails = 'The database encountered an unexpected error. Please try again.';
+        } else if (error?.name === 'PrismaClientInitializationError') {
+            errorMessage = 'Database initialization failed';
+            errorDetails = 'Failed to initialize database connection. Please refresh and try again.';
+        } else if (error?.name === 'PrismaClientValidationError') {
+            errorMessage = 'Invalid entry data';
+            errorDetails = 'The entry data is invalid or incomplete. Please check all fields.';
+        } else if (error?.message) {
+            errorMessage = error.message;
+            errorDetails = 'An unexpected error occurred while saving the entry.';
+        }
+
+        const errorResponse: any = {
+            error: errorMessage,
+            message: 'Failed to save entry to your library'
+        };
+
+        if (errorDetails) {
+            errorResponse.details = errorDetails;
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+            errorResponse.debug = {
+                name: error?.name,
+                code: error?.code,
+                stack: error?.stack
+            };
+        }
+
+        return NextResponse.json(errorResponse, {
             status: 500,
             headers: {
                 'Access-Control-Allow-Origin': '*',

@@ -136,7 +136,7 @@ export default function QueuedEntriesDisplay({
               <div className="mt-0.5">
                 {getStatusIcon(item.status)}
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -153,11 +153,18 @@ export default function QueuedEntriesDisplay({
                     {getStatusText(item.status)}
                   </span>
                 </div>
-                
+
                 {item.error && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {item.error}
-                  </p>
+                  <div className="mt-1">
+                    <p className="text-xs text-red-500 break-words">
+                      {item.error}
+                    </p>
+                    {item.status === 'failed' && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tip: Check your internet connection and try again, or verify the entry details are correct.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -172,7 +179,7 @@ export default function QueuedEntriesDisplay({
                     View
                   </Button>
                 )}
-                
+
                 {item.status === 'failed' && (
                   <Button
                     variant="ghost"
@@ -183,7 +190,7 @@ export default function QueuedEntriesDisplay({
                     <RotateCcw className="w-3 h-3" />
                   </Button>
                 )}
-                
+
                 {item.status === 'pending' && (
                   <Button
                     variant="ghost"

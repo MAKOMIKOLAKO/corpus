@@ -25,6 +25,7 @@ export interface CreationResult {
     entry?: any;
     existingEntry?: any;
     error?: string;
+    details?: string;
     confidence?: 'high' | 'medium' | 'low';
     reason?: string;
     limit?: number;
@@ -179,6 +180,22 @@ export async function createEntryWithMetadata(
         }
     } catch (error: any) {
         console.error('Entry creation error:', error);
-        return { success: false, error: error.message || 'Failed to create entry' };
+
+        // Provide detailed error message based on error type
+        let errorMessage = 'Failed to create entry';
+
+        if (error?.name === 'TypeError' && error?.message.includes('fetch')) {
+            errorMessage = 'Network error';
+        } else if (error?.name === 'AbortError') {
+            errorMessage = 'Request timed out';
+        } else if (error?.message) {
+            errorMessage = error.message;
+        }
+
+        return {
+            success: false,
+            error: errorMessage,
+            details: 'An error occurred while communicating with the server. Please check your connection and try again.'
+        };
     }
 }
