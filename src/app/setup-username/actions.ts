@@ -35,9 +35,10 @@ export async function setupUsername(username: string, bio?: string) {
       },
     });
 
-    // Revalidate the library path to ensure fresh data
+    // Revalidate all paths to ensure fresh data
+    revalidatePath('/', 'layout');
     revalidatePath('/library');
-    
+
     return { success: true };
   } catch (e: any) {
     if (e?.code === 'P2025') return { error: 'User not found' };
