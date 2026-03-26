@@ -24,11 +24,6 @@ export default function UsernameSetupModal() {
   const [availability, setAvailability] = useState<{ available: boolean; valid: boolean; message: string } | null>(null);
   const debouncedUsername = useDebounce(username, 400);
 
-  // Don't show if user has username or not authenticated
-  if (!session || session.user?.username) {
-    return null;
-  }
-
   const checkAvailability = useCallback(async (val: string) => {
     if (!val) { setAvailability(null); return; }
     setChecking(true);
@@ -51,11 +46,11 @@ export default function UsernameSetupModal() {
     setSaving(true);
     try {
       const result = await setupUsername(username, bio);
-      
+
       if (result.success) {
         // Update the session to reflect the new username
         await update();
-        
+
         // Reload the page to get fresh session
         window.location.reload();
       } else if (result.error) {
@@ -75,6 +70,11 @@ export default function UsernameSetupModal() {
       ? 'text-green-500'
       : 'text-red-500'
     : 'text-[var(--muted-foreground)]';
+
+  // Don't show if user has username or not authenticated
+  if (!session || session.user?.username) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">

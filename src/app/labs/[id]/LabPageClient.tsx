@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { 
-  Building2, 
-  Users, 
-  Calendar, 
-  Shield, 
-  Crown, 
-  User, 
+import {
+  Building2,
+  Users,
+  Calendar,
+  Shield,
+  Crown,
+  User,
   Mail,
   MessageSquare,
   BookOpen,
@@ -99,11 +99,7 @@ export default function LabPageClient({ initialLab }: LabPageClientProps) {
   const isAdmin = lab.userRole === 'ADMIN';
   const isMember = lab.userRole !== null;
 
-  useEffect(() => {
-    fetchLabStats();
-  }, [lab.id]);
-
-  const fetchLabStats = async () => {
+  const fetchLabStats = useCallback(async () => {
     try {
       // TODO: Implement lab stats API
       // For now, using placeholder data
@@ -112,7 +108,11 @@ export default function LabPageClient({ initialLab }: LabPageClientProps) {
     } catch (error) {
       console.error("Failed to fetch lab stats");
     }
-  };
+  }, [lab.members]);
+
+  useEffect(() => {
+    fetchLabStats();
+  }, [lab.id, fetchLabStats]);
 
   const handleJoinLab = async () => {
     setLoading(true);
@@ -175,7 +175,7 @@ export default function LabPageClient({ initialLab }: LabPageClientProps) {
       }
 
       const user = await userResponse.json();
-      
+
       // Add member
       const response = await fetch(`/api/labs/${lab.id}/members`, {
         method: 'POST',
@@ -242,7 +242,7 @@ export default function LabPageClient({ initialLab }: LabPageClientProps) {
       if (response.ok) {
         setLab(prev => ({
           ...prev,
-          members: prev.members.map(m => 
+          members: prev.members.map(m =>
             m.id === memberId ? { ...m, role } : m
           )
         }));
@@ -312,7 +312,7 @@ export default function LabPageClient({ initialLab }: LabPageClientProps) {
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {isMember ? (
               <>
@@ -393,7 +393,7 @@ export default function LabPageClient({ initialLab }: LabPageClientProps) {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={() => handleUpdateMemberRole(
-                              member.id, 
+                              member.id,
                               member.role === 'ADMIN' ? 'MEMBER' : 'ADMIN'
                             )}
                           >
