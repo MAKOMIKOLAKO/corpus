@@ -123,9 +123,57 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
                 'Access-Control-Allow-Origin': '*',
             }
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error adding entry to collection:', error);
-        return NextResponse.json({ error: 'Failed to add entry to collection' }, {
+
+        // Provide detailed error message based on error type
+        let errorMessage = 'Failed to add entry to collection';
+        let errorDetails = '';
+
+        if (error?.code === 'P2002') {
+            // Unique constraint violation
+            errorMessage = 'Entry already in collection';
+            errorDetails = 'This entry is already a member of the selected collection';
+        } else if (error?.code === 'P2025') {
+            // Record not found
+            errorMessage = 'Entry or collection not found';
+            errorDetails = 'The specified entry or collection no longer exists';
+        } else if (error?.code === 'P2003') {
+            // Foreign key constraint
+            errorMessage = 'Invalid entry or collection';
+            errorDetails = 'The entry or collection reference is invalid';
+        } else if (error?.name === 'PrismaClientKnownRequestError') {
+            errorMessage = 'Database error';
+            errorDetails = `Database operation failed: ${error.message || 'Unknown database error'}`;
+        } else if (error?.name === 'PrismaClientUnknownRequestError') {
+            errorMessage = 'Database connection error';
+            errorDetails = 'Unable to connect to the database. Please try again later.';
+        } else if (error?.name === 'PrismaClientValidationError') {
+            errorMessage = 'Invalid data';
+            errorDetails = 'The provided data is invalid. Please refresh and try again.';
+        } else if (error?.message) {
+            errorMessage = error.message;
+            errorDetails = 'An unexpected error occurred while adding the entry to the collection.';
+        }
+
+        const errorResponse: any = {
+            error: errorMessage,
+            message: 'Failed to add entry to collection'
+        };
+
+        if (errorDetails) {
+            errorResponse.details = errorDetails;
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+            errorResponse.debug = {
+                name: error?.name,
+                code: error?.code,
+                stack: error?.stack
+            };
+        }
+
+        return NextResponse.json(errorResponse, {
             status: 500,
             headers: {
                 'Access-Control-Allow-Origin': '*',
