@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import SoftwareApplicationJsonLd from "@/components/SoftwareApplicationJsonLd";
 
 const GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`;
 
@@ -190,6 +191,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-[var(--accent)]/30 selection:text-[var(--foreground)] neural-bg">
+      <SoftwareApplicationJsonLd />
       {/* Nav */}
       <header
         className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${navScrolled ? "border-[var(--border)] bg-[var(--background)]/75 backdrop-blur-md" : "border-transparent bg-transparent"

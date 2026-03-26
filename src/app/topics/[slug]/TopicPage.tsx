@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { BookOpen, Lightbulb, ArrowRight, FileText, Users, Calendar } from 'lucide-react'
 import SaveButton from '@/components/SaveButton'
 import SignupPrompt from '@/components/SignupPrompt'
+import SoftwareApplicationJsonLd from '@/components/SoftwareApplicationJsonLd'
 import { useSession } from 'next-auth/react'
 import { useSavedEntries } from '@/hooks/useSavedEntries'
 import { useScrollDepth } from '@/hooks/useScrollDepth'
@@ -32,33 +33,6 @@ interface Props {
   relatedTopics: RelatedTopic[]
 }
 
-const jsonLd = (topic: Topic, relatedPapers: RelatedPaper[]) => {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: topic.name,
-    description: topic.description || topic.explanation,
-    author: {
-      '@type': 'Organization',
-      name: 'Corpus'
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Corpus'
-    },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': `https://corpus.app/topics/${topic.slug}`
-    },
-    about: relatedPapers.map(paper => ({
-      '@type': 'ScholarlyArticle',
-      name: paper.title,
-      author: paper.authors,
-      datePublished: paper.year ? paper.year.toString() : undefined
-    }))
-  }
-}
-
 export default function TopicPage({ topic, relatedPapers, relatedTopics }: Props) {
   const { data: session } = useSession()
   const { syncToBackend } = useSavedEntries()
@@ -79,9 +53,9 @@ export default function TopicPage({ topic, relatedPapers, relatedTopics }: Props
   }, [session, syncToBackend])
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(topic, relatedPapers)) }}
+      <SoftwareApplicationJsonLd
+        url={`https://corpus.app/topics/${topic.slug}`}
+        description={topic.description || `Explore ${topic.name} with comprehensive explanations, key concepts, and related research papers on Corpus.`}
       />
 
       <div className="min-h-screen bg-white">
