@@ -144,8 +144,13 @@ export async function createEntryWithMetadata(
             let entry: unknown;
             try {
                 entry = await response.json();
-            } catch {
-                return { success: false, error: 'Invalid response from server' };
+            } catch (parseError) {
+                console.error('Failed to parse response JSON:', parseError);
+                return {
+                    success: false,
+                    error: 'Invalid response from server',
+                    details: 'The server returned an invalid JSON response. This may indicate a server error or maintenance.'
+                };
             }
             if (
                 entry &&
@@ -155,9 +160,24 @@ export async function createEntryWithMetadata(
             ) {
                 return { success: true, entry };
             }
-            return { success: false, error: 'Invalid response from server' };
+            return {
+                success: false,
+                error: 'Invalid response from server',
+                details: `The server response is missing required fields. Expected an entry object with an 'id' field, but received: ${JSON.stringify(entry, null, 2).substring(0, 200)}...`
+            };
         } else {
-            const errorData = await response.json();
+            let errorData: any;
+            try {
+                errorData = await response.json();
+            } catch (parseError) {
+                console.error('Failed to parse error response JSON:', parseError);
+                return {
+                    success: false,
+                    error: `Server error (${response.status})`,
+                    details: `The server returned an error (${response.status} ${response.statusText}) but the response could not be parsed. This may indicate a server configuration issue.`
+                };
+            }
+
             // Check if it's a duplicate error (status 409)
             if (response.status === 409 && errorData.duplicateEntry) {
                 return {
@@ -176,7 +196,7 @@ export async function createEntryWithMetadata(
                     limit: errorData.limit
                 };
             }
-            return { success: false, error: errorData.error || 'Failed to create entry' };
+            return { success: false, error: errorData.error || `Failed to create entry (${response.status})` };
         }
     } catch (error: any) {
         console.error('Entry creation error:', error);
