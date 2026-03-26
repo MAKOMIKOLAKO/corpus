@@ -90,17 +90,6 @@ export async function POST(request: Request) {
         receivedConnections: {
           where: { status: "ACCEPTED" },
           select: { requesterId: true }
-        },
-        labMemberships: {
-          include: {
-            lab: {
-              include: {
-                members: {
-                  where: { userId: ownerId }
-                }
-              }
-            }
-          }
         }
       }
     });
@@ -109,19 +98,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if they are connected or lab members
+    // Check if they are connected
     const connectedUserIds = [
       ...requester.sentConnections.map(c => c.receiverId),
       ...requester.receivedConnections.map(c => c.requesterId)
     ];
 
-    const isLabMember = requester.labMemberships.some(membership =>
-      membership.lab.members.some(member => member.userId === ownerId)
-    );
-
-    if (!connectedUserIds.includes(ownerId) && !isLabMember) {
+    if (!connectedUserIds.includes(ownerId)) {
       return NextResponse.json({
-        error: "You can only request access from connections or lab members"
+        error: "You can only request access from connections"
       }, { status: 403 });
     }
 

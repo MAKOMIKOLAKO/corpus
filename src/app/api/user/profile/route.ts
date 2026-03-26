@@ -19,18 +19,8 @@ export async function GET() {
       plan: true,
       createdAt: true,
       email: true,
-      showSignals: true,
-      institutionId: true,
-      institutionVerifiedAt: true,
-      institutionVerificationEmail: true,
-      institution: {
-        select: {
-          id: true,
-          name: true,
-          domain: true
-        }
-      }
-    },
+      showSignals: true
+    }
   });
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
