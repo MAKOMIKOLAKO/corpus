@@ -51,17 +51,16 @@ export default function SetupUsernameClient() {
     if (!availability?.available) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/user/profile', {
-        method: 'PATCH',
+      const res = await fetch('/api/auth/setup-username', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, bio }),
+        credentials: 'include',
       });
+
       if (res.ok) {
-        // Update session to get the new username in the token
-        await update(true);
-        // Use router.push instead of window.location.href to avoid hard redirect
-        router.push('/library');
-        router.refresh();
+        // Force a full page reload to refresh the session and cookies
+        window.location.href = '/library';
       } else if (res.status === 404) {
         await signOut({ callbackUrl: '/signup' });
       } else {
