@@ -236,38 +236,29 @@ export async function POST(request: NextRequest) {
                     'x-api-key': internalApiKey,
                 };
                 const base = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-                // Generate topics and keywords in parallel for better performance
-                const [topicsResponse, keywordsResponse] = await Promise.all([
-                    fetch(`${base}/api/topics`, {
-                        method: 'POST',
-                        headers: internalHeaders,
-                        body: JSON.stringify({ text: textForAnalysis }),
-                    }),
-                    fetch(`${base}/api/keywords`, {
-                        method: 'POST',
-                        headers: internalHeaders,
-                        body: JSON.stringify({ text: textForAnalysis }),
-                    })
-                ]);
 
-                // Process responses (avoid .json() on HTML error pages)
-                if (topicsResponse.ok) {
-                    const ct = topicsResponse.headers.get('content-type') || '';
-                    if (ct.includes('application/json')) {
-                        const topicsData = await topicsResponse.json();
-                        topics = topicsData.topics || [];
-                    }
-                }
+                // Use unified metadata endpoint for better performance and caching
+                const metadataResponse = await fetch(`${base}/api/metadata`, {
+                    method: 'POST',
+                    headers: internalHeaders,
+                    body: JSON.stringify({ text: textForAnalysis }),
+                });
 
-                if (keywordsResponse.ok) {
-                    const ct = keywordsResponse.headers.get('content-type') || '';
+                if (metadataResponse.ok) {
+                    const ct = metadataResponse.headers.get('content-type') || '';
                     if (ct.includes('application/json')) {
-                        const keywordsData = await keywordsResponse.json();
-                        autoKeywords = keywordsData.keywords || [];
+                        const metadataData = await metadataResponse.json();
+                        topics = metadataData.topics || [];
+                        autoKeywords = metadataData.keywords || [];
+
+                        // Log cache hits for monitoring
+                        if (metadataData.cached) {
+                            console.log('Cache hit for metadata generation');
+                        }
                     }
                 }
             } catch (error) {
-                console.error('Error generating topics/keywords:', error);
+                console.error('Error generating metadata:', error);
                 // Continue without topics/keywords if generation fails
             }
         }
