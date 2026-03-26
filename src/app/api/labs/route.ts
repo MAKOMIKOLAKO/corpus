@@ -55,28 +55,46 @@ export async function POST(request: Request) {
     }
 
     // Create lab using raw query with correct quoted column names
-    const labs = await prisma.$queryRaw`
-      INSERT INTO "Lab" (name, slug, description, "institutionId", "createdBy", "isVerified", "createdAt")
-      VALUES (${name}, ${slug}, ${description || null}, ${user.institutionId}, ${user.id}, false, NOW())
-      RETURNING id, name, slug, description, "isVerified", "createdAt"
-    ` as any[];
-
-    const lab = labs[0];
+    let lab;
+    try {
+      const labs = await prisma.$queryRaw`
+        INSERT INTO "Lab" (name, slug, description, "institutionId", "createdBy", "isVerified", "createdAt")
+        VALUES (${name}, ${slug}, ${description || null}, ${user.institutionId}, ${user.id}, false, NOW())
+        RETURNING id, name, slug, description, "isVerified", "createdAt"
+      ` as any[];
+      lab = labs[0];
+      console.log("Lab created successfully:", lab);
+    } catch (labError) {
+      console.error("Error creating lab:", labError);
+      return NextResponse.json({ error: "Failed to create lab: " + (labError as Error).message }, { status: 500 });
+    }
 
     // Add creator as admin
-    await prisma.$queryRaw`
-      INSERT INTO "LabMember" ("labId", "userId", "role", "joinedAt")
-      VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
-    `;
+    try {
+      await prisma.$queryRaw`
+        INSERT INTO "LabMember" ("labId", "userId", "role", "joinedAt")
+        VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
+      `;
+    } catch (memberError) {
+      console.error("Error adding lab member:", memberError);
+      // Continue even if member addition fails
+    }
 
     // Get institution info
-    const institutions = await prisma.$queryRaw`
-      SELECT id, name, domain 
-      FROM "Institution" 
-      WHERE id = ${user.institutionId}
-    ` as any[];
-
-    const institution = institutions[0];
+    let institution;
+    try {
+      const institutions = await prisma.$queryRaw`
+        SELECT id, name, domain 
+        FROM "Institution" 
+        WHERE id = ${user.institutionId}
+      ` as any[];
+      institution = institutions[0];
+      console.log("Institution found:", institution);
+    } catch (instError) {
+      console.error("Error fetching institution:", instError);
+      // Continue without institution info
+      institution = { id: user.institutionId, name: "Unknown Institution", domain: "" };
+    }
 
     // Return lab with userRole and joinedAt
     const labWithRole = {
