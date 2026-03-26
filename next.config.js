@@ -31,8 +31,6 @@ module.exports = {
                 fs: false,
             };
         }
-        // Disable ESLint in webpack to let Next.js handle it
-        config.plugins = config.plugins.filter(plugin => plugin.constructor.name !== 'ESLintWebpackPlugin');
         return config;
     },
 };
