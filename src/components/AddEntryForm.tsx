@@ -431,7 +431,8 @@ export default function AddEntryForm() {
                             </CardContent>
                         </Card>
                     </form>
+                </>
             )}
-                </div>
-            );
+        </div>
+    );
 }
