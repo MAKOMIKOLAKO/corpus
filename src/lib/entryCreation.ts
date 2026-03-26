@@ -14,7 +14,6 @@ export interface EntryData {
     doi: string;
     source: string;
     abstract: string;
-    userKeywords: string;
     readingStatus: ReadingStatus;
     publishDate?: string;
     skipAI?: boolean; // Optional flag to skip AI generation
@@ -44,7 +43,6 @@ export function validateEntryData(data: Partial<EntryData>): EntryData {
         doi: sanitizeString(data.doi || ''),
         source: sanitizeString(data.source || ''),
         abstract: sanitizeString(data.abstract || ''),
-        userKeywords: sanitizeString(data.userKeywords || ''),
         readingStatus: data.readingStatus || 'UNREAD',
         publishDate: data.publishDate ? sanitizeString(data.publishDate) : '',
     };
@@ -68,7 +66,6 @@ export function createFallbackEntry(url: string): Partial<EntryData> {
             doi: '',
             source: hostname,
             abstract: '',
-            userKeywords: '',
             readingStatus: 'UNREAD' as ReadingStatus,
         };
     } catch (error) {
@@ -82,7 +79,6 @@ export function createFallbackEntry(url: string): Partial<EntryData> {
             doi: '',
             source: 'unknown-source',
             abstract: '',
-            userKeywords: '',
             readingStatus: 'UNREAD' as ReadingStatus,
         };
     }
@@ -115,7 +111,6 @@ export async function createEntryWithMetadata(
             doi: metadata.doi || '',
             source: metadata.source || '',
             abstract: metadata.abstract || '',
-            userKeywords: '',
             readingStatus: 'UNREAD',
             publishDate: metadata.publishDate || '',
             skipAI: skipAI,

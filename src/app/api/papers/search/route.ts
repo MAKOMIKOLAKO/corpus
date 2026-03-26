@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
             }
 
             const data = await response.json();
-            console.log('Semantic Scholar response data:', JSON.stringify(data, null, 2).substring(0, 1000));
 
             const results = data.data?.map((item: any) => ({
                 semanticScholarId: item.paperId,
@@ -67,11 +66,6 @@ export async function GET(request: NextRequest) {
                 doi: item.externalIds?.DOI || null,
                 openAccessUrl: item.openAccessPdf?.url || null
             })) || [];
-
-            console.log('Processed results count:', results.length);
-            if (results.length > 0) {
-                console.log('First result:', JSON.stringify(results[0], null, 2));
-            }
 
             return NextResponse.json({ results });
 

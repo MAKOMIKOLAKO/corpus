@@ -113,7 +113,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                     abstract: formData.abstract,
                     contentType: formData.contentType,
                     readingStatus: formData.readingStatus,
-                    userKeywords: Array.isArray(formData.userKeywords) ? formData.userKeywords : formData.userKeywords.split(',').map((k: string) => k.trim()),
                 }),
             });
             if (res.ok) {
@@ -324,10 +323,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             <label className="text-sm font-medium">Abstract</label>
                             <textarea value={formData.abstract || ''} onChange={e => setFormData({ ...formData, abstract: e.target.value })} rows={5} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
                         </div>
-                        <div>
-                            <label className="text-sm font-medium">User Keywords (comma-separated)</label>
-                            <input type="text" value={Array.isArray(formData.userKeywords) ? formData.userKeywords.join(', ') : formData.userKeywords} onChange={e => setFormData({ ...formData, userKeywords: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
-                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium">URL</label>
@@ -446,36 +441,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             </div>
                         )}
 
-                        {Array.isArray(formData.topics) && formData.topics.length > 0 && (
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-3">topics</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.topics.map((topic: string, i: number) => (
-                                        <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 font-medium border border-blue-200 dark:border-blue-700">
-                                            {topic}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {(Array.isArray(formData.autoKeywords) && formData.autoKeywords.length > 0) || (Array.isArray(formData.userKeywords) && formData.userKeywords.length > 0) && (
-                            <div className="pt-4 border-t border-[var(--border)]">
-                                <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-3">Keywords</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {Array.isArray(formData.userKeywords) && formData.userKeywords.map((kw: string, i: number) => (
-                                        <span key={`user-${i}`} className="text-xs px-2.5 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] font-medium border border-[var(--primary)]/20">
-                                            {kw}
-                                        </span>
-                                    ))}
-                                    {Array.isArray(formData.autoKeywords) && formData.autoKeywords.map((kw: string, i: number) => (
-                                        <span key={`auto-${i}`} className="text-xs px-2.5 py-1 rounded-full bg-[var(--muted)] text-[var(--foreground)] font-medium border border-[var(--border)]">
-                                            {kw} <span className="text-[9px] text-[var(--muted-foreground)] ml-1">AI</span>
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">

@@ -149,7 +149,6 @@ export default function QuickAddBookEntry() {
                 description: bookDetails.description,
                 isbn13: bookDetails.isbn13 || [],
                 cover: bookDetails.cover,
-                userKeywords: [],
                 readingStatus: 'UNREAD',
                 skipAI: true,
             };

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUserId } from '@/lib/session';
-import { GoogleGenAI } from '@google/genai';
 
 export async function POST(request: NextRequest) {
     try {
@@ -59,10 +58,7 @@ export async function POST(request: NextRequest) {
                 contentType: 'PAPER',
                 userId,
                 readingStatus: data.readingStatus || 'UNREAD',
-                autoKeywords: [],
-                topics: [],
-                notes: [],
-                userKeywords: data.userKeywords ? data.userKeywords.split(',').map((k: string) => k.trim()).filter(Boolean) : []
+                notes: []
             },
             select: {
                 id: true,
@@ -73,68 +69,7 @@ export async function POST(request: NextRequest) {
 
         // Update user's entry count - removed as field doesn't exist in schema
 
-        // Fire and forget enrichment
-        (async () => {
-            try {
-                let keywords: string[] = [];
-                let topics: string[] = [];
-
-                // Generate keywords and topics with Gemini
-                if (process.env.GEMINI_API_KEY && (data.abstract || data.title)) {
-                    const ai = new GoogleGenAI({
-                        apiKey: process.env.GEMINI_API_KEY,
-                    });
-
-                    const textToAnalyze = data.abstract || data.title;
-
-                    try {
-                        const keywordCompletion = await ai.models.generateContent({
-                            model: 'gemini-2.5-flash',
-                            contents: `Extract 5 to 8 concise, specific keywords from the following text. Return only a JSON array of strings, no explanation.\n\nText: ${textToAnalyze}`,
-                            config: {
-                                responseMimeType: 'application/json',
-                            }
-                        });
-                        const keywordResult = keywordCompletion.text || '[]';
-                        keywords = JSON.parse(keywordResult);
-                        keywords = Array.isArray(keywords) ? keywords.slice(0, 8) : [];
-                    } catch (error) {
-                        console.error('Keyword generation error:', error);
-                    }
-
-                    try {
-                        const topicCompletion = await ai.models.generateContent({
-                            model: 'gemini-2.5-flash',
-                            contents: `Extract 3 to 5 broad academic topics or fields from the following text. Return only a JSON array of strings, no explanation.\n\nText: ${textToAnalyze}`,
-                            config: {
-                                responseMimeType: 'application/json',
-                            }
-                        });
-                        const topicResult = topicCompletion.text || '[]';
-                        topics = JSON.parse(topicResult);
-                        topics = Array.isArray(topics) ? topics.slice(0, 5) : [];
-                    } catch (error) {
-                        console.error('Topic generation error:', error);
-                    }
-                }
-
-                // Embedding generation removed as OpenAI is not installed and embedding field doesn't exist
-
-                // Update entry with enrichment data (embedding removed)
-                await prisma.entry.update({
-                    where: { id: entry.id },
-                    data: {
-                        autoKeywords: keywords,
-                        topics
-                    }
-                });
-
-            } catch (error) {
-                console.error('Enrichment error:', error);
-            } finally {
-                await prisma.$disconnect();
-            }
-        })();
+        // Fire and forget enrichment - REMOVED
 
         return NextResponse.json(entry);
 
