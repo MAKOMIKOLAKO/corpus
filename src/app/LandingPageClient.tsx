@@ -485,12 +485,12 @@ export default function LandingPage() {
                 <h3 className="text-2xl font-semibold text-[var(--foreground)]">Pro</h3>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-5xl font-bold text-[var(--foreground)]">
-                    {billing === "monthly" ? "$6" : "$30"}
+                    {billing === "monthly" ? "$6" : "$2.50"}
                   </span>
                   <span className="text-[var(--muted-foreground)]">/month</span>
                 </div>
                 <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                  {billing === "monthly" ? "Billed monthly" : "Billed annually"}
+                  {billing === "monthly" ? "Billed monthly" : "$30 billed annually"}
                 </p>
               </div>
 
