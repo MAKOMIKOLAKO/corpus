@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/adminAuth';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
-import { sql } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   // Check admin authentication
@@ -24,6 +23,10 @@ export async function GET(request: NextRequest) {
       dateFilter.lte = new Date(endDate);
     }
 
+    // Build WHERE clauses for raw queries
+    const startDateClause = startDate ? `AND timestamp >= '${startDate}'` : '';
+    const endDateClause = endDate ? `AND timestamp <= '${endDate}'` : '';
+
     // User Onboarding Metrics
     const [totalSignups, signupsPerDay, usernameSetups, emailVerifications] = await Promise.all([
       // Total signups
@@ -41,8 +44,8 @@ export async function GET(request: NextRequest) {
           COUNT(*) as count
         FROM "AnalyticsEvent"
         WHERE event = 'USER_SIGNED_UP'
-          ${startDate ? sql`AND timestamp >= ${startDate}` : sql``}
-          ${endDate ? sql`AND timestamp <= ${endDate}` : sql``}
+          ${startDateClause}
+          ${endDateClause}
         GROUP BY DATE(timestamp)
         ORDER BY date DESC
         LIMIT 30
@@ -97,8 +100,8 @@ export async function GET(request: NextRequest) {
           COUNT(*) as count
         FROM "AnalyticsEvent"
         WHERE event = 'READING_STATUS_UPDATED'
-          ${startDate ? sql`AND timestamp >= ${startDate}` : sql``}
-          ${endDate ? sql`AND timestamp <= ${endDate}` : sql``}
+          ${startDateClause}
+          ${endDateClause}
         GROUP BY metadata->>'readingStatus'
       `,
 
@@ -110,8 +113,8 @@ export async function GET(request: NextRequest) {
         FROM "AnalyticsEvent" ae
         JOIN "User" u ON ae."userId" = u.id
         WHERE ae.event = 'ENTRY_SAVED'
-          ${startDate ? sql`AND ae.timestamp >= ${startDate}` : sql``}
-          ${endDate ? sql`AND ae.timestamp <= ${endDate}` : sql``}
+          ${startDateClause}
+          ${endDateClause}
         GROUP BY u.email
         ORDER BY entryCount DESC
         LIMIT 10
@@ -154,8 +157,8 @@ export async function GET(request: NextRequest) {
             COUNT(ec."entryId") as entry_count
           FROM "Collection" c
           LEFT JOIN "EntryCollection" ec ON c.id = ec."collectionId"
-          WHERE c."createdAt" ${startDate ? sql`>= ${startDate}` : sql`>= '2020-01-01'`}
-            ${endDate ? sql`AND c."createdAt" <= ${endDate}` : sql``}
+          WHERE c."createdAt" ${startDate ? `>= '${startDate}'` : `>= '2020-01-01'`}
+            ${endDateClause}
           GROUP BY c.id
         ) t
       `,
@@ -187,8 +190,8 @@ export async function GET(request: NextRequest) {
           SELECT "userId"
           FROM "AnalyticsEvent"
           WHERE event = 'ENTRY_SAVED'
-            ${startDate ? sql`AND timestamp >= ${startDate}` : sql``}
-            ${endDate ? sql`AND timestamp <= ${endDate}` : sql``}
+            ${startDateClause}
+            ${endDateClause}
           GROUP BY "userId"
           HAVING COUNT(*) > 1
         ) t
