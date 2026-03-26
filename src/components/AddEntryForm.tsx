@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useApiKey } from '@/hooks/useApiKey';
 import { createEntryWithMetadata } from '@/lib/entryCreation';
 import UpgradeBanner from '@/components/UpgradeBanner';
+import { useEntryQueue } from '@/hooks/useEntryQueue';
+import QueuedEntriesDisplay from '@/components/QueuedEntriesDisplay';
 
 export default function AddEntryForm() {
     const router = useRouter();
@@ -24,6 +26,20 @@ export default function AddEntryForm() {
     const [error, setError] = useState<string | null>(null);
     const [existingDuplicate, setExistingDuplicate] = useState<any | null>(null);
     const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+    const [queueMode, setQueueMode] = useState(false);
+
+    const entryQueue = useEntryQueue({
+        apiKey,
+        onSuccess: (item, entryId) => {
+            console.log(`Entry "${item.metadata.title}" added successfully with ID: ${entryId}`);
+        },
+        onError: (item, error) => {
+            console.error(`Failed to add entry "${item.metadata.title}": ${error}`);
+        },
+        onQueueComplete: () => {
+            console.log('Queue processing complete');
+        }
+    });
 
     const [formData, setFormData] = useState({
         title: '',
@@ -117,67 +133,84 @@ export default function AddEntryForm() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSaving(true);
         setError(null);
 
-        try {
-            // Prepare entry data
-            const entryData = {
-                ...formData,
-                authors: formData.authors.split(',').map(a => a.trim()).filter(Boolean),
-                userKeywords: formData.userKeywords.split(',').map(k => k.trim()).filter(Boolean),
-            };
+        if (!formData.title.trim()) {
+            setError('Title is required');
+            return;
+        }
 
-            // Use unified entry creation system
-            const result = await createEntryWithMetadata(
-                tab === 'URL' ? formData.url : `https://doi.org/${formData.doi}`,
-                {
-                    title: formData.title,
-                    authors: formData.authors.split(',').map(a => a.trim()).filter(Boolean),
-                    year: formData.year ? parseInt(formData.year, 10) : undefined,
-                    publishDate: formData.publishDate || undefined,
-                    contentType: formData.contentType,
-                    url: formData.url,
-                    doi: formData.doi,
-                    source: formData.source,
-                    abstract: formData.abstract,
-                },
-                apiKey
-            );
+        const metadata = {
+            title: formData.title,
+            authors: formData.authors.split(',').map(a => a.trim()).filter(Boolean),
+            year: formData.year ? parseInt(formData.year, 10) : undefined,
+            publishDate: formData.publishDate || undefined,
+            contentType: formData.contentType,
+            url: formData.url,
+            doi: formData.doi,
+            source: formData.source,
+            abstract: formData.abstract,
+        };
 
-            if (result.success && result.entry?.id) {
-                router.push(`/entries/${result.entry.id}`);
-            } else {
-                // Handle entry limit error
-                if (result.error === 'entry_limit_reached') {
-                    setShowUpgradeBanner(true);
-                    setError(null);
-                    return;
-                }
-                // Handle duplicate entries with enhanced messaging
-                if (result.error?.includes('duplicate') && result.existingEntry) {
-                    const confidence = result.confidence || 'unknown';
-                    const reason = result.reason || 'Duplicate detected';
-                    const existingTitle = result.existingEntry.title;
+        const url = tab === 'URL' ? formData.url : `https://doi.org/${formData.doi}`;
 
-                    // Store the duplicate data for navigation
-                    setExistingDuplicate(result.existingEntry);
+        if (queueMode) {
+            // Add to queue and reset form for next entry
+            entryQueue.addToQueue(url, metadata);
 
-                    if (confidence === 'high') {
-                        setError(`exact duplicate found: "${existingTitle}". This entry already exists in your library.`);
-                    } else if (confidence === 'medium') {
-                        setError(`possible duplicate: "${existingTitle}" (${reason}). This entry may already exist.`);
-                    } else {
-                        setError(`potential match: "${existingTitle}" (${reason}). Please check if this entry already exists.`);
-                    }
+            // Reset form for quick consecutive entries
+            setFormData({
+                title: '',
+                authors: '',
+                year: '',
+                publishDate: '',
+                contentType: 'PAPER',
+                url: '',
+                doi: '',
+                source: '',
+                abstract: '',
+                summary: '',
+                userKeywords: '',
+                autoKeywords: [] as string[],
+                readingStatus: 'UNREAD',
+            });
+            setFetchInput('');
+        } else {
+            // Original behavior: save immediately and navigate
+            setIsSaving(true);
+            try {
+                const result = await createEntryWithMetadata(url, metadata, apiKey);
+
+                if (result.success && result.entry?.id) {
+                    router.push(`/entries/${result.entry.id}`);
                 } else {
-                    setError(result.error || 'Failed to save entry');
+                    if (result.error === 'entry_limit_reached') {
+                        setShowUpgradeBanner(true);
+                        setError(null);
+                        return;
+                    }
+                    if (result.error?.includes('duplicate') && result.existingEntry) {
+                        const confidence = result.confidence || 'unknown';
+                        const reason = result.reason || 'Duplicate detected';
+                        const existingTitle = result.existingEntry.title;
+                        setExistingDuplicate(result.existingEntry);
+
+                        if (confidence === 'high') {
+                            setError(`exact duplicate found: "${existingTitle}". This entry already exists in your library.`);
+                        } else if (confidence === 'medium') {
+                            setError(`possible duplicate: "${existingTitle}" (${reason}). This entry may already exist.`);
+                        } else {
+                            setError(`potential match: "${existingTitle}" (${reason}). Please check if this entry already exists.`);
+                        }
+                    } else {
+                        setError(result.error || 'Failed to save entry');
+                    }
                 }
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setIsSaving(false);
             }
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -214,12 +247,24 @@ export default function AddEntryForm() {
     }, [formData.abstract, formData.summary, apiKey]);
 
     return (
-        <div className="space-y-8 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+        <div className="space-y-6 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
             {/* Upgrade Banner for Entry Limit */}
             {showUpgradeBanner && (
                 <UpgradeBanner
                     message="You've reached the 100 entry limit on the free plan. Upgrade to Pro for unlimited entries."
                     ctaText="Upgrade to Pro"
+                />
+            )}
+
+            {/* Queue Display */}
+            {entryQueue.queue.length > 0 && (
+                <QueuedEntriesDisplay
+                    queue={entryQueue.queue}
+                    stats={entryQueue.stats}
+                    onRemove={entryQueue.removeFromQueue}
+                    onRetry={entryQueue.retryItem}
+                    onClearCompleted={entryQueue.clearCompleted}
+                    onClearAll={entryQueue.clearAll}
                 />
             )}
             {/* Fetch Section */}
@@ -400,14 +445,27 @@ export default function AddEntryForm() {
                             </div>
                         </div>
 
-                        <div className="pt-8 flex justify-end gap-3 border-t border-border">
-                            <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isSaving}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSaving || !formData.title.trim()}>
-                                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                Save Entry
-                            </Button>
+                        <div className="pt-8 flex justify-between items-center gap-3 border-t border-border">
+                            <div className="flex items-center gap-2">
+                                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={queueMode}
+                                        onChange={(e) => setQueueMode(e.target.checked)}
+                                        className="rounded border-gray-300"
+                                    />
+                                    <span>Queue mode (add multiple entries)</span>
+                                </label>
+                            </div>
+                            <div className="flex gap-3">
+                                <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isSaving}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={isSaving || !formData.title.trim()}>
+                                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                    {queueMode ? 'Add to Queue' : 'Save Entry'}
+                                </Button>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
