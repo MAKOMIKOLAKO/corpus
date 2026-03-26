@@ -197,15 +197,15 @@ export default function CollectionsPage() {
             {myCollections.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-4">My Collections</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {myCollections.map((collection) => (
                             <Link key={collection.id} href={`/collections/${collection.id}`}>
                                 <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                                    <CardHeader>
+                                    <CardHeader className="pb-3">
                                         <div className="flex justify-between items-start">
                                             <div className="flex-1 min-w-0">
-                                                <CardTitle className="text-lg truncate">{collection.name}</CardTitle>
-                                                <div className="flex items-center gap-2 mt-1">
+                                                <CardTitle className="text-xl truncate">{collection.name}</CardTitle>
+                                                <div className="flex flex-wrap items-center gap-2 mt-2">
                                                     {collection.isOwner && (
                                                         <Badge variant="default" className="text-xs">Owner</Badge>
                                                     )}
@@ -225,33 +225,36 @@ export default function CollectionsPage() {
                                             </div>
                                         </div>
                                         {collection.description && (
-                                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                            <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
                                                 {collection.description}
                                             </p>
                                         )}
                                     </CardHeader>
-                                    <CardContent className="pt-0">
+                                    <CardContent className="pt-3">
                                         <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-4">
                                                 <div className="flex items-center gap-1">
-                                                    <FileText className="w-3 h-3" />
-                                                    {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                                                    <FileText className="w-4 h-4" />
+                                                    <span className="font-medium">{collection._count.entries}</span>
+                                                    <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
                                                 </div>
                                                 {collection.isPublic && (
                                                     <div className="flex items-center gap-1">
-                                                        <Eye className="w-3 h-3" />
-                                                        {collection.publicViewCount || 0} views
+                                                        <Eye className="w-4 h-4" />
+                                                        <span className="font-medium">{collection.publicViewCount || 0}</span>
+                                                        <span>views</span>
                                                     </div>
                                                 )}
                                                 {collection._count?.members !== undefined && collection._count.members > 0 && (
                                                     <div className="flex items-center gap-1">
-                                                        <Users className="w-3 h-3" />
-                                                        {collection._count.members + 1} {collection._count.members + 1 === 1 ? 'member' : 'members'}
+                                                        <Users className="w-4 h-4" />
+                                                        <span className="font-medium">{collection._count.members + 1}</span>
+                                                        <span>{collection._count.members + 1 === 1 ? 'member' : 'members'}</span>
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
+                                                <Calendar className="w-4 h-4" />
                                                 {formatDate(collection.createdAt)}
                                             </div>
                                         </div>
