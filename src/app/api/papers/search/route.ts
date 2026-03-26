@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
             }
 
             const urlString = url.toString();
-            console.error('DEBUG: OpenAlex URL:', urlString);
 
             const response = await fetch(urlString, {
                 headers: {
@@ -50,11 +49,8 @@ export async function GET(request: NextRequest) {
                 }
             });
 
-            console.error('DEBUG: Response status:', response.status);
-
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('OpenAlex API error:', response.status, errorText);
 
                 // If we get a 401 or 403, it's likely an API key issue
                 if (response.status === 401 || response.status === 403) {
