@@ -63,7 +63,7 @@ export default function AddEntryForm() {
         setError(null);
         try {
             const endpoint = '/api/fetch-academic-metadata';
-            const body = tab === 'DOI' ? { doi: fetchInput } : { url: fetchInput };
+            const body = { url: fetchInput };
 
             const res = await fetch(endpoint, {
                 method: 'POST',
@@ -154,7 +154,7 @@ export default function AddEntryForm() {
             abstract: formData.abstract,
         };
 
-        const url = tab === 'URL' ? formData.url : `https://doi.org/${formData.doi}`;
+        const url = formData.url || `https://doi.org/${formData.doi}`;
 
         // Add to queue and reset form for next entry
         entryQueue.addToQueue(url, metadata);
