@@ -7,7 +7,9 @@ import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
-import { Users, BookOpen, Folder } from "lucide-react";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { FeedbackModal } from "@/components/FeedbackModal";
+import { Users, BookOpen, Folder, MessageSquare, HelpCircle } from "lucide-react";
 
 export function AppShell({
   children,
@@ -23,6 +25,8 @@ export function AppShell({
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -54,9 +58,10 @@ export function AppShell({
     if (!session) return;
     const fetchPending = async () => {
       try {
-        const [connRes, sharedRes] = await Promise.all([
+        const [connRes, sharedRes, onboardingRes] = await Promise.all([
           fetch('/api/connections'),
-          fetch('/api/entries/shared')
+          fetch('/api/entries/shared'),
+          fetch('/api/user/onboarding-status')
         ]);
         let count = 0;
         if (connRes.ok) {
@@ -66,6 +71,19 @@ export function AppShell({
         if (sharedRes.ok) {
           const d = await sharedRes.json();
           count += (d.received || []).filter((e: any) => e.status === 'PENDING').length;
+        }
+        if (onboardingRes.ok) {
+          const d = await onboardingRes.json();
+          if (!d.onboardingCompleted && session.user?.id) {
+            // Check if this is the first session by checking if user has any entries
+            const entriesRes = await fetch('/api/entries');
+            if (entriesRes.ok) {
+              const entriesData = await entriesRes.json();
+              if (!entriesData.entries || entriesData.entries.length === 0) {
+                setShowOnboarding(true);
+              }
+            }
+          }
         }
         setPendingCount(count);
       } catch { }
@@ -126,6 +144,7 @@ export function AppShell({
                   href="/library"
                   className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
                   aria-current={pathname === "/library" ? "page" : undefined}
+                  data-onboarding="library-view"
                 >
                   <BookOpen className="w-4 h-4" />
                   library
@@ -134,6 +153,7 @@ export function AppShell({
                   href="/collections"
                   className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
                   aria-current={pathname === "/collections" ? "page" : undefined}
+                  data-onboarding="collections"
                 >
                   <Folder className="w-4 h-4" />
                   collections
@@ -174,6 +194,24 @@ export function AppShell({
                   </Link>
                 )}
                 <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
+                <button
+                  onClick={() => setShowOnboarding(true)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                  title="Start guided tour"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  tour
+                </button>
+                <FeedbackModal
+                  trigger={
+                    <button className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1">
+                      <MessageSquare className="w-4 h-4" />
+                      feedback
+                    </button>
+                  }
+                  open={showFeedback}
+                  onOpenChange={setShowFeedback}
+                />
                 <AccountHoverMenu
                   displayName={session.user?.name || session.user?.email || "Account"}
                 />
@@ -191,6 +229,10 @@ export function AppShell({
       >
         {children}
       </main>
+      <OnboardingTour
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+      />
     </>
   );
 }

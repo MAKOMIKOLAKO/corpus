@@ -11,14 +11,14 @@ import { useRouter } from 'next/navigation';
 export default function PricingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual' | 'lifetime'>('monthly');
   const [loading, setLoading] = useState(false);
 
   const handleGetStarted = () => {
     router.push('/login');
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (cycle?: string) => {
     if (!session) {
       router.push('/login');
       return;
@@ -31,7 +31,7 @@ export default function PricingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ billingCycle }),
+        body: JSON.stringify({ billingCycle: cycle || billingCycle }),
       });
 
       const data = await response.json();
@@ -49,6 +49,7 @@ export default function PricingPage() {
 
   const monthlyPrice = 6;
   const annualPrice = 48;
+  const lifetimePrice = 30;
   const effectiveMonthlyPrice = annualPrice / 12;
 
   return (
@@ -63,7 +64,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* Free Tier */}
           <Card className="relative">
             <CardHeader className="text-center pb-8">
@@ -93,9 +94,9 @@ export default function PricingPage() {
                   <span>Full search and filtering</span>
                 </li>
               </ul>
-              <Button 
-                variant="outline" 
-                className="w-full" 
+              <Button
+                variant="outline"
+                className="w-full"
                 onClick={handleGetStarted}
               >
                 Get Started
@@ -163,9 +164,9 @@ export default function PricingPage() {
                   </li>
                 </ul>
               </div>
-              <Button 
-                className="w-full" 
-                onClick={handleUpgrade}
+              <Button
+                className="w-full"
+                onClick={() => handleUpgrade('monthly')}
                 disabled={loading}
               >
                 {loading ? (
@@ -175,6 +176,59 @@ export default function PricingPage() {
                   </>
                 ) : (
                   'Upgrade to Pro'
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Lifetime Premium Tier */}
+          <Card className="relative border-purple-200 bg-purple-50/50 shadow-lg">
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                Best Value
+              </Badge>
+            </div>
+            <CardHeader className="text-center pb-8">
+              <CardTitle className="text-2xl">Lifetime Premium</CardTitle>
+              <div className="space-y-2">
+                <div className="text-4xl font-bold">${lifetimePrice}<span className="text-lg font-normal text-muted-foreground">/year</span></div>
+                <div className="text-sm text-muted-foreground">Pay once, use forever</div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="border-t pt-6">
+                <p className="text-sm font-medium text-muted-foreground mb-4">Everything in Pro, plus:</p>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Lifetime access to all features</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Priority feature requests</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>VIP support channel</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Exclusive beta access</span>
+                  </li>
+                </ul>
+              </div>
+              <Button
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                onClick={() => handleUpgrade('lifetime')}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Get Lifetime Premium'
                 )}
               </Button>
             </CardContent>

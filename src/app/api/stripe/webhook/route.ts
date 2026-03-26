@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
 
         const userId = session.metadata?.userId;
         const customerId = session.customer as string;
+        const billingCycle = session.metadata?.billingCycle;
 
         if (process.env.NODE_ENV === 'development') {
           console.log("User ID from metadata:", userId);
@@ -82,16 +83,26 @@ export async function POST(request: NextRequest) {
 
         if (user) {
           if (process.env.NODE_ENV === 'development') {
-            console.log("Updating user plan to PRO");
+            console.log("Updating user plan");
           }
+
+          const updateData: any = {
+            subscriptionStatus: 'active',
+          };
+
+          if (billingCycle === 'lifetime') {
+            updateData.plan = 'LIFETIME_PRO';
+            updateData.stripePriceId = session.display_items?.[0]?.price?.id || session.amount_total;
+            // No subscription ID for one-time payments
+          } else {
+            updateData.plan = 'PRO';
+            updateData.stripeSubscriptionId = session.subscription as string;
+            updateData.stripePriceId = session.display_items?.[0]?.price?.id || session.amount_total;
+          }
+
           const updatedUser = await (prisma as any).user.update({
             where: { id: user.id },
-            data: {
-              plan: 'PRO',
-              stripeSubscriptionId: session.subscription as string,
-              stripePriceId: session.display_items?.[0]?.price?.id || session.amount_total,
-              subscriptionStatus: 'active',
-            },
+            data: updateData,
           });
           if (process.env.NODE_ENV === 'development') {
             console.log("Update result:", updatedUser);
