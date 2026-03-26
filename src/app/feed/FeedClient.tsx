@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Bookmark,
@@ -108,6 +109,7 @@ const timeAgo = (date: string) => {
 
 export default function FeedClient() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "connections" | "mine">("all");
@@ -208,7 +210,7 @@ export default function FeedClient() {
                     <>
                       <h4
                         className="font-medium text-[var(--foreground)] mb-1 cursor-pointer hover:text-[var(--primary)] transition-colors"
-                        onClick={() => setSelectedEntry(signal.entry!)}
+                        onClick={() => router.push(`/entries/${signal.entry!.id}?from=/feed`)}
                       >
                         {signal.entry.title}
                       </h4>
