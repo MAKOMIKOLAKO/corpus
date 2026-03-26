@@ -23,14 +23,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lab name must be at least 3 characters" }, { status: 400 });
     }
 
-    // Get user with institution using direct SQL
-    const users = await prisma.$queryRaw`
-      SELECT id, "institutionId", "institutionVerifiedAt" 
-      FROM "User" 
-      WHERE email = ${session.user.email}
-    ` as any[];
+    // Get user with institution using regular Prisma query
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: {
+        id: true,
+        institutionId: true,
+        institutionVerifiedAt: true
+      }
+    });
 
-    const user = users[0];
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -41,66 +43,63 @@ export async function POST(request: Request) {
 
     // Generate unique slug
     let slug = generateSlug(name);
-    let slugExists = await prisma.$queryRaw`SELECT id FROM "Lab" WHERE slug = ${slug}` as any[];
+    let slugExists = await prisma.lab.findUnique({ where: { slug } });
     let attempts = 0;
 
-    while (slugExists.length > 0 && attempts < 10) {
+    while (slugExists && attempts < 10) {
       slug = `${generateSlug(name)}-${Math.random().toString(36).substring(2, 6)}`;
-      slugExists = await prisma.$queryRaw`SELECT id FROM "Lab" WHERE slug = ${slug}` as any[];
+      slugExists = await prisma.lab.findUnique({ where: { slug } });
       attempts++;
     }
 
-    if (slugExists.length > 0) {
+    if (slugExists) {
       return NextResponse.json({ error: "Could not generate unique slug" }, { status: 500 });
     }
 
-    // Create lab using raw query with correct quoted column names
-    let lab;
-    try {
-      const labs = await prisma.$queryRaw`
-        INSERT INTO "Lab" (name, slug, description, "institutionId", "createdBy", "isVerified", "createdAt")
-        VALUES (${name}, ${slug}, ${description || null}, ${user.institutionId}, ${user.id}, false, NOW())
-        RETURNING id, name, slug, description, "isVerified", "createdAt"
-      ` as any[];
-      lab = labs[0];
-      console.log("Lab created successfully:", lab);
-    } catch (labError) {
-      console.error("Error creating lab:", labError);
-      return NextResponse.json({ error: "Failed to create lab: " + (labError as Error).message }, { status: 500 });
-    }
+    // Create lab using regular Prisma
+    const lab = await prisma.lab.create({
+      data: {
+        name: name.trim(),
+        slug,
+        description: description?.trim() || null,
+        institutionId: user.institutionId,
+        createdBy: user.id,
+        isVerified: false,
+        createdAt: new Date()
+      }
+    });
 
-    // Add creator as admin
+    // Add creator as admin using regular Prisma
     try {
-      await prisma.$queryRaw`
-        INSERT INTO "LabMember" ("labId", "userId", "role", "joinedAt")
-        VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
-      `;
+      await prisma.labMember.create({
+        data: {
+          labId: lab.id,
+          userId: user.id,
+          role: 'ADMIN',
+          joinedAt: new Date()
+        }
+      });
     } catch (memberError) {
       console.error("Error adding lab member:", memberError);
       // Continue even if member addition fails
     }
 
-    // Get institution info
+    // Get institution info using regular Prisma
     let institution;
     try {
-      const institutions = await prisma.$queryRaw`
-        SELECT id, name, domain 
-        FROM "Institution" 
-        WHERE id = ${user.institutionId}
-      ` as any[];
-      institution = institutions[0];
-      console.log("Institution found:", institution);
+      institution = await prisma.institution.findUnique({
+        where: { id: user.institutionId },
+        select: { id: true, name: true, domain: true }
+      });
     } catch (instError) {
       console.error("Error fetching institution:", instError);
-      // Continue without institution info
       institution = { id: user.institutionId, name: "Unknown Institution", domain: "" };
     }
 
     // Return lab with userRole and joinedAt
     const labWithRole = {
       ...lab,
-      createdAt: lab.createdAt.toISOString(),
-      institution: institution,
+      institution: institution || { id: user.institutionId, name: "Unknown Institution", domain: "" },
       userRole: 'ADMIN' as const,
       joinedAt: new Date().toISOString(),
       _count: {
