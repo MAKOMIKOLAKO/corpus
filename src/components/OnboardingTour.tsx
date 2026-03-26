@@ -41,9 +41,10 @@ const ONBOARDING_STEPS: Step[] = [
 interface OnboardingTourProps {
   isOpen: boolean;
   onClose: () => void;
+  onCompleted?: () => void;
 }
 
-export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
+export function OnboardingTour({ isOpen, onClose, onCompleted }: OnboardingTourProps) {
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const { data: session } = useSession();
@@ -85,6 +86,9 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
         fetch("/api/user/onboarding-complete", {
           method: "POST",
         }).catch(console.error);
+
+        // Notify parent component
+        onCompleted?.();
       }
     }
 

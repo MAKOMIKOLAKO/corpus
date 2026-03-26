@@ -27,6 +27,7 @@ export function AppShell({
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
 
   useEffect(() => {
     if (!session) return;
@@ -74,6 +75,7 @@ export function AppShell({
         }
         if (onboardingRes.ok) {
           const d = await onboardingRes.json();
+          setOnboardingCompleted(d.onboardingCompleted);
           if (!d.onboardingCompleted && session.user?.id) {
             // Check if this is the first session by checking if user has any entries
             const entriesRes = await fetch('/api/entries');
@@ -198,6 +200,7 @@ export function AppShell({
                   onClick={() => setShowOnboarding(true)}
                   className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
                   title="Start guided tour"
+                  style={{ visibility: onboardingCompleted ? 'hidden' : 'visible' }}
                 >
                   <HelpCircle className="w-4 h-4" />
                   tour
@@ -232,6 +235,7 @@ export function AppShell({
       <OnboardingTour
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
+        onCompleted={() => setOnboardingCompleted(true)}
       />
     </>
   );
