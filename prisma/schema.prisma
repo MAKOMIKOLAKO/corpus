@@ -178,7 +178,9 @@ model Collection {
   publicViewCount  Int                @default(0)
   createdAt        DateTime           @default(now())
   userId           String?
+  labId            String?
   user             User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lab              Lab?               @relation(fields: [labId], references: [id], onDelete: Cascade)
   entries          EntryCollection[]
   members          CollectionMember[]
   signals          Signal[]
@@ -295,6 +297,7 @@ model Lab {
   createdAt     DateTime @default(now())
   institution   Institution @relation(fields: [institutionId], references: [id])
   members       LabMember[]
+  collections   Collection[]
   creator       User     @relation("LabCreator", fields: [createdBy], references: [id])
 }
 
