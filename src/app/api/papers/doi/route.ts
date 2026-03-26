@@ -99,10 +99,16 @@ export async function POST(request: NextRequest) {
         // If no abstract from CrossRef, try Semantic Scholar (only for standard DOIs)
         if (!metadata.abstract && isStandardDoi) {
             try {
+                const headers: Record<string, string> = {};
+                if (process.env.SEMANTIC_SCHOLAR_API_KEY) {
+                    headers['x-api-key'] = process.env.SEMANTIC_SCHOLAR_API_KEY;
+                    console.log('Using Semantic Scholar API key for DOI lookup');
+                } else {
+                    console.log('WARNING: No Semantic Scholar API key found for DOI lookup');
+                }
+                
                 const s2Response = await fetch(`https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(cleanDoi)}?fields=abstract,openAccessPdf`, {
-                    headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? {
-                        'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY
-                    } : {}
+                    headers
                 });
                 if (s2Response.ok) {
                     const s2Data = await s2Response.json();

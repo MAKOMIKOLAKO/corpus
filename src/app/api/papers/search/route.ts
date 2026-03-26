@@ -32,9 +32,15 @@ export async function GET(request: NextRequest) {
             // Add API key if available
             if (process.env.SEMANTIC_SCHOLAR_API_KEY) {
                 params.append('key', process.env.SEMANTIC_SCHOLAR_API_KEY);
+                console.log('Using Semantic Scholar API key for search');
+            } else {
+                console.log('WARNING: No Semantic Scholar API key found in environment');
             }
 
-            const response = await fetch(`${baseUrl}?${params}`);
+            const url = `${baseUrl}?${params}`;
+            console.log('Search URL:', url.replace(/key=[^&]+/, 'key=REDACTED'));
+
+            const response = await fetch(url);
 
             if (!response.ok) {
                 const errorText = await response.text();
