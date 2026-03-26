@@ -5,6 +5,7 @@ import HomePageClient from '@/components/HomePageClient';
 import EntryCard from '@/components/EntryCard';
 import QuickAddSmartEntry from '@/components/QuickAddSmartEntry';
 import LibraryPageWrapper from '@/components/LibraryPageWrapper';
+import LibraryScrollRestore from './LibraryScrollRestore';
 import { ContentType, ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -106,6 +107,7 @@ export default async function LibraryPage({
 
     return (
         <LibraryPageWrapper>
+            <LibraryScrollRestore />
             <div className="max-w-6xl mx-auto overflow-visible">
                 <div className="space-y-8">
                     {/* Page Header */}
