@@ -359,7 +359,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
 
                         <h1 className="text-3xl font-bold tracking-tight text-[var(--foreground)] mb-2 pr-16">{formData.title}</h1>
                         <p className="text-lg text-[var(--muted-foreground)] mb-6 font-medium">
-                            {formData.authors?.join(', ')}
+                            {Array.isArray(formData.authors) ? formData.authors.join(', ') : formData.authors}
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
@@ -429,7 +429,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             </div>
                         )}
 
-                        {formData.topics && formData.topics.length > 0 && (
+                        {Array.isArray(formData.topics) && formData.topics.length > 0 && (
                             <div className="mb-6">
                                 <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-3">topics</h3>
                                 <div className="flex flex-wrap gap-2">
@@ -442,16 +442,16 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             </div>
                         )}
 
-                        {(formData.autoKeywords.length > 0 || formData.userKeywords.length > 0) && (
+                        {(Array.isArray(formData.autoKeywords) && formData.autoKeywords.length > 0) || (Array.isArray(formData.userKeywords) && formData.userKeywords.length > 0) && (
                             <div className="pt-4 border-t border-[var(--border)]">
                                 <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-3">Keywords</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {formData.userKeywords?.map((kw: string, i: number) => (
+                                    {Array.isArray(formData.userKeywords) && formData.userKeywords.map((kw: string, i: number) => (
                                         <span key={`user-${i}`} className="text-xs px-2.5 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] font-medium border border-[var(--primary)]/20">
                                             {kw}
                                         </span>
                                     ))}
-                                    {formData.autoKeywords?.map((kw: string, i: number) => (
+                                    {Array.isArray(formData.autoKeywords) && formData.autoKeywords.map((kw: string, i: number) => (
                                         <span key={`auto-${i}`} className="text-xs px-2.5 py-1 rounded-full bg-[var(--muted)] text-[var(--foreground)] font-medium border border-[var(--border)]">
                                             {kw} <span className="text-[9px] text-[var(--muted-foreground)] ml-1">AI</span>
                                         </span>
@@ -468,7 +468,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                         </h3>
 
                         <div className="space-y-4 mb-6">
-                            {entryCollections?.length > 0 ? (
+                            {Array.isArray(entryCollections) && entryCollections.length > 0 ? (
                                 entryCollections.map((collection: any) => (
                                     <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
                                         <div>
@@ -499,7 +499,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)]"
                             >
                                 <option value="">Select a collection...</option>
-                                {availableCollections?.map((collection: any) => (
+                                {Array.isArray(availableCollections) && availableCollections.map((collection: any) => (
                                     <option key={collection.id} value={collection.id}>
                                         {collection.name}
                                     </option>
