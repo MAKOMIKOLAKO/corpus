@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,13 +39,7 @@ export default function ProfileClient({ user, totalConnections }: Props) {
 
   const isOwnProfile = session?.user?.id === user.id;
 
-  useEffect(() => {
-    if (!isOwnProfile && session?.user?.id) {
-      checkConnectionStatus();
-    }
-  }, [session, user.id, isOwnProfile]);
-
-  const checkConnectionStatus = async () => {
+  const checkConnectionStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/connections/status/${user.id}`);
       if (response.ok) {
@@ -56,7 +50,13 @@ export default function ProfileClient({ user, totalConnections }: Props) {
     } catch (error) {
       console.error("Failed to check connection status");
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    if (!isOwnProfile && session?.user?.id) {
+      checkConnectionStatus();
+    }
+  }, [session, user.id, isOwnProfile, checkConnectionStatus]);
 
   const handleConnect = async () => {
     setLoading(true);
