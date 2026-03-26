@@ -68,10 +68,11 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
     }
   }, [isOpen, session]);
 
-  const handleCallback = useCallback((data: any) => {
-    const { status, type, index } = data;
+  const handleEvent = useCallback((data: any, controls: any) => {
+    const { type, status, index } = data;
 
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+    // Handle tour finish or skip
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED || type === 'tour:end') {
       setRun(false);
       onClose();
 
@@ -85,8 +86,14 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
       }
     }
 
-    if (type === "step:before") {
+    // Track step completion before showing
+    if (type === 'step:before') {
       analytics.onboardingStepCompleted(session?.user?.id, index);
+    }
+
+    // Update step index for controlled mode
+    if (type === 'step:after') {
+      setStepIndex(index + 1);
     }
   }, [onClose, session]);
 
@@ -98,6 +105,7 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
       run={run}
       stepIndex={stepIndex}
       continuous
+      onEvent={handleEvent}
     />
   );
 }
