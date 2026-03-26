@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { doi } = await request.json();
-        
+
         if (!doi || typeof doi !== 'string') {
             return NextResponse.json({ error: 'DOI is required' }, { status: 400 });
         }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
             if (crossrefResponse.ok) {
                 const crossrefData = await crossrefResponse.json();
                 const item = crossrefData.message;
-                
+
                 metadata.title = item.title?.[0] || null;
                 metadata.authors = item.author?.map((a: any) => `${a.given || ''} ${a.family || ''}`.trim()).filter(Boolean) || [];
                 metadata.year = item.published?.['date-parts']?.[0]?.[0] || null;
@@ -57,22 +57,29 @@ export async function POST(request: NextRequest) {
             console.error('CrossRef error:', error);
         }
 
-        // If no abstract from CrossRef, try Semantic Scholar
+        // If no abstract from CrossRef, try OpenAlex
         if (!metadata.abstract) {
             try {
-                const s2Response = await fetch(`https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(cleanDoi)}?fields=abstract,openAccessPdf`);
-                if (s2Response.ok) {
-                    const s2Data = await s2Response.json();
-                    if (s2Data.abstract) {
-                        metadata.abstract = s2Data.abstract;
-                        metadata.metadataSources.push('Semantic Scholar');
+                const openalexResponse = await fetch(`https://api.openalex.org/works?filter=doi:${encodeURIComponent(cleanDoi)}&select=abstract,open_access`, {
+                    headers: {
+                        'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
                     }
-                    if (s2Data.openAccessPdf?.url) {
-                        metadata.openAccessUrl = s2Data.openAccessPdf.url;
+                });
+                if (openalexResponse.ok) {
+                    const openalexData = await openalexResponse.json();
+                    if (openalexData.results?.[0]) {
+                        const work = openalexData.results[0];
+                        if (work.abstract?.length > 2) {
+                            metadata.abstract = work.abstract;
+                            metadata.metadataSources.push('OpenAlex');
+                        }
+                        if (work.open_access?.oa_url) {
+                            metadata.openAccessUrl = work.open_access.oa_url;
+                        }
                     }
                 }
             } catch (error) {
-                console.error('Semantic Scholar error:', error);
+                console.error('OpenAlex error:', error);
             }
         }
 
@@ -97,7 +104,7 @@ export async function POST(request: NextRequest) {
             try {
                 const { PrismaClient } = await import('@prisma/client');
                 const prisma = new PrismaClient();
-                
+
                 const duplicate = await prisma.entry.findFirst({
                     where: {
                         userId,
@@ -109,11 +116,11 @@ export async function POST(request: NextRequest) {
                         createdAt: true
                     }
                 });
-                
+
                 if (duplicate) {
                     metadata.duplicate = duplicate;
                 }
-                
+
                 await prisma.$disconnect();
             } catch (error) {
                 console.error('Duplicate check error:', error);
