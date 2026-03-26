@@ -6,7 +6,7 @@ export default function FeedPage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[var(--foreground)]">Feed Coming Soon</h1>
         <p className="text-lg text-[var(--muted-foreground)]">
-          The feed feature is currently under construction. We're working on something great!
+          The feed feature is currently under construction. We&apos;re working on something great!
         </p>
         <p className="text-sm text-[var(--muted-foreground)]">
           Check back later for updates from your connections and the research community.

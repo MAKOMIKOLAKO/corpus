@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,12 +92,7 @@ export default function CollectionsPage() {
     const descTooLong = newCollection.description.trim().length > DESC_MAX;
     const isValid = newCollection.name.trim().length >= NAME_MIN && !nameTooLong && !descTooLong;
 
-    useEffect(() => {
-        fetchCollections();
-        fetchInvites();
-    }, []);
-
-    const fetchInvites = async () => {
+    const fetchInvites = useCallback(async () => {
         try {
             const response = await fetch('/api/collections/invites');
             if (response.ok) {
@@ -107,9 +102,9 @@ export default function CollectionsPage() {
         } catch (error) {
             console.error('Failed to fetch invites:', error);
         }
-    };
+    }, []);
 
-    const fetchCollections = async () => {
+    const fetchCollections = useCallback(async () => {
         try {
             const response = await fetch('/api/collections', {
                 headers: { 'x-api-key': apiKey },
@@ -123,7 +118,12 @@ export default function CollectionsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [apiKey]);
+
+    useEffect(() => {
+        fetchCollections();
+        fetchInvites();
+    }, [fetchCollections, fetchInvites]);
 
     const handleCreateCollection = async () => {
         setFormError(null);
