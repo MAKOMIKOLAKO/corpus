@@ -113,6 +113,7 @@ model User {
   signals               Signal[]
   sentReferenceRequests ReferenceRequest[] @relation("ReferenceRequester")
   receivedReferenceRequests ReferenceRequest[] @relation("ReferenceOwner")
+  analyticsEvents       AnalyticsEvent[]
 }
 
 model PasswordResetToken {
@@ -278,4 +279,16 @@ model ReferenceRequest {
   entry        Entry                @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@unique([requesterId, ownerId, entryId])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  event     String
+  userId    String?
+  metadata  Json?
+  timestamp DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([event, timestamp])
+  @@index([userId, event])
 }
