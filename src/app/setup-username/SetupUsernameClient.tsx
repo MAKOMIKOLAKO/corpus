@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { setupUsername } from './actions';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -51,21 +52,20 @@ export default function SetupUsernameClient() {
     if (!availability?.available) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/auth/setup-username', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, bio }),
-        credentials: 'include',
-      });
+      const result = await setupUsername(username, bio);
 
-      if (res.ok) {
-        // Force a full page reload to refresh the session and cookies
+      if (result.success) {
+        // Clear NextAuth cookies to ensure fresh session
+        await fetch('/api/auth/clear-cookies', { method: 'POST' });
+
+        // Force a full page reload to get a fresh session
         window.location.href = '/library';
-      } else if (res.status === 404) {
-        await signOut({ callbackUrl: '/signup' });
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to save username');
+      } else if (result.error) {
+        if (result.error === 'User not found') {
+          await signOut({ callbackUrl: '/signup' });
+        } else {
+          alert(result.error);
+        }
       }
     } finally {
       setSaving(false);
