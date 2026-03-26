@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Signups per day
-      prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
-        SELECT 
+      // Signups per day - use unsafe query with pre-built string
+      prisma.$queryRawUnsafe<Array<{ date: Date; count: bigint }>>(
+        `SELECT 
           DATE(timestamp) as date,
           COUNT(*) as count
         FROM "AnalyticsEvent"
@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
           ${endDateClause}
         GROUP BY DATE(timestamp)
         ORDER BY date DESC
-        LIMIT 30
-      `,
+        LIMIT 30`
+      ),
 
       // Username setups
       prisma.analyticsEvent.count({
@@ -94,20 +94,20 @@ export async function GET(request: NextRequest) {
       }),
 
       // Reading status distribution
-      prisma.$queryRaw<Array<{ status: string; count: bigint }>>`
-        SELECT 
+      prisma.$queryRawUnsafe<Array<{ status: string; count: bigint }>>(
+        `SELECT 
           metadata->>'readingStatus' as status,
           COUNT(*) as count
         FROM "AnalyticsEvent"
         WHERE event = 'READING_STATUS_UPDATED'
           ${startDateClause}
           ${endDateClause}
-        GROUP BY metadata->>'readingStatus'
-      `,
+        GROUP BY metadata->>'readingStatus'`
+      ),
 
       // Top users by entries saved
-      prisma.$queryRaw<Array<{ email: string; entryCount: bigint }>>`
-        SELECT 
+      prisma.$queryRawUnsafe<Array<{ email: string; entryCount: bigint }>>(
+        `SELECT 
           u.email,
           COUNT(ae.id) as entryCount
         FROM "AnalyticsEvent" ae
@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
           ${endDateClause}
         GROUP BY u.email
         ORDER BY entryCount DESC
-        LIMIT 10
-      `,
+        LIMIT 10`
+      ),
     ]);
 
     // Collections Metrics
@@ -149,8 +149,8 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      prisma.$queryRaw<Array<{ avg_entries: number }>>`
-        SELECT AVG(entry_count) as avg_entries
+      prisma.$queryRawUnsafe<Array<{ avg_entries: number }>>(
+        `SELECT AVG(entry_count) as avg_entries
         FROM (
           SELECT 
             c.id,
@@ -160,8 +160,8 @@ export async function GET(request: NextRequest) {
           WHERE c."createdAt" ${startDate ? `>= '${startDate}'` : `>= '2020-01-01'`}
             ${endDateClause}
           GROUP BY c.id
-        ) t
-      `,
+        ) t`
+      ),
     ]);
 
     // Feed & Engagement Metrics
@@ -184,8 +184,8 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(*) as count
+      prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        `SELECT COUNT(*) as count
         FROM (
           SELECT "userId"
           FROM "AnalyticsEvent"
@@ -194,8 +194,8 @@ export async function GET(request: NextRequest) {
             ${endDateClause}
           GROUP BY "userId"
           HAVING COUNT(*) > 1
-        ) t
-      `,
+        ) t`
+      ),
     ]);
 
     // Calculate derived metrics
