@@ -171,7 +171,7 @@ export default function AddPaperForm() {
                 url: paper.doi ? `https://doi.org/${paper.doi}` : null,
                 openAccessUrl: paper.openAccessUrl,
                 contentType: 'PAPER',
-                metadataSources: ['OpenAlex']
+                metadataSources: ['Semantic Scholar']
             };
             setSelectedPaper(metadata);
             populateForm(metadata);
