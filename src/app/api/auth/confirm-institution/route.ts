@@ -51,7 +51,8 @@ export async function POST(request: Request) {
       where: { id: session.user.id },
       data: {
         institutionId: institution.id,
-        institutionVerifiedAt: new Date()
+        institutionVerifiedAt: new Date(),
+        institutionVerificationEmail: verificationCode.email // Save the verified email
       }
     });
 

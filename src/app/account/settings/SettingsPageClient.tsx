@@ -39,6 +39,7 @@ export default function AccountPage() {
     const [verificationCode, setVerificationCode] = useState('');
     const [verifying, setVerifying] = useState(false);
     const [sendingCode, setSendingCode] = useState(false);
+    const [showCodeInput, setShowCodeInput] = useState(false);
     const [verificationMsg, setVerificationMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const userPlan = getUserPlan(session?.user ? {
@@ -216,6 +217,7 @@ export default function AccountPage() {
             const data = await response.json();
             if (response.ok) {
                 setVerificationMsg({ type: 'success', text: `Verification code sent to ${verificationEmail}` });
+                setShowCodeInput(true); // Show the code input field
             } else {
                 setVerificationMsg({ type: 'error', text: data.error || 'Failed to send verification code' });
             }
@@ -244,6 +246,7 @@ export default function AccountPage() {
                 setShowVerificationModal(false);
                 setVerificationEmail('');
                 setVerificationCode('');
+                setShowCodeInput(false);
                 fetchProfile(); // Refresh profile data
             } else {
                 setVerificationMsg({ type: 'error', text: data.error || 'Invalid verification code' });
@@ -727,6 +730,7 @@ export default function AccountPage() {
                                     setShowVerificationModal(false);
                                     setVerificationEmail('');
                                     setVerificationCode('');
+                                    setShowCodeInput(false);
                                     setVerificationMsg(null);
                                 }}
                             >
@@ -750,7 +754,7 @@ export default function AccountPage() {
                                 </p>
                             </div>
 
-                            {!sendingCode && !verificationCode && (
+                            {!showCodeInput && (
                                 <Button
                                     onClick={handleSendVerificationCode}
                                     disabled={!verificationEmail.trim()}
@@ -767,7 +771,7 @@ export default function AccountPage() {
                                 </Button>
                             )}
 
-                            {verificationCode && (
+                            {showCodeInput && (
                                 <>
                                     <div>
                                         <Label htmlFor="verificationCode">Verification Code</Label>
@@ -817,8 +821,8 @@ export default function AccountPage() {
 
                             {verificationMsg && (
                                 <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${verificationMsg.type === 'success'
-                                        ? 'bg-green-50 text-green-800 border border-green-200'
-                                        : 'bg-red-50 text-red-800 border border-red-200'
+                                    ? 'bg-green-50 text-green-800 border border-green-200'
+                                    : 'bg-red-50 text-red-800 border border-red-200'
                                     }`}>
                                     {verificationMsg.type === 'success' ? (
                                         <CheckCircle className="w-4 h-4" />

@@ -95,6 +95,7 @@ model User {
   lastFeedViewedAt      DateTime?
   institutionId         String?
   institutionVerifiedAt DateTime?
+  institutionVerificationEmail String?
 
   entries               Entry[]
   collections           Collection[]
