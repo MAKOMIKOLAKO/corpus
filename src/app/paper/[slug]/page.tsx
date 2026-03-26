@@ -80,14 +80,11 @@ export default async function PaperPageWrapper({ params }: Props) {
     notFound()
   }
 
-  // Get related papers based on shared topics
+  // Get related papers based on content type only
   const relatedPapers = await prisma.entry.findMany({
     where: {
       id: { not: entry.id },
-      contentType: 'PAPER',
-      OR: entry.topics.map(topic => ({
-        topics: { has: topic }
-      }))
+      contentType: 'PAPER'
     },
     take: 5,
     select: {
@@ -100,25 +97,11 @@ export default async function PaperPageWrapper({ params }: Props) {
     }
   })
 
-  // Get related topics
-  const relatedTopics = await prisma.topic.findMany({
-    where: {
-      slug: { in: entry.topics.map(t => t.toLowerCase().replace(/\s+/g, '-')) }
-    },
-    take: 5,
-    select: {
-      slug: true,
-      name: true,
-      description: true
-    }
-  })
-
   return (
     <SEOLayoutWrapper>
       <PaperPage
         entry={entry}
         relatedPapers={relatedPapers}
-        relatedTopics={relatedTopics}
       />
     </SEOLayoutWrapper>
   )

@@ -33,7 +33,7 @@ interface Props {
     } | null
   }
   relatedPapers: RelatedPaper[]
-  relatedTopics: RelatedTopic[]
+  relatedTopics?: RelatedTopic[]
 }
 
 const jsonLd = (entry: Entry) => {
@@ -143,7 +143,6 @@ export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props
                 year={entry.year || undefined}
                 doi={entry.doi || undefined}
                 url={entry.url || undefined}
-                topics={entry.topics || []}
                 onSignupTrigger={() => setShowSignupPrompt(true)}
               />
             </div>
@@ -189,25 +188,8 @@ export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props
             </section>
           )}
 
-          {/* Topics */}
-          {entry.topics && entry.topics.length > 0 && (
-            <section className="mb-12">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Topics</h2>
-              <div className="flex flex-wrap gap-2">
-                {entry.topics.map((topic, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                  >
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Related Topics */}
-          {relatedTopics.length > 0 && (
+          {relatedTopics && relatedTopics.length > 0 && (
             <section className="mb-12">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Related Topics</h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -256,7 +238,6 @@ export default function PaperPage({ entry, relatedPapers, relatedTopics }: Props
                         title={paper.title}
                         authors={paper.authors}
                         year={paper.year || undefined}
-                        topics={[]}
                         className="flex-shrink-0"
                         onSignupTrigger={() => setShowSignupPrompt(true)}
                       />

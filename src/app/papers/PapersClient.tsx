@@ -12,7 +12,6 @@ interface Paper {
   year: number | null
   summary: string | null
   abstract: string | null
-  topics: string[]
   doi: string | null
 }
 
@@ -33,15 +32,7 @@ export default function PapersClient({ initialPapers, allTopics }: Props) {
     if (searchQuery) {
       filtered = filtered.filter(paper =>
         paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        paper.authors.some(author => author.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        paper.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    }
-
-    // Filter by topic
-    if (selectedTopic !== 'all') {
-      filtered = filtered.filter(paper =>
-        paper.topics.includes(selectedTopic)
+        paper.authors.some(author => author.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
 
@@ -169,25 +160,6 @@ export default function PapersClient({ initialPapers, allTopics }: Props) {
                   <p className="text-gray-700 line-clamp-3 mb-3">
                     {paper.summary || paper.abstract}
                   </p>
-                )}
-
-                {paper.topics.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {paper.topics.slice(0, 5).map((topic, index) => (
-                      <Link
-                        key={index}
-                        href={`/papers?topic=${encodeURIComponent(topic)}`}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setSearchQuery('')
-                          setSelectedTopic(topic)
-                        }}
-                        className="text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-full"
-                      >
-                        {topic}
-                      </Link>
-                    ))}
-                  </div>
                 )}
 
                 <div className="flex items-center gap-4">

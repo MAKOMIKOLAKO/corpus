@@ -56,7 +56,6 @@ export async function PATCH(
       cover: src.cover ?? null,
       autoKeywords: src.autoKeywords,
       userKeywords: src.userKeywords,
-      topics: src.topics,
       summary: src.summary ?? null,
       notes: src.notes ?? [],
       readingStatus: 'UNREAD',
