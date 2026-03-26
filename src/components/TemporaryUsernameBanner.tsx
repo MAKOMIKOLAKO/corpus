@@ -12,6 +12,20 @@ export default function TemporaryUsernameBanner() {
   // Check if user has a random username
   const isRandomUsername = session?.user?.username?.startsWith('user_');
 
+  // Load dismissal state from localStorage on mount
+  useEffect(() => {
+    const dismissedState = localStorage.getItem('temp-username-banner-dismissed');
+    if (dismissedState === 'true') {
+      setDismissed(true);
+    }
+  }, []);
+
+  // Save dismissal state to localStorage
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem('temp-username-banner-dismissed', 'true');
+  };
+
   // Don't show if user doesn't have a random username, not authenticated, or dismissed
   if (!session || !isRandomUsername || dismissed) {
     return null;
@@ -36,7 +50,7 @@ export default function TemporaryUsernameBanner() {
             </p>
           </div>
           <button
-            onClick={() => setDismissed(true)}
+            onClick={handleDismiss}
             className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 transition-colors"
           >
             <X className="w-4 h-4" />

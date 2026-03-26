@@ -199,7 +199,7 @@ export default function FeedClient() {
                 <div className="flex-1">
                   <p className="text-sm text-[var(--foreground)] mb-2">
                     <span className="font-medium">@{signal.user.username || signal.user.name}</span>
-                    <span className="text-[var(--muted-foreground)]"> saved a paper</span>
+                    <span className="text-[var(--muted-foreground)]"> added a new entry</span>
                   </p>
 
                   {signal.entry && (
