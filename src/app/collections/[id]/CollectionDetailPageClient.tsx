@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
@@ -616,16 +617,20 @@ export default function CollectionDetailPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {canManage ? (
-                                            <select
+                                            <Select
                                                 value={member.role}
-                                                onChange={(e) => handleUpdateMemberRole(member.id, e.target.value as any)}
+                                                onValueChange={(value) => handleUpdateMemberRole(member.id, value as any)}
                                                 disabled={updatingMember === member.id}
-                                                className="text-xs px-2 py-1 border rounded-md bg-background"
                                             >
-                                                <option value="VIEWER">Viewer</option>
-                                                <option value="CONTRIBUTOR">Contributor</option>
-                                                <option value="ADMIN">Admin</option>
-                                            </select>
+                                                <SelectTrigger className="w-24 h-8 text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="VIEWER">Viewer</SelectItem>
+                                                    <SelectItem value="CONTRIBUTOR">Contributor</SelectItem>
+                                                    <SelectItem value="ADMIN">Admin</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         ) : (
                                             <Badge className={getRoleBadgeColor(member.role)}>
                                                 {member.role.toLowerCase()}
@@ -723,7 +728,7 @@ export default function CollectionDetailPage() {
                                         autoComplete="off"
                                     />
                                     {contactsOpen && (
-                                        <div className="absolute z-10 mt-1 w-full bg-background border border-border rounded-md shadow-sm max-h-56 overflow-auto">
+                                        <div className="absolute z-50 mt-1 w-full bg-background border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
                                             {/* Show loading indicator */}
                                             {searchLoading && (
                                                 <div className="px-3 py-2 text-sm text-muted-foreground">
@@ -745,7 +750,7 @@ export default function CollectionDetailPage() {
                                                             <button
                                                                 type="button"
                                                                 key={`search-${c.id}`}
-                                                                className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                                                                className="w-full text-left px-3 py-2 hover:bg-muted text-sm transition-colors"
                                                                 onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
                                                             >
                                                                 <div className="flex flex-col">
@@ -764,7 +769,7 @@ export default function CollectionDetailPage() {
                                             {/* Show existing contacts if no query or as fallback */}
                                             {inviteEmail.length === 0 && contacts.length > 0 && (
                                                 <>
-                                                    <div className="px-3 py-2 text-xs text-muted-foreground font-medium border-b">
+                                                    <div className="px-3 py-2 text-xs text-muted-foreground font-medium border-b border-border">
                                                         Recent Contacts
                                                     </div>
                                                     {contacts
@@ -773,7 +778,7 @@ export default function CollectionDetailPage() {
                                                             <button
                                                                 type="button"
                                                                 key={`contact-${c.id}`}
-                                                                className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                                                                className="w-full text-left px-3 py-2 hover:bg-muted text-sm transition-colors"
                                                                 onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
                                                             >
                                                                 <div className="flex flex-col">
@@ -795,15 +800,19 @@ export default function CollectionDetailPage() {
 
                             <div>
                                 <label className="text-sm font-medium mb-1 block">Role</label>
-                                <select
+                                <Select
                                     value={inviteRole}
-                                    onChange={(e) => setInviteRole(e.target.value as any)}
-                                    className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+                                    onValueChange={(value) => setInviteRole(value as any)}
                                 >
-                                    <option value="VIEWER">Viewer</option>
-                                    <option value="CONTRIBUTOR">Contributor</option>
-                                    <option value="ADMIN">Admin</option>
-                                </select>
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="VIEWER">Viewer</SelectItem>
+                                        <SelectItem value="CONTRIBUTOR">Contributor</SelectItem>
+                                        <SelectItem value="ADMIN">Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 {inviteRole === 'ADMIN' && (
                                     <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                                         Admin role requires both users to have Pro accounts
