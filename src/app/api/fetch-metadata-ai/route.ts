@@ -155,28 +155,6 @@ Return exactly this JSON structure with no markdown formatting.`;
             finalContentType = 'OTHER';
         }
 
-        // Generate keywords using AI
-        let autoKeywords: string[] = [];
-        if (parsedData.title || parsedData.abstract) {
-            try {
-                const textForAnalysis = `${parsedData.title || ''}. ${parsedData.abstract || ''}`;
-                const completion = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: `Extract 5 to 8 concise, specific keywords from the following text. Return only a JSON array of strings, no explanation.\n\nText: ${textForAnalysis}`,
-                    config: {
-                        responseMimeType: 'application/json',
-                    }
-                });
-
-                const resultText = completion.text || '[]';
-                const parsedKeywords = JSON.parse(resultText);
-                autoKeywords = Array.isArray(parsedKeywords) ? parsedKeywords.slice(0, 8) : [];
-            } catch (error) {
-                console.error('Failed to generate keywords for metadata:', error);
-                // Continue without keywords if generation fails
-            }
-        }
-
         return NextResponse.json({
             title: parsedData.title || '',
             authors: Array.isArray(parsedData.authors) ? parsedData.authors : [],
@@ -186,8 +164,6 @@ Return exactly this JSON structure with no markdown formatting.`;
             contentType: finalContentType,
             url: url || targetUrl, // Provide the url back if they used DOI
             doi: doi || '',
-            autoKeywords,
-            userKeywords: [],
         });
 
     } catch (error) {
