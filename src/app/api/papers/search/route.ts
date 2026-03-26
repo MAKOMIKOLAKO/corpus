@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
         const query = searchParams.get('q');
         const limit = parseInt(searchParams.get('limit') || '8');
 
-        console.log('Search request received:', { query, limit });
-
         if (!query || query.length < 3) {
             return NextResponse.json({ results: [] });
         }
@@ -38,11 +36,9 @@ export async function GET(request: NextRequest) {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('OpenAlex API error:', response.status, errorText);
                 return NextResponse.json({
                     results: [],
-                    error: 'Search temporarily unavailable. Please try entering a DOI instead.'
+                    error: `Search failed (${response.status}). Please try again or use DOI lookup.`
                 });
             }
 

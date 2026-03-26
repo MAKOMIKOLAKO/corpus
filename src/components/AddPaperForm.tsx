@@ -117,7 +117,7 @@ export default function AddPaperForm() {
                     setSearchError(data.error);
                 }
             } else {
-                setSearchError('Search failed');
+                setSearchError(data.error || 'Search failed');
             }
         } catch (error) {
             setSearchError('Search unavailable');
