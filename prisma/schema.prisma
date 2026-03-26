@@ -98,6 +98,7 @@ model User {
   createdAt             DateTime    @default(now())
   showSignals           Boolean     @default(true)
   lastFeedViewedAt      DateTime?
+  onboardingCompleted   Boolean     @default(false)
 
   entries               Entry[]
   collections           Collection[]
@@ -114,6 +115,7 @@ model User {
   sentReferenceRequests ReferenceRequest[] @relation("ReferenceRequester")
   receivedReferenceRequests ReferenceRequest[] @relation("ReferenceOwner")
   analyticsEvents       AnalyticsEvent[]
+  feedback              Feedback[]
 }
 
 model PasswordResetToken {
@@ -291,4 +293,16 @@ model AnalyticsEvent {
 
   @@index([event, timestamp])
   @@index([userId, event])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?
+  message   String   @db.Text
+  rating    Int?
+  email     String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }

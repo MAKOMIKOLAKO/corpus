@@ -578,7 +578,7 @@ export default function CollectionDetailPage() {
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-base">Members</CardTitle>
                             {canManage && (
-                                <Button size="sm" onClick={() => setShowInviteModal(true)}>
+                                <Button size="sm" onClick={() => setShowInviteModal(true)} data-onboarding="share-collection">
                                     <UserPlus className="w-4 h-4 mr-2" />
                                     Invite Member
                                 </Button>

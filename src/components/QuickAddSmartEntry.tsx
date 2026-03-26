@@ -315,6 +315,7 @@ export default function QuickAddSmartEntry() {
                         disabled={!canSubmit || success}
                         size="sm"
                         className="h-10 px-4 rounded-lg font-medium transition-all"
+                        data-onboarding="add-entry"
                     >
                         {isWorking ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'url' ? 'add' : 'search'}
                     </Button>

@@ -152,14 +152,14 @@ const faqItems = [
   },
   {
     q: "How much does Corpus cost?",
-    a: "Corpus is free for up to 100 saved sources with full access to core features including the Chrome extension, AI organization, and research connections. Pro is $6/month or $48/year for unlimited sources, collaborative collections, and the knowledge graph.",
+    a: "Corpus is free for up to 100 saved sources with full access to core features including the Chrome extension, AI organization, and research connections. Pro is $6/month or $48/year for unlimited sources, collaborative collections, and the knowledge graph. Lifetime Premium is $30/year for lifetime access to all features plus exclusive benefits.",
   },
 ];
 
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const [billing, setBilling] = useState<"monthly" | "annual" | "lifetime">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {

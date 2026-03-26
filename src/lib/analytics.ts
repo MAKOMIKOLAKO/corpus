@@ -21,33 +21,50 @@ export async function trackAnalyticsEvent(
 
 // Specific event trackers for convenience
 export const analytics = {
-  userSignedUp: (userId: string) => 
+  userSignedUp: (userId: string) =>
     trackAnalyticsEvent('USER_SIGNED_UP', userId),
-    
-  usernameSet: (userId: string) => 
+
+  usernameSet: (userId: string) =>
     trackAnalyticsEvent('USERNAME_SET', userId),
-    
-  emailVerified: (userId: string) => 
+
+  emailVerified: (userId: string) =>
     trackAnalyticsEvent('EMAIL_VERIFIED', userId),
-    
-  entrySaved: (userId: string, entryId: string, entryType?: string) => 
+
+  entrySaved: (userId: string, entryId: string, entryType?: string) =>
     trackAnalyticsEvent('ENTRY_SAVED', userId, { entryId, entryType }),
-    
-  readingStatusUpdated: (userId: string, entryId: string, status: string) => 
+
+  readingStatusUpdated: (userId: string, entryId: string, status: string) =>
     trackAnalyticsEvent('READING_STATUS_UPDATED', userId, { entryId, readingStatus: status }),
-    
-  collectionCreated: (userId: string, collectionId: string) => 
+
+  collectionCreated: (userId: string, collectionId: string) =>
     trackAnalyticsEvent('COLLECTION_CREATED', userId, { collectionId }),
-    
-  collectionShared: (userId: string, collectionId: string) => 
+
+  collectionShared: (userId: string, collectionId: string) =>
     trackAnalyticsEvent('COLLECTION_SHARED', userId, { collectionId }),
-    
-  collectionShareAccepted: (userId: string, collectionId: string) => 
+
+  collectionShareAccepted: (userId: string, collectionId: string) =>
     trackAnalyticsEvent('COLLECTION_SHARE_ACCEPTED', userId, { collectionId }),
-    
-  feedCardViewed: (userId?: string, entryId?: string) => 
+
+  feedCardViewed: (userId?: string, entryId?: string) =>
     trackAnalyticsEvent('FEED_CARD_VIEWED', userId, { entryId }),
-    
-  addToLibraryClicked: (userId?: string, entryId?: string) => 
+
+  addToLibraryClicked: (userId?: string, entryId?: string) =>
     trackAnalyticsEvent('ADD_TO_LIBRARY_CLICKED', userId, { entryId }),
+
+  // Onboarding events
+  onboardingStarted: (userId?: string) =>
+    trackAnalyticsEvent('ONBOARDING_STARTED', userId),
+
+  onboardingStepCompleted: (userId?: string, stepNumber?: number) =>
+    trackAnalyticsEvent('ONBOARDING_STEP_COMPLETED', userId, { stepNumber }),
+
+  onboardingFinished: (userId?: string) =>
+    trackAnalyticsEvent('ONBOARDING_FINISHED', userId),
+
+  // Feedback events
+  feedbackModalOpened: (userId?: string) =>
+    trackAnalyticsEvent('FEEDBACK_MODAL_OPENED', userId),
+
+  feedbackSubmitted: (userId?: string, metadata?: { hasRating?: boolean; rating?: number | null }) =>
+    trackAnalyticsEvent('FEEDBACK_SUBMITTED', userId, metadata),
 };
