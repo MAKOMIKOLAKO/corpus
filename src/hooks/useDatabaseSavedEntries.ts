@@ -32,18 +32,20 @@ export function useDatabaseSavedEntries() {
       const response = await fetch('/api/entries')
       if (response.ok) {
         const entries = await response.json()
-        setSavedEntries(entries)
+        setSavedEntries(Array.isArray(entries) ? entries : [])
       }
     } catch (error) {
       console.error('Error fetching saved entries:', error)
+      setSavedEntries([])
     }
   }
 
   // Check if an entry is saved
   const isSaved = (entry: { title?: string; doi?: string }) => {
-    if (!entry.title && !entry.doi) return false
-    
+    if (!entry?.title && !entry?.doi) return false
+
     return savedEntries.some(saved => {
+      if (!saved) return false
       if (entry.doi && saved.doi) {
         return saved.doi === entry.doi
       }
@@ -82,7 +84,7 @@ export function useDatabaseSavedEntries() {
       }
 
       const result = await response.json()
-      
+
       // Update local state
       if (result.action === 'created') {
         setSavedEntries(prev => [...prev, result.entry])
