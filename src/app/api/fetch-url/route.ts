@@ -3,6 +3,9 @@ import * as cheerio from 'cheerio';
 import { GoogleGenAI } from '@google/genai';
 import { validateApiKey } from '@/app/api/api-key-middleware';
 
+// NOTE: Chrome extension should eventually be updated to use /api/papers/detect-and-fetch
+// for paper URLs as it provides richer metadata from academic sources (CrossRef, ArXiv, PubMed, etc.)
+
 function isYouTubeUrl(url: string): boolean {
     const youtubePatterns = [
         /youtube\.com\/watch\?v=/,

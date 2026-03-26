@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Link as LinkIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Search, Link as LinkIcon, Sparkles, Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,11 +14,12 @@ import { createEntryWithMetadata } from '@/lib/entryCreation';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useEntryQueue } from '@/hooks/useEntryQueue';
 import QueuedEntriesDisplay from '@/components/QueuedEntriesDisplay';
+import AddPaperForm from '@/components/AddPaperForm';
 
 export default function AddEntryForm() {
     const router = useRouter();
     const apiKey = useApiKey();
-    const [tab, setTab] = useState<'DOI' | 'URL'>('DOI');
+    const [tab, setTab] = useState<'PAPER' | 'URL'>('PAPER');
     const [fetchInput, setFetchInput] = useState('');
     const [isFetching, setIsFetching] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -230,198 +231,207 @@ export default function AddEntryForm() {
                     onClearAll={entryQueue.clearAll}
                 />
             )}
-            {/* Fetch Section */}
+            {/* Tab Navigation */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Add Academic Paper or Book</CardTitle>
+                    <CardTitle>Add New Entry</CardTitle>
                     <CardDescription>
-                        Automatically extract metadata from DOIs, arXiv, PubMed, ISBNs, or academic publisher URLs.
+                        Choose how you want to add content to your library.
                     </CardDescription>
                     <div className="flex gap-6 border-b border-[var(--border)] mt-4">
                         <button
                             type="button"
-                            className={`font-medium text-[15px] pb-3 transition-colors relative ${tab === 'DOI' ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'}`}
-                            onClick={() => { setTab('DOI'); setFetchInput(''); setError(null); }}
+                            className={`font-medium text-[15px] pb-3 transition-colors relative ${tab === 'PAPER' ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'}`}
+                            onClick={() => { setTab('PAPER'); }}
                         >
-                            DOI / ISBN
+                            <BookOpen className="inline w-4 h-4 mr-2" />
+                            Academic Paper
                         </button>
                         <button
                             type="button"
                             className={`font-medium text-[15px] pb-3 transition-colors relative ${tab === 'URL' ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'}`}
                             onClick={() => { setTab('URL'); setFetchInput(''); setError(null); }}
                         >
-                            Academic URL
+                            <LinkIcon className="inline w-4 h-4 mr-2" />
+                            Article / Book / URL
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent>
-
-                    <div className="flex gap-3 pt-2">
-                        <div className="relative flex-1">
-                            {tab === 'DOI' ? <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> : <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
-                            <Input
-                                type="text"
-                                placeholder={tab === 'DOI' ? "10.1038/nature12373 or 978-0-262-03384-8" : "https://arxiv.org/abs/2103.00020"}
-                                value={fetchInput}
-                                onChange={e => setFetchInput(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                        <Button
-                            type="button"
-                            onClick={handleFetch}
-                            disabled={!fetchInput.trim() || isFetching}
-                        >
-                            {isFetching && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            {isFetching ? 'Fetching...' : 'Fetch Metadata'}
-                        </Button>
-                    </div>
-
-                    {error && (
-                        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-md">
-                            <div className="flex flex-col gap-2">
-                                <p className="font-medium">Error</p>
-                                <p>{error}</p>
-                                {existingDuplicate && (
-                                    <div className="flex gap-2 mt-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                                router.push(`/entries/${existingDuplicate.id}`);
-                                            }}
-                                        >
-                                            View Existing Entry
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setError(null);
-                                                setExistingDuplicate(null);
-                                            }}
-                                        >
-                                            Continue Anyway
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
             </Card>
-
-            {/* Editor Section */}
-            <form onSubmit={handleSave}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Entry Details</CardTitle>
-                        <CardDescription>Manually edit or complete the indexed information.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-                            <div className="space-y-2 md:col-span-2">
-                                <Label>Title <span className="text-red-500">*</span></Label>
-                                <Input required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Authors (comma-separated)</Label>
-                                <Input value={formData.authors} onChange={e => setFormData({ ...formData, authors: e.target.value })} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Source (Journal/Publisher)</Label>
-                                <Input value={formData.source} onChange={e => setFormData({ ...formData, source: e.target.value })} />
-                            </div>
-                            <div className="space-y-2 flex flex-wrap gap-4 md:col-span-2">
-                                <div className="w-1/3 min-w-[140px] space-y-2">
-                                    <Label>Year</Label>
-                                    <Input type="number" value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} />
-                                </div>
-                                <div className="min-w-[200px] flex-1 space-y-2">
-                                    <Label>Publish date</Label>
+            {/* Tab Content */}
+            {tab === 'PAPER' ? (
+                <AddPaperForm />
+            ) : (
+                <>
+                    {/* Fetch Section for URL/ISBN */}
+                    <Card>
+                        <CardContent>
+                            <div className="flex gap-3 pt-6">
+                                <div className="relative flex-1">
+                                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <Input
-                                        placeholder="e.g. ISO date from source"
-                                        value={formData.publishDate}
-                                        onChange={e => setFormData({ ...formData, publishDate: e.target.value })}
+                                        type="text"
+                                        placeholder="https://example.com/article or ISBN: 978-0-262-03384-8"
+                                        value={fetchInput}
+                                        onChange={e => setFetchInput(e.target.value)}
+                                        className="pl-10"
                                     />
                                 </div>
-                                <div className="flex-1 space-y-2">
-                                    <Label>Content Type</Label>
-                                    <Select value={formData.contentType} onValueChange={v => setFormData({ ...formData, contentType: v || '' })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="PAPER">Paper</SelectItem>
-                                            <SelectItem value="BOOK">Book</SelectItem>
-                                            <SelectItem value="ARTICLE">Article</SelectItem>
-                                            <SelectItem value="ESSAY">Essay</SelectItem>
-                                            <SelectItem value="POLICY_REPORT">Policy Report</SelectItem>
-                                            <SelectItem value="OTHER">Other</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="flex-1 space-y-2">
-                                    <Label>Status</Label>
-                                    <Select value={formData.readingStatus} onValueChange={v => setFormData({ ...formData, readingStatus: v || '' })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="UNREAD">Unread</SelectItem>
-                                            <SelectItem value="READING">Reading</SelectItem>
-                                            <SelectItem value="READ">Read</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={handleFetch}
+                                    disabled={!fetchInput.trim() || isFetching}
+                                >
+                                    {isFetching && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                    {isFetching ? 'Fetching...' : 'Fetch Metadata'}
+                                </Button>
                             </div>
 
-                            <div className="space-y-2 md:col-span-2 relative mt-4">
-                                <div className="pb-1">
-                                    <Label>Abstract / Excerpt</Label>
-                                </div>
-                                <Textarea value={formData.abstract} onChange={e => setFormData({ ...formData, abstract: e.target.value })} rows={5} className="resize-y" />
-
-                                {formData.autoKeywords.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mt-3">
-                                        {formData.autoKeywords.map((kw, i) => (
-                                            <span key={i} className="text-xs bg-background border border-border text-muted-foreground px-2 py-1 rounded-md flex items-center gap-1">
-                                                #{kw}
-                                            </span>
-                                        ))}
+                            {error && (
+                                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-md">
+                                    <div className="flex flex-col gap-2">
+                                        <p className="font-medium">Error</p>
+                                        <p>{error}</p>
+                                        {existingDuplicate && (
+                                            <div className="flex gap-2 mt-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        router.push(`/entries/${existingDuplicate.id}`);
+                                                    }}
+                                                >
+                                                    View Existing Entry
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        setError(null);
+                                                        setExistingDuplicate(null);
+                                                    }}
+                                                >
+                                                    Continue Anyway
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                            <div className="space-y-2 md:col-span-2">
-                                <Label>Tags (comma-separated)</Label>
-                                <Input value={formData.userKeywords} onChange={e => setFormData({ ...formData, userKeywords: e.target.value })} />
-                            </div>
+                    <form onSubmit={handleSave}>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Entry Details</CardTitle>
+                                <CardDescription>Manually edit or complete the indexed information.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
 
-                            <div className="space-y-2">
-                                <Label>URL</Label>
-                                <Input type="url" value={formData.url} onChange={e => setFormData({ ...formData, url: e.target.value })} />
-                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label>Title <span className="text-red-500">*</span></Label>
+                                        <Input required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Authors (comma-separated)</Label>
+                                        <Input value={formData.authors} onChange={e => setFormData({ ...formData, authors: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Source (Journal/Publisher)</Label>
+                                        <Input value={formData.source} onChange={e => setFormData({ ...formData, source: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2 flex flex-wrap gap-4 md:col-span-2">
+                                        <div className="w-1/3 min-w-[140px] space-y-2">
+                                            <Label>Year</Label>
+                                            <Input type="number" value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} />
+                                        </div>
+                                        <div className="min-w-[200px] flex-1 space-y-2">
+                                            <Label>Publish date</Label>
+                                            <Input
+                                                placeholder="e.g. ISO date from source"
+                                                value={formData.publishDate}
+                                                onChange={e => setFormData({ ...formData, publishDate: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <Label>Content Type</Label>
+                                            <Select value={formData.contentType} onValueChange={v => setFormData({ ...formData, contentType: v || '' })}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="PAPER">Paper</SelectItem>
+                                                    <SelectItem value="BOOK">Book</SelectItem>
+                                                    <SelectItem value="ARTICLE">Article</SelectItem>
+                                                    <SelectItem value="ESSAY">Essay</SelectItem>
+                                                    <SelectItem value="POLICY_REPORT">Policy Report</SelectItem>
+                                                    <SelectItem value="OTHER">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <Label>Status</Label>
+                                            <Select value={formData.readingStatus} onValueChange={v => setFormData({ ...formData, readingStatus: v || '' })}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="UNREAD">Unread</SelectItem>
+                                                    <SelectItem value="READING">Reading</SelectItem>
+                                                    <SelectItem value="READ">Read</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
 
-                            <div className="space-y-2">
-                                <Label>DOI</Label>
-                                <Input value={formData.doi} onChange={e => setFormData({ ...formData, doi: e.target.value })} />
-                            </div>
-                        </div>
+                                    <div className="space-y-2 md:col-span-2 relative mt-4">
+                                        <div className="pb-1">
+                                            <Label>Abstract / Excerpt</Label>
+                                        </div>
+                                        <Textarea value={formData.abstract} onChange={e => setFormData({ ...formData, abstract: e.target.value })} rows={5} className="resize-y" />
 
-                        <div className="pt-8 flex justify-end gap-3 border-t border-border">
-                            <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isSaving}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSaving || !formData.title.trim()}>
-                                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                Add to Queue
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </form>
-        </div>
-    );
+                                        {formData.autoKeywords.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-3">
+                                                {formData.autoKeywords.map((kw, i) => (
+                                                    <span key={i} className="text-xs bg-background border border-border text-muted-foreground px-2 py-1 rounded-md flex items-center gap-1">
+                                                        #{kw}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label>Tags (comma-separated)</Label>
+                                        <Input value={formData.userKeywords} onChange={e => setFormData({ ...formData, userKeywords: e.target.value })} />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>URL</Label>
+                                        <Input type="url" value={formData.url} onChange={e => setFormData({ ...formData, url: e.target.value })} />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>DOI</Label>
+                                        <Input value={formData.doi} onChange={e => setFormData({ ...formData, doi: e.target.value })} />
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 flex justify-end gap-3 border-t border-border">
+                                    <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isSaving}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={isSaving || !formData.title.trim()}>
+                                        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                        Add to Queue
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </form>
+            )}
+                </div>
+            );
 }
