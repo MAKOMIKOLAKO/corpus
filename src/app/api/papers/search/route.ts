@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUserId } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
     try {
+        // Check authentication
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const query = searchParams.get('q');
         const limit = parseInt(searchParams.get('limit') || '8');
+
+        console.log('Search request received:', { query, limit });
 
         if (!query || query.length < 3) {
             return NextResponse.json({ results: [] });
