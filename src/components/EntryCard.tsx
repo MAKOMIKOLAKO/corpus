@@ -296,11 +296,6 @@ export default function EntryCard({
                 href={`/entries/${entry.id}${fromPath ? `?from=${fromPath}` : ''}`}
                 scroll={false}
                 onClick={() => {
-                    // Save scroll position for library page restoration
-                    if (typeof window !== 'undefined') {
-                        sessionStorage.setItem('lib_scroll', window.scrollY.toString());
-                    }
-                    // Also save using the existing hook for compatibility
                     saveScrollPositionForKey(scrollPositionKey);
                 }}
             >
