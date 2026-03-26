@@ -174,11 +174,10 @@ export default function CollectionsPage() {
     return (
         <div className="space-y-6">
             {/* Upgrade Banner for Collections Feature */}
-            {session?.user && !hasPaidFeature(session.user.plan, 'collections') && (
+            {session?.user && !hasPaidFeature(session.user, 'collections') && (
                 <UpgradeBanner
-                    title="Upgrade to Pro for Collections"
-                    description="Create and share collections of entries with other users."
-                    feature="collections"
+                    message="Create and share collections of entries with other users. Upgrade to Pro to unlock collections."
+                    ctaText="Upgrade to Pro for Collections"
                 />
             )}
 
@@ -187,7 +186,7 @@ export default function CollectionsPage() {
                 <h1 className="text-2xl font-bold">Collections</h1>
                 <Button
                     onClick={() => setShowCreateModal(true)}
-                    disabled={!session?.user || !hasPaidFeature(session.user.plan, 'collections')}
+                    disabled={!session?.user || !hasPaidFeature(session.user, 'collections')}
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     New Collection
