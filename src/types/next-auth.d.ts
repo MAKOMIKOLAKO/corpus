@@ -7,7 +7,7 @@ declare module "next-auth" {
       name?: string | null
       email?: string | null
       image?: string | null
-      plan?: "FREE" | "PRO" | "LIFETIME_PRO"
+      plan?: "FREE" | "PRO"
       username?: string | null
       emailVerified?: Date | null
     }

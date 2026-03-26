@@ -15,13 +15,6 @@ export const PLAN_LIMITS = {
     sharedCollections: Infinity,
     canBeAdmin: true,
   },
-  LIFETIME_PRO: {
-    maxEntries: Infinity,
-    collections: true,
-    graph: true,
-    sharedCollections: Infinity,
-    canBeAdmin: true,
-  },
 } as const
 
 export type PlanType = keyof typeof PLAN_LIMITS
@@ -30,7 +23,7 @@ export type FeatureType = 'collections' | 'graph'
 // Standalone user interface with plan field
 interface UserWithPlan {
   id: string
-  plan: 'FREE' | 'PRO' | 'LIFETIME_PRO'
+  plan: 'FREE' | 'PRO'
 }
 
 // Session user type
@@ -38,12 +31,12 @@ interface SessionUser {
   name?: string | null;
   email?: string | null;
   image?: string | null;
-  plan?: 'FREE' | 'PRO' | 'LIFETIME_PRO';
+  plan?: 'FREE' | 'PRO';
 }
 
 export function getUserPlan(user: UserWithPlan | SessionUser | null): PlanType {
   if (!user || !('plan' in user) || !user.plan) return 'FREE'
-  return user.plan === 'LIFETIME_PRO' ? 'PRO' : user.plan
+  return user.plan
 }
 
 export function canAddEntry(user: UserWithPlan | SessionUser | null, currentEntryCount: number): boolean {

@@ -97,7 +97,6 @@ export function AppShell({
 
   return (
     <>
-      {session && <TemporaryUsernameBanner />}
       {isLanding ? (
         <>
           {session && !emailVerified && !bannerDismissed && (
@@ -129,6 +128,7 @@ export function AppShell({
         </>
       ) : (
         <>
+          {session && <TemporaryUsernameBanner />}
           {session && !emailVerified && !bannerDismissed && (
             <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2.5 text-sm text-yellow-300 flex items-center justify-between gap-4 flex-wrap">
               <span>
