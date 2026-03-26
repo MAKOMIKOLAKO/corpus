@@ -17,54 +17,34 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
-        // Search via OpenAlex
+        // Search via Semantic Scholar
         try {
-            // Build the URL with correct OpenAlex format
-            const baseUrl = 'https://api.openalex.org/works';
+            // Semantic Scholar API URL
+            const baseUrl = 'https://api.semanticscholar.org/graph/v1/paper/search';
 
-            // Start with basic search
-            const url = new URL(baseUrl);
-            url.searchParams.append('search', query);
-
-            // Add filter for journal articles only
-            url.searchParams.append('filter', 'type:journal-article');
-
-            // Add pagination (note: hyphen not underscore)
-            url.searchParams.append('per-page', limit.toString());
-
-            // Sort by citation count
-            url.searchParams.append('sort', 'cited_by_count:desc');
+            // Build URL with parameters
+            const params = new URLSearchParams({
+                query: query,
+                limit: limit.toString(),
+                fields: 'paperId,title,authors,year,abstract,venue,externalIds,openAccessPdf'
+            });
 
             // Add API key if available
-            if (process.env.OPENALEX_API_KEY) {
-                url.searchParams.append('api_key', process.env.OPENALEX_API_KEY);
+            if (process.env.SEMANTIC_SCHOLAR_API_KEY) {
+                params.append('key', process.env.SEMANTIC_SCHOLAR_API_KEY);
             }
 
-            const urlString = url.toString();
-
-            const response = await fetch(urlString, {
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
-                }
-            });
+            const response = await fetch(`${baseUrl}?${params}`);
 
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error('Semantic Scholar API error:', response.status, errorText);
 
-                // If we get a 401 or 403, it's likely an API key issue
-                if (response.status === 401 || response.status === 403) {
+                // If rate limited
+                if (response.status === 429) {
                     return NextResponse.json({
                         results: [],
-                        error: 'Search requires an OpenAlex API key. Please add OPENALEX_API_KEY to your environment variables.'
-                    });
-                }
-
-                // If we get a 400, it's a bad request - show the actual error
-                if (response.status === 400) {
-                    return NextResponse.json({
-                        results: [],
-                        error: `Invalid request to OpenAlex: ${errorText}`
+                        error: 'Search temporarily unavailable due to rate limits. Please try again in a few moments or use DOI lookup.'
                     });
                 }
 
@@ -75,36 +55,18 @@ export async function GET(request: NextRequest) {
             }
 
             const data = await response.json();
-            console.log('OpenAlex response data:', JSON.stringify(data, null, 2).substring(0, 1000));
+            console.log('Semantic Scholar response data:', JSON.stringify(data, null, 2).substring(0, 1000));
 
-            const results = data.results?.map((item: any) => {
-                // Extract authors from authorships
-                const authors = item.authorships
-                    ?.filter((a: any) => a.author?.display_name)
-                    .map((a: any) => a.author.display_name) || [];
-
-                // Extract DOI
-                const doi = item.doi || null;
-
-                // Extract open access URL if available
-                const openAccessUrl = item.open_access?.oa_url || null;
-
-                // Extract source/journal name
-                const source = item.primary_location?.source?.display_name || null;
-
-                return {
-                    semanticScholarId: item.id, // Keep as semanticScholarId for compatibility
-                    title: item.display_name,
-                    authors: authors,
-                    year: item.publication_year || null,
-                    abstract: item.abstract && item.abstract.startsWith('<Abstract>')
-                        ? item.abstract.replace(/<\/?[^>]+(>|$)/g, '').trim() // Remove HTML tags
-                        : (item.abstract || null),
-                    source: source,
-                    doi: doi,
-                    openAccessUrl: openAccessUrl
-                };
-            }) || [];
+            const results = data.data?.map((item: any) => ({
+                semanticScholarId: item.paperId,
+                title: item.title,
+                authors: item.authors?.map((a: any) => a.name) || [],
+                year: item.year || null,
+                abstract: item.abstract || null,
+                source: item.venue || null,
+                doi: item.externalIds?.DOI || null,
+                openAccessUrl: item.openAccessPdf?.url || null
+            })) || [];
 
             console.log('Processed results count:', results.length);
             if (results.length > 0) {
@@ -114,7 +76,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ results });
 
         } catch (error) {
-            console.error('OpenAlex search error:', error);
+            console.error('Semantic Scholar search error:', error);
             return NextResponse.json({
                 results: [],
                 error: 'Search temporarily unavailable. Please try entering a DOI instead.'

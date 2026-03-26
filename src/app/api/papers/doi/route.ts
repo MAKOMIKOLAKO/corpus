@@ -57,40 +57,26 @@ export async function POST(request: NextRequest) {
             console.error('CrossRef error:', error);
         }
 
-        // If no abstract from CrossRef, try OpenAlex
+        // If no abstract from CrossRef, try Semantic Scholar
         if (!metadata.abstract) {
             try {
-                const baseUrl = 'https://api.openalex.org/works';
-                const params = new URLSearchParams({
-                    filter: `doi:${encodeURIComponent(cleanDoi)}`,
-                    select: 'abstract,open_access'
+                const s2Response = await fetch(`https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(cleanDoi)}?fields=abstract,openAccessPdf`, {
+                    headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? {
+                        'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY
+                    } : {}
                 });
-
-                // Add API key if available
-                if (process.env.OPENALEX_API_KEY) {
-                    params.append('api_key', process.env.OPENALEX_API_KEY);
-                }
-
-                const openalexResponse = await fetch(`${baseUrl}?${params}`, {
-                    headers: {
-                        'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
+                if (s2Response.ok) {
+                    const s2Data = await s2Response.json();
+                    if (s2Data.abstract) {
+                        metadata.abstract = s2Data.abstract;
+                        metadata.metadataSources.push('Semantic Scholar');
                     }
-                });
-                if (openalexResponse.ok) {
-                    const openalexData = await openalexResponse.json();
-                    if (openalexData.results?.[0]) {
-                        const work = openalexData.results[0];
-                        if (work.abstract && work.abstract.startsWith('<Abstract>')) {
-                            metadata.abstract = work.abstract.replace(/<\/?[^>]+(>|$)/g, '').trim();
-                            metadata.metadataSources.push('OpenAlex');
-                        }
-                        if (work.open_access?.oa_url) {
-                            metadata.openAccessUrl = work.open_access.oa_url;
-                        }
+                    if (s2Data.openAccessPdf?.url) {
+                        metadata.openAccessUrl = s2Data.openAccessPdf.url;
                     }
                 }
             } catch (error) {
-                console.error('OpenAlex error:', error);
+                console.error('Semantic Scholar error:', error);
             }
         }
 
