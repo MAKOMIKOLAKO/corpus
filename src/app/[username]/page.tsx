@@ -30,34 +30,10 @@ export default async function ProfilePage({ params }: Props) {
       username: true,
       bio: true,
       createdAt: true,
-      institution: {
-        select: {
-          id: true,
-          name: true,
-          domain: true
-        }
-      },
-      institutionVerifiedAt: true,
       _count: {
         select: {
           sentConnections: true,
           receivedConnections: true
-        }
-      },
-      labMemberships: {
-        include: {
-          lab: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              institution: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          }
         }
       }
     }
@@ -79,8 +55,7 @@ export default async function ProfilePage({ params }: Props) {
     <ProfileClient
       user={{
         ...user,
-        createdAt: user.createdAt.toISOString(),
-        institutionVerifiedAt: user.institutionVerifiedAt?.toISOString() || null
+        createdAt: user.createdAt.toISOString()
       }}
       totalConnections={totalConnections}
     />
