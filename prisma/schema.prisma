@@ -65,11 +65,6 @@ enum SignalType {
   REFERENCE_REQUESTED
 }
 
-enum LabRole {
-  MEMBER
-  ADMIN
-}
-
 enum ReferenceRequestStatus {
   PENDING
   ACKNOWLEDGED
@@ -93,9 +88,6 @@ model User {
   createdAt             DateTime    @default(now())
   showSignals           Boolean     @default(true)
   lastFeedViewedAt      DateTime?
-  institutionId         String?
-  institutionVerifiedAt DateTime?
-  institutionVerificationEmail String?
 
   entries               Entry[]
   collections           Collection[]
@@ -109,9 +101,6 @@ model User {
   passwordResetTokens   PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   signals               Signal[]
-  institution           Institution?       @relation(fields: [institutionId], references: [id])
-  labMemberships        LabMember[]
-  createdLabs           Lab[]              @relation("LabCreator")
   sentReferenceRequests ReferenceRequest[] @relation("ReferenceRequester")
   receivedReferenceRequests ReferenceRequest[] @relation("ReferenceOwner")
 }
@@ -178,9 +167,7 @@ model Collection {
   publicViewCount  Int                @default(0)
   createdAt        DateTime           @default(now())
   userId           String?
-  labId            String?
   user             User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  lab              Lab?               @relation(fields: [labId], references: [id], onDelete: Cascade)
   entries          EntryCollection[]
   members          CollectionMember[]
   signals          Signal[]
@@ -263,54 +250,6 @@ model Signal {
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   entry        Entry?      @relation(fields: [entryId], references: [id], onDelete: SetNull)
   collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-}
-
-model Institution {
-  id          String   @id @default(cuid())
-  name        String
-  domain      String   @unique
-  shortName   String
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  members     User[]
-  labs        Lab[]
-}
-
-model InstitutionVerificationCode {
-  id        String   @id @default(cuid())
-  userId    String
-  code      String
-  email     String
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime @default(now())
-}
-
-model Lab {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  description   String?
-  institutionId String
-  createdBy     String
-  isVerified    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  institution   Institution @relation(fields: [institutionId], references: [id])
-  members       LabMember[]
-  collections   Collection[]
-  creator       User     @relation("LabCreator", fields: [createdBy], references: [id])
-}
-
-model LabMember {
-  id       String   @id @default(cuid())
-  labId    String
-  userId   String
-  role     LabRole  @default(MEMBER)
-  joinedAt DateTime @default(now())
-  lab      Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([labId, userId])
 }
 
 model ReferenceRequest {
