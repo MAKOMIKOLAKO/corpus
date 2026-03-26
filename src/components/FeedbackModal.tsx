@@ -90,15 +90,7 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
 
   return (
     <>
-      {trigger !== undefined ? (
-        trigger
-      ) : (
-        <Button variant="ghost" size="sm" onClick={() => handleOpenChange(true)}>
-          <MessageSquare className="w-4 h-4 mr-2" />
-          Feedback
-        </Button>
-      )}
-
+      {trigger}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
           <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full">
