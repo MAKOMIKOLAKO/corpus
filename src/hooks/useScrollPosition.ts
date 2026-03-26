@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface ScrollPosition {
   x: number;
@@ -20,6 +20,7 @@ export function saveScrollPositionForKey(key: string) {
 
 export function useScrollPosition(key: string = 'default') {
   const [scrollPosition, setScrollPosition] = useState<ScrollPosition>({ x: 0, y: 0 });
+  const restoringRef = useRef(false);
 
   const saveScrollPosition = () => {
     const position = { x: window.scrollX, y: window.scrollY };
@@ -51,8 +52,10 @@ export function useScrollPosition(key: string = 'default') {
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const handleScroll = () => {
+      if (restoringRef.current) return;
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
+        if (restoringRef.current) return;
         const position = { x: window.scrollX, y: window.scrollY };
         setScrollPosition(position);
         const positions = JSON.parse(sessionStorage.getItem(SCROLL_POSITION_KEY) || '{}');
@@ -69,29 +72,59 @@ export function useScrollPosition(key: string = 'default') {
     };
   }, [key]);
 
-  // Restore after navigation (back/forward) or full reload. Re-run a few times so we win over Next.js scroll-to-top.
+  // Restore after navigation (back/forward) or full reload.
+  // Uses a height-aware rAF loop to wait for async content before scrolling.
   useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const positions = JSON.parse(sessionStorage.getItem(SCROLL_POSITION_KEY) || '{}');
     const position = positions[key];
     if (!position || (position.x === 0 && position.y === 0)) return;
 
+    const targetY = position.y;
+    restoringRef.current = true;
+    let rafId: number;
+    let disposed = false;
+
     const restore = () => {
-      window.scrollTo(position.x, position.y);
+      window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
       setScrollPosition(position);
     };
 
-    restore();
-    const raf = requestAnimationFrame(() => {
+    // Safety: stop polling after 3 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (disposed) return;
+      disposed = true;
+      cancelAnimationFrame(rafId);
+      // Last-ditch attempt even if page isn't fully tall enough
       restore();
-      requestAnimationFrame(restore);
-    });
-    const t0 = setTimeout(restore, 0);
-    const t1 = setTimeout(restore, 100);
+      restoringRef.current = false;
+    }, 3000);
+
+    const check = () => {
+      if (disposed) return;
+
+      if (document.documentElement.scrollHeight >= targetY) {
+        restore();
+        disposed = true;
+        clearTimeout(safetyTimeout);
+        // Keep restoring flag a bit longer to beat any Next.js scroll-to-top
+        setTimeout(() => { restoringRef.current = false; }, 200);
+        return;
+      }
+
+      rafId = requestAnimationFrame(check);
+    };
+
+    // Try immediately in case content is already rendered
+    restore();
+    rafId = requestAnimationFrame(check);
 
     return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(t0);
-      clearTimeout(t1);
+      disposed = true;
+      cancelAnimationFrame(rafId);
+      clearTimeout(safetyTimeout);
+      restoringRef.current = false;
     };
   }, [key]);
 
