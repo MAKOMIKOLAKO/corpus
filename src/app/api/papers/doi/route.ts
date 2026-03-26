@@ -19,9 +19,12 @@ export async function POST(request: NextRequest) {
             .replace(/^(doi:|DOI:)/, '')
             .replace(/^https?:\/\/(dx\.)?doi\.org\//, '');
 
-        // Validate DOI format
-        if (!/^10\.\d{4,}[\/.].+$/.test(cleanDoi)) {
-            return NextResponse.json({ error: 'Invalid DOI format' }, { status: 400 });
+        // Validate DOI format - accept standard DOIs (10.xxxx) or ArXiv IDs
+        const isStandardDoi = /^10\.\d{4,}[\/.].+$/.test(cleanDoi);
+        const isArXivId = /^\d{4}\.\d{4,5}(v\d+)?$/.test(cleanDoi);
+
+        if (!isStandardDoi && !isArXivId) {
+            return NextResponse.json({ error: 'Invalid DOI or ArXiv ID format' }, { status: 400 });
         }
 
         let metadata: any = {
@@ -38,27 +41,63 @@ export async function POST(request: NextRequest) {
             metadataSources: []
         };
 
-        // Fetch from CrossRef
-        try {
-            const crossrefResponse = await fetch(`https://api.crossref.org/works/${encodeURIComponent(cleanDoi)}`);
-            if (crossrefResponse.ok) {
-                const crossrefData = await crossrefResponse.json();
-                const item = crossrefData.message;
+        // Fetch from CrossRef (for standard DOIs)
+        if (isStandardDoi) {
+            try {
+                const crossrefResponse = await fetch(`https://api.crossref.org/works/${encodeURIComponent(cleanDoi)}`);
+                if (crossrefResponse.ok) {
+                    const crossrefData = await crossrefResponse.json();
+                    const item = crossrefData.message;
 
-                metadata.title = item.title?.[0] || null;
-                metadata.authors = item.author?.map((a: any) => `${a.given || ''} ${a.family || ''}`.trim()).filter(Boolean) || [];
-                metadata.year = item.published?.['date-parts']?.[0]?.[0] || null;
-                metadata.abstract = item.abstract || null;
-                metadata.source = item['container-title']?.[0] || null;
-                metadata.url = item.URL || `https://doi.org/${cleanDoi}`;
-                metadata.metadataSources.push('CrossRef');
+                    metadata.title = item.title?.[0] || null;
+                    metadata.authors = item.author?.map((a: any) => `${a.given || ''} ${a.family || ''}`.trim()).filter(Boolean) || [];
+                    metadata.year = item.published?.['date-parts']?.[0]?.[0] || null;
+                    metadata.abstract = item.abstract || null;
+                    metadata.source = item['container-title']?.[0] || null;
+                    metadata.url = item.URL || `https://doi.org/${cleanDoi}`;
+                    metadata.metadataSources.push('CrossRef');
+                }
+            } catch (error) {
+                console.error('CrossRef error:', error);
             }
-        } catch (error) {
-            console.error('CrossRef error:', error);
         }
 
-        // If no abstract from CrossRef, try Semantic Scholar
-        if (!metadata.abstract) {
+        // Fetch from ArXiv API (for ArXiv IDs)
+        if (isArXivId) {
+            try {
+                const arxivResponse = await fetch(`http://export.arxiv.org/api/query?id_list=${cleanDoi}`);
+                if (arxivResponse.ok) {
+                    const xmlText = await arxivResponse.text();
+                    // Simple XML parsing - in production, you'd use a proper XML parser
+                    const titleMatch = xmlText.match(/<title>(.*?)<\/title>/);
+                    const authorMatches = xmlText.matchAll(/<name>(.*?)<\/name>/g);
+                    const abstractMatch = xmlText.match(/<summary>(.*?)<\/summary>/);
+                    const yearMatch = xmlText.match(/<published>(\d{4})/);
+
+                    if (titleMatch) {
+                        metadata.title = titleMatch[1];
+                    }
+                    if (authorMatches) {
+                        metadata.authors = Array.from(authorMatches).map(match => match[1]);
+                    }
+                    if (yearMatch) {
+                        metadata.year = parseInt(yearMatch[1]);
+                    }
+                    if (abstractMatch) {
+                        metadata.abstract = abstractMatch[1];
+                    }
+                    metadata.source = 'arXiv';
+                    metadata.url = `https://arxiv.org/abs/${cleanDoi}`;
+                    metadata.doi = `arXiv:${cleanDoi}`; // Store as ArXiv ID
+                    metadata.metadataSources.push('arXiv');
+                }
+            } catch (error) {
+                console.error('ArXiv error:', error);
+            }
+        }
+
+        // If no abstract from CrossRef, try Semantic Scholar (only for standard DOIs)
+        if (!metadata.abstract && isStandardDoi) {
             try {
                 const s2Response = await fetch(`https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(cleanDoi)}?fields=abstract,openAccessPdf`, {
                     headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? {
