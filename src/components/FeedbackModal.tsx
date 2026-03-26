@@ -26,11 +26,18 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
   const { data: session } = useSession();
 
   // Pre-fill email if user is logged in
-  useState(() => {
+  React.useEffect(() => {
     if (session?.user?.email) {
       setEmail(session.user.email);
     }
-  });
+  }, [session?.user?.email]);
+
+  // Sync internal state with prop
+  React.useEffect(() => {
+    if (open !== undefined) {
+      setIsOpen(open);
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

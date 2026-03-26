@@ -169,7 +169,7 @@ export function AppShell({
                   beta
                 </span>
               </Link>
-              <nav className="flex items-center gap-4" role="navigation" aria-label="Main navigation">
+              <nav className="flex items-center gap-2 ml-8" role="navigation" aria-label="Main navigation">
                 {session ? (
                   <>
                     <Link
