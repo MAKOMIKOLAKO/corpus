@@ -11,11 +11,7 @@ interface SEOLayoutWrapperProps {
 export default function SEOLayoutWrapper({ children }: SEOLayoutWrapperProps) {
   const { data: session } = useSession()
 
-  // Only show saved papers indicator for non-authenticated users
-  if (session?.user) {
-    return <>{children}</>
-  }
-
+  // Always render the indicator as it handles its own visibility logic
   return (
     <>
       {children}
