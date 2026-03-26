@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
@@ -94,6 +94,7 @@ export default function CollectionDetailPage() {
     const [publicDescription, setPublicDescription] = useState('');
     const [updatingVisibility, setUpdatingVisibility] = useState(false);
     const [copiedSlug, setCopiedSlug] = useState(false);
+    const [deletingCollection, setDeletingCollection] = useState(false);
 
     // Use scroll position restoration for collection pages
     useScrollPosition(`collection-${params.id}`);
@@ -313,6 +314,63 @@ export default function CollectionDetailPage() {
         }
     };
 
+    const handleDeleteCollection = async () => {
+        if (!collection) return;
+
+        if (!confirm(`Are you sure you want to delete "${collection.name}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        setDeletingCollection(true);
+        try {
+            const response = await fetch(`/api/collections/${params.id}`, {
+                method: 'DELETE',
+                headers: { 'x-api-key': apiKey },
+            });
+
+            if (response.ok) {
+                router.push('/collections');
+            } else {
+                const data = await response.json();
+                alert(data?.error || 'Failed to delete collection');
+            }
+        } catch (error) {
+            console.error('Error deleting collection:', error);
+            alert('Failed to delete collection');
+        } finally {
+            setDeletingCollection(false);
+        }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
+
+    const isOwner = collection?.userId === session?.user?.id;
+    const userMember = collection?.members?.find(m => m.user.id === session?.user?.id);
+    const canManage = isOwner || userMember?.role === 'ADMIN';
+
+    const getRoleBadgeColor = (role: string) => {
+        switch (role) {
+            case 'OWNER': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 border-purple-200 dark:border-purple-700';
+            case 'ADMIN': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 border-red-200 dark:border-red-700';
+            case 'CONTRIBUTOR': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-700';
+            case 'VIEWER': return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700';
+            default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+        }
+    };
+
+    const filteredEntries = collection?.entries.filter(item =>
+        item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
+        item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase())) ||
+        item.entry.topics.some(topic => topic.toLowerCase().includes(search.toLowerCase())) ||
+        item.entry.autoKeywords.some(keyword => keyword.toLowerCase().includes(search.toLowerCase()))
+    ) || [];
+
     const handleUpdateVisibility = async () => {
         setUpdatingVisibility(true);
         try {
@@ -355,27 +413,6 @@ export default function CollectionDetailPage() {
         }
     };
 
-    const isOwner = collection?.userId === session?.user?.id;
-    const userMember = collection?.members?.find(m => m.user.id === session?.user?.id);
-    const canManage = isOwner || userMember?.role === 'ADMIN';
-
-    const getRoleBadgeColor = (role: string) => {
-        switch (role) {
-            case 'OWNER': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 border-purple-200 dark:border-purple-700';
-            case 'ADMIN': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 border-red-200 dark:border-red-700';
-            case 'CONTRIBUTOR': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-700';
-            case 'VIEWER': return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700';
-            default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
-        }
-    };
-
-    const filteredEntries = collection?.entries.filter(item =>
-        item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase())) ||
-        item.entry.topics.some(topic => topic.toLowerCase().includes(search.toLowerCase())) ||
-        item.entry.autoKeywords.some(keyword => keyword.toLowerCase().includes(search.toLowerCase()))
-    ) || [];
-
     if (loading) {
         return <div className="text-center py-12">Loading collection...</div>;
     }
@@ -396,19 +433,41 @@ export default function CollectionDetailPage() {
             </div>
 
             <div>
-                <h2 className="text-xl font-medium tracking-tight">{collection.name}</h2>
-                {collection.description && (
-                    <p className="text-sm text-muted-foreground mt-1">{collection.description}</p>
-                )}
-                <p className="text-sm text-muted-foreground mt-2">
-                    {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
-                    {collection.isPublic && (
-                        <span className="ml-2 inline-flex items-center gap-1">
-                            <Eye className="w-3 h-3" />
-                            {collection.publicViewCount || 0} views
-                        </span>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-medium tracking-tight">{collection.name}</h2>
+                        {collection.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{collection.description}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}
+                            {collection.isPublic && (
+                                <span className="ml-2 inline-flex items-center gap-1">
+                                    <Eye className="w-3 h-3" />
+                                    {collection.publicViewCount || 0} views
+                                </span>
+                            )}
+                        </p>
+                    </div>
+                    {isOwner && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDeleteCollection}
+                            disabled={deletingCollection}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                            {deletingCollection ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                </>
+                            )}
+                        </Button>
                     )}
-                </p>
+                </div>
             </div>
 
             {/* Share Settings Section - Only visible to owner */}

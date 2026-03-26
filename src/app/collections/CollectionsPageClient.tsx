@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -78,6 +78,7 @@ export default function CollectionsPage() {
     const [newCollection, setNewCollection] = useState({ name: '', description: '' });
     const [creating, setCreating] = useState(false);
     const [respondingToInvite, setRespondingToInvite] = useState<string | null>(null);
+    const [deletingCollection, setDeletingCollection] = useState<string | null>(null);
     const apiKey = useApiKey();
     const { data: session } = useSession();
     const router = useRouter();
@@ -192,6 +193,33 @@ export default function CollectionsPage() {
         }
     };
 
+    const handleDeleteCollection = async (collectionId: string, collectionName: string) => {
+        if (!confirm(`Are you sure you want to delete "${collectionName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        setDeletingCollection(collectionId);
+        try {
+            const response = await fetch(`/api/collections/${collectionId}`, {
+                method: 'DELETE',
+                headers: { 'x-api-key': apiKey },
+            });
+
+            if (response.ok) {
+                // Remove from local state
+                setCollections(prev => prev.filter(c => c.id !== collectionId));
+            } else {
+                const data = await response.json();
+                alert(data?.error || 'Failed to delete collection');
+            }
+        } catch (error) {
+            console.error('Error deleting collection:', error);
+            alert('Failed to delete collection');
+        } finally {
+            setDeletingCollection(null);
+        }
+    };
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -287,68 +315,89 @@ export default function CollectionsPage() {
                     <h2 className="text-lg font-semibold mb-4">My Collections</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {myCollections.map((collection) => (
-                            <Link key={collection.id} href={`/collections/${collection.id}`}>
-                                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                                    <CardHeader className="pb-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1 min-w-0">
-                                                <CardTitle className="text-xl truncate">{collection.name}</CardTitle>
-                                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                    {collection.isOwner && (
-                                                        <Badge variant="default" className="text-xs">Owner</Badge>
-                                                    )}
-                                                    {!collection.isOwner && collection.userRole === 'ADMIN' && (
-                                                        <Badge variant="default" className="text-xs">Admin</Badge>
-                                                    )}
-                                                    {!collection.isOwner && collection.userRole === 'CONTRIBUTOR' && (
-                                                        <Badge variant="outline" className="text-xs">Contributor</Badge>
-                                                    )}
-                                                    {!collection.isOwner && collection.userRole === 'VIEWER' && (
-                                                        <Badge variant="outline" className="text-xs">Member</Badge>
-                                                    )}
-                                                    {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
-                                                        <Badge variant="secondary" className="text-xs">Shared</Badge>
-                                                    )}
+                            <div key={collection.id} className="relative">
+                                <Link href={`/collections/${collection.id}`}>
+                                    <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                                        <CardHeader className="pb-3">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1 min-w-0">
+                                                    <CardTitle className="text-xl truncate">{collection.name}</CardTitle>
+                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                        {collection.isOwner && (
+                                                            <Badge variant="default" className="text-xs">Owner</Badge>
+                                                        )}
+                                                        {!collection.isOwner && collection.userRole === 'ADMIN' && (
+                                                            <Badge variant="default" className="text-xs">Admin</Badge>
+                                                        )}
+                                                        {!collection.isOwner && collection.userRole === 'CONTRIBUTOR' && (
+                                                            <Badge variant="outline" className="text-xs">Contributor</Badge>
+                                                        )}
+                                                        {!collection.isOwner && collection.userRole === 'VIEWER' && (
+                                                            <Badge variant="outline" className="text-xs">Member</Badge>
+                                                        )}
+                                                        {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
+                                                            <Badge variant="secondary" className="text-xs">Shared</Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        {collection.description && (
-                                            <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
-                                                {collection.description}
-                                            </p>
-                                        )}
-                                    </CardHeader>
-                                    <CardContent className="pt-3">
-                                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-4">
+                                            {collection.description && (
+                                                <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
+                                                    {collection.description}
+                                                </p>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent className="pt-3">
+                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex items-center gap-1">
+                                                        <FileText className="w-4 h-4" />
+                                                        <span className="font-medium">{collection._count.entries}</span>
+                                                        <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
+                                                    </div>
+                                                    {collection.isPublic && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Eye className="w-4 h-4" />
+                                                            <span className="font-medium">{collection.publicViewCount || 0}</span>
+                                                            <span>views</span>
+                                                        </div>
+                                                    )}
+                                                    {collection._count?.members !== undefined && collection._count.members > 0 && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Users className="w-4 h-4" />
+                                                            <span className="font-medium">{collection._count.members + 1}</span>
+                                                            <span>{collection._count.members + 1 === 1 ? 'member' : 'members'}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-1">
-                                                    <FileText className="w-4 h-4" />
-                                                    <span className="font-medium">{collection._count.entries}</span>
-                                                    <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
+                                                    <Calendar className="w-4 h-4" />
+                                                    {formatDate(collection.createdAt)}
                                                 </div>
-                                                {collection.isPublic && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Eye className="w-4 h-4" />
-                                                        <span className="font-medium">{collection.publicViewCount || 0}</span>
-                                                        <span>views</span>
-                                                    </div>
-                                                )}
-                                                {collection._count?.members !== undefined && collection._count.members > 0 && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Users className="w-4 h-4" />
-                                                        <span className="font-medium">{collection._count.members + 1}</span>
-                                                        <span>{collection._count.members + 1 === 1 ? 'member' : 'members'}</span>
-                                                    </div>
-                                                )}
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="w-4 h-4" />
-                                                {formatDate(collection.createdAt)}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                                {collection.isOwner && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDeleteCollection(collection.id, collection.name);
+                                        }}
+                                        disabled={deletingCollection === collection.id}
+                                        className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background"
+                                    >
+                                        {deletingCollection === collection.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="w-4 h-4" />
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>
