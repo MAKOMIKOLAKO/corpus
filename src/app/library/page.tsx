@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import prisma from '@/lib/prisma';
 import HomePageClient from '@/components/HomePageClient';
 import EntryCard from '@/components/EntryCard';
-import QuickAddSmartEntry from '@/components/QuickAddSmartEntry';
 import LibraryPageWrapper from '@/components/LibraryPageWrapper';
 import { ContentType, ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
@@ -119,13 +118,10 @@ export default async function LibraryPage({
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 5v14M5 12h14" />
                                 </svg>
-                                new entry
+                                add paper
                             </Button>
                         </Link>
                     </div>
-
-                    {/* Quick Add Section */}
-                    <QuickAddSmartEntry />
 
                     {/* Search and Filters */}
                     <HomePageClient
@@ -174,7 +170,7 @@ export default async function LibraryPage({
                                             <p className="text-sm text-muted-foreground">
                                                 {search || contentType || readingStatus || year
                                                     ? 'try adjusting your search or filters'
-                                                    : 'add your first entry to get started'
+                                                    : 'add your first paper to get started'
                                                 }
                                             </p>
                                         </div>
@@ -183,7 +179,7 @@ export default async function LibraryPage({
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M12 5v14M5 12h14" />
                                                 </svg>
-                                                add your first entry
+                                                add your first paper
                                             </Link>
                                         )}
                                     </div>

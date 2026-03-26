@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AddEntryForm from '@/components/AddEntryForm';
+import AddPaperForm from '@/components/AddPaperForm';
 
 export const metadata: Metadata = {
     robots: {
@@ -10,13 +10,13 @@ export const metadata: Metadata = {
 
 export default function AddPage() {
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-[640px] mx-auto space-y-6">
             <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">add new entry</h1>
-                <p className="text-sm text-[var(--muted-foreground)]">fetch metadata from a doi or url, or manually enter details.</p>
+                <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">Add a Paper</h1>
+                <p className="text-sm text-[var(--muted-foreground)]">Search by title or enter a DOI to add papers to your library.</p>
             </div>
 
-            <AddEntryForm />
+            <AddPaperForm />
         </div>
     );
 }
