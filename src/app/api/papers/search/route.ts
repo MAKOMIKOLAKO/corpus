@@ -10,60 +10,65 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
-        // Search via Semantic Scholar
+        // Search via OpenAlex (no API key required, higher rate limits)
         try {
-            // Build URL with API key if available
-            const baseUrl = 'https://api.semanticscholar.org/graph/v1/paper/search';
+            // OpenAlex API URL
+            const baseUrl = 'https://api.openalex.org/works';
             const params = new URLSearchParams({
-                query: query,
-                limit: limit.toString(),
-                fields: 'paperId,title,authors,year,abstract,venue,externalIds,openAccessPdf'
+                search: query,
+                filter: 'type:journal-article',
+                select: 'id,display_name,authorships,publication_year,abstract,primary_location,doi,open_access',
+                per_page: limit.toString(),
+                sort: 'cited_by_count:desc'
             });
 
-            // Add API key if available (increases rate limits)
-            if (process.env.SEMANTIC_SCHOLAR_API_KEY) {
-                params.append('key', process.env.SEMANTIC_SCHOLAR_API_KEY);
-            }
-
-            const s2Response = await fetch(`${baseUrl}?${params}`);
-
-            if (!s2Response.ok) {
-                // If rate limited or error, return appropriate message
-                if (s2Response.status === 429) {
-                    console.error('Semantic Scholar rate limit exceeded');
-                    return NextResponse.json({
-                        results: [],
-                        error: 'Search temporarily unavailable due to rate limits. Please try again in a few moments or use DOI lookup.'
-                    });
+            const response = await fetch(`${baseUrl}?${params}`, {
+                headers: {
+                    'User-Agent': 'Corpus/1.0 (mailto:support@usecorpus.app)'
                 }
+            });
 
-                // Log the actual error for debugging
-                const errorText = await s2Response.text();
-                console.error('Semantic Scholar API error:', s2Response.status, errorText);
-
+            if (!response.ok) {
+                console.error('OpenAlex API error:', response.status, await response.text());
                 return NextResponse.json({
                     results: [],
                     error: 'Search temporarily unavailable. Please try entering a DOI instead.'
                 });
             }
 
-            const s2Data = await s2Response.json();
+            const data = await response.json();
 
-            const results = s2Data.data?.map((item: any) => ({
-                semanticScholarId: item.paperId,
-                title: item.title,
-                authors: item.authors?.map((a: any) => a.name) || [],
-                year: item.year || null,
-                abstract: item.abstract || null,
-                source: item.venue || null,
-                doi: item.externalIds?.DOI || null,
-                openAccessUrl: item.openAccessPdf?.url || null
-            })) || [];
+            const results = data.results?.map((item: any) => {
+                // Extract authors from authorships
+                const authors = item.authorships
+                    ?.filter((a: any) => a.author?.display_name)
+                    .map((a: any) => a.author.display_name) || [];
+
+                // Extract DOI
+                const doi = item.doi || null;
+
+                // Extract open access URL if available
+                const openAccessUrl = item.open_access?.oa_url || null;
+
+                // Extract source/journal name
+                const source = item.primary_location?.source?.display_name || null;
+
+                return {
+                    semanticScholarId: item.id, // Keep as semanticScholarId for compatibility
+                    title: item.display_name,
+                    authors: authors,
+                    year: item.publication_year || null,
+                    abstract: item.abstract?.length > 2 ? item.abstract : null,
+                    source: source,
+                    doi: doi,
+                    openAccessUrl: openAccessUrl
+                };
+            }) || [];
 
             return NextResponse.json({ results });
 
         } catch (error) {
-            console.error('Semantic Scholar search error:', error);
+            console.error('OpenAlex search error:', error);
             return NextResponse.json({
                 results: [],
                 error: 'Search temporarily unavailable. Please try entering a DOI instead.'
