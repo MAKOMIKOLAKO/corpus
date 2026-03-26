@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
+import { getToken } from 'next-auth/jwt';
 
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
 
@@ -44,18 +45,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create a response that will trigger a session refresh
-    const response = NextResponse.json({ success: true, user: updated });
-    
-    // Set a cookie to signal the client to refresh the session
-    response.cookies.set('refresh-session', 'true', {
-      httpOnly: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 10, // 10 seconds, just enough to trigger the refresh
+    // Return success with a flag to trigger client-side session update
+    return NextResponse.json({
+      success: true,
+      user: updated,
+      needsSessionUpdate: true
     });
-
-    return response;
   } catch (e: any) {
     if (e?.code === 'P2025') return NextResponse.json({ error: 'User not found' }, { status: 404 });
     throw e;
