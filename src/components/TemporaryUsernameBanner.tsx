@@ -2,59 +2,109 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Settings, X } from 'lucide-react';
+import { Settings, X, User } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function TemporaryUsernameBanner() {
   const { data: session } = useSession();
   const [dismissed, setDismissed] = useState(false);
+  const [bannerShown, setBannerShown] = useState(false);
 
-  // Check if user has a random username
+  // Check if user has a random username or no username
   const isRandomUsername = session?.user?.username?.startsWith('user_');
+  const hasNoUsername = !session?.user?.username;
+  const shouldShow = isRandomUsername || hasNoUsername;
 
-  // Load dismissal state from localStorage on mount
+  // Load dismissal state and check if banner was shown
   useEffect(() => {
-    const dismissedState = localStorage.getItem('temp-username-banner-dismissed');
-    if (dismissedState === 'true') {
-      setDismissed(true);
-    }
-  }, []);
+    if (!session) return;
 
-  // Save dismissal state to localStorage
-  const handleDismiss = () => {
+    // Check if banner was already dismissed from server
+    const checkBannerStatus = async () => {
+      try {
+        const res = await fetch('/api/user/username-banner-status');
+        const data = await res.json();
+        if (data.bannerShown) {
+          setDismissed(true);
+        } else if (shouldShow && !data.bannerShown) {
+          setBannerShown(true);
+        }
+      } catch (error) {
+        console.error('Failed to check banner status:', error);
+        // Fallback to localStorage for existing users
+        const dismissedState = localStorage.getItem('temp-username-banner-dismissed');
+        if (dismissedState === 'true') {
+          setDismissed(true);
+        } else if (shouldShow) {
+          setBannerShown(true);
+        }
+      }
+    };
+
+    checkBannerStatus();
+  }, [session, shouldShow]);
+
+  // Handle dismissal
+  const handleDismiss = async () => {
     setDismissed(true);
-    localStorage.setItem('temp-username-banner-dismissed', 'true');
+    setBannerShown(false);
+
+    // Save to server
+    try {
+      await fetch('/api/user/username-banner-dismiss', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to dismiss banner:', error);
+      // Fallback to localStorage
+      localStorage.setItem('temp-username-banner-dismissed', 'true');
+    }
   };
 
-  // Don't show if user doesn't have a random username, not authenticated, or dismissed
-  if (!session || !isRandomUsername || dismissed) {
+  // Don't show if not authenticated, has a proper username, or dismissed
+  if (!session || !shouldShow || dismissed) {
     return null;
   }
 
   return (
-    <div className="bg-green-50 dark:bg-green-950/20 border-b border-green-200 dark:border-green-800">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 dark:border-blue-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-green-600 dark:text-green-400">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </span>
-            <p className="text-sm text-green-800 dark:text-green-200">
-              You&apos;re using a temporary username. You can change it in{' '}
-              <Link href="/account/settings" className="font-medium underline hover:no-underline">
-                settings
-              </Link>
-              .
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              {hasNoUsername ? (
+                <span>
+                  <span className="font-medium">Welcome to Corpus!</span> Personalize your profile by setting a unique username that others can use to find you.
+                </span>
+              ) : (
+                <span>
+                  You&apos;re using a temporary username. You can change it to something more personal in settings.
+                </span>
+              )}
             </p>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 ml-4">
+            <Link href="/account/settings#username">
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                {hasNoUsername ? 'Set Username' : 'Change Username'}
+              </Button>
+            </Link>
+            <button
+              onClick={handleDismiss}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition-colors p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

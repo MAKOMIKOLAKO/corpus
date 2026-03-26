@@ -112,7 +112,7 @@ export default async function LibraryPage({
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="space-y-1">
                             <h1 className="text-2xl font-semibold tracking-tight">your library</h1>
-                            <p className="text-sm text-muted-foreground">browse and search your indexed knowledge</p>
+                            <p className="text-sm text-muted-foreground">browse and search your knowledge base</p>
                         </div>
                         <Link href="/add" passHref>
                             <Button variant="default" className="gap-2">

@@ -55,6 +55,28 @@ export default function AccountPage() {
         fetchProfile();
     }, []);
 
+    // Handle hash navigation
+    useEffect(() => {
+        if (window.location.hash === '#username' && profile) {
+            // Scroll to the username section
+            const element = document.getElementById('username');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Auto-open edit mode for better UX
+                setTimeout(() => {
+                    setEditingProfile(true);
+                    setProfileMsg(null);
+                    // Focus on username input
+                    const input = document.getElementById('settingsUsername') as HTMLInputElement;
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                }, 500);
+            }
+        }
+    }, [profile]);
+
     const fetchProfile = async () => {
         try {
             const res = await fetch('/api/user/profile');
@@ -304,7 +326,7 @@ export default function AccountPage() {
             </div>
 
             {/* Profile */}
-            <Card>
+            <Card id="username">
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                         <span className="flex items-center gap-2"><User className="w-5 h-5" /> Profile</span>
