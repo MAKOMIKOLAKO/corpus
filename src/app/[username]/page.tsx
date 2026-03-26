@@ -77,7 +77,10 @@ export default async function ProfilePage({ params }: Props) {
 
   return (
     <ProfileClient
-      user={user}
+      user={{
+        ...user,
+        createdAt: user.createdAt.toISOString()
+      }}
       totalConnections={totalConnections}
     />
   );
