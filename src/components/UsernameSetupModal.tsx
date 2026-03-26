@@ -48,11 +48,11 @@ export default function UsernameSetupModal() {
       const result = await setupUsername(username, bio);
 
       if (result.success) {
-        // Update the session to reflect the new username
-        await update();
-
-        // Reload the page to get fresh session
-        window.location.reload();
+        // Force sign out and redirect to sign in to get a completely fresh session
+        await signOut({
+          redirect: true,
+          callbackUrl: '/login'
+        });
       } else if (result.error) {
         if (result.error === 'User not found') {
           await signOut({ callbackUrl: '/signup' });
@@ -71,13 +71,16 @@ export default function UsernameSetupModal() {
       : 'text-red-500'
     : 'text-[var(--muted-foreground)]';
 
-  // Don't show if user has username or not authenticated
-  if (!session || session.user?.username) {
+  // Don't render the modal content if user has username or not authenticated
+  // But still render the blocking overlay to prevent interaction
+  const shouldShowModal = !!(session && !session.user?.username);
+
+  if (!shouldShowModal) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999]">
       <div className="bg-[var(--background)] rounded-xl p-8 max-w-md w-full border border-[var(--border)]">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight mb-2">Choose your username</h1>
