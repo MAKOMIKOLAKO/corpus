@@ -22,22 +22,25 @@ export function useSavedEntries() {
   // Load saved entries from localStorage on mount
   useEffect(() => {
     if (typeof window === 'undefined') return
-    
+
     try {
       const stored = localStorage.getItem(SAVED_ENTRIES_KEY)
       if (stored) {
-        setSavedEntries(JSON.parse(stored))
+        const parsed = JSON.parse(stored)
+        setSavedEntries(Array.isArray(parsed) ? parsed : [])
       }
     } catch (error) {
       console.error('Error loading saved entries:', error)
+      setSavedEntries([])
     }
   }, [])
 
   // Check if an entry is saved
   const isSaved = (entry: { title?: string; doi?: string }) => {
-    if (!entry.title && !entry.doi) return false
-    
+    if (!entry?.title && !entry?.doi) return false
+
     return savedEntries.some(saved => {
+      if (!saved) return false
       if (entry.doi && saved.doi) {
         return saved.doi === entry.doi
       }
@@ -109,7 +112,7 @@ export function useSavedEntries() {
   // Clear all saved entries
   const clearSavedEntries = () => {
     if (typeof window === 'undefined') return
-    
+
     setSavedEntries([])
     localStorage.removeItem(SAVED_ENTRIES_KEY)
   }

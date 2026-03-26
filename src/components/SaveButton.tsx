@@ -36,6 +36,12 @@ export default function SaveButton({
   const saved = isLoggedIn ? isSavedDB({ title, doi }) : isSavedLocal({ title, doi })
 
   const handleClick = async () => {
+    // Validate required fields
+    if (!title || (Array.isArray(authors) && authors.length === 0)) {
+      console.error('Invalid entry data: missing title or authors')
+      return
+    }
+
     if (!isLoggedIn) {
       // Check if this is the second save (trigger signup)
       if (count >= 1) {
@@ -87,8 +93,8 @@ export default function SaveButton({
       onClick={handleClick}
       disabled={isLoadingDB || isAnimating}
       className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${saved
-          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         } ${(isLoadingDB || isAnimating) ? 'scale-95 opacity-75' : 'scale-100'} ${className}`}
     >
       {isLoadingDB ? (
