@@ -31,20 +31,8 @@ const ONBOARDING_STEPS: Step[] = [
     placement: "bottom",
   },
   {
-    target: '[data-onboarding="share-collection"]',
-    content: "Share collections with others and assign different roles: Viewer, Contributor, or Admin.",
-    title: "Share & Collaborate 👥",
-    placement: "left",
-  },
-  {
-    target: '[data-onboarding="feed"]',
-    content: "See what others are sharing and add interesting entries to your library with one click.",
-    title: "Feed & Discover 🔍",
-    placement: "bottom",
-  },
-  {
     target: "body",
-    content: "You're all set! Start building your knowledge library with Corpus.",
+    content: "You're all set! Start building your knowledge library with Corpus. You can always restart this tour from the help menu.",
     placement: "center",
     title: "Ready to Go! 🎉",
   },
@@ -69,7 +57,21 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
   }, [isOpen, session]);
 
   const handleEvent = useCallback((data: any, controls: any) => {
-    const { type, status, index } = data;
+    const { type, status, index, error } = data;
+
+    // Log errors for debugging
+    if (type === 'error:target_not_found') {
+      console.error(`Onboarding target not found for step ${index}:`, data);
+      // Skip to next step if target not found
+      if (index < ONBOARDING_STEPS.length - 1) {
+        setStepIndex(index + 1);
+      } else {
+        // End tour if it's the last step
+        setRun(false);
+        onClose();
+      }
+      return;
+    }
 
     // Handle tour finish or skip
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED || type === 'tour:end') {
@@ -106,6 +108,7 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
       stepIndex={stepIndex}
       continuous
       onEvent={handleEvent}
+      debug={process.env.NODE_ENV === 'development'}
     />
   );
 }
