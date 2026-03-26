@@ -222,16 +222,13 @@ export function AppShell({
                       <HelpCircle className="w-4 h-4" />
                       tour
                     </button>
-                    <FeedbackModal
-                      trigger={
-                        <button className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1">
-                          <MessageSquare className="w-4 h-4" />
-                          feedback
-                        </button>
-                      }
-                      open={showFeedback}
-                      onOpenChange={setShowFeedback}
-                    />
+                    <button
+                      onClick={() => setShowFeedback(true)}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      feedback
+                    </button>
                     <AccountHoverMenu
                       displayName={session.user?.name || session.user?.email || "Account"}
                     />
@@ -255,6 +252,10 @@ export function AppShell({
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
         onCompleted={() => setOnboardingCompleted(true)}
+      />
+      <FeedbackModal
+        open={showFeedback}
+        onOpenChange={setShowFeedback}
       />
     </>
   );
