@@ -811,3 +811,29 @@ export default function AccountPage() {
         </div>
     );
 }
+
+function getPlanBadgeVariant(plan: string): "default" | "secondary" | "destructive" | "outline" {
+    switch (plan) {
+        case 'LIFETIME_PRO':
+            return 'default';
+        case 'PRO':
+            return 'default';
+        case 'FREE':
+            return 'secondary';
+        default:
+            return 'secondary';
+    }
+}
+
+function getPlanDisplay(plan: string): string {
+    switch (plan) {
+        case 'LIFETIME_PRO':
+            return 'Lifetime Premium';
+        case 'PRO':
+            return 'Pro';
+        case 'FREE':
+            return 'Free';
+        default:
+            return 'Unknown';
+    }
+}

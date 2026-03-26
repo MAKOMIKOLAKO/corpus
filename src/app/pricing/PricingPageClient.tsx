@@ -191,7 +191,7 @@ export default function PricingPage() {
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-2xl">Lifetime Premium</CardTitle>
               <div className="space-y-2">
-                <div className="text-4xl font-bold">${lifetimePrice}<span className="text-lg font-normal text-muted-foreground">/year</span></div>
+                <div className="text-4xl font-bold">${lifetimePrice}<span className="text-lg font-normal text-muted-foreground">/once</span></div>
                 <div className="text-sm text-muted-foreground">Pay once, use forever</div>
               </div>
             </CardHeader>

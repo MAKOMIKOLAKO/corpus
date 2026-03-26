@@ -416,13 +416,13 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
-        <div className="mx-auto max-w-4xl px-4">
+        <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
             <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Simple pricing for researchers and students</h2>
             <p className="mt-4 text-[var(--muted-foreground)]">Start free. Upgrade when your research grows.</p>
           </div>
 
-          <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-2`}>
+          <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-3 md:grid-cols-2`}>
             {/* Free Plan */}
             <div className="relative flex flex-col rounded-2xl border-[var(--border)] bg-[var(--card)] p-8">
               <div className="mb-8">
@@ -521,6 +521,50 @@ export default function LandingPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Lifetime Premium Plan */}
+            <div className="relative flex flex-col rounded-2xl border-2 border-purple-200 bg-purple-50/50 p-8 lg:mt-0">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-purple-100 px-4 py-1 text-xs font-semibold text-purple-800">
+                Best Value
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-2xl font-semibold text-[var(--foreground)]">Lifetime Premium</h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-5xl font-bold text-[var(--foreground)]">$30</span>
+                  <span className="text-[var(--muted-foreground)]">/once</span>
+                </div>
+                <p className="mt-2 text-sm text-[var(--muted-foreground)]">Pay once, use forever</p>
+              </div>
+
+              <ul className="mb-8 space-y-4">
+                {[
+                  "Everything in Pro",
+                  "Lifetime access to all features",
+                  "Priority feature requests",
+                  "VIP support channel",
+                  "Exclusive beta access",
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center gap-3">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
+                      <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-[var(--foreground)]">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-auto">
+                <Link
+                  href="/pricing"
+                  className="block w-full rounded-lg bg-purple-600 py-3 text-center font-medium text-white transition-colors hover:bg-purple-700"
+                >
+                  Get Lifetime Premium
+                </Link>
+              </div>
+            </div>
           </div>
 
           <div data-reveal className={`${reveal} mt-8 flex justify-center gap-4 text-sm text-[var(--muted-foreground)]`}>
@@ -536,6 +580,13 @@ export default function LandingPage() {
             >
               Annual
               <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save 33%</span>
+            </button>
+            <button
+              onClick={() => setBilling("lifetime")}
+              className={`rounded-full px-4 py-2 font-medium transition ${billing === "lifetime" ? "bg-purple-600 text-white" : "hover:text-[var(--foreground)]"}`}
+            >
+              Lifetime
+              <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-600">$30</span>
             </button>
           </div>
         </div>
