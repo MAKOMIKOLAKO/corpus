@@ -26,7 +26,6 @@ export default function AddEntryForm() {
     const [error, setError] = useState<string | null>(null);
     const [existingDuplicate, setExistingDuplicate] = useState<any | null>(null);
     const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
-    const [queueMode, setQueueMode] = useState(false);
 
     const entryQueue = useEntryQueue({
         apiKey,
@@ -154,64 +153,26 @@ export default function AddEntryForm() {
 
         const url = tab === 'URL' ? formData.url : `https://doi.org/${formData.doi}`;
 
-        if (queueMode) {
-            // Add to queue and reset form for next entry
-            entryQueue.addToQueue(url, metadata);
+        // Add to queue and reset form for next entry
+        entryQueue.addToQueue(url, metadata);
 
-            // Reset form for quick consecutive entries
-            setFormData({
-                title: '',
-                authors: '',
-                year: '',
-                publishDate: '',
-                contentType: 'PAPER',
-                url: '',
-                doi: '',
-                source: '',
-                abstract: '',
-                summary: '',
-                userKeywords: '',
-                autoKeywords: [] as string[],
-                readingStatus: 'UNREAD',
-            });
-            setFetchInput('');
-        } else {
-            // Original behavior: save immediately and navigate
-            setIsSaving(true);
-            try {
-                const result = await createEntryWithMetadata(url, metadata, apiKey);
-
-                if (result.success && result.entry?.id) {
-                    router.push(`/entries/${result.entry.id}`);
-                } else {
-                    if (result.error === 'entry_limit_reached') {
-                        setShowUpgradeBanner(true);
-                        setError(null);
-                        return;
-                    }
-                    if (result.error?.includes('duplicate') && result.existingEntry) {
-                        const confidence = result.confidence || 'unknown';
-                        const reason = result.reason || 'Duplicate detected';
-                        const existingTitle = result.existingEntry.title;
-                        setExistingDuplicate(result.existingEntry);
-
-                        if (confidence === 'high') {
-                            setError(`exact duplicate found: "${existingTitle}". This entry already exists in your library.`);
-                        } else if (confidence === 'medium') {
-                            setError(`possible duplicate: "${existingTitle}" (${reason}). This entry may already exist.`);
-                        } else {
-                            setError(`potential match: "${existingTitle}" (${reason}). Please check if this entry already exists.`);
-                        }
-                    } else {
-                        setError(result.error || 'Failed to save entry');
-                    }
-                }
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setIsSaving(false);
-            }
-        }
+        // Reset form for quick consecutive entries
+        setFormData({
+            title: '',
+            authors: '',
+            year: '',
+            publishDate: '',
+            contentType: 'PAPER',
+            url: '',
+            doi: '',
+            source: '',
+            abstract: '',
+            summary: '',
+            userKeywords: '',
+            autoKeywords: [] as string[],
+            readingStatus: 'UNREAD',
+        });
+        setFetchInput('');
     };
 
     // Auto-generate keywords when abstract changes
@@ -445,27 +406,14 @@ export default function AddEntryForm() {
                             </div>
                         </div>
 
-                        <div className="pt-8 flex justify-between items-center gap-3 border-t border-border">
-                            <div className="flex items-center gap-2">
-                                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={queueMode}
-                                        onChange={(e) => setQueueMode(e.target.checked)}
-                                        className="rounded border-gray-300"
-                                    />
-                                    <span>Queue mode (add multiple entries)</span>
-                                </label>
-                            </div>
-                            <div className="flex gap-3">
-                                <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isSaving}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={isSaving || !formData.title.trim()}>
-                                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                    {queueMode ? 'Add to Queue' : 'Save Entry'}
-                                </Button>
-                            </div>
+                        <div className="pt-8 flex justify-end gap-3 border-t border-border">
+                            <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isSaving}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSaving || !formData.title.trim()}>
+                                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                Add to Queue
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
