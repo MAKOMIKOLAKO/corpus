@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      type: 'article',
+      type: 'website',
       url: `https://corpus.app/topics/${topic.slug}`,
     },
     twitter: {
