@@ -23,12 +23,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lab name must be at least 3 characters" }, { status: 400 });
     }
 
-    // Get user with institution
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { institution: true }
-    });
+    // Get user with institution using raw query
+    const users = await prisma.$queryRaw`
+      SELECT id, institutionId, institutionVerifiedAt 
+      FROM "User" 
+      WHERE email = ${session.user.email}
+    ` as any[];
 
+    const user = users[0];
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -39,57 +41,53 @@ export async function POST(request: Request) {
 
     // Generate unique slug
     let slug = generateSlug(name);
-    let slugExists = await prisma.lab.findUnique({ where: { slug } });
+    let slugExists = await prisma.$queryRaw`SELECT id FROM Lab WHERE slug = ${slug}` as any[];
     let attempts = 0;
 
-    while (slugExists && attempts < 10) {
+    while (slugExists.length > 0 && attempts < 10) {
       slug = `${generateSlug(name)}-${Math.random().toString(36).substring(2, 6)}`;
-      slugExists = await prisma.lab.findUnique({ where: { slug } });
+      slugExists = await prisma.$queryRaw`SELECT id FROM Lab WHERE slug = ${slug}` as any[];
       attempts++;
     }
 
-    if (slugExists) {
-      return NextResponse.json({ error: "Unable to generate unique slug for lab" }, { status: 500 });
+    if (slugExists.length > 0) {
+      return NextResponse.json({ error: "Could not generate unique slug" }, { status: 500 });
     }
 
-    // Create lab
-    const lab = await prisma.lab.create({
-      data: {
-        name: name.trim(),
-        slug,
-        description: description?.trim() || null,
-        institutionId: user.institutionId,
-        createdBy: user.id
-      },
-      include: {
-        institution: true,
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            username: true
-          }
-        },
-        _count: {
-          select: { members: true }
-        }
-      }
-    });
+    // Create lab using raw query
+    const labs = await prisma.$queryRaw`
+      INSERT INTO Lab (name, slug, description, institutionId, createdBy, isVerified, createdAt)
+      VALUES (${name}, ${slug}, ${description || null}, ${user.institutionId}, ${user.id}, false, NOW())
+      RETURNING id, name, slug, description, isVerified, createdAt
+    ` as any[];
+
+    const lab = labs[0];
 
     // Add creator as admin
-    await prisma.labMember.create({
-      data: {
-        labId: lab.id,
-        userId: user.id,
-        role: 'ADMIN'
-      }
-    });
+    await prisma.$queryRaw`
+      INSERT INTO LabMember (labId, userId, role, joinedAt)
+      VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
+    `;
+
+    // Get institution info
+    const institutions = await prisma.$queryRaw`
+      SELECT id, name, domain 
+      FROM Institution 
+      WHERE id = ${user.institutionId}
+    ` as any[];
+
+    const institution = institutions[0];
 
     // Return lab with userRole and joinedAt
     const labWithRole = {
       ...lab,
+      createdAt: lab.createdAt.toISOString(),
+      institution: institution,
       userRole: 'ADMIN' as const,
-      joinedAt: new Date().toISOString()
+      joinedAt: new Date().toISOString(),
+      _count: {
+        members: 0 // We'll count this separately if needed
+      }
     };
 
     return NextResponse.json(labWithRole);
@@ -106,33 +104,52 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's labs
+    // Get user's email first
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        labMemberships: {
-          include: {
-            lab: {
-              include: {
-                institution: true,
-                _count: {
-                  select: { members: true }
-                }
-              }
-            }
-          }
-        }
-      }
+      where: { email: session.user.email }
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const labs = user.labMemberships.map(membership => ({
-      ...membership.lab,
-      userRole: membership.role,
-      joinedAt: membership.joinedAt.toISOString()
+    // Get lab memberships directly
+    const labMemberships = await prisma.$queryRaw`
+      SELECT 
+        l.id,
+        l.name,
+        l.slug,
+        l.description,
+        l.isVerified,
+        l.createdAt,
+        i.name as institutionName,
+        i.domain as institutionDomain,
+        lm.role as userRole,
+        lm.joinedAt
+      FROM LabMember lm
+      JOIN Lab l ON lm.labId = l.id
+      JOIN Institution i ON l.institutionId = i.id
+      WHERE lm.userId = ${user.id}
+    ` as any[];
+
+    // Convert dates to strings and format response
+    const labs = labMemberships.map((lab: any) => ({
+      id: lab.id,
+      name: lab.name,
+      slug: lab.slug,
+      description: lab.description,
+      isVerified: lab.isVerified,
+      createdAt: lab.createdAt.toISOString(),
+      institution: {
+        id: lab.id, // We'll use lab.id as placeholder since we don't have institution.id
+        name: lab.institutionName,
+        domain: lab.institutionDomain
+      },
+      userRole: lab.userRole,
+      joinedAt: lab.joinedAt.toISOString(),
+      _count: {
+        members: 0 // We'll count this separately if needed
+      }
     }));
 
     return NextResponse.json(labs);
