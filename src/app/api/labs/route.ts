@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     // Get user with institution using raw query
     const users = await prisma.$queryRaw`
-      SELECT id, institutionId, institutionVerifiedAt 
+      SELECT id, "institutionId", "institutionVerifiedAt" 
       FROM "User" 
       WHERE email = ${session.user.email}
     ` as any[];
@@ -35,18 +35,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user.institutionId || !user.institutionVerifiedAt) {
+    if (!user["institutionId"] || !user["institutionVerifiedAt"]) {
       return NextResponse.json({ error: "You must verify your institution before creating a lab" }, { status: 403 });
     }
 
     // Generate unique slug
     let slug = generateSlug(name);
-    let slugExists = await prisma.$queryRaw`SELECT id FROM Lab WHERE slug = ${slug}` as any[];
+    let slugExists = await prisma.$queryRaw`SELECT id FROM "Lab" WHERE slug = ${slug}` as any[];
     let attempts = 0;
 
     while (slugExists.length > 0 && attempts < 10) {
       slug = `${generateSlug(name)}-${Math.random().toString(36).substring(2, 6)}`;
-      slugExists = await prisma.$queryRaw`SELECT id FROM Lab WHERE slug = ${slug}` as any[];
+      slugExists = await prisma.$queryRaw`SELECT id FROM "Lab" WHERE slug = ${slug}` as any[];
       attempts++;
     }
 
@@ -56,24 +56,24 @@ export async function POST(request: Request) {
 
     // Create lab using raw query
     const labs = await prisma.$queryRaw`
-      INSERT INTO Lab (name, slug, description, institutionId, createdBy, isVerified, createdAt)
-      VALUES (${name}, ${slug}, ${description || null}, ${user.institutionId}, ${user.id}, false, NOW())
-      RETURNING id, name, slug, description, isVerified, createdAt
+      INSERT INTO "Lab" (name, slug, description, "institutionId", "createdBy", "isVerified", "createdAt")
+      VALUES (${name}, ${slug}, ${description || null}, ${user["institutionId"]}, ${user.id}, false, NOW())
+      RETURNING id, name, slug, description, "isVerified", "createdAt"
     ` as any[];
 
     const lab = labs[0];
 
     // Add creator as admin
     await prisma.$queryRaw`
-      INSERT INTO LabMember (labId, userId, role, joinedAt)
+      INSERT INTO "LabMember" ("labId", "userId", "role", "joinedAt")
       VALUES (${lab.id}, ${user.id}, 'ADMIN', NOW())
     `;
 
     // Get institution info
     const institutions = await prisma.$queryRaw`
       SELECT id, name, domain 
-      FROM Institution 
-      WHERE id = ${user.institutionId}
+      FROM "Institution" 
+      WHERE id = ${user["institutionId"]}
     ` as any[];
 
     const institution = institutions[0];
@@ -120,16 +120,16 @@ export async function GET(request: Request) {
         l.name,
         l.slug,
         l.description,
-        l.isVerified,
-        l.createdAt,
-        i.name as institutionName,
-        i.domain as institutionDomain,
-        lm.role as userRole,
-        lm.joinedAt
-      FROM LabMember lm
-      JOIN Lab l ON lm.labId = l.id
-      JOIN Institution i ON l.institutionId = i.id
-      WHERE lm.userId = ${user.id}
+        l."isVerified",
+        l."createdAt",
+        i.name as "institutionName",
+        i.domain as "institutionDomain",
+        lm.role as "userRole",
+        lm."joinedAt"
+      FROM "LabMember" lm
+      JOIN "Lab" l ON lm."labId" = l.id
+      JOIN "Institution" i ON l."institutionId" = i.id
+      WHERE lm."userId" = ${user.id}
     ` as any[];
 
     // Convert dates to strings and format response
