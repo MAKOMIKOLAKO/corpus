@@ -90,8 +90,8 @@ export async function GET(request: NextRequest) {
       stats: {
         totalCount,
         averageRating: avgRatingResult._avg.rating || 0,
-        ratingDistribution: ratingDistribution.map((r: { rating: number; _count: number }) => ({
-          rating: r.rating,
+        ratingDistribution: ratingDistribution.map((r: { rating: number | null; _count: number }) => ({
+          rating: r.rating as number,
           count: r._count,
         })),
       },
