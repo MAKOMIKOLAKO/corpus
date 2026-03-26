@@ -13,16 +13,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       slug: { not: null }
     },
     select: {
-      slug: true,
-      createdAt: true
+      slug: true
     }
   })
 
   // Get all topics
   const topics = await prisma.topic.findMany({
     select: {
-      slug: true,
-      createdAt: true
+      slug: true
+    }
+  })
+
+  // Get all public collections
+  const publicCollections = await prisma.collection.findMany({
+    where: {
+      publicSlug: { not: null }
+    },
+    select: {
+      publicSlug: true
     }
   })
 
@@ -30,31 +38,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     {
       url: baseUrl,
-      lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 1,
     },
     {
       url: `${baseUrl}/papers`,
-      lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/topics`,
-      lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
     {
       url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     },
     {
       url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
       changeFrequency: 'yearly' as const,
       priority: 0.3,
     },
@@ -63,7 +66,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Paper pages
   const paperPages = papers.map((paper) => ({
     url: `${baseUrl}/paper/${paper.slug}`,
-    lastModified: paper.createdAt,
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }))
@@ -71,18 +73,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Topic pages
   const topicPages = topics.map((topic) => ({
     url: `${baseUrl}/topics/${topic.slug}`,
-    lastModified: topic.createdAt,
     changeFrequency: 'monthly' as const,
     priority: 0.8,
+  }))
+
+  // Public collection pages
+  const publicCollectionPages = publicCollections.map((collection) => ({
+    url: `${baseUrl}/c/${collection.publicSlug}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
   }))
 
   // Top papers pages
   const topPapersPages = topics.map((topic) => ({
     url: `${baseUrl}/top/${topic.slug}`,
-    lastModified: topic.createdAt,
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }))
 
-  return [...staticPages, ...paperPages, ...topicPages, ...topPapersPages]
+  return [...staticPages, ...paperPages, ...topicPages, ...publicCollectionPages, ...topPapersPages]
 }
