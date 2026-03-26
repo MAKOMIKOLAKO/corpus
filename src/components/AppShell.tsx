@@ -7,7 +7,7 @@ import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
-import { Activity, Building2, Users } from "lucide-react";
+import { Activity, Users } from "lucide-react";
 
 export function AppShell({
   children,
@@ -153,14 +153,6 @@ export function AppShell({
                       {unreadSignalCount > 9 ? '9+' : unreadSignalCount}
                     </span>
                   )}
-                </Link>
-                <Link
-                  href="/labs"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
-                  aria-current={pathname === "/labs" ? "page" : undefined}
-                >
-                  <Building2 className="w-4 h-4" />
-                  labs
                 </Link>
                 <Link
                   href="/connections"

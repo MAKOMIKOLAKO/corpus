@@ -83,7 +83,7 @@ export default function CollectionDetailPage() {
     const [inviteError, setInviteError] = useState('');
     const [inviteSuccess, setInviteSuccess] = useState('');
     const [updatingMember, setUpdatingMember] = useState<string | null>(null);
-    const [contacts, setContacts] = useState<Array<{ id: string; name: string | null; email: string }>>([]);
+    const [contacts, setContacts] = useState<Array<{ id: string; name: string | null; email: string; username: string | null }>>([]);
     const [contactsLoading, setContactsLoading] = useState(false);
     const [contactsOpen, setContactsOpen] = useState(false);
 
@@ -618,15 +618,15 @@ export default function CollectionDetailPage() {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="text-sm font-medium mb-1 block">Email</label>
+                                <label className="text-sm font-medium mb-1 block">Email or Username</label>
                                 <div className="relative">
                                     <input
-                                        type="email"
+                                        type="text"
                                         value={inviteEmail}
                                         onChange={(e) => { setInviteEmail(e.target.value); setContactsOpen(true); }}
                                         onFocus={() => setContactsOpen(true)}
                                         onBlur={() => setTimeout(() => setContactsOpen(false), 150)}
-                                        placeholder="user@example.com"
+                                        placeholder="user@example.com or @username"
                                         className="w-full px-3 py-2 border rounded-md bg-background text-sm"
                                         autoComplete="off"
                                     />
@@ -634,10 +634,11 @@ export default function CollectionDetailPage() {
                                         <div className="absolute z-10 mt-1 w-full bg-background border border-border rounded-md shadow-sm max-h-56 overflow-auto">
                                             {contacts
                                                 .filter(c =>
-                                                    // Exclude current user and match by email or name
+                                                    // Exclude current user and match by email, name, or username
                                                     c.email.toLowerCase() !== (session?.user?.email || '').toLowerCase() && (
                                                         c.email.toLowerCase().includes(inviteEmail.toLowerCase()) ||
-                                                        (c.name || '').toLowerCase().includes(inviteEmail.toLowerCase())
+                                                        (c.name || '').toLowerCase().includes(inviteEmail.toLowerCase()) ||
+                                                        (c.username || '').toLowerCase().includes(inviteEmail.toLowerCase())
                                                     )
                                                 )
                                                 .slice(0, 8)
@@ -648,10 +649,14 @@ export default function CollectionDetailPage() {
                                                         className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
                                                         onMouseDown={(e) => { e.preventDefault(); setInviteEmail(c.email); setContactsOpen(false); }}
                                                     >
-                                                        <span className="font-medium">{c.name || c.email}</span>
-                                                        {c.name && (
-                                                            <span className="text-muted-foreground ml-2">{c.email}</span>
-                                                        )}
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{c.name || c.email}</span>
+                                                            <div className="text-muted-foreground text-xs">
+                                                                {c.username && <span>@{c.username}</span>}
+                                                                {c.username && c.email && <span className="mx-1">•</span>}
+                                                                {c.email && <span>{c.email}</span>}
+                                                            </div>
+                                                        </div>
                                                     </button>
                                                 ))}
                                         </div>
