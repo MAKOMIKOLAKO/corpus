@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { PrismaClient } from '@prisma/client'
 import TopicPage from './TopicPage'
+import SEOLayoutWrapper from '@/components/SEOLayoutWrapper'
 
 const prisma = new PrismaClient()
 
@@ -105,10 +106,12 @@ export default async function TopicPageWrapper({ params }: Props) {
   })
 
   return (
-    <TopicPage 
-      topic={topic} 
-      relatedPapers={relatedPapers}
-      relatedTopics={relatedTopics}
-    />
+    <SEOLayoutWrapper>
+      <TopicPage
+        topic={topic}
+        relatedPapers={relatedPapers}
+        relatedTopics={relatedTopics}
+      />
+    </SEOLayoutWrapper>
   )
 }

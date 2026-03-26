@@ -1,8 +1,14 @@
 'use client'
 
+import React, { useState } from 'react'
 import { Topic } from '@prisma/client'
 import Link from 'next/link'
 import { BookOpen, Lightbulb, ArrowRight, FileText, Users, Calendar } from 'lucide-react'
+import SaveButton from '@/components/SaveButton'
+import SignupPrompt from '@/components/SignupPrompt'
+import { useSession } from 'next-auth/react'
+import { useSavedEntries } from '@/hooks/useSavedEntries'
+import { useScrollDepth } from '@/hooks/useScrollDepth'
 
 interface RelatedPaper {
   id: string
@@ -54,6 +60,23 @@ const jsonLd = (topic: Topic, relatedPapers: RelatedPaper[]) => {
 }
 
 export default function TopicPage({ topic, relatedPapers, relatedTopics }: Props) {
+  const { data: session } = useSession()
+  const { syncToBackend } = useSavedEntries()
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false)
+
+  // Track scroll depth for signup trigger
+  useScrollDepth(60, () => {
+    if (!session?.user) {
+      setShowSignupPrompt(true)
+    }
+  })
+
+  // Sync saved entries when user logs in
+  React.useEffect(() => {
+    if (session?.user) {
+      syncToBackend().catch(console.error)
+    }
+  }, [session, syncToBackend])
   return (
     <>
       <script
@@ -107,7 +130,7 @@ export default function TopicPage({ topic, relatedPapers, relatedTopics }: Props
                 Key Concepts
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
-                {topic.keyConcepts.map((concept, index) => (
+                {topic.keyConcepts.map((concept: string, index: number) => (
                   <div key={index} className="flex items-start gap-3">
                     <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
                       {index + 1}
@@ -128,30 +151,45 @@ export default function TopicPage({ topic, relatedPapers, relatedTopics }: Props
               </h2>
               <div className="space-y-4">
                 {relatedPapers.filter(paper => paper.slug).slice(0, 10).map((paper) => (
-                  <Link
-                    key={paper.id}
-                    href={`/paper/${paper.slug}`}
-                    className="block p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-colors"
-                  >
-                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">{paper.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>{paper.authors.slice(0, 2).join(', ')}
-                          {paper.authors.length > 2 && ' et al.'}
-                        </span>
+                  <div key={paper.id} className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-colors">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/paper/${paper.slug}`}
+                          className="block group"
+                        >
+                          <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                            {paper.title}
+                          </h3>
+                        </Link>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            <span>{paper.authors.slice(0, 2).join(', ')}
+                              {paper.authors.length > 2 && ' et al.'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            <span>{paper.year || 'n.d.'}</span>
+                          </div>
+                        </div>
+                        {(paper.summary || paper.abstract) && (
+                          <p className="text-sm text-gray-700 line-clamp-3">
+                            {paper.summary || paper.abstract}
+                          </p>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{paper.year || 'n.d.'}</span>
-                      </div>
+                      <SaveButton
+                        title={paper.title}
+                        authors={paper.authors}
+                        year={paper.year || undefined}
+                        topics={[topic.name]}
+                        className="flex-shrink-0"
+                        onSignupTrigger={() => setShowSignupPrompt(true)}
+                      />
                     </div>
-                    {(paper.summary || paper.abstract) && (
-                      <p className="text-sm text-gray-700 line-clamp-3">
-                        {paper.summary || paper.abstract}
-                      </p>
-                    )}
-                  </Link>
+                  </div>
                 ))}
               </div>
 
@@ -209,6 +247,11 @@ export default function TopicPage({ topic, relatedPapers, relatedTopics }: Props
           </section>
         </div>
       </div>
+
+      <SignupPrompt
+        isOpen={showSignupPrompt}
+        onClose={() => setShowSignupPrompt(false)}
+      />
     </>
   )
 }

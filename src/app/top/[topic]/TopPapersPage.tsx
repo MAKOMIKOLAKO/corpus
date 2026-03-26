@@ -1,8 +1,14 @@
 'use client'
 
+import React, { useState } from 'react'
 import { Topic } from '@prisma/client'
 import Link from 'next/link'
 import { FileText, Users, Calendar, ArrowRight, BookOpen, List } from 'lucide-react'
+import SaveButton from '@/components/SaveButton'
+import SignupPrompt from '@/components/SignupPrompt'
+import { useSession } from 'next-auth/react'
+import { useSavedEntries } from '@/hooks/useSavedEntries'
+import { useScrollDepth } from '@/hooks/useScrollDepth'
 
 interface Paper {
   id: string
@@ -55,6 +61,23 @@ const jsonLd = (topic: Topic, papers: Paper[]) => {
 }
 
 export default function TopPapersPage({ topic, papers, otherTopics }: Props) {
+  const { data: session } = useSession()
+  const { syncToBackend } = useSavedEntries()
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false)
+
+  // Track scroll depth for signup trigger
+  useScrollDepth(60, () => {
+    if (!session?.user) {
+      setShowSignupPrompt(true)
+    }
+  })
+
+  // Sync saved entries when user logs in
+  React.useEffect(() => {
+    if (session?.user) {
+      syncToBackend().catch(console.error)
+    }
+  }, [session, syncToBackend])
   return (
     <>
       <script
@@ -152,6 +175,15 @@ export default function TopPapersPage({ topic, papers, otherTopics }: Props) {
                               </Link>
                             )}
 
+                            <SaveButton
+                              title={paper.title}
+                              authors={paper.authors}
+                              year={paper.year || undefined}
+                              doi={paper.doi || undefined}
+                              topics={[topic.name]}
+                              onSignupTrigger={() => setShowSignupPrompt(true)}
+                            />
+
                             {paper.doi && (
                               <a
                                 href={`https://doi.org/${paper.doi}`}
@@ -244,6 +276,11 @@ export default function TopPapersPage({ topic, papers, otherTopics }: Props) {
           </section>
         </div>
       </div>
+
+      <SignupPrompt
+        isOpen={showSignupPrompt}
+        onClose={() => setShowSignupPrompt(false)}
+      />
     </>
   )
 }
