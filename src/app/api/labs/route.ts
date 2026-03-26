@@ -69,6 +69,9 @@ export async function POST(request: Request) {
             name: true,
             username: true
           }
+        },
+        _count: {
+          select: { members: true }
         }
       }
     });
@@ -82,7 +85,14 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(lab);
+    // Return lab with userRole and joinedAt
+    const labWithRole = {
+      ...lab,
+      userRole: 'ADMIN' as const,
+      joinedAt: new Date().toISOString()
+    };
+
+    return NextResponse.json(labWithRole);
   } catch (error) {
     console.error("Error creating lab:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
