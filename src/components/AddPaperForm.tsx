@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, CheckCircle, AlertCircle, BookOpen, External, Plus, Share, ChevronDown } from 'lucide-react';
+import { Search, Loader2, CheckCircle, AlertCircle, BookOpen, ArrowUpRight, Plus, Share, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -455,7 +455,7 @@ export default function AddPaperForm() {
 
                                 <Button variant="outline" onClick={() => router.push(`/entries/${savedEntryId}`)}>
                                     View Entry
-                                    <ExternalLink className="w-4 h-4 ml-2" />
+                                    <ArrowUpRight className="w-4 h-4 ml-2" />
                                 </Button>
                             </div>
 
@@ -737,7 +737,7 @@ export default function AddPaperForm() {
                                             className="flex items-center gap-2 text-sm text-primary hover:underline"
                                         >
                                             Free PDF available →
-                                            <External className="w-3 h-3" />
+                                            <ArrowUpRight className="w-3 h-3" />
                                         </a>
                                     </div>
                                 )}
