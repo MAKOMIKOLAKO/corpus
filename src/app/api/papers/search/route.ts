@@ -17,24 +17,28 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
-        // Search via OpenAlex (API key recommended for production)
+        // Search via OpenAlex
         try {
-            // OpenAlex API URL - using correct parameter format
+            // Build the URL with correct OpenAlex format
             const baseUrl = 'https://api.openalex.org/works';
 
-            // Build the URL with proper encoding
+            // Start with basic search
             const url = new URL(baseUrl);
             url.searchParams.append('search', query);
+
+            // Add filter for journal articles only
             url.searchParams.append('filter', 'type:journal-article');
-            url.searchParams.append('select', 'id,display_name,authorships,publication_year,abstract,primary_location,doi,open_access');
+
+            // Add pagination (note: hyphen not underscore)
             url.searchParams.append('per-page', limit.toString());
+
+            // Sort by citation count
             url.searchParams.append('sort', 'cited_by_count:desc');
 
-            // Add API key if available (as email parameter for OpenAlex)
-            // Note: Try without API key first as it might not be needed
-            // if (process.env.OPENALEX_API_KEY) {
-            //     url.searchParams.append('api_key', process.env.OPENALEX_API_KEY);
-            // }
+            // Add API key if available
+            if (process.env.OPENALEX_API_KEY) {
+                url.searchParams.append('api_key', process.env.OPENALEX_API_KEY);
+            }
 
             const urlString = url.toString();
             console.error('DEBUG: OpenAlex URL:', urlString);
@@ -47,7 +51,6 @@ export async function GET(request: NextRequest) {
             });
 
             console.error('DEBUG: Response status:', response.status);
-            console.error('DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
                 const errorText = await response.text();
