@@ -102,12 +102,16 @@ export default function CollectionsPage() {
     const fetchCollections = async () => {
         try {
             const response = await fetch(`/api/collections?t=${Date.now()}`, { cache: 'no-store' as RequestCache });
-            if (response.ok) {
-                const data = await response.json();
-                setCollections(data);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Collections API error:', errorData.error || response.statusText);
+                throw new Error(errorData.error || 'Failed to fetch collections');
             }
+            const data = await response.json();
+            setCollections(data);
         } catch (error) {
             console.error('Error fetching collections:', error);
+            // Don't set collections to empty array, keep previous state if available
         } finally {
             setLoading(false);
         }
@@ -116,12 +120,17 @@ export default function CollectionsPage() {
     const fetchInvites = async () => {
         try {
             const response = await fetch(`/api/collections/invites?t=${Date.now()}`, { cache: 'no-store' as RequestCache });
-            if (response.ok) {
-                const data = await response.json();
-                setInvites(data);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Invites API error:', errorData.error || response.statusText);
+                throw new Error(errorData.error || 'Failed to fetch invites');
             }
+            const data = await response.json();
+            setInvites(data);
         } catch (error) {
             console.error('Error fetching invites:', error);
+            // Set empty array on error to prevent UI issues
+            setInvites([]);
         }
     };
 

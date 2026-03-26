@@ -41,9 +41,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(invites);
   } catch (error) {
     console.error('Error fetching invites:', error);
+    // Ensure we always return JSON, never HTML
     return NextResponse.json(
       { error: 'Failed to fetch invites' },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     );
   }
 }
