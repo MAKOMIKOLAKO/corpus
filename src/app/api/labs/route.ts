@@ -132,7 +132,7 @@ export async function GET(request: Request) {
     const labs = user.labMemberships.map(membership => ({
       ...membership.lab,
       userRole: membership.role,
-      joinedAt: membership.joinedAt
+      joinedAt: membership.joinedAt.toISOString()
     }));
 
     return NextResponse.json(labs);
