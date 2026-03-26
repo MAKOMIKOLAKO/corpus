@@ -7,7 +7,7 @@ import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
-import { Activity, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 export function AppShell({
   children,
@@ -23,7 +23,6 @@ export function AppShell({
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
-  const [unreadSignalCount, setUnreadSignalCount] = useState(0);
 
   useEffect(() => {
     if (!session) return;
@@ -55,10 +54,9 @@ export function AppShell({
     if (!session) return;
     const fetchPending = async () => {
       try {
-        const [connRes, sharedRes, feedRes] = await Promise.all([
+        const [connRes, sharedRes] = await Promise.all([
           fetch('/api/connections'),
-          fetch('/api/entries/shared'),
-          fetch('/api/feed?limit=1')
+          fetch('/api/entries/shared')
         ]);
         let count = 0;
         if (connRes.ok) {
@@ -68,10 +66,6 @@ export function AppShell({
         if (sharedRes.ok) {
           const d = await sharedRes.json();
           count += (d.received || []).filter((e: any) => e.status === 'PENDING').length;
-        }
-        if (feedRes.ok) {
-          const d = await feedRes.json();
-          setUnreadSignalCount(d.unreadCount || 0);
         }
         setPendingCount(count);
       } catch { }
@@ -141,7 +135,7 @@ export function AppShell({
                 >
                   collections
                 </Link>
-                <Link
+                {/* <Link
                   href="/feed"
                   className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
                   aria-current={pathname === "/feed" ? "page" : undefined}
@@ -153,7 +147,7 @@ export function AppShell({
                       {unreadSignalCount > 9 ? '9+' : unreadSignalCount}
                     </span>
                   )}
-                </Link>
+                </Link> */}
                 <Link
                   href="/connections"
                   className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
