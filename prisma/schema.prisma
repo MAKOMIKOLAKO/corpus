@@ -99,6 +99,7 @@ model User {
   showSignals           Boolean     @default(true)
   lastFeedViewedAt      DateTime?
   onboardingCompleted   Boolean     @default(false)
+  usernameBannerShown   Boolean     @default(false)
 
   entries               Entry[]
   collections           Collection[]
