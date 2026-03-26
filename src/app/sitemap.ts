@@ -17,13 +17,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   })
 
-  // Get all topics
-  const topics = await prisma.topic.findMany({
-    select: {
-      slug: true
-    }
-  })
-
   // Get all public collections
   const publicCollections = await prisma.collection.findMany({
     where: {
@@ -47,11 +40,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/topics`,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
       url: `${baseUrl}/pricing`,
       changeFrequency: 'monthly' as const,
       priority: 0.8,
@@ -70,13 +58,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  // Topic pages
-  const topicPages = topics.map((topic) => ({
-    url: `${baseUrl}/topics/${topic.slug}`,
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
-  }))
-
   // Public collection pages
   const publicCollectionPages = publicCollections.map((collection) => ({
     url: `${baseUrl}/c/${collection.publicSlug}`,
@@ -84,12 +65,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  // Top papers pages
-  const topPapersPages = topics.map((topic) => ({
-    url: `${baseUrl}/top/${topic.slug}`,
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }))
-
-  return [...staticPages, ...paperPages, ...topicPages, ...publicCollectionPages, ...topPapersPages]
+  return [...staticPages, ...paperPages, ...publicCollectionPages]
 }

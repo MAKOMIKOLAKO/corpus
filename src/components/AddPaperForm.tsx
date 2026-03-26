@@ -217,7 +217,6 @@ export default function AddPaperForm() {
                     source: formData.source || null,
                     doi: formData.doi || null,
                     url: formData.url || null,
-                    userKeywords: '',
                     readingStatus: formData.readingStatus,
                     notes: formData.notes
                 })

@@ -20,8 +20,6 @@ interface Entry {
     contentType: string;
     url?: string | null;
     readingStatus: 'UNREAD' | 'READING' | 'READ';
-    autoKeywords: string[];
-    topics?: string[]; // Optional until Prisma client is regenerated
     createdAt: string | Date;
     collections?: {
         id: string;
@@ -441,31 +439,6 @@ export default function EntryCard({
                                     )}
                                 </div>
                             </div>
-
-                            {/* Keywords section */}
-                            {entry.autoKeywords.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                    {entry.autoKeywords.slice(0, 3).map((kw, idx) => (
-                                        <Badge key={idx} variant="outline" className="text-[10px] font-normal px-1.5 py-0 rounded-sm text-muted-foreground border-border bg-background">
-                                            #{kw}
-                                        </Badge>
-                                    ))}
-                                    {entry.autoKeywords.length > 3 && (
-                                        <span className="text-[10px] px-1 text-muted-foreground self-center">+{entry.autoKeywords.length - 3}</span>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Topics section */}
-                            {entry.topics && entry.topics.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                    {entry.topics.map((topic, idx) => (
-                                        <Badge key={idx} variant="default" className="text-[10px] font-normal px-1.5 py-0 rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-700">
-                                            {topic}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            )}
 
                             {/* Footer with date info */}
                             <div className="pt-3 border-t border-border/50">

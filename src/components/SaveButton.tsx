@@ -7,14 +7,13 @@ import { useDatabaseSavedEntries } from '@/hooks/useDatabaseSavedEntries'
 import { useSession } from 'next-auth/react'
 
 interface SaveButtonProps {
-  title: string
-  authors: string[]
-  year?: number
-  doi?: string
-  url?: string
-  topics: string[]
-  className?: string
-  onSignupTrigger?: () => void
+  title: string;
+  authors?: string[];
+  year?: number;
+  doi?: string;
+  url?: string;
+  className?: string;
+  onSignupTrigger?: () => void;
 }
 
 export default function SaveButton({
@@ -23,7 +22,6 @@ export default function SaveButton({
   year,
   doi,
   url,
-  topics,
   className = '',
   onSignupTrigger,
 }: SaveButtonProps) {
@@ -61,7 +59,6 @@ export default function SaveButton({
           year,
           doi,
           url,
-          topics,
         })
       } else {
         // Save to localStorage
@@ -71,7 +68,6 @@ export default function SaveButton({
           year,
           doi,
           url,
-          topics,
         })
 
         // If this was the second save, trigger signup

@@ -9,7 +9,6 @@ interface SavedEntry {
   year?: number
   doi?: string
   url?: string
-  topics: string[]
 }
 
 const SAVED_ENTRIES_KEY = 'corpus_saved_entries'

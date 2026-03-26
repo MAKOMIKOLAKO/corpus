@@ -63,9 +63,6 @@ export async function GET(request: NextRequest) {
                 { title: { contains: search, mode: 'insensitive' } },
                 { abstract: { contains: search, mode: 'insensitive' } },
                 { authors: { hasSome: [search] } },
-                { userKeywords: { hasSome: [search] } },
-                { autoKeywords: { hasSome: [search] } },
-                // { topics: { hasSome: [search] } }, // TODO: Uncomment after Prisma client regeneration
             ];
         }
         if (contentType) {
@@ -190,14 +187,6 @@ export async function POST(request: NextRequest) {
                     .filter(Boolean)
                 : [];
 
-        const userKeywords = Array.isArray(body.userKeywords)
-            ? body.userKeywords
-            : typeof body.userKeywords === 'string'
-                ? body.userKeywords
-                    .split(',')
-                    .map((k: string) => k.trim())
-                    .filter(Boolean)
-                : [];
 
         // Use the new duplicate handler
         const duplicateCheck = await checkForDuplicates(body.url, body.doi, body.title);
@@ -222,55 +211,6 @@ export async function POST(request: NextRequest) {
         // Check if AI generation should be skipped (for bulk entries)
         const skipAI = body.skipAI === true;
 
-        // Generate topics and keywords if abstract or text is provided
-        let topics: string[] = [];
-        let autoKeywords: string[] = [];
-        const textForAnalysis = body.abstract || body.excerpt || '';
-
-        // Only generate AI content if we have substantial text and not skipped
-        if (!skipAI && textForAnalysis && textForAnalysis.length > 100 && process.env.GEMINI_API_KEY) {
-            try {
-                const internalApiKey = request.headers.get('x-api-key') || process.env.KEY || '';
-                const internalHeaders: HeadersInit = {
-                    'Content-Type': 'application/json',
-                    'x-api-key': internalApiKey,
-                };
-                const base = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-                // Generate topics and keywords in parallel for better performance
-                const [topicsResponse, keywordsResponse] = await Promise.all([
-                    fetch(`${base}/api/topics`, {
-                        method: 'POST',
-                        headers: internalHeaders,
-                        body: JSON.stringify({ text: textForAnalysis }),
-                    }),
-                    fetch(`${base}/api/keywords`, {
-                        method: 'POST',
-                        headers: internalHeaders,
-                        body: JSON.stringify({ text: textForAnalysis }),
-                    })
-                ]);
-
-                // Process responses (avoid .json() on HTML error pages)
-                if (topicsResponse.ok) {
-                    const ct = topicsResponse.headers.get('content-type') || '';
-                    if (ct.includes('application/json')) {
-                        const topicsData = await topicsResponse.json();
-                        topics = topicsData.topics || [];
-                    }
-                }
-
-                if (keywordsResponse.ok) {
-                    const ct = keywordsResponse.headers.get('content-type') || '';
-                    if (ct.includes('application/json')) {
-                        const keywordsData = await keywordsResponse.json();
-                        autoKeywords = keywordsData.keywords || [];
-                    }
-                }
-            } catch (error) {
-                console.error('Error generating topics/keywords:', error);
-                // Continue without topics/keywords if generation fails
-            }
-        }
 
         const entryCreateData: any = {
             title: body.title,
@@ -287,9 +227,6 @@ export async function POST(request: NextRequest) {
             description: body.description || null,
             isbn13: Array.isArray(body.isbn13) ? body.isbn13 : [],
             cover: body.cover || null,
-            autoKeywords: autoKeywords, // Use auto-generated keywords
-            userKeywords,
-            // topics: topics, // TODO: Uncomment after Prisma client regeneration
             summary: body.summary || null,
             notes: body.notes || [],
             readingStatus: body.readingStatus || 'UNREAD',
@@ -310,8 +247,7 @@ export async function POST(request: NextRequest) {
                     entryId: entry.id,
                     metadata: {
                         title: entry.title,
-                        contentType: entry.contentType,
-                        topics: entry.topics || []
+                        contentType: entry.contentType
                     }
                 }
             }).catch(err => console.error("Failed to create signal:", err));

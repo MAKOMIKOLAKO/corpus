@@ -10,7 +10,6 @@ interface SavedEntry {
   year?: number
   doi?: string
   url?: string
-  topics: string[]
 }
 
 export function useDatabaseSavedEntries() {
@@ -63,7 +62,6 @@ export function useDatabaseSavedEntries() {
     year?: number
     doi?: string
     url?: string
-    topics: string[]
   }) => {
     if (status !== 'authenticated') {
       throw new Error('User not authenticated')
