@@ -105,9 +105,9 @@ export default function PricingPage() {
           </Card>
 
           {/* Pro Tier */}
-          <Card className="relative border-primary shadow-lg min-h-[600px] flex flex-col">
+          <Card className="relative border-primary shadow-lg min-h-[600px] flex flex-col pt-6">
             {billingCycle === 'annual' && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10">
                 <Badge className="bg-green-100 text-green-800 border-green-200">
                   Save $6/month
                 </Badge>
