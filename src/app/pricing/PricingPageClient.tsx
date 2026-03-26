@@ -118,8 +118,8 @@ export default function PricingPage() {
                   <div className="text-4xl font-bold">${monthlyPrice}<span className="text-lg font-normal text-muted-foreground">/month</span></div>
                 ) : (
                   <div>
-                    <div className="text-4xl font-bold">${annualPrice}<span className="text-lg font-normal text-muted-foreground">/month</span></div>
-                    <div className="text-sm text-muted-foreground">Billed annually</div>
+                    <div className="text-4xl font-bold">${(annualPrice / 12).toFixed(2)}<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+                    <div className="text-sm text-muted-foreground">${annualPrice} billed annually</div>
                   </div>
                 )}
               </div>

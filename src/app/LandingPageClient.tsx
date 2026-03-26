@@ -198,8 +198,11 @@ export default function LandingPage() {
           }`}
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight font-serif text-[var(--foreground)]">
+          <Link href="/" className="text-lg font-semibold tracking-tight font-serif text-[var(--foreground)] flex items-center gap-2">
             Corpus
+            <span className="text-xs font-normal text-[var(--muted-foreground)] bg-[var(--muted)] px-1.5 py-0.5 rounded-sm">
+              beta
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-10 md:flex">
