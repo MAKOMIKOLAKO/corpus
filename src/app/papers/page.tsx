@@ -38,7 +38,6 @@ async function getPapers() {
       year: true,
       summary: true,
       abstract: true,
-      topics: true,
       doi: true
     }
   })
@@ -46,32 +45,13 @@ async function getPapers() {
   return papers
 }
 
-async function getAllTopics() {
-  const topics = await prisma.entry.findMany({
-    where: {
-      contentType: 'PAPER'
-    },
-    select: {
-      topics: true
-    }
-  })
-
-  const allTopics = new Set<string>()
-  topics.forEach(paper => {
-    paper.topics.forEach(topic => allTopics.add(topic))
-  })
-
-  return Array.from(allTopics).sort()
-}
-
 export default async function PapersPage() {
   const papers = await getPapers()
-  const allTopics = await getAllTopics()
 
   return (
-    <PapersClient 
-      initialPapers={papers} 
-      allTopics={allTopics}
+    <PapersClient
+      initialPapers={papers}
+      allTopics={[]}
     />
   )
 }

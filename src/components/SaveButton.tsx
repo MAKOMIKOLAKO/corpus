@@ -55,7 +55,7 @@ export default function SaveButton({
         // Save to database
         await toggleSave({
           title,
-          authors,
+          authors: authors || [],
           year,
           doi,
           url,
@@ -64,7 +64,7 @@ export default function SaveButton({
         // Save to localStorage
         saveEntry({
           title,
-          authors,
+          authors: authors || [],
           year,
           doi,
           url,
