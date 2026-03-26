@@ -19,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -350,78 +349,67 @@ export default function LabsClient() {
       )}
 
       {/* Create Lab Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Lab</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Lab Name</label>
-              <Input
-                value={newLab.name}
-                onChange={(e) => setNewLab({ ...newLab, name: e.target.value })}
-                placeholder="e.g., Machine Learning Research Lab"
-                maxLength={100}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Description (optional)</label>
-              <Textarea
-                value={newLab.description}
-                onChange={(e) => setNewLab({ ...newLab, description: e.target.value })}
-                placeholder="Describe your lab's research focus..."
-                maxLength={500}
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateLab} disabled={creating}>
-                {creating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Create Lab
-              </Button>
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Create New Lab</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Lab Name</label>
+                <Input
+                  value={newLab.name}
+                  onChange={(e) => setNewLab({ ...newLab, name: e.target.value })}
+                  placeholder="e.g., Machine Learning Research Lab"
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Description (optional)</label>
+                <Textarea
+                  value={newLab.description}
+                  onChange={(e) => setNewLab({ ...newLab, description: e.target.value })}
+                  placeholder="Describe your lab's research focus..."
+                  maxLength={500}
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateLab} disabled={creating}>
+                  {creating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Create Lab
+                </Button>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Verify Institution Modal */}
-      <Dialog open={showVerifyModal} onOpenChange={setShowVerifyModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verify Your Institution</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-[var(--muted-foreground)]">
-              Use your institutional email address to verify your affiliation
-            </p>
-
-            {!verifyingEmail && !confirmingCode && (
-              <>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Institutional Email</label>
-                  <Input
-                    type="email"
-                    value={verificationEmail}
-                    onChange={(e) => setVerificationEmail(e.target.value)}
-                    placeholder="your.name@university.edu"
-                  />
-                </div>
-                <Button onClick={handleVerifyEmail} className="w-full">
-                  Send Verification Code
-                </Button>
-              </>
-            )}
-
-            {verifyingEmail && (
-              <div className="text-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-[var(--muted-foreground)]">Sending verification code...</p>
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Verify Your Institution</h3>
+            <div className="space-y-4">
+              <p className="text-sm text-[var(--muted-foreground)]">
+                Use your institutional email address to verify your affiliation
+              </p>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Institution Email</label>
+                <Input
+                  type="email"
+                  value={verificationEmail}
+                  onChange={(e) => setVerificationEmail(e.target.value)}
+                  placeholder="your.name@university.edu"
+                />
               </div>
-            )}
+              <Button onClick={handleVerifyEmail} className="w-full" disabled={verifyingEmail}>
+                {verifyingEmail ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Send Verification Code
+              </Button>
+            </div>
 
             {!verifyingEmail && verificationEmail && !confirmingCode && (
               <>
@@ -448,8 +436,8 @@ export default function LabsClient() {
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }

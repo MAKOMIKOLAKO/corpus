@@ -607,8 +607,8 @@ export default function CollectionDetailPage() {
 
             {/* Invite Modal */}
             {showInviteModal && (
-                <div className="fixed inset-0 bg-black flex items-center justify-center z-50" onClick={() => setShowInviteModal(false)}>
-                    <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                    <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium">Invite Member</h3>
                             <Button variant="ghost" size="sm" onClick={() => setShowInviteModal(false)}>
