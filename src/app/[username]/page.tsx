@@ -41,8 +41,7 @@ export default async function ProfilePage({ params }: Props) {
       _count: {
         select: {
           sentConnections: true,
-          receivedConnections: true,
-          labMemberships: true
+          receivedConnections: true
         }
       },
       labMemberships: {
@@ -77,8 +76,8 @@ export default async function ProfilePage({ params }: Props) {
   });
 
   return (
-    <ProfileClient 
-      user={user} 
+    <ProfileClient
+      user={user}
       totalConnections={totalConnections}
     />
   );
