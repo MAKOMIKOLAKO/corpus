@@ -28,18 +28,23 @@ export default function TemporaryUsernameBanner() {
         const res = await fetch('/api/user/username-banner-status');
         const data = await res.json();
 
+        // If banner was dismissed on server, keep it dismissed
+        if (data.bannerShown) {
+          setDismissed(true);
+          return;
+        }
+
         // Check if username was just changed (not random and banner was shown)
         if (!session.user.username?.startsWith('user_') && data.bannerShown) {
           setUsernameJustChanged(true);
           // Mark banner as dismissed on server since user now has a proper username
           await fetch('/api/user/username-banner-dismiss', { method: 'POST' });
-          setLoading(false);
+          setDismissed(true);
           return;
         }
 
-        if (data.bannerShown) {
-          setDismissed(true);
-        } else if (shouldShow && !data.bannerShown && !usernameJustChanged) {
+        // Show banner if user has random/no username and hasn't dismissed it
+        if (shouldShow && !data.bannerShown) {
           setBannerShown(true);
         }
       } catch (error) {
@@ -48,7 +53,7 @@ export default function TemporaryUsernameBanner() {
         const dismissedState = localStorage.getItem('temp-username-banner-dismissed');
         if (dismissedState === 'true') {
           setDismissed(true);
-        } else if (shouldShow && !usernameJustChanged) {
+        } else if (shouldShow) {
           setBannerShown(true);
         }
       } finally {
@@ -57,7 +62,7 @@ export default function TemporaryUsernameBanner() {
     };
 
     checkBannerStatus();
-  }, [session, shouldShow, usernameJustChanged]);
+  }, [session, shouldShow]);
 
   // Handle dismissal
   const handleDismiss = async () => {
