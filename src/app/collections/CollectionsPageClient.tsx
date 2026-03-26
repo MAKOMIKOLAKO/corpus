@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Building2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -44,6 +44,11 @@ interface Collection {
         username?: string | null;
     } | null;
     isDiscovery?: boolean;
+    isLabCollection?: boolean;
+    lab?: {
+        id: string;
+        name: string;
+    } | null;
     _count: {
         entries: number;
         members?: number;
@@ -75,9 +80,10 @@ function CollectionsLoading() {
 export default function CollectionsPage() {
     const [collections, setCollections] = useState<Collection[]>([]);
     const [invites, setInvites] = useState<CollectionInvite[]>([]);
+    const [labs, setLabs] = useState<{ id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newCollection, setNewCollection] = useState({ name: '', description: '' });
+    const [newCollection, setNewCollection] = useState({ name: '', description: '', labId: '' });
     const [creating, setCreating] = useState(false);
     const [respondingToInvite, setRespondingToInvite] = useState<string | null>(null);
     const apiKey = useApiKey();
@@ -97,7 +103,20 @@ export default function CollectionsPage() {
     useEffect(() => {
         fetchCollections();
         fetchInvites();
+        fetchLabs();
     }, []);
+
+    const fetchLabs = async () => {
+        try {
+            const response = await fetch('/api/labs');
+            if (response.ok) {
+                const data = await response.json();
+                setLabs(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch labs:', error);
+        }
+    };
 
     const fetchCollections = async () => {
         try {
@@ -179,6 +198,7 @@ export default function CollectionsPage() {
                 body: JSON.stringify({
                     name: newCollection.name.trim().slice(0, NAME_MAX),
                     description: newCollection.description.trim().slice(0, DESC_MAX),
+                    ...(newCollection.labId && { labId: newCollection.labId }),
                 }),
             });
 
@@ -186,7 +206,7 @@ export default function CollectionsPage() {
 
             if (response.ok && data?.id) {
                 // Reset and navigate to the newly created collection
-                setNewCollection({ name: '', description: '' });
+                setNewCollection({ name: '', description: '', labId: '' });
                 setShowCreateModal(false);
                 // Optimistically update list
                 fetchCollections();
@@ -311,14 +331,23 @@ export default function CollectionsPage() {
                                                         {collection.name}
                                                     </CardTitle>
                                                     <div className="flex gap-1 flex-shrink-0">
-                                                        {collection.isPublic && (
-                                                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 border-green-200 dark:border-green-700">
-                                                                <Globe className="w-3 h-3 mr-1" />
-                                                                Public
-                                                            </Badge>
+                                                        {collection.isOwner && (
+                                                            <Badge variant="default" className="text-xs">Owner</Badge>
                                                         )}
-                                                        {!collection.isOwner && (
+                                                        {!collection.isOwner && collection.userRole === 'ADMIN' && (
+                                                            <Badge variant="default" className="text-xs">Admin</Badge>
+                                                        )}
+                                                        {!collection.isOwner && collection.userRole === 'CONTRIBUTOR' && (
+                                                            <Badge variant="outline" className="text-xs">Contributor</Badge>
+                                                        )}
+                                                        {!collection.isOwner && collection.userRole === 'VIEWER' && (
                                                             <Badge variant="outline" className="text-xs">Member</Badge>
+                                                        )}
+                                                        {collection.isLabCollection && (
+                                                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-700">
+                                                                <Building2 className="w-3 h-3 mr-1" />
+                                                                Lab
+                                                            </Badge>
                                                         )}
                                                         {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
                                                             <Badge variant="secondary" className="text-xs">Shared</Badge>
@@ -328,6 +357,12 @@ export default function CollectionsPage() {
                                                 {collection.description && (
                                                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                                                         {collection.description}
+                                                    </p>
+                                                )}
+                                                {collection.lab && (
+                                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                                        <Building2 className="w-3 h-3" />
+                                                        {collection.lab.name}
                                                     </p>
                                                 )}
                                             </CardHeader>
@@ -481,6 +516,27 @@ export default function CollectionsPage() {
                                     </span>
                                 </div>
                             </div>
+
+                            {labs.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Lab (optional)</label>
+                                    <select
+                                        value={newCollection.labId}
+                                        onChange={(e) => setNewCollection({ ...newCollection, labId: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-md bg-background"
+                                    >
+                                        <option value="">Personal collection</option>
+                                        {labs.map((lab) => (
+                                            <option key={lab.id} value={lab.id}>
+                                                {lab.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Create this collection for a lab. All lab members will be able to contribute.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-2 mt-6">
