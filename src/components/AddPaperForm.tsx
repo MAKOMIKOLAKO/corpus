@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, AlertCircle, BookOpen, ChevronDown, ExternalLink } from 'lucide-react';
+import { Search, Loader2, CheckCircle, AlertCircle, BookOpen, External, Plus, Share, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,7 +47,6 @@ interface Candidate {
 export default function AddPaperForm() {
     const router = useRouter();
     const apiKey = useApiKey();
-    const inputRef = useRef<HTMLInputElement>(null);
 
     // Input and detection
     const [input, setInput] = useState('');
@@ -85,6 +84,11 @@ export default function AddPaperForm() {
     const [error, setError] = useState<string | null>(null);
     const [duplicate, setDuplicate] = useState<DuplicateEntry | null>(null);
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(true);
+    const [isSaved, setIsSaved] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState<string>('');
+    const [showCollectionsDropdown, setShowCollectionsDropdown] = useState(false);
+    const [collections, setCollections] = useState<any[]>([]);
+    const [addedToCollections, setAddedToCollections] = useState<Set<string>>(new Set());
 
     // Abstract expansion
     const [showFullAbstract, setShowFullAbstract] = useState(false);
@@ -325,38 +329,11 @@ export default function AddPaperForm() {
             );
 
             if (result.success && result.entry?.id) {
-                // Show brief success message then reset for next entry
-                setError(null);
+                setSavedEntryId(result.entry.id);
+                setIsSaved(true);
 
-                // Reset form for next entry
-                setInput('');
-                setDetectedType('');
-                setMetadata(null);
-                setSource('');
-                setCandidates([]);
-                setShowCandidates(false);
-                setDuplicate(null);
-                setFormData({
-                    title: '',
-                    authors: '',
-                    year: '',
-                    abstract: '',
-                    source: '',
-                    doi: '',
-                    url: '',
-                    openAccessUrl: '',
-                    userKeywords: '',
-                    summary: '',
-                    notes: '',
-                    readingStatus: 'BACKLOG'
-                });
-
-                // Focus back to input after a brief delay
-                setTimeout(() => {
-                    if (inputRef.current) {
-                        inputRef.current.focus();
-                    }
-                }, 100);
+                // Load collections for the dropdown
+                loadCollections();
             } else {
                 setError(result.error || 'Failed to save entry');
             }
@@ -365,6 +342,135 @@ export default function AddPaperForm() {
         }
     };
 
+    // Load user collections
+    const loadCollections = async () => {
+        try {
+            const response = await fetch('/api/collections', {
+                headers: { 'x-api-key': apiKey }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setCollections(data);
+            }
+        } catch (error) {
+            console.error('Failed to load collections:', error);
+        }
+    };
+
+    // Add to collection
+    const handleAddToCollection = async (collectionId: string) => {
+        try {
+            const response = await fetch(`/api/collections/${collectionId}/entries`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey
+                },
+                body: JSON.stringify({ entryId: savedEntryId })
+            });
+
+            if (response.ok) {
+                setAddedToCollections(prev => new Set(prev).add(collectionId));
+            }
+        } catch (error) {
+            console.error('Failed to add to collection:', error);
+        }
+    };
+
+    // Reset form
+    const handleAddAnother = () => {
+        setInput('');
+        setDetectedType('');
+        setMetadata(null);
+        setSource('');
+        setCandidates([]);
+        setShowCandidates(false);
+        setFormData({
+            title: '',
+            authors: '',
+            year: '',
+            abstract: '',
+            source: '',
+            doi: '',
+            url: '',
+            openAccessUrl: '',
+            userKeywords: '',
+            summary: '',
+            notes: '',
+            readingStatus: 'BACKLOG'
+        });
+        setError(null);
+        setDuplicate(null);
+        setIsSaved(false);
+        setSavedEntryId('');
+        setShowCollectionsDropdown(false);
+        setAddedToCollections(new Set());
+    };
+
+    // If saved, show confirmation
+    if (isSaved) {
+        return (
+            <div className="max-w-2xl mx-auto space-y-6">
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="text-center space-y-4">
+                            <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+                            <h2 className="text-xl font-semibold">Saved to your library</h2>
+                            <p className="text-sm text-muted-foreground">{formData.title}</p>
+
+                            <div className="flex justify-center gap-2 pt-4">
+                                {/* Add to Collection Dropdown */}
+                                <div className="relative">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowCollectionsDropdown(!showCollectionsDropdown)}
+                                        className="gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add to Collection
+                                        <ChevronDown className="w-4 h-4" />
+                                    </Button>
+
+                                    {showCollectionsDropdown && collections.length > 0 && (
+                                        <div className="absolute top-full mt-1 w-64 bg-popover border rounded-md shadow-lg z-10">
+                                            <div className="p-2">
+                                                {collections.map(collection => (
+                                                    <button
+                                                        key={collection.id}
+                                                        onClick={() => handleAddToCollection(collection.id)}
+                                                        disabled={addedToCollections.has(collection.id)}
+                                                        className="w-full text-left px-2 py-1.5 rounded hover:bg-accent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {collection.name}
+                                                        {addedToCollections.has(collection.id) && (
+                                                            <span className="ml-2 text-xs text-green-600">Added!</span>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <Button variant="outline" onClick={() => router.push(`/entries/${savedEntryId}`)}>
+                                    View Entry
+                                    <ExternalLink className="w-4 h-4 ml-2" />
+                                </Button>
+                            </div>
+
+                            <button
+                                onClick={handleAddAnother}
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Add another paper
+                            </button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -378,7 +484,6 @@ export default function AddPaperForm() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
-                                ref={inputRef}
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
                                 placeholder="Paste a DOI, ArXiv ID, PubMed ID, URL, or citation..."
@@ -632,7 +737,7 @@ export default function AddPaperForm() {
                                             className="flex items-center gap-2 text-sm text-primary hover:underline"
                                         >
                                             Free PDF available →
-                                            <ExternalLink className="w-3 h-3" />
+                                            <External className="w-3 h-3" />
                                         </a>
                                     </div>
                                 )}
