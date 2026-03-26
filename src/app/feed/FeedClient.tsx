@@ -125,9 +125,9 @@ export default function FeedClient() {
       const response = await fetch(`/api/feed?filter=${filter}&limit=20`);
       if (response.ok) {
         const data = await response.json();
-        setSignals(data.signals);
-        setUnreadCount(data.unreadCount);
-        setHasMore(data.hasMore);
+        setSignals(Array.isArray(data.signals) ? data.signals : []);
+        setUnreadCount(data.unreadCount || 0);
+        setHasMore(data.hasMore || false);
         setPage(1);
 
         // Mark feed as viewed
@@ -139,6 +139,7 @@ export default function FeedClient() {
       }
     } catch (error) {
       toast.error("Failed to load feed");
+      setSignals([]); // Reset to empty array on error
     } finally {
       setLoading(false);
     }
@@ -149,8 +150,9 @@ export default function FeedClient() {
       const response = await fetch(`/api/feed?filter=${filter}&limit=20&page=${page}`);
       if (response.ok) {
         const data = await response.json();
-        setSignals(prev => [...prev, ...data.signals]);
-        setHasMore(data.hasMore);
+        const newSignals = Array.isArray(data.signals) ? data.signals : [];
+        setSignals(prev => [...prev, ...newSignals]);
+        setHasMore(data.hasMore || false);
       }
     } catch (error) {
       console.error("Failed to load more signals");
@@ -211,15 +213,15 @@ export default function FeedClient() {
                         {signal.entry.title}
                       </h4>
                       <p className="text-sm text-[var(--muted-foreground)] mb-2">
-                        {signal.entry.authors.slice(0, 3).join(", ")}
-                        {signal.entry.authors.length > 3 && " et al."}
+                        {Array.isArray(signal.entry.authors) ? signal.entry.authors.slice(0, 3).join(", ") : ""}
+                        {Array.isArray(signal.entry.authors) && signal.entry.authors.length > 3 && " et al."}
                         {signal.entry.year && ` (${signal.entry.year})`}
                       </p>
                       <div className="flex items-center gap-2 flex-wrap mb-2">
                         <Badge variant="secondary" className="text-xs">
                           {contentTypeLabels[signal.entry.contentType] || signal.entry.contentType}
                         </Badge>
-                        {signal.entry.topics.slice(0, 2).map(topic => (
+                        {Array.isArray(signal.entry.topics) && signal.entry.topics.slice(0, 2).map(topic => (
                           <Badge key={topic} variant="outline" className="text-xs">
                             {topic}
                           </Badge>
@@ -298,7 +300,7 @@ export default function FeedClient() {
                         <Badge variant="secondary" className="text-xs">
                           {contentTypeLabels[signal.entry.contentType] || signal.entry.contentType}
                         </Badge>
-                        {signal.entry.topics.slice(0, 2).map(topic => (
+                        {Array.isArray(signal.entry.topics) && signal.entry.topics.slice(0, 2).map(topic => (
                           <Badge key={topic} variant="outline" className="text-xs">
                             {topic}
                           </Badge>
@@ -378,8 +380,7 @@ export default function FeedClient() {
             <CardContent className="p-4">
               <p className="text-sm text-[var(--foreground)]">
                 <span className="font-medium">@{signal.user.username || signal.user.name}</span>
-                <span className="text-[var(--muted-foreground)]"> connected with </span>
-                <span className="font-medium">@{signal.metadata?.connectedUsername}</span>
+                <span className="text-[var(--muted-foreground)]"> accepted your connection request</span>
               </p>
               <p className="text-xs text-[var(--muted-foreground)] mt-2">
                 {timeAgo(signal.createdAt)}
@@ -474,7 +475,7 @@ export default function FeedClient() {
               </div>
             ) : (
               <>
-                {signals.map((signal) => (
+                {Array.isArray(signals) && signals.map((signal) => (
                   <div key={signal.id}>
                     {renderSignalCard(signal)}
                   </div>
@@ -511,7 +512,7 @@ export default function FeedClient() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {suggestedConnections.map((conn) => (
+                  {Array.isArray(suggestedConnections) && suggestedConnections.map((conn) => (
                     <div key={conn.id} className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">{conn.name || conn.username}</p>
@@ -543,7 +544,7 @@ export default function FeedClient() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {activeCollections.map((collection) => (
+                  {Array.isArray(activeCollections) && activeCollections.map((collection) => (
                     <div key={collection.id} className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-sm font-medium">{collection.name}</p>

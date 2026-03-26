@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       'chrome-extension://*',
       process.env.NEXTAUTH_URL || 'http://localhost:3000',
       'http://localhost:3000',
-      'https://corpus-lemon.vercel.app'
+      'https://usecorpus.app'
     ];
 
     const isAllowedOrigin = allowedOrigins.some(allowed =>
@@ -54,7 +54,7 @@ export async function OPTIONS(request: NextRequest) {
     'chrome-extension://*',
     process.env.NEXTAUTH_URL || 'http://localhost:3000',
     'http://localhost:3000',
-    'https://corpus-lemon.vercel.app'
+    'https://usecorpus.app'
   ];
 
   const isAllowedOrigin = allowedOrigins.some(allowed =>
