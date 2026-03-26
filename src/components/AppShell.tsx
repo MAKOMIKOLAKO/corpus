@@ -254,6 +254,7 @@ export function AppShell({
         onCompleted={() => setOnboardingCompleted(true)}
       />
       <FeedbackModal
+        trigger={null}
         open={showFeedback}
         onOpenChange={setShowFeedback}
       />

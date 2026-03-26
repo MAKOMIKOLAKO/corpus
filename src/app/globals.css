@@ -2,18 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide floating feedback buttons */
-div[class*="feedback"][class*="fixed"],
-button[class*="feedback"][class*="fixed"],
-div[class*="Feedback"][class*="fixed"],
-button[class*="Feedback"][class*="fixed"],
-.fixed.bottom-left .feedback,
-.fixed.bottom-left .Feedback,
-button[aria-label*="feedback"][style*="position: fixed"],
-button[aria-label*="Feedback"][style*="position: fixed"] {
-  display: none !important;
-}
-
 /* Joyride Tour Styles */
 .joyride-tooltip {
   background-color: hsl(var(--background));
