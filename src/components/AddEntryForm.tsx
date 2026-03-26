@@ -61,7 +61,7 @@ export default function AddEntryForm() {
         setIsFetching(true);
         setError(null);
         try {
-            const endpoint = '/api/fetch-metadata-ai';
+            const endpoint = '/api/fetch-academic-metadata';
             const body = tab === 'DOI' ? { doi: fetchInput } : { url: fetchInput };
 
             const res = await fetch(endpoint, {
@@ -74,7 +74,8 @@ export default function AddEntryForm() {
             });
 
             if (!res.ok) {
-                throw new Error('Failed to fetch metadata');
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to fetch metadata');
             }
 
             const data = await res.json();
@@ -89,7 +90,8 @@ export default function AddEntryForm() {
                 abstract: data.abstract || '',
                 url: tab === 'URL' ? fetchInput : (data.url || ''),
                 doi: tab === 'DOI' ? fetchInput : (data.doi || ''),
-                contentType: data.contentType || prev.contentType || 'PAPER',
+                contentType: 'PAPER',
+                autoKeywords: data.autoKeywords || [],
             }));
         } catch (err: any) {
             setError(err.message || 'An error occurred during fetch');
@@ -255,7 +257,7 @@ export default function AddEntryForm() {
                             {tab === 'DOI' ? <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> : <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
                             <Input
                                 type="text"
-                                placeholder={tab === 'DOI' ? "Search 10.1038/nphys1170" : "https://example.com/article"}
+                                placeholder={tab === 'DOI' ? "e.g., 10.1038/nphys1170" : "e.g., arXiv URL, PubMed, or academic publisher"}
                                 value={fetchInput}
                                 onChange={e => setFetchInput(e.target.value)}
                                 className="pl-10"
