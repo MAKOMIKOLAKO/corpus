@@ -45,7 +45,7 @@ export default function UsernameSuggestion() {
     setSaving(true);
     try {
       const result = await setupUsername(username, bio);
-      
+
       if (result.success) {
         await update();
         setIsOpen(false);
@@ -63,7 +63,7 @@ export default function UsernameSuggestion() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              You're using a temporary username. <button 
+              You&apos;re using a temporary username. <button
                 onClick={() => setIsOpen(true)}
                 className="font-medium underline hover:no-underline"
               >
@@ -93,7 +93,7 @@ export default function UsernameSuggestion() {
           <X className="w-5 h-5" />
         </button>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
