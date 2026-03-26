@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
+import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { Activity, Building2 } from "lucide-react";
 
 export function AppShell({
@@ -111,7 +112,9 @@ export function AppShell({
           </button>
         </div>
       )}
-      <header className="border-b border-[var(--border)] bg-[var(--card)]/50 backdrop-blur-md sticky top-0 z-50" role="banner">
+      <header
+        className={`sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)/60]`}
+      >
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link
             href={session ? "/library" : "/"}
