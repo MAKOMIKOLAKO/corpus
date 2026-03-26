@@ -64,12 +64,12 @@ export default function PricingPage() {
 
         <div className="grid lg:grid-cols-2 md:grid-cols-1 gap-8 max-w-4xl mx-auto">
           {/* Free Tier */}
-          <Card className="relative">
+          <Card className="relative min-h-[600px] flex flex-col">
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-2xl">Free</CardTitle>
               <div className="text-4xl font-bold">$0<span className="text-lg font-normal text-muted-foreground">/month</span></div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 flex-1 flex flex-col">
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600" />
@@ -92,18 +92,20 @@ export default function PricingPage() {
                   <span>Full search and filtering</span>
                 </li>
               </ul>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleGetStarted}
-              >
-                Get Started
-              </Button>
+              <div className="mt-auto">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGetStarted}
+                >
+                  Get Started
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
           {/* Pro Tier */}
-          <Card className="relative border-primary shadow-lg">
+          <Card className="relative border-primary shadow-lg min-h-[600px] flex flex-col">
             {billingCycle === 'annual' && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -140,7 +142,7 @@ export default function PricingPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 flex-1 flex flex-col">
               <div className="border-t pt-6">
                 <p className="text-sm font-medium text-muted-foreground mb-4">Everything in Free, plus:</p>
                 <ul className="space-y-3">
@@ -162,22 +164,24 @@ export default function PricingPage() {
                   </li>
                 </ul>
               </div>
-              <Button
-                className="w-full"
-                onClick={() => handleUpgrade(billingCycle)}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : billingCycle === 'monthly' ? (
-                  'Start Pro Monthly'
-                ) : (
-                  'Start Pro Annual'
-                )}
-              </Button>
+              <div className="mt-auto">
+                <Button
+                  className="w-full"
+                  onClick={() => handleUpgrade(billingCycle)}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : billingCycle === 'monthly' ? (
+                    'Start Pro Monthly'
+                  ) : (
+                    'Start Pro Annual'
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
