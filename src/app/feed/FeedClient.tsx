@@ -353,13 +353,12 @@ export default function FeedClient() {
                 </div>
 
                 {signal.entry && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSaveEntry(signal.entry!.id)}
-                    disabled={savingEntry === signal.entry!.id || isOwnSignal}
-                    data-onboarding="feed"
-                  >
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSaveEntry(signal.entry!.id)}
+                      disabled={savingEntry === signal.entry!.id || isOwnSignal}
+                    >
                     {savingEntry === signal.entry!.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
