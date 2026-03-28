@@ -46,9 +46,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Queue item not found' }, { status: 404 });
     }
 
-    if (item.status !== 'PENDING') {
+    if (item.status === 'PROCESSING') {
       return NextResponse.json(
-        { error: 'Only PENDING queue items can be removed' },
+        { error: 'Cannot remove an item while it is being processed' },
         { status: 400 }
       );
     }

@@ -645,7 +645,7 @@ function QueuePanel({
                   Retry
                 </button>
               )}
-              {item.status === 'PENDING' && <RemoveConfirmButton onRemove={() => onRemove(item.id)} />}
+              {item.status !== 'PROCESSING' && <RemoveConfirmButton onRemove={() => onRemove(item.id)} />}
             </div>
           </div>
         ))}
