@@ -439,7 +439,7 @@ export default function EntryCard({
                                                 e.stopPropagation();
                                                 setIsCollectionOpen(!isCollectionOpen);
                                             }}
-                                            className="h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-accent touch-manipulation"
+                                            className="h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-muted touch-manipulation"
                                             disabled={isUpdatingCollection}
                                         >
                                             <span className="truncate">{isUpdatingCollection ? '...' : currentCollectionName.toLowerCase()}</span>
@@ -454,7 +454,7 @@ export default function EntryCard({
                                                         e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
-                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${currentCollectionId === null ? 'bg-accent font-medium' : ''
+                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${currentCollectionId === null ? 'bg-muted font-medium' : ''
                                                         }`}
                                                 >
                                                     no collection
@@ -467,7 +467,7 @@ export default function EntryCard({
                                                             e.stopPropagation();
                                                             handleCollectionChange(c.id);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${c.id === currentCollectionId ? 'bg-accent font-medium' : ''
+                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${c.id === currentCollectionId ? 'bg-muted font-medium' : ''
                                                             }`}
                                                     >
                                                         {c.name}
@@ -486,10 +486,10 @@ export default function EntryCard({
                                                 setIsOpen(!isOpen);
                                             }}
                                             className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
-                                                ? 'border-[var(--accent)] bg-[var(--accent)]/20 text-[var(--accent)] hover:bg-[var(--accent)]/30'
+                                                ? 'border-blue-600 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-400 dark:hover:bg-blue-900'
                                                 : statusVariant(currentStatus) === 'default'
-                                                    ? 'border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--muted)]'
-                                                    : 'border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80'
+                                                    ? 'border-border bg-card text-foreground hover:bg-muted'
+                                                    : 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80'
                                                 }`}
                                             disabled={isUpdating}
                                         >
@@ -507,7 +507,7 @@ export default function EntryCard({
                                                             e.stopPropagation();
                                                             handleStatusChange(status.value as typeof entry.readingStatus);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${status.value === currentStatus ? 'bg-accent font-medium' : ''
+                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${status.value === currentStatus ? 'bg-muted font-medium' : ''
                                                             }`}
                                                     >
                                                         {status.label}
