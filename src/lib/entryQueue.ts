@@ -162,7 +162,7 @@ class EntryQueue {
    * Save extracted metadata as an entry in the database
    */
   private async saveEntryToDatabase(userId: string, metadata: any): Promise<any> {
-    const prisma = (await import('./prisma')).prisma;
+    const prisma = (await import('./prisma')).default;
 
     // Check for duplicates by URL or normalized title
     const whereClause: any = {
