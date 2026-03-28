@@ -153,14 +153,15 @@ export default function EntryCard({
                 const data = await response.json();
 
                 if (!cancelled && Array.isArray(data)) {
-                    setCollections(
-                        data
-                            .filter((c: any) => c && typeof c.id === 'string' && typeof c.name === 'string')
-                            .map((c: any) => ({ id: c.id, name: c.name }))
-                    );
+                    const filteredCollections = data
+                        .filter((c: any) => c && typeof c.id === 'string' && typeof c.name === 'string')
+                        .map((c: any) => ({ id: c.id, name: c.name }));
+
+                    console.log('Collections loaded:', filteredCollections);
+                    setCollections(filteredCollections);
                 }
-            } catch {
-                // ignore
+            } catch (error) {
+                console.error('Error fetching collections:', error);
             }
         };
 
@@ -471,32 +472,38 @@ export default function EntryCard({
                                         </button>
 
                                         {isCollectionOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-background border border-border rounded-md shadow-lg min-w-[160px]">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[160px]">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
-                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${currentCollectionId === null ? 'bg-muted font-medium' : ''
+                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${currentCollectionId === null ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''
                                                         }`}
                                                 >
                                                     no collection
                                                 </button>
-                                                {collections.map((c) => (
-                                                    <button
-                                                        key={c.id}
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            handleCollectionChange(c.id);
-                                                        }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${c.id === currentCollectionId ? 'bg-muted font-medium' : ''
-                                                            }`}
-                                                    >
-                                                        {c.name}
-                                                    </button>
-                                                ))}
+                                                {collections.length === 0 ? (
+                                                    <div className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                        No collections
+                                                    </div>
+                                                ) : (
+                                                    collections.map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                handleCollectionChange(c.id);
+                                                            }}
+                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${c.id === currentCollectionId ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''
+                                                                }`}
+                                                        >
+                                                            {c.name}
+                                                        </button>
+                                                    ))
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -522,7 +529,7 @@ export default function EntryCard({
                                         </button>
 
                                         {isOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-background border border-border rounded-md shadow-lg min-w-[120px]">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[120px]">
                                                 {readingStatuses.map((status) => (
                                                     <button
                                                         key={status.value}
@@ -531,13 +538,13 @@ export default function EntryCard({
                                                             e.stopPropagation();
                                                             handleStatusChange(status.value as typeof entry.readingStatus);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${status.value === currentStatus ? 'bg-muted font-medium' : ''
+                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${status.value === currentStatus ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''
                                                             }`}
                                                     >
                                                         {status.label}
                                                     </button>
                                                 ))}
-                                                <div className="border-t border-border">
+                                                <div className="border-t border-gray-200 dark:border-gray-700">
                                                     <button
                                                         onClick={(e) => {
                                                             e.preventDefault();
