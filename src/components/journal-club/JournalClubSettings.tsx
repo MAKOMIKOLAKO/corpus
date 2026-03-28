@@ -33,6 +33,8 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
   }, [metadata]);
 
   const handleSave = async () => {
+    if (saving) return; // Prevent double clicks
+
     setSaving(true);
     try {
       const response = await fetch(`/api/journal-club/${collectionId}/settings`, {
@@ -47,7 +49,13 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
       });
 
       if (!response.ok) {
-        toast.error('Failed to update settings');
+        if (response.status === 403) {
+          toast.error('You do not have permission to update journal club settings.');
+        } else if (response.status === 404) {
+          toast.error('Journal club not found.');
+        } else {
+          toast.error('Failed to update settings');
+        }
         return;
       }
 
@@ -55,8 +63,8 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
       onUpdate(updatedCollection.metadata as JournalClubMetadata);
       toast.success('Journal club settings updated successfully');
     } catch (error) {
-      console.error('Error updating settings:', error);
-      toast.error('Failed to update settings');
+      console.error('Error updating journal club settings:', error);
+      toast.error('Failed to update settings. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -78,10 +86,6 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
     setSettings(prev => ({ ...prev, meetingDayOfWeek: parseInt(day) }));
   };
 
-  const handleTimezoneChange = (timezone: string) => {
-    setSettings(prev => ({ ...prev, timezone }));
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -97,7 +101,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
             <Label htmlFor="frequency">Meeting Frequency</Label>
             <Select
               value={settings.meetingFrequency}
-              onValueChange={(value) => value && handleFrequencyChange(value)}
+              onValueChange={(value) => value && handleFrequencyChange(value as any)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -116,8 +120,8 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
             <Input
               id="nextMeeting"
               type="datetime-local"
-              value={settings.nextMeetingDate ? new Date(settings.nextMeetingDate).toISOString().slice(0, 16) : ''}
-              onChange={(e) => handleDateChange(new Date(e.target.value).toISOString())}
+              value={settings.nextMeetingDate}
+              onChange={(e) => handleDateChange(e.target.value)}
             />
           </div>
 
@@ -149,7 +153,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
             <Input
               id="meetingTime"
               type="time"
-              value={settings.meetingTime || ''}
+              value={settings.meetingTime}
               onChange={(e) => handleTimeChange(e.target.value)}
             />
           </div>
@@ -173,7 +177,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
               <div>
                 <h4 className="font-medium">Meeting Frequency</h4>
                 <p className="text-sm text-muted-foreground">
-                  How often your journal club meets. This helps with scheduling and planning.
+                  Set how often your journal club meets. This helps with scheduling and reminders.
                 </p>
               </div>
             </div>
@@ -182,7 +186,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
               <div>
                 <h4 className="font-medium">Meeting Schedule</h4>
                 <p className="text-sm text-muted-foreground">
-                  Set the next meeting date and optionally specify a recurring day and time for future meetings.
+                  Configure when and where your journal club meets. Members can see these details in the Schedule tab.
                 </p>
               </div>
             </div>

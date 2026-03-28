@@ -52,29 +52,17 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
 
   useEffect(() => {
     if (selectedEntryId) {
-      fetchComments();
+      fetchComments(selectedEntryId);
     }
   }, [selectedEntryId, collectionId]);
 
   const fetchEntries = async () => {
     try {
-      const response = await fetch(`/api/collections/${collectionId}`);
+      const response = await fetch(`/api/journal-club/${collectionId}/schedule`);
       if (!response.ok) throw new Error('Failed to fetch entries');
 
-      const collectionData = await response.json();
-      const allEntries = collectionData.entries || [];
-
-      // Sort entries alphabetically by title
-      const sortedEntries = allEntries
-        .map((ec: any) => ec.entry)
-        .sort((a: Entry, b: Entry) => a.title.localeCompare(b.title));
-
-      setEntries(sortedEntries);
-
-      // Select first entry by default
-      if (sortedEntries.length > 0 && !selectedEntryId) {
-        setSelectedEntryId(sortedEntries[0].id);
-      }
+      const data = await response.json();
+      setEntries(data || []);
     } catch (error) {
       console.error('Error fetching entries:', error);
       toast.error('Failed to load entries');
@@ -83,15 +71,13 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
     }
   };
 
-  const fetchComments = async () => {
-    if (!selectedEntryId) return;
-
+  const fetchComments = async (entryId: string) => {
     try {
-      const response = await fetch(`/api/journal-club/${collectionId}/comments/${selectedEntryId}`);
+      const response = await fetch(`/api/journal-club/${collectionId}/comments/${entryId}`);
       if (!response.ok) throw new Error('Failed to fetch comments');
 
-      const commentsData = await response.json();
-      setComments(commentsData);
+      const data = await response.json();
+      setComments(data || []);
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast.error('Failed to load comments');
@@ -99,14 +85,13 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
   };
 
   const handlePostComment = async () => {
-    const trimmedContent = newComment.trim();
-    if (!trimmedContent) {
-      toast.error('Comment cannot be empty');
+    if (!newComment.trim()) {
+      toast.error('Please enter a comment');
       return;
     }
 
-    if (trimmedContent.length > 2000) {
-      toast.error('Comment cannot exceed 2000 characters');
+    if (!canParticipate) {
+      toast.error('You do not have permission to comment');
       return;
     }
 
@@ -116,20 +101,23 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          entryId: selectedEntryId,
           collectionId,
-          content: trimmedContent
+          entryId: selectedEntryId,
+          content: newComment.trim()
         })
       });
 
       if (!response.ok) {
-        toast.error('Failed to post comment');
+        if (response.status === 403) {
+          toast.error('You do not have permission to comment');
+        } else {
+          toast.error('Failed to post comment');
+        }
         return;
       }
 
-      const newCommentData = await response.json();
-      setComments(prev => [...prev, newCommentData]);
       setNewComment('');
+      fetchComments(selectedEntryId);
       toast.success('Comment posted successfully');
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -147,11 +135,15 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
       });
 
       if (!response.ok) {
-        toast.error('Failed to delete comment');
+        if (response.status === 403) {
+          toast.error('You do not have permission to delete this comment');
+        } else {
+          toast.error('Failed to delete comment');
+        }
         return;
       }
 
-      setComments(prev => prev.filter(c => c.id !== commentId));
+      fetchComments(selectedEntryId);
       toast.success('Comment deleted successfully');
     } catch (error) {
       console.error('Error deleting comment:', error);

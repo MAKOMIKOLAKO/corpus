@@ -54,65 +54,42 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
   const [unscheduledEntries, setUnscheduledEntries] = useState<UnscheduledEntry[]>([]);
   const [members, setMembers] = useState<CollectionMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scheduling, setScheduling] = useState<string | null>(null);
+  const [unassigning, setUnassigning] = useState<string | null>(null);
+  const [presenting, setPresenting] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showPastPresentations, setShowPastPresentations] = useState(false);
-  const [scheduling, setScheduling] = useState(false);
-
-  // Form state
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [selectedPresenterId, setSelectedPresenterId] = useState('');
   const [presentationDate, setPresentationDate] = useState('');
+  const [showPastPresentations, setShowPastPresentations] = useState(false);
 
   useEffect(() => {
     if (isJournalClub) {
-      fetchData();
+      fetchScheduleData();
     }
   }, [isJournalClub, collectionId]);
 
-  const fetchData = async () => {
+  const fetchScheduleData = async () => {
     try {
-      // Get all entries in collection
-      const entriesResponse = await fetch(`/api/collections/${collectionId}`);
-      if (!entriesResponse.ok) throw new Error('Failed to fetch entries');
+      const [scheduledRes, unscheduledRes, membersRes] = await Promise.all([
+        fetch(`/api/journal-club/${collectionId}/meetings`),
+        fetch(`/api/journal-club/${collectionId}/schedule`),
+        fetch(`/api/collections/${collectionId}/members`)
+      ]);
 
-      const collectionData = await entriesResponse.json();
-      const allEntries = collectionData.entries || [];
-
-      // Get collection members
-      const membersResponse = await fetch(`/api/collections/${collectionId}/members`);
-      if (membersResponse.ok) {
-        const membersData = await membersResponse.json();
-        setMembers(membersData.filter((m: any) => m.status === 'ACCEPTED'));
+      if (!scheduledRes.ok || !unscheduledRes.ok || !membersRes.ok) {
+        throw new Error('Failed to fetch schedule data');
       }
 
-      // Separate scheduled and unscheduled entries
-      const scheduled: ScheduledEntry[] = [];
-      const unscheduled: UnscheduledEntry[] = [];
+      const [scheduledData, unscheduledData, membersData] = await Promise.all([
+        scheduledRes.json(),
+        unscheduledRes.json(),
+        membersRes.json()
+      ]);
 
-      allEntries.forEach((ec: any) => {
-        const metadata = ec.entry.metadata as any;
-        if (metadata?.presentationDate) {
-          scheduled.push({
-            id: ec.entry.id,
-            entry: ec.entry,
-            presentationDate: metadata.presentationDate,
-            presenterId: metadata.presenterId,
-            presenterName: metadata.presenterName,
-            presented: metadata.presented || false
-          });
-        } else {
-          unscheduled.push({
-            id: ec.entry.id,
-            entry: ec.entry
-          });
-        }
-      });
-
-      // Sort scheduled entries by date
-      scheduled.sort((a, b) => new Date(a.presentationDate).getTime() - new Date(b.presentationDate).getTime());
-
-      setScheduledEntries(scheduled);
-      setUnscheduledEntries(unscheduled);
+      setScheduledEntries(scheduledData || []);
+      setUnscheduledEntries(unscheduledData || []);
+      setMembers(membersData || []);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
       toast.error('Failed to load schedule data');
@@ -127,7 +104,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
       return;
     }
 
-    setScheduling(true);
+    setScheduling(selectedEntryId);
     try {
       const response = await fetch('/api/journal-club/schedule', {
         method: 'POST',
@@ -144,6 +121,8 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
         const error = await response.json();
         if (error.error === 'date_already_scheduled') {
           toast.error('Another paper is already scheduled for that date. Please choose a different date.');
+        } else if (response.status === 403) {
+          toast.error('You do not have permission to schedule presentations.');
         } else {
           toast.error('Failed to schedule presentation');
         }
@@ -155,16 +134,17 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
       setSelectedEntryId('');
       setSelectedPresenterId('');
       setPresentationDate('');
-      fetchData();
+      fetchScheduleData();
     } catch (error) {
       console.error('Error scheduling presentation:', error);
       toast.error('Failed to schedule presentation');
     } finally {
-      setScheduling(false);
+      setScheduling(null);
     }
   };
 
   const handleMarkAsPresented = async (entryId: string) => {
+    setPresenting(entryId);
     try {
       const response = await fetch(`/api/journal-club/schedule/${entryId}/present`, {
         method: 'PATCH',
@@ -173,15 +153,21 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
       });
 
       if (!response.ok) {
-        toast.error('Failed to mark as presented');
+        if (response.status === 403) {
+          toast.error('You do not have permission to mark presentations as complete.');
+        } else {
+          toast.error('Failed to mark as presented');
+        }
         return;
       }
 
       toast.success('Presentation marked as complete');
-      fetchData();
+      fetchScheduleData();
     } catch (error) {
       console.error('Error marking as presented:', error);
       toast.error('Failed to mark as presented');
+    } finally {
+      setPresenting(null);
     }
   };
 
@@ -385,10 +371,10 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
                 </Button>
                 <Button
                   onClick={handleSchedulePresentation}
-                  disabled={scheduling}
+                  disabled={!!scheduling}
                   className="flex-1"
                 >
-                  {scheduling ? 'Scheduling...' : 'Schedule'}
+                  {!!scheduling ? 'Scheduling...' : 'Schedule'}
                 </Button>
               </div>
             </CardContent>

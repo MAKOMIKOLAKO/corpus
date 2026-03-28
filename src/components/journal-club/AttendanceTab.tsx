@@ -49,36 +49,36 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [members, setMembers] = useState<CollectionMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
+  const [recording, setRecording] = useState<string | null>(null);
+  const [showCreateMeeting, setShowCreateMeeting] = useState(false);
+  const [newMeetingDate, setNewMeetingDate] = useState('');
+  const [newMeetingNotes, setNewMeetingNotes] = useState('');
   const [expandedMeetings, setExpandedMeetings] = useState<Set<string>>(new Set());
-  const [creating, setCreating] = useState(false);
-  const [updating, setUpdating] = useState<string | null>(null);
-  
-  // Form state
-  const [meetingDate, setMeetingDate] = useState('');
-  const [meetingNotes, setMeetingNotes] = useState('');
 
   useEffect(() => {
     if (isJournalClub) {
-      fetchData();
+      fetchAttendanceData();
     }
   }, [isJournalClub, collectionId]);
 
-  const fetchData = async () => {
+  const fetchAttendanceData = async () => {
     try {
-      // Get meetings
-      const meetingsResponse = await fetch(`/api/journal-club/${collectionId}/meetings`);
-      if (meetingsResponse.ok) {
-        const meetingsData = await meetingsResponse.json();
-        setMeetings(meetingsData);
+      const [meetingsRes, membersRes] = await Promise.all([
+        fetch(`/api/journal-club/${collectionId}/meetings`),
+        fetch(`/api/collections/${collectionId}/members`)
+      ]);
+
+      if (!meetingsRes.ok || !membersRes.ok) {
+        throw new Error('Failed to fetch attendance data');
       }
 
-      // Get collection members
-      const membersResponse = await fetch(`/api/collections/${collectionId}/members`);
-      if (membersResponse.ok) {
-        const membersData = await membersResponse.json();
-        setMembers(membersData.filter((m: any) => m.status === 'ACCEPTED'));
-      }
+      const [meetingsData, membersData] = await Promise.all([
+        meetingsRes.json(),
+        membersRes.json()
+      ]);
+
+      setMeetings(meetingsData || []);
+      setMembers(membersData || []);
     } catch (error) {
       console.error('Error fetching attendance data:', error);
       toast.error('Failed to load attendance data');
@@ -88,80 +88,84 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
   };
 
   const handleCreateMeeting = async () => {
-    if (!meetingDate) {
+    if (!newMeetingDate) {
       toast.error('Please select a meeting date');
       return;
     }
 
-    setCreating(true);
-    try {
-      const response = await fetch(`/api/journal-club/${collectionId}/meetings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: new Date(meetingDate).toISOString(),
-          notes: meetingNotes.trim() || null
-        })
-      });
-
-      if (!response.ok) {
-        toast.error('Failed to create meeting');
-        return;
-      }
-
-      const newMeeting = await response.json();
-      setMeetings(prev => [newMeeting, ...prev]);
-      setShowAddMeetingModal(false);
-      setMeetingDate('');
-      setMeetingNotes('');
-      toast.success('Meeting created successfully');
-    } catch (error) {
-      console.error('Error creating meeting:', error);
-      toast.error('Failed to create meeting');
-    } finally {
-      setCreating(false);
+    if (!canManage) {
+      toast.error('You do not have permission to create meetings');
+      return;
     }
-  };
 
-  const handleUpdateAttendance = async (meetingId: string, userId: string, status: 'PRESENT' | 'ABSENT' | 'EXCUSED') => {
-    setUpdating(`${meetingId}-${userId}`);
+    setRecording('creating');
     try {
       const response = await fetch('/api/journal-club/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          collectionId,
+          date: new Date(newMeetingDate).toISOString(),
+          notes: newMeetingNotes.trim() || null
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          toast.error('You do not have permission to create meetings');
+        } else {
+          toast.error('Failed to create meeting');
+        }
+        return;
+      }
+
+      toast.success('Meeting created successfully');
+      setShowCreateMeeting(false);
+      setNewMeetingDate('');
+      setNewMeetingNotes('');
+      fetchAttendanceData();
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      toast.error('Failed to create meeting');
+    } finally {
+      setRecording(null);
+    }
+  };
+
+  const handleRecordAttendance = async (meetingId: string, memberId: string, status: 'PRESENT' | 'ABSENT' | 'EXCUSED') => {
+    if (!canManage) {
+      toast.error('You do not have permission to record attendance');
+      return;
+    }
+
+    setRecording(`${meetingId}-${memberId}`);
+    try {
+      const response = await fetch('/api/journal-club/attendance', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           meetingId,
-          userId,
+          memberId,
           status
         })
       });
 
       if (!response.ok) {
-        toast.error('Failed to update attendance');
+        if (response.status === 403) {
+          toast.error('You do not have permission to record attendance');
+        } else {
+          toast.error('Failed to record attendance');
+        }
         return;
       }
 
-      // Update local state
-      setMeetings(prev => prev.map(meeting => {
-        if (meeting.id === meetingId) {
-          return {
-            ...meeting,
-            attendances: meeting.attendances.map(attendance =>
-              attendance.user.id === userId
-                ? { ...attendance, status, recordedAt: new Date().toISOString() }
-                : attendance
-            )
-          };
-        }
-        return meeting;
-      }));
-
-      toast.success('Attendance updated successfully');
+      toast.success('Attendance recorded successfully');
+      fetchAttendanceData();
     } catch (error) {
-      console.error('Error updating attendance:', error);
-      toast.error('Failed to update attendance');
+      console.error('Error recording attendance:', error);
+      toast.error('Failed to record attendance');
     } finally {
-      setUpdating(null);
+      setRecording(null);
     }
   };
 
@@ -228,7 +232,7 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
           <p className="text-muted-foreground">Track attendance for journal club meetings</p>
         </div>
         {canManage && (
-          <Button onClick={() => setShowAddMeetingModal(true)}>
+          <Button onClick={() => setShowCreateMeeting(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Meeting
           </Button>
@@ -245,7 +249,7 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
               Start tracking attendance for your journal club meetings.
             </p>
             {canManage && (
-              <Button onClick={() => setShowAddMeetingModal(true)}>
+              <Button onClick={() => setShowCreateMeeting(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Meeting
               </Button>
@@ -324,10 +328,10 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
                                   {canUpdate ? (
                                     <Select
                                       value={currentStatus}
-                                      onValueChange={(value: any) => 
-                                        handleUpdateAttendance(meeting.id, member.user.id, value)
+                                      onValueChange={(value: any) =>
+                                        handleRecordAttendance(meeting.id, member.user.id, value)
                                       }
-                                      disabled={updating === `${meeting.id}-${member.user.id}`}
+                                      disabled={recording === `${meeting.id}-${member.user.id}`}
                                     >
                                       <SelectTrigger className="w-32">
                                         <SelectValue />
@@ -357,7 +361,7 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
       )}
 
       {/* Add Meeting Modal */}
-      {showAddMeetingModal && (
+      {showCreateMeeting && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
@@ -368,8 +372,8 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
                 <label className="text-sm font-medium">Meeting Date</label>
                 <input
                   type="datetime-local"
-                  value={meetingDate}
-                  onChange={(e) => setMeetingDate(e.target.value)}
+                  value={newMeetingDate}
+                  onChange={(e) => setNewMeetingDate(e.target.value)}
                   className="w-full mt-1 px-3 py-2 border rounded-md"
                 />
               </div>
@@ -377,8 +381,8 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
               <div>
                 <label className="text-sm font-medium">Notes (optional)</label>
                 <Textarea
-                  value={meetingNotes}
-                  onChange={(e) => setMeetingNotes(e.target.value)}
+                  value={newMeetingNotes}
+                  onChange={(e) => setNewMeetingNotes(e.target.value)}
                   placeholder="Meeting notes, agenda, etc."
                   rows={3}
                 />
@@ -387,17 +391,17 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
               <div className="flex gap-2 pt-4">
                 <Button
                   variant="outline"
-                  onClick={() => setShowAddMeetingModal(false)}
+                  onClick={() => setShowCreateMeeting(false)}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleCreateMeeting}
-                  disabled={creating}
+                  disabled={recording === 'creating'}
                   className="flex-1"
                 >
-                  {creating ? 'Creating...' : 'Create Meeting'}
+                  {recording === 'creating' ? 'Creating...' : 'Create Meeting'}
                 </Button>
               </div>
             </CardContent>
