@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
       where: { userId, usedAt: null },
     });
 
+    // SECURITY AUDIT: 64-char hex from 32 bytes (not Math.random).
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 

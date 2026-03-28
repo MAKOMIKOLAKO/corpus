@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function PATCH(
   request: Request,
@@ -39,7 +40,7 @@ export async function PATCH(
     });
 
     if (!user || user.id !== referenceRequest.ownerId) {
-      return NextResponse.json({ error: "Only the owner can respond to requests" }, { status: 403 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     // Update request
@@ -95,7 +96,16 @@ export async function PATCH(
 
     return NextResponse.json(updatedRequest);
   } catch (error) {
-    console.error("Error updating reference request:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("[api/reference-requests/[id] PATCH]", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: "Database error. Please try again." },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
   }
 }

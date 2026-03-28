@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUserId } from '@/lib/session';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q');
 

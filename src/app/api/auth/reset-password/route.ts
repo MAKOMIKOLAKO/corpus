@@ -1,28 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prismaWithRetry';
 import bcrypt from 'bcryptjs';
+import { resetPasswordBodySchema } from '@/lib/validation';
+
+const MIN_RESPONSE_MS = 200;
+
+async function ensureMinDelay(startedAt: number, ms: number) {
+  const elapsed = Date.now() - startedAt;
+  if (elapsed < ms) {
+    await new Promise((r) => setTimeout(r, ms - elapsed));
+  }
+}
 
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now();
   try {
-    const { token, password } = await req.json();
-
-    if (!token || !password) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    const raw = await req.json().catch(() => ({}));
+    const parsed = resetPasswordBodySchema.safeParse(raw);
+    if (!parsed.success) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
-
-    if (password.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
-    }
+    const { token, password } = parsed.data;
 
     const resetToken = await prisma.passwordResetToken.findUnique({
       where: { token },
     });
 
     if (!resetToken) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
       return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 });
     }
 
     if (resetToken.expiresAt < new Date()) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
       return NextResponse.json(
         { error: 'This reset link has expired. Please request a new one.' },
         { status: 400 }
@@ -30,13 +44,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (resetToken.usedAt !== null) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
       return NextResponse.json(
         { error: 'This reset link has already been used.' },
         { status: 400 }
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
 
     await prisma.$transaction([
       prisma.user.update({
@@ -49,9 +64,14 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
+    await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('reset-password error:', err);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again.' },
+      { status: 500 }
+    );
   }
 }

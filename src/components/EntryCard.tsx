@@ -12,6 +12,20 @@ import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2 } from 'lucide-re
 import { useApiKey } from '@/hooks/useApiKey';
 import ShareEntryModal from '@/components/ShareEntryModal';
 
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+    PAPER: 'Paper',
+    BOOK: 'Book',
+    ARTICLE: 'Article',
+    BLOG: 'Blog',
+    ESSAY: 'Essay',
+    POLICY_REPORT: 'Policy Report',
+    OTHER: 'Other',
+};
+
+function contentTypeLabel(contentType: string): string {
+    return CONTENT_TYPE_LABELS[contentType] ?? contentType;
+}
+
 interface Entry {
     id: string;
     title: string;
@@ -19,7 +33,7 @@ interface Entry {
     year: number | null;
     contentType: string;
     url?: string | null;
-    readingStatus: 'UNREAD' | 'READING' | 'READ';
+    readingStatus: 'UNREAD' | 'READING' | 'READ' | 'DROPPED';
     createdAt: string | Date;
     collections?: {
         id: string;
@@ -314,7 +328,7 @@ export default function EntryCard({
                                             {displayTitle}
                                         </CardTitle>
                                         <Badge variant="outline" className="text-[10px] uppercase tracking-wider py-0 px-1.5 h-4 whitespace-nowrap border-border/50 text-muted-foreground font-bold">
-                                            {entry.contentType.replace('_', ' ').toLowerCase()}
+                                            {contentTypeLabel(entry.contentType)}
                                         </Badge>
                                     </div>
 

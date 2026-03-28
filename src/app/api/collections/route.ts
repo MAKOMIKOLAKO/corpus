@@ -2,26 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/app/api/api-key-middleware';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
+import { corsOptionsHeaders } from '@/lib/corsHeaders';
 
 export const dynamic = 'force-dynamic';
 
-export async function OPTIONS(request: NextRequest) {
-    const allowedOrigins = [
-        process.env.NEXTAUTH_URL || 'http://localhost:3000',
-        'http://localhost:3001'
-    ];
-    const origin = request.headers.get('origin');
-    const allowedOrigin = allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0];
-
+export async function OPTIONS() {
     return new NextResponse(null, {
         status: 200,
-        headers: {
-            'Access-Control-Allow-Origin': allowedOrigin || allowedOrigins[0],
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
-            'Access-Control-Max-Age': '86400',
-            'Vary': 'Origin'
-        },
+        headers: corsOptionsHeaders(),
     });
 }
 

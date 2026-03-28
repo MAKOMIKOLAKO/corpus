@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
+import { referenceRequestCreateSchema } from "@/lib/validation";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -57,8 +59,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json(requests);
   } catch (error) {
-    console.error("Error fetching reference requests:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("[api/reference-requests GET]", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
   }
 }
 
@@ -137,7 +142,7 @@ export async function POST(request: Request) {
         requesterId: requester.id,
         ownerId,
         entryId,
-        message: message?.trim() || null
+        message: message != null ? message.trim() || null : null
       },
       include: {
         requester: {
@@ -185,7 +190,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json(referenceRequest, { status: 201 });
   } catch (error) {
-    console.error("Error creating reference request:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("[api/reference-requests POST]", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: "Database error. Please try again." },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
   }
 }

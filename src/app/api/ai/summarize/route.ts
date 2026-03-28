@@ -5,7 +5,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Chat, GoogleGenAI } from '@google/genai';
 
-// Initialize GoogleGenAI and chat
 const genai = new GoogleGenAI({
   apiKey: process.env.GOOGLE_AI_API_KEY || ''
 });
@@ -38,21 +37,19 @@ Summary:`;
 
     return NextResponse.json({ summary });
 
-  } catch (error: any) {
-    console.error('Summarization error:', error);
+  } catch (error: unknown) {
+    console.error('[api/ai/summarize]', error);
 
-    if (error?.message?.includes('API_KEY')) {
+    const msg = error instanceof Error ? error.message : '';
+    if (msg.includes('API_KEY')) {
       return NextResponse.json(
-        { error: 'AI service configuration error', details: 'Invalid API key' },
+        { error: 'AI service configuration error' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      {
-        error: 'Failed to generate summary',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'An unexpected error occurred. Please try again.' },
       { status: 500 }
     );
   }

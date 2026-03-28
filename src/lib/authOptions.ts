@@ -33,7 +33,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const bcrypt = require("bcryptjs");
-        const saltRounds = 10;
+        const saltRounds = 12;
 
         // Try to find existing user
         const existingUser = await withRetry(() => prisma.user.findUnique({
@@ -62,6 +62,7 @@ export const authOptions: NextAuthOptions = {
           // Send verification email asynchronously — do not block sign-up
           (async () => {
             try {
+              // SECURITY AUDIT: 64-char hex from 32 bytes (not Math.random).
               const token = crypto.randomBytes(32).toString("hex");
               const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
               await prisma.emailVerificationToken.create({
@@ -87,6 +88,9 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, account, profile, user, trigger }) {
+      if (!token.jti) {
+        token.jti = crypto.randomUUID();
+      }
       if (account?.provider === "google") {
         const email = (profile?.email ?? token.email) as string | undefined;
         if (email && typeof (token as any).userId !== "string") {
@@ -154,6 +158,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // refresh session token every 24h
   },
   cookies: {
     sessionToken: {
