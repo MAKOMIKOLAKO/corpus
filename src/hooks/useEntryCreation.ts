@@ -17,6 +17,7 @@ export function useEntryCreation({ onEntryCreated, onError }: UseEntryCreationOp
   const [queue, setQueue] = useState<QueueSubmission[]>([]);
   const [isPolling, setIsPolling] = useState(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout>();
+  const reportedErrors = useRef<Set<string>>(new Set());
 
   // Submit a new entry
   const submitEntry = useCallback(async (mode: InputMode, input: string) => {
@@ -24,6 +25,9 @@ export function useEntryCreation({ onEntryCreated, onError }: UseEntryCreationOp
       onError?.('You must be logged in to create entries');
       return;
     }
+
+    // Clear previously reported errors for new submissions
+    reportedErrors.current.clear();
 
     try {
       const response = await fetch('/api/entry/create', {
@@ -86,7 +90,11 @@ export function useEntryCreation({ onEntryCreated, onError }: UseEntryCreationOp
 
         if (failed?.length > 0) {
           failed.forEach((submission: QueueSubmission) => {
-            onError?.(`Failed to process: ${submission.error}`);
+            const errorKey = `${submission.id}-${submission.error}`;
+            if (!reportedErrors.current.has(errorKey)) {
+              reportedErrors.current.add(errorKey);
+              onError?.(`Failed to process: ${submission.error}`);
+            }
           });
         }
       }

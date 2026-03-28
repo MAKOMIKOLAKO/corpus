@@ -39,12 +39,16 @@ Respond with only the JSON object, no other text.`;
     const content = response.text;
 
     if (!content) {
+      console.error('AI Response: No content received');
       throw new Error('No response from AI');
     }
+
+    console.log('AI Response Content:', content);
 
     // Extract JSON from response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error('AI Response: No JSON found in:', content);
       throw new Error('No JSON found in AI response');
     }
 
@@ -71,6 +75,7 @@ Respond with only the JSON object, no other text.`;
       return NextResponse.json(metadata);
     } catch (parseError) {
       console.error('Failed to parse AI response:', content);
+      console.error('Parse error:', parseError);
       throw new Error('Invalid JSON response from AI');
     }
 
