@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prismaWithRetry';
 import { getCurrentUserId } from '@/lib/session';
 import { triggerQueueProcessing } from '@/lib/queueProcessor';
 import { queueItemSchema } from '@/lib/validation';
+import { canAddEntry, getUserLimits } from '@/lib/plans';
 
 const READING_STATUSES: ReadingStatus[] = ['UNREAD', 'READING', 'READ', 'DROPPED'];
 
@@ -44,15 +45,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'payload is required for PAPER and BOOK' }, { status: 400 });
       }
 
-      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { plan: true, entriesCount: true }
+      });
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      const currentEntryCount = await prisma.entry.count({ where: { userId } });
-      if (user.plan === 'FREE' && currentEntryCount >= 100) {
+      const { allowed, reason } = canAddEntry(user.plan, user.entriesCount);
+      if (!allowed) {
         return NextResponse.json(
-          { error: 'entry_limit_reached', limit: 100 },
+          { error: reason, limit: 50, current: user.entriesCount },
           { status: 403 }
         );
       }
@@ -106,6 +110,11 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        await prisma.user.update({
+          where: { id: userId },
+          data: { entriesCount: { increment: 1 } }
+        });
+
         const queueItem = await prisma.queueItem.create({
           data: {
             userId,
@@ -149,6 +158,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid inputType' }, { status: 400 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true, entriesCount: true }
+    });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const { allowed, reason } = canAddEntry(user.plan, user.entriesCount);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: reason, limit: 50, current: user.entriesCount },
+        { status: 403 }
+      );
+    }
+
+    const limits = getUserLimits(user.plan);
+    const priority = limits.queuePriority === 'priority' ? 1 : 0;
+
     const queueItem = await prisma.queueItem.create({
       data: {
         userId,
@@ -156,6 +184,7 @@ export async function POST(request: NextRequest) {
         inputType: 'URL',
         input,
         position,
+        priority,
       },
     });
 

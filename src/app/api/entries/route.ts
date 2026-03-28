@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma } from '@/lib/prismaWithRetry';
 import { entryCreateSchema } from '@/lib/validation';
+import { canAddEntry } from '@/lib/plans';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
 
 type ContentType =
@@ -80,19 +81,16 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: { plan: true, entriesCount: true }
     });
-
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const currentEntryCount = await prisma.entry.count({
-      where: { userId },
-    });
-
-    if (user.plan === 'FREE' && currentEntryCount >= 100) {
+    const { allowed, reason } = canAddEntry(user.plan, user.entriesCount);
+    if (!allowed) {
       return NextResponse.json(
-        { error: 'entry_limit_reached', limit: 100 },
+        { error: reason, limit: 50, current: user.entriesCount },
         { status: 403 }
       );
     }
@@ -129,6 +127,11 @@ export async function POST(request: NextRequest) {
         readingStatus: d.readingStatus,
         userId,
       },
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { entriesCount: { increment: 1 } }
     });
 
     return NextResponse.json(

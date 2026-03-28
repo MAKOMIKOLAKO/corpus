@@ -1,15 +1,66 @@
-export default function FeedPage() {
+import { getCurrentUserId } from '@/lib/session';
+import { prisma } from '@/lib/prismaWithRetry';
+import FeedClient from './FeedClient';
+import { redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
+
+export default async function FeedPage() {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    redirect('/login');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plan: true }
+  });
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Fetch signals for the feed — showing public signals for now
+  const signals = await prisma.signal.findMany({
+    where: {
+      OR: [
+        { isPublic: true },
+        { userId: userId }
+      ]
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 30,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+        }
+      },
+      entry: {
+        select: {
+          id: true,
+          title: true,
+          contentType: true,
+        }
+      },
+      collection: {
+        select: {
+          id: true,
+          name: true,
+        }
+      }
+    }
+  });
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold text-[var(--foreground)]">Feed Coming Soon</h1>
-        <p className="text-lg text-[var(--muted-foreground)]">
-          The feed feature is currently under construction. We&apos;re working on something great!
-        </p>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          Check back later for updates from your connections and the research community.
-        </p>
-      </div>
+    <div className="min-h-screen bg-background pb-20">
+      <FeedClient signals={signals.map(s => ({
+        ...s,
+        type: s.type as any, // Cast for simplicity
+        createdAt: s.createdAt.toISOString()
+      }))} userPlan={user.plan} />
     </div>
   );
 }

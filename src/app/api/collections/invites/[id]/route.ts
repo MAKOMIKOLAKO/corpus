@@ -39,12 +39,32 @@ export async function PATCH(
 
     if (action === 'accept') {
       // Update the invite to accepted
-      await prisma.collectionMember.update({
+      const updatedMember = await prisma.collectionMember.update({
         where: { id: params.id },
         data: {
           status: 'ACCEPTED',
           acceptedAt: new Date(),
         },
+        include: {
+          collection: true,
+          user: true,
+        }
+      });
+
+      // Emit activity event (Signal)
+      await prisma.signal.create({
+        data: {
+          userId: session.user.id,
+          type: 'COLLECTION_MEMBER_JOINED',
+          collectionId: updatedMember.collectionId,
+          metadata: {
+            collectionName: updatedMember.collection.name,
+            collectionIsPublic: updatedMember.collection.isPublic,
+            newMemberUsername: updatedMember.user.username || updatedMember.user.name || 'A user',
+            role: 'ACCEPTED'
+          },
+          isPublic: updatedMember.collection.isPublic
+        }
       });
     } else {
       // Delete the invite for declined

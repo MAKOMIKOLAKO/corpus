@@ -33,7 +33,10 @@ enum QueueInputType {
 
 enum ReadingStatus {
   UNREAD
+  BACKLOG
+  IN_PROGRESS
   READING
+  COMPLETED
   READ
   DROPPED
 }
@@ -76,6 +79,7 @@ enum SignalType {
   CONNECTION_MADE
   PAPER_SHARED
   REFERENCE_REQUESTED
+  COLLECTION_MEMBER_JOINED
 }
 
 enum ReferenceRequestStatus {
@@ -112,6 +116,8 @@ model User {
   showSignals           Boolean     @default(true)
   lastFeedViewedAt      DateTime?
   usernameBannerShown   Boolean     @default(false)
+  entriesCount          Int         @default(0)
+  personalCollectionsCount Int       @default(0)
 
   entries               Entry[]
   collections           Collection[]
@@ -332,6 +338,7 @@ model QueueItem {
   entryId      String?
   errorMessage String?
   position     Int
+  priority     Int             @default(0)
   createdAt    DateTime        @default(now())
   startedAt    DateTime?
   completedAt  DateTime?

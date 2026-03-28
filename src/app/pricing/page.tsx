@@ -3,7 +3,7 @@ import PricingPageClient from "./PricingPageClient";
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Start free with 100 entries. Upgrade to Pro for unlimited entries, collections, and the knowledge graph. $6/month or $48/year.',
+  description: 'Start free with 50 saved entries, 1 personal collection, join shared collections as viewer, paper and book search, AI metadata extraction, full text search, Chrome extension, and research connections and labs. Upgrade to Pro for unlimited entries, collections, and shared collections, batch entry actions, and priority queue processing. $6/month or $30/year.',
 };
 
 export default function ServerPricingPage() {

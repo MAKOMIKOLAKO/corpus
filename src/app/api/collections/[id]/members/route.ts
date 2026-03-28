@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 import { canManageCollection, canAssignAdmin, canShareCollection } from '@/lib/collectionPermissions';
+import { canContributeToSharedCollection } from '@/lib/plans';
 
 export async function POST(
   request: NextRequest,
@@ -79,6 +80,19 @@ export async function POST(
         { error: 'Admin role requires both users to have Pro accounts' },
         { status: 403 }
       );
+    }
+
+    if (role === 'CONTRIBUTOR' || role === 'ADMIN') {
+      const { allowed } = canContributeToSharedCollection(targetUser.plan);
+      if (!allowed) {
+        return NextResponse.json(
+          { 
+            error: 'contribution_pro_only',
+            message: 'This user needs a Pro account to contribute to shared collections.'
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const existingMember = await prisma.collectionMember.findUnique({

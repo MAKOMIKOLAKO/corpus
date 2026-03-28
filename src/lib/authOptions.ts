@@ -107,35 +107,53 @@ export const authOptions: NextAuthOptions = {
           (token as any).userId = dbUser.id;
           (token as any).plan = dbUser.plan || 'FREE';
           (token as any).username = dbUser.username ?? null;
+          (token as any).entriesCount = dbUser.entriesCount || 0;
+          (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
         }
       } else if (user?.id) {
         (token as any).userId = user.id;
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: user.id },
-            select: { plan: true, username: true, emailVerified: true }
+            select: { 
+              plan: true, 
+              username: true, 
+              emailVerified: true,
+              entriesCount: true,
+              personalCollectionsCount: true
+            }
           }));
           if (dbUser) {
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).emailVerified = dbUser.emailVerified;
+            (token as any).entriesCount = dbUser.entriesCount || 0;
+            (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
           }
         } catch (error) {
           console.error('Error fetching user plan:', error);
           (token as any).plan = 'FREE';
         }
       }
-      // Re-fetch username when session is updated (e.g. after /setup-username)
+      // Re-fetch data when session is updated (trigger === 'update')
       if (trigger === 'update' && (token as any).userId) {
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: (token as any).userId },
-            select: { username: true, plan: true, emailVerified: true }
+            select: { 
+              username: true, 
+              plan: true, 
+              emailVerified: true,
+              entriesCount: true,
+              personalCollectionsCount: true
+            }
           }));
           if (dbUser) {
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).emailVerified = dbUser.emailVerified;
+            (token as any).entriesCount = dbUser.entriesCount || 0;
+            (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
           }
         } catch { }
       }
@@ -147,6 +165,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).plan = (token as any).plan || 'FREE';
         (session.user as any).emailVerified = (token as any).emailVerified;
         (session.user as any).username = (token as any).username || null;
+        (session.user as any).entriesCount = (token as any).entriesCount || 0;
+        (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
       }
       return session;
     },
