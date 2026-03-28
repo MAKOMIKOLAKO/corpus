@@ -56,9 +56,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
       }
 
-      // Check if user is ADMIN (owner of the collection)
+      // Check if user is ADMIN (owner of the collection) or has ADMIN role
+      const isOwner = collection.userId === userId;
       const membership = collection.members[0];
-      if (!membership || membership.role !== 'ADMIN') {
+
+      if (!isOwner && (!membership || membership.role !== 'ADMIN')) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       }
 
