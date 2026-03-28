@@ -3,6 +3,8 @@
  * Manages asynchronous processing of entry submissions
  */
 
+import { extractMetadataFromLink, fetchBookByTitle, fetchPaperByTitle } from './metadataExtraction';
+
 export type InputMode = 'link' | 'book' | 'paper';
 
 export interface QueueSubmission {
