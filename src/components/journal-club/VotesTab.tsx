@@ -42,7 +42,7 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
       if (!response.ok) throw new Error('Failed to fetch votes');
 
       const data = await response.json();
-      setVoteData(data);
+      setVoteData(data || []);
     } catch (error) {
       console.error('Error fetching votes:', error);
       toast.error('Failed to load votes');
@@ -53,7 +53,7 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
 
   const handleVote = async (entryId: string) => {
     if (!canParticipate) {
-      toast.error('You must be a member to vote');
+      toast.error('You do not have permission to vote');
       return;
     }
 
@@ -63,30 +63,22 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          entryId,
-          collectionId
+          collectionId,
+          entryId
         })
       });
 
       if (!response.ok) {
-        toast.error('Failed to cast vote');
+        if (response.status === 403) {
+          toast.error('You do not have permission to vote');
+        } else {
+          toast.error('Failed to cast vote');
+        }
         return;
       }
 
-      const result = await response.json();
-
-      // Update the vote data optimistically
-      setVoteData(prev => prev.map(item =>
-        item.entryId === entryId
-          ? {
-            ...item,
-            voteCount: result.voteCount,
-            userHasVoted: result.action === 'added'
-          }
-          : item
-      ));
-
-      toast.success(result.action === 'added' ? 'Vote added' : 'Vote removed');
+      await fetchVotes();
+      toast.success('Vote cast successfully');
     } catch (error) {
       console.error('Error casting vote:', error);
       toast.error('Failed to cast vote');

@@ -22,9 +22,9 @@ export async function PATCH(
       where: { id: collectionId },
       include: {
         members: {
-          where: { 
-            userId, 
-            status: 'ACCEPTED' 
+          where: {
+            userId,
+            status: 'ACCEPTED'
           }
         },
         user: {
@@ -37,34 +37,36 @@ export async function PATCH(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
-    // Check if user is ADMIN
+    // Check if user is ADMIN (owner of the collection) or has ADMIN role
+    const isOwner = collection.userId === userId;
     const membership = collection.members[0];
-    if (!membership || membership.role !== 'ADMIN') {
+
+    if (!isOwner && (!membership || membership.role !== 'ADMIN')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Check if user can manage journal club
     const userPlan = collection.user?.plan || 'FREE';
-    if (!canManageJournalClub(userPlan, membership.role)) {
+    if (!canManageJournalClub(userPlan, membership?.role || 'VIEWER')) {
       return NextResponse.json({ error: 'journal_club_pro_only' }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { 
-      meetingFrequency, 
-      nextMeetingDate, 
-      meetingDayOfWeek, 
-      meetingTime, 
-      timezone 
-    } = body;
-
     // Get existing metadata
     const existingMeta = (collection.metadata as any) || {};
-    
+
     // Verify this is a journal club
     if (!existingMeta.isJournalClub) {
       return NextResponse.json({ error: 'Not a journal club collection' }, { status: 400 });
     }
+
+    const body = await request.json();
+    const {
+      meetingFrequency,
+      nextMeetingDate,
+      meetingDayOfWeek,
+      meetingTime,
+      timezone
+    } = body;
 
     // Update metadata with new settings
     const updatedMetadata = {
