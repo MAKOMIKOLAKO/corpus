@@ -46,30 +46,32 @@ export async function DELETE(
       return NextResponse.json({ error: 'Queue item not found' }, { status: 404 });
     }
 
-    if (item.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Only pending items can be deleted' }, { status: 400 });
+    if (item.status === 'PROCESSING') {
+      return NextResponse.json({ error: 'Cannot delete an item that is currently being processed' }, { status: 400 });
     }
 
-    // Delete and recalculate positions
+    // Delete and recalculate positions if it was PENDING
     await prisma.$transaction(async (tx) => {
       await tx.queueItem.delete({
         where: { id: params.id }
       });
 
-      // Recalculate positions for remaining PENDING items
-      const remainingItems = await tx.queueItem.findMany({
-        where: {
-          userId,
-          status: 'PENDING'
-        },
-        orderBy: { createdAt: 'asc' }
-      });
-
-      for (let i = 0; i < remainingItems.length; i++) {
-        await tx.queueItem.update({
-          where: { id: remainingItems[i].id },
-          data: { position: i + 1 }
+      if (item.status === 'PENDING') {
+        // Recalculate positions for remaining PENDING items
+        const remainingItems = await tx.queueItem.findMany({
+          where: {
+            userId,
+            status: 'PENDING'
+          },
+          orderBy: { createdAt: 'asc' }
         });
+
+        for (let i = 0; i < remainingItems.length; i++) {
+          await tx.queueItem.update({
+            where: { id: remainingItems[i].id },
+            data: { position: i + 1 }
+          });
+        }
       }
     });
 
