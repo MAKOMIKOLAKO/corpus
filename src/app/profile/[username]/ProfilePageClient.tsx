@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, UserCheck, Clock, X, Check, ChevronLeft, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 type Profile = {
@@ -141,13 +142,14 @@ export default function ProfilePageClient({
           {!isOwnProfile && currentUserId && (
             <div className="shrink-0">
               {!profile.connectionStatus && (
-                <button
+                <Button
                   onClick={sendRequest}
                   disabled={acting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  variant="default"
+                  className="gap-1.5"
                 >
                   <UserPlus className="w-4 h-4" /> Connect
-                </button>
+                </Button>
               )}
               {profile.connectionStatus === 'PENDING' && profile.isSentByMe && (
                 <div className="flex items-center gap-2">

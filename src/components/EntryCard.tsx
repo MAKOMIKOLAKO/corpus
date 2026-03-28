@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { saveScrollPositionForKey } from '@/hooks/useScrollPosition';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -154,7 +155,11 @@ export default function EntryCard({
             return;
         }
 
+        const previousStatus = currentStatus;
+        setCurrentStatus(newStatus);
+        setIsOpen(false);
         setIsUpdating(true);
+
         try {
             const response = await fetch(`/api/entries/${entry.id}`, {
                 method: 'PATCH',
@@ -165,20 +170,15 @@ export default function EntryCard({
                 body: JSON.stringify({ readingStatus: newStatus }),
             });
 
-            if (response.ok) {
-                setCurrentStatus(newStatus);
-            } else {
-                console.error('Failed to update reading status');
-                // Revert on error
-                setCurrentStatus(currentStatus);
+            if (!response.ok) {
+                throw new Error('Failed to update reading status');
             }
         } catch (error) {
             console.error('Error updating reading status:', error);
-            // Revert on error
-            setCurrentStatus(currentStatus);
+            setCurrentStatus(previousStatus);
+            toast.error('Failed to update status');
         } finally {
             setIsUpdating(false);
-            setIsOpen(false);
         }
     };
 

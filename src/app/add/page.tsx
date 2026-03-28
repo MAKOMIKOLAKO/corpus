@@ -42,6 +42,7 @@ interface SearchResult {
   authors: string[];
   year: number | null;
   abstract?: string | null;
+  description?: string | null;
   source?: string | null;
   doi?: string | null;
   isbn?: string | null;
@@ -77,6 +78,15 @@ function inputTypeLabel(t: string) {
 function truncateInput(s: string, max = 60) {
   if (s.length <= max) return s;
   return `${s.slice(0, max)}…`;
+}
+
+function mergeQueueState(prev: QueueItem[], server: QueueItem[]): QueueItem[] {
+    const map = new Map<string, QueueItem>();
+    prev.forEach(item => map.set(item.id, item));
+    server.forEach(item => map.set(item.id, item));
+    return Array.from(map.values()).sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 }
 
 export default function AddEntryPage() {
@@ -116,11 +126,11 @@ export default function AddEntryPage() {
       const res = await fetch('/api/queue');
       if (!res.ok) return;
       const data = await res.json();
-      setQueue({
-        items: data.items ?? [],
+      setQueue(prev => ({
+        items: mergeQueueState(prev.items, data.items ?? []),
         processingCount: data.processingCount ?? 0,
         pendingCount: data.pendingCount ?? 0,
-      });
+      }));
     } catch (e) {
       console.error('Failed to fetch queue', e);
     }
@@ -131,18 +141,24 @@ export default function AddEntryPage() {
   }, [refreshQueue]);
 
   useEffect(() => {
-    const active = queue.pendingCount + queue.processingCount > 0;
+    const active = queue.items.some(item => item.status === 'PENDING' || item.status === 'PROCESSING');
     if (!active) return;
     const id = setInterval(() => {
       refreshQueue();
     }, 3000);
     return () => clearInterval(id);
-  }, [queue.pendingCount, queue.processingCount, refreshQueue]);
+  }, [queue.items, refreshQueue]);
 
   const handleRemoveFromQueue = async (id: string) => {
     try {
       const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
-      if (res.ok) refreshQueue();
+      if (res.ok) {
+        setQueue(prev => ({
+          ...prev,
+          items: prev.items.filter(item => item.id !== id)
+        }));
+        refreshQueue();
+      }
     } catch (e) {
       console.error('Failed to delete queue item', e);
     }
@@ -205,6 +221,13 @@ export default function AddEntryPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to add to queue');
       }
+      const data = await res.json();
+      if (data.queueItem) {
+        setQueue(prev => ({
+          ...prev,
+          items: mergeQueueState(prev.items, [data.queueItem])
+        }));
+      }
       setUrlInput('');
       setUrlStatus({ message: 'Added to queue ✓', type: 'success' });
       setTimeout(() => setUrlStatus({ message: '', type: null }), 2000);
@@ -236,8 +259,19 @@ export default function AddEntryPage() {
     setSelectedResult(null);
   };
 
-  const activeQueueCount = queue.processingCount + queue.pendingCount;
-  const displayQueueItems = queueShowAll ? queue.items : queue.items.slice(0, 10);
+  const activeQueueCount = queue.items.filter(item => item.status === 'PENDING' || item.status === 'PROCESSING').length;
+  const displayQueueItems = (() => {
+    if (queueShowAll) return queue.items;
+    
+    const count = 10;
+    const first10 = queue.items.slice(0, count);
+    const terminalExtra = queue.items.filter(item => 
+      (item.status === 'COMPLETED' || item.status === 'FAILED') && 
+      !first10.some(f => f.id === item.id)
+    );
+    
+    return [...first10, ...terminalExtra];
+  })();
 
   return (
     <div
@@ -280,6 +314,8 @@ export default function AddEntryPage() {
             onSave={(id, title, authors, url) =>
               setSaveConfirmation({ id, title, authors, url })
             }
+            setQueue={setQueue}
+            refreshQueue={refreshQueue}
           />
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
@@ -496,6 +532,11 @@ function SearchResultCard({
             {abstractSnippet}
           </p>
         )}
+        {type === 'BOOK' && result.description && (
+          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--muted-foreground)] opacity-70">
+            {result.description}
+          </p>
+        )}
       </div>
     </button>
   );
@@ -661,11 +702,19 @@ function PreviewForm({
   type,
   onBack,
   onSave,
+  setQueue,
+  refreshQueue,
 }: {
   item: SearchResult;
   type: Tab;
   onBack: () => void;
   onSave: (id: string, title: string, authors: string[], url: string | null) => void;
+  setQueue: React.Dispatch<React.SetStateAction<{
+    items: QueueItem[];
+    processingCount: number;
+    pendingCount: number;
+  }>>;
+  refreshQueue: () => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
     title: item.title,
@@ -737,9 +786,17 @@ function PreviewForm({
         throw new Error(data.error || data.message || 'Failed to save');
       }
 
-      const entryId = data.queueItem?.entryId as string | undefined;
-      if (!entryId) throw new Error('Missing entry id');
-      onSave(entryId, formData.title, authorsArr, formData.url || null);
+      const queueItem = data.queueItem;
+      if (queueItem) {
+        setQueue(prev => ({
+          ...prev,
+          items: mergeQueueState(prev.items, [queueItem])
+        }));
+      }
+
+      const entryId = queueItem?.entryId as string | undefined;
+      onSave(entryId || '', formData.title, authorsArr, formData.url || null);
+      refreshQueue();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save';
       if (msg === 'LIMIT_REACHED') setError('LIMIT');
