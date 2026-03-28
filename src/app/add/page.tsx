@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Book, 
@@ -56,10 +56,10 @@ interface SearchResult {
 // --- Icons ---
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
-    case 'PENDING': return <Clock className="w-4 h-4 text-gray-400" />;
-    case 'PROCESSING': return <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />;
-    case 'COMPLETED': return <CheckCircle2 className="w-4 h-4 text-green-400" />;
-    case 'FAILED': return <XCircle className="w-4 h-4 text-red-400" />;
+    case 'PENDING': return <Clock className="w-4 h-4 text-[var(--muted-foreground)]" />;
+    case 'PROCESSING': return <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />;
+    case 'COMPLETED': return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+    case 'FAILED': return <XCircle className="w-4 h-4 text-red-500" />;
     default: return null;
   }
 };
@@ -131,7 +131,7 @@ export default function AddEntryPage() {
         body: JSON.stringify({
           inputType: item.inputType,
           input: item.input,
-          payload: null // URLs use LLM, which retry from scratch
+          payload: null
         })
       });
       if (res.ok) fetchQueue();
@@ -197,12 +197,12 @@ export default function AddEntryPage() {
   };
 
   return (
-    <div className="max-w-[720px] mx-auto p-6 min-h-screen bg-[#0a0a0a] text-white">
+    <div className="max-w-[720px] mx-auto p-6 min-h-screen bg-[var(--background)] text-[var(--foreground)] theme-transition">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold font-serif mb-6">Add to Library</h1>
+        <h1 className="text-3xl font-bold font-serif mb-6 text-[var(--foreground)]">Add to Library</h1>
         
         {!selectedResult && !saveConfirmation && (
-          <div className="flex gap-2 p-1 bg-[#1a1a1a] rounded-xl border border-white/5">
+          <div className="flex gap-2 p-1 bg-[var(--muted)]/50 rounded-xl border border-[var(--border)]">
             <TabButton 
               active={activeTab === 'PAPER'} 
               onClick={() => { setActiveTab('PAPER'); setSearchResults([]); setSearchQuery(''); }}
@@ -245,21 +245,21 @@ export default function AddEntryPage() {
                     placeholder="https://..."
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 transition-colors"
+                    className="flex-1 bg-[var(--background)] border border-[var(--border)] rounded-lg px-4 py-3 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
                   />
                   <button 
                     type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
+                    className="bg-[var(--accent)] hover:opacity-90 text-[var(--accent-foreground)] px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap shadow-sm"
                   >
                     Add to Queue
                   </button>
                 </form>
                 {urlStatus.message && (
-                  <p className={`text-sm ${urlStatus.type === 'error' ? 'text-amber-400' : 'text-green-400'}`}>
+                  <p className={`text-sm ${urlStatus.type === 'error' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     {urlStatus.message}
                   </p>
                 )}
-                <p className="text-sm text-gray-500 text-center">
+                <p className="text-sm text-[var(--muted-foreground)] text-center">
                   URLs are processed one at a time. Enter multiple URLs and they'll be queued automatically.
                 </p>
               </div>
@@ -267,27 +267,27 @@ export default function AddEntryPage() {
               <div className="space-y-6">
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
                     <input
                       type="text"
                       placeholder={activeTab === 'PAPER' ? "Search by title, keywords, or author..." : "Search by title or author..."}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
                     />
                   </div>
                   <button 
                     type="submit"
                     disabled={isSearching}
-                    className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="bg-[var(--accent)] hover:opacity-90 disabled:opacity-50 text-[var(--accent-foreground)] px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 shadow-sm"
                   >
                     {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
                   </button>
                 </form>
 
                 {isSearching ? (
-                  <div className="py-20 flex flex-col items-center justify-center text-gray-500 gap-4">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                  <div className="py-20 flex flex-col items-center justify-center text-[var(--muted-foreground)] gap-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
                     <p>Searching for {activeTab === 'PAPER' ? 'papers' : 'books'}...</p>
                   </div>
                 ) : searchResults.length > 0 ? (
@@ -302,11 +302,11 @@ export default function AddEntryPage() {
                     ))}
                   </div>
                 ) : searchError ? (
-                  <div className="py-10 text-center text-amber-400">
+                  <div className="py-10 text-center text-amber-600 dark:text-amber-400">
                     <p>{searchError}</p>
                   </div>
                 ) : (
-                  <div className="py-20 text-center text-gray-500">
+                  <div className="py-20 text-center text-[var(--muted-foreground)]">
                     <p>Search for any {activeTab === 'PAPER' ? 'research paper' : 'book'}</p>
                   </div>
                 )}
@@ -316,7 +316,7 @@ export default function AddEntryPage() {
         )}
       </main>
 
-      <footer className="border-t border-white/10 pt-8 pb-20">
+      <footer className="border-t border-[var(--border)] pt-8 pb-20">
         <QueuePanel queue={queue} onRemove={handleRemoveFromQueue} onRetry={handleRetryQueueItem} />
       </footer>
     </div>
@@ -331,8 +331,8 @@ function TabButton({ active, onClick, icon, label }: { active: boolean, onClick:
       onClick={onClick}
       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
         active 
-          ? 'bg-indigo-600 text-white shadow-lg' 
-          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          ? 'bg-[var(--accent)] text-[var(--accent-foreground)] shadow-md' 
+          : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
       }`}
     >
       {icon}
@@ -349,14 +349,14 @@ function SearchResultCard({ result, type, onClick }: { result: SearchResult, typ
   return (
     <button 
       onClick={onClick}
-      className="w-full text-left p-4 bg-[#141414] hover:bg-[#1a1a1a] border border-white/5 rounded-xl transition-all group flex gap-4"
+      className="w-full text-left p-4 bg-[var(--card)] hover:bg-[var(--muted)]/30 border border-[var(--border)] rounded-xl transition-all group flex gap-4 shadow-sm hover:shadow-md"
     >
       {type === 'BOOK' && (
-        <div className="w-12 h-16 bg-[#2a2a2a] rounded flex-shrink-0 overflow-hidden border border-white/5">
+        <div className="w-12 h-16 bg-[var(--muted)]/50 rounded flex-shrink-0 overflow-hidden border border-[var(--border)]">
           {result.coverUrl ? (
             <img src={result.coverUrl} alt={result.title} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-600">
+            <div className="w-full h-full flex items-center justify-center text-[var(--muted-foreground)]">
               <Book className="w-6 h-6" />
             </div>
           )}
@@ -364,22 +364,22 @@ function SearchResultCard({ result, type, onClick }: { result: SearchResult, typ
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-white group-hover:text-indigo-400 transition-colors line-clamp-2 leading-tight">
+          <h3 className="font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors line-clamp-2 leading-tight">
             {result.title}
           </h3>
           {result.openAccessUrl && (
-            <span className="flex-shrink-0 px-2 py-0.5 bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wider rounded border border-green-500/20">
+            <span className="flex-shrink-0 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded border border-emerald-500/20">
               Open Access
             </span>
           )}
         </div>
-        <p className="text-sm text-gray-500 mt-1 truncate">{displayAuthors}</p>
-        <p className="text-xs text-gray-600 mt-1 italic">
+        <p className="text-sm text-[var(--muted-foreground)] mt-1 truncate">{displayAuthors}</p>
+        <p className="text-xs text-[var(--muted-foreground)] mt-1 italic opacity-80">
           {result.year ? `${result.year} · ` : ''}{result.source || result.publisher || ''}
           {result.pages ? ` · ${result.pages} pages` : ''}
         </p>
         {result.abstract && (
-          <p className="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed opacity-60">
+          <p className="text-xs text-[var(--muted-foreground)] mt-2 line-clamp-2 leading-relaxed opacity-70">
             {result.abstract}
           </p>
         )}
@@ -398,40 +398,40 @@ function QueuePanel({ queue, onRemove, onRetry }: {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
+        <h2 className="text-lg font-semibold flex items-center gap-2 text-[var(--foreground)]">
           Your Queue
           {activeCount > 0 && (
-            <span className="bg-indigo-600 text-[10px] px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+            <span className="bg-[var(--accent)] text-[var(--accent-foreground)] text-[10px] px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
               {activeCount}
             </span>
           )}
         </h2>
-        {queue.items.length === 0 && <span className="text-xs text-gray-600 italic">(empty)</span>}
-        {queue.items.length > 10 && <Link href="/library/queue" className="text-xs text-indigo-400 hover:text-indigo-300">View all</Link>}
+        {queue.items.length === 0 && <span className="text-xs text-[var(--muted-foreground)] italic">(empty)</span>}
+        {queue.items.length > 10 && <Link href="/library/queue" className="text-xs text-[var(--accent)] hover:underline">View all</Link>}
       </div>
 
-      <div className="grid gap-px bg-white/5 rounded-xl border border-white/5 overflow-hidden">
+      <div className="grid gap-px bg-[var(--border)] rounded-xl border border-[var(--border)] overflow-hidden shadow-sm">
         {queue.items.slice(0, 10).map((item) => (
-          <div key={item.id} className="bg-[#0f0f0f] p-3 flex items-center justify-between gap-4 group">
+          <div key={item.id} className="bg-[var(--background)] p-3 flex items-center justify-between gap-4 group">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex-shrink-0">
                 <StatusIcon status={item.status} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-gray-500 px-1 bg-white/5 rounded">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--muted-foreground)] px-1 bg-[var(--muted)] rounded">
                     {item.inputType.toLowerCase()}
                   </span>
-                  <span className="text-sm text-gray-300 truncate max-w-[300px]" title={item.input}>
+                  <span className="text-sm text-[var(--foreground)] truncate max-w-[300px]" title={item.input}>
                     {item.input}
                   </span>
                 </div>
                 {item.status === 'FAILED' && (
-                  <p className="text-[11px] text-amber-500 truncate">{item.errorMessage}</p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-500 truncate">{item.errorMessage}</p>
                 )}
                 {item.status === 'COMPLETED' && item.entryId && (
-                  <p className="text-[11px] text-gray-500">
-                    Saved → <Link href={`/entries/${item.entryId}`} className="text-indigo-400 hover:underline">View Entry</Link>
+                  <p className="text-[11px] text-[var(--muted-foreground)]">
+                    Saved → <Link href={`/entries/${item.entryId}`} className="text-[var(--accent)] hover:underline">View Entry</Link>
                   </p>
                 )}
               </div>
@@ -442,12 +442,12 @@ function QueuePanel({ queue, onRemove, onRetry }: {
                  <RemoveConfirmButton onRemove={() => onRemove(item.id)} />
                )}
                {item.status === 'PROCESSING' && (
-                 <span className="text-xs text-gray-600 italic">Processing...</span>
+                 <span className="text-xs text-[var(--muted-foreground)] italic">Processing...</span>
                )}
                {item.status === 'FAILED' && (
                  <button 
                   onClick={() => onRetry(item)}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 font-medium px-2 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors"
+                  className="text-xs text-[var(--accent)] hover:opacity-80 font-medium px-2 py-1 rounded bg-[var(--accent)]/10 transition-colors"
                  >
                    Retry
                  </button>
@@ -457,7 +457,7 @@ function QueuePanel({ queue, onRemove, onRetry }: {
         ))}
 
         {queue.items.length === 0 && (
-          <div className="bg-[#0f0f0f] p-8 text-center text-gray-600 text-sm">
+          <div className="bg-[var(--background)] p-8 text-center text-[var(--muted-foreground)] text-sm">
             No items in your queue. Add papers, books, or URLs above.
           </div>
         )}
@@ -472,16 +472,16 @@ function RemoveConfirmButton({ onRemove }: { onRemove: () => void }) {
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-500 font-bold uppercase">Remove?</span>
+        <span className="text-[10px] text-[var(--muted-foreground)] font-bold uppercase">Remove?</span>
         <button 
           onClick={onRemove}
-          className="text-xs text-red-400 hover:text-red-300 font-bold px-2 py-1 bg-red-500/10 rounded"
+          className="text-xs text-red-600 dark:text-red-400 hover:opacity-80 font-bold px-2 py-1 bg-red-500/10 rounded"
         >
           Yes
         </button>
         <button 
           onClick={() => setConfirming(false)}
-          className="text-gray-500 hover:text-white"
+          className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
         >
           <X className="w-3 h-3" />
         </button>
@@ -492,7 +492,7 @@ function RemoveConfirmButton({ onRemove }: { onRemove: () => void }) {
   return (
     <button 
       onClick={() => setConfirming(true)}
-      className="text-gray-600 hover:text-red-400 transition-colors p-1"
+      className="text-[var(--muted-foreground)] hover:text-red-500 transition-colors p-1"
     >
       <X className="w-4 h-4" />
     </button>
@@ -539,7 +539,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
         url: formData.url || null,
         isbn: formData.isbn || null,
         readingStatus: formData.readingStatus,
-        notes: formData.notes ? [{ content: formData.notes, date: new Date().toISOString() }] : [],
+        notes: formData.notes ? [{ text: formData.notes, createdAt: new Date().toISOString() }] : [],
         metadata: {
           externalId: item.semanticScholarId || item.openLibraryKey,
           pages: item.pages,
@@ -575,30 +575,30 @@ function PreviewForm({ item, type, onBack, onSave }: {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-white transition-colors">
+      <button onClick={onBack} className="flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
         <ArrowLeft className="w-4 h-4" />
         Back to results
       </button>
 
       {error === 'LIMIT' && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-sm">
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 text-sm">
           You've reached the 100 entry limit on the free plan.{' '}
           <Link href="/billing" className="font-bold underline">Upgrade to Pro →</Link>
         </div>
       )}
       
       {error && error !== 'LIMIT' && (
-        <div className="p-3 text-red-400 text-sm bg-red-500/5 border border-red-500/10 rounded-lg">
+        <div className="p-3 text-red-600 dark:text-red-400 text-sm bg-red-500/5 border border-red-500/10 rounded-lg">
           {error}
         </div>
       )}
 
-      <div className="space-y-4 bg-[#141414] p-6 rounded-2xl border border-white/5">
+      <div className="space-y-4 bg-[var(--card)] p-6 rounded-2xl border border-[var(--border)] shadow-md">
         <Field label="Title" required>
           <input 
             value={formData.title} 
             onChange={e => setFormData({...formData, title: e.target.value})}
-            className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none"
+            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none transition-all"
           />
         </Field>
 
@@ -608,7 +608,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
               <input 
                 value={formData.authors} 
                 onChange={e => setFormData({...formData, authors: e.target.value})}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none transition-all"
               />
             </Field>
           </div>
@@ -617,7 +617,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
               type="number"
               value={formData.year} 
               onChange={e => setFormData({...formData, year: e.target.value})}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none"
+              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none transition-all"
             />
           </Field>
         </div>
@@ -627,7 +627,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
             <select 
               value={formData.contentType}
               onChange={e => setFormData({...formData, contentType: e.target.value})}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none appearance-none"
+              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none appearance-none transition-all"
             >
               <option value="PAPER">Research Paper</option>
               <option value="BOOK">Book</option>
@@ -642,7 +642,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
             <select 
               value={formData.readingStatus}
               onChange={e => setFormData({...formData, readingStatus: e.target.value})}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none appearance-none"
+              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none appearance-none transition-all"
             >
               <option value="UNREAD">Unread</option>
               <option value="READING">Reading</option>
@@ -658,12 +658,12 @@ function PreviewForm({ item, type, onBack, onSave }: {
             value={formData.abstract}
             onChange={e => setFormData({...formData, abstract: e.target.value})}
             placeholder="Add a description..."
-            className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none resize-none"
+            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none resize-none transition-all"
           />
         </Field>
 
         {item.openAccessUrl && (
-          <p className="text-xs text-green-400 flex items-center gap-1">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3" />
             Free full text available → <a href={item.openAccessUrl} target="_blank" className="underline hover:no-underline">Open link</a>
           </p>
@@ -671,7 +671,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
 
         <button 
           onClick={() => setShowMore(!showMore)}
-          className="text-xs text-gray-500 hover:text-indigo-400 flex items-center gap-1 py-2"
+          className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] flex items-center gap-1 py-2 transition-colors"
         >
           <ChevronDown className={`w-3 h-3 transition-transform ${showMore ? 'rotate-180' : ''}`} />
           {showMore ? 'Show fewer details' : 'More details'}
@@ -683,7 +683,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
               <input 
                 value={formData.source} 
                 onChange={e => setFormData({...formData, source: e.target.value})}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
               />
             </Field>
 
@@ -694,7 +694,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
                     value={formData.doi} 
                     onChange={e => setFormData({...formData, doi: e.target.value})}
                     readOnly={!!item.doi}
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500 opacity-80"
+                    className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] opacity-80"
                   />
                 </Field>
               )}
@@ -703,7 +703,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
                   <input 
                     value={formData.isbn} 
                     onChange={e => setFormData({...formData, isbn: e.target.value})}
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500"
+                    className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
                   />
                 </Field>
               )}
@@ -711,7 +711,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
                 <input 
                   value={formData.url} 
                   onChange={e => setFormData({...formData, url: e.target.value})}
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500"
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
                 />
               </Field>
             </div>
@@ -722,7 +722,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
                 value={formData.notes}
                 onChange={e => setFormData({...formData, notes: e.target.value})}
                 placeholder="Personal notes..."
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-indigo-500 outline-none resize-none"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none resize-none transition-all"
               />
             </Field>
           </div>
@@ -731,7 +731,7 @@ function PreviewForm({ item, type, onBack, onSave }: {
         <button 
           onClick={handleSave}
           disabled={isSaving || !formData.title}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl shadow-indigo-500/10 mt-4 active:scale-[0.98]"
+          className="w-full bg-[var(--accent)] hover:opacity-90 disabled:opacity-50 text-[var(--accent-foreground)] py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--accent)]/10 mt-4 active:scale-[0.98]"
         >
           {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save to Library'}
         </button>
@@ -741,26 +741,24 @@ function PreviewForm({ item, type, onBack, onSave }: {
 }
 
 function PostSavePanel({ confirmation, onAddAnother }: { confirmation: { id: string, title: string }, onAddAnother: () => void }) {
-  const [collectionStatus, setCollectionStatus] = useState<string | null>(null);
-  
   return (
     <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in-95 duration-700">
-      <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-6 border border-green-500/20">
-        <CheckCircle2 className="w-10 h-10 text-green-400" />
+      <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 border border-emerald-500/20">
+        <CheckCircle2 className="w-10 h-10 text-emerald-500" />
       </div>
-      <h2 className="text-2xl font-bold mb-2">Saved to your library</h2>
-      <p className="text-gray-500 mb-10 text-center max-w-[400px]">{confirmation.title}</p>
+      <h2 className="text-2xl font-bold mb-2 text-[var(--foreground)] font-serif">Saved to your library</h2>
+      <p className="text-[var(--muted-foreground)] mb-10 text-center max-w-[400px]">{confirmation.title}</p>
       
       <div className="flex gap-3 mb-12">
-        <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#252525] px-4 py-2.5 rounded-lg border border-white/5 transition-colors text-sm font-medium">
+        <button className="flex items-center gap-2 bg-[var(--background)] hover:bg-[var(--muted)] px-4 py-2.5 rounded-lg border border-[var(--border)] transition-colors text-sm font-medium">
           Add to Collection <ChevronDown className="w-4 h-4" />
         </button>
-        <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#252525] px-4 py-2.5 rounded-lg border border-white/5 transition-colors text-sm font-medium">
+        <button className="flex items-center gap-2 bg-[var(--background)] hover:bg-[var(--muted)] px-4 py-2.5 rounded-lg border border-[var(--border)] transition-colors text-sm font-medium">
           Share <Share2 className="w-4 h-4" />
         </button>
         <Link 
           href={`/entries/${confirmation.id}`}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium"
+          className="flex items-center gap-2 bg-[var(--accent)] hover:opacity-90 text-[var(--accent-foreground)] px-4 py-2.5 rounded-lg transition-all text-sm font-medium shadow-sm"
         >
           View Entry <ExternalLink className="w-4 h-4" />
         </Link>
@@ -768,7 +766,7 @@ function PostSavePanel({ confirmation, onAddAnother }: { confirmation: { id: str
       
       <button 
         onClick={onAddAnother}
-        className="text-indigo-400 hover:text-indigo-300 font-medium text-sm underline-offset-4 hover:underline"
+        className="text-[var(--accent)] hover:underline font-medium text-sm underline-offset-4"
       >
         Add another
       </button>
@@ -779,7 +777,7 @@ function PostSavePanel({ confirmation, onAddAnother }: { confirmation: { id: str
 function Field({ label, required, hint, children }: { label: string, required?: boolean, hint?: string, children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-gray-500">
+      <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">
         <label>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
