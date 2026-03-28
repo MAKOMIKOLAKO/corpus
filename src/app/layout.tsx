@@ -19,12 +19,11 @@ export const metadata: Metadata = {
   description: 'Corpus is a personal knowledge management system for researchers, academics, and students. Save research papers by DOI, articles by URL, and books by ISBN. Automatically organized with AI keyword extraction and a semantic knowledge graph.',
   icons: {
     icon: [
-      { url: '/favicon.png', sizes: 'any' },
-      { url: '/icons/icon.png', sizes: 'any' }
+      { url: '/icon', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon.png', sizes: '32x32' },
     ],
-    shortcut: '/favicon.png',
     apple: [
-      { url: '/favicon.png', sizes: 'any' }
+      { url: '/apple-icon', sizes: '180x180', type: 'image/png' }
     ],
   },
   keywords: [

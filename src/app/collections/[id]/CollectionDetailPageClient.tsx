@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2, Users } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
@@ -96,6 +96,7 @@ export default function CollectionDetailPage() {
     const [updatingVisibility, setUpdatingVisibility] = useState(false);
     const [copiedSlug, setCopiedSlug] = useState(false);
     const [deletingCollection, setDeletingCollection] = useState(false);
+    const [showMembersDropdown, setShowMembersDropdown] = useState(false);
 
     // Use scroll position restoration for collection pages
     useScrollPosition(`collection-${params.id}`);
@@ -106,6 +107,23 @@ export default function CollectionDetailPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params.id]);
+
+    // Handle Escape key for dropdowns
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowMembersDropdown(false);
+            }
+        };
+
+        if (showMembersDropdown) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showMembersDropdown]);
 
     useEffect(() => {
         if (collection) {
@@ -365,6 +383,14 @@ export default function CollectionDetailPage() {
         }
     };
 
+    const getMemberCount = () => {
+        let count = collection?.userId ? 1 : 0; // Count owner
+        if (collection?.members) {
+            count += collection.members.filter(m => m.status === 'ACCEPTED').length;
+        }
+        return count;
+    };
+
     const filteredEntries = collection?.entries.filter(item =>
         item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
         item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase())) ||
@@ -450,24 +476,174 @@ export default function CollectionDetailPage() {
                             )}
                         </p>
                     </div>
-                    {isOwner && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleDeleteCollection}
-                            disabled={deletingCollection}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                            {deletingCollection ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <>
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                </>
-                            )}
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {/* Members Button */}
+                        {(isOwner || (collection.members && collection.members.length > 0)) && (
+                            <div className="relative">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowMembersDropdown(!showMembersDropdown)}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    Members ({getMemberCount()})
+                                </Button>
+
+                                {/* Members Dropdown */}
+                                {showMembersDropdown && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowMembersDropdown(false)} />
+                                        <div className="absolute top-full right-0 mt-1 w-80 max-h-96 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                                            <div className="p-4 border-b border-border">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="font-medium">Members ({getMemberCount()})</h3>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setShowMembersDropdown(false)}
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="max-h-80 overflow-y-auto p-4 space-y-3">
+                                                {/* Owner */}
+                                                {collection.userId && (
+                                                    <div className="flex items-center justify-between py-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                                                                {session?.user?.name?.[0] || session?.user?.email?.[0] || 'O'}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium">{session?.user?.name || 'You'}</p>
+                                                                <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                                                            </div>
+                                                        </div>
+                                                        <Badge className={getRoleBadgeColor('OWNER')}>Owner</Badge>
+                                                    </div>
+                                                )}
+
+                                                {/* Members */}
+                                                {collection.members?.filter(m => m.status === 'ACCEPTED').map((member) => (
+                                                    <div key={member.id} className="flex items-center justify-between py-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                                                                {member.user.name?.[0] || member.user.email[0]}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium">{member.user.name || 'User'}</p>
+                                                                <p className="text-xs text-muted-foreground">{member.user.email}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {canManage ? (
+                                                                <Select
+                                                                    value={member.role}
+                                                                    onValueChange={(value) => handleUpdateMemberRole(member.id, value as any)}
+                                                                    disabled={updatingMember === member.id}
+                                                                >
+                                                                    <SelectTrigger className="w-24 h-8 text-xs">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="VIEWER">Viewer</SelectItem>
+                                                                        <SelectItem value="CONTRIBUTOR">Contributor</SelectItem>
+                                                                        <SelectItem value="ADMIN">Admin</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : (
+                                                                <Badge className={getRoleBadgeColor(member.role)}>
+                                                                    {member.role.toLowerCase()}
+                                                                </Badge>
+                                                            )}
+                                                            {canManage && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleRemoveMember(member.id, member.user.name)}
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                {/* Pending Invites */}
+                                                {collection.members && collection.members.filter(m => m.status === 'PENDING').length > 0 && (
+                                                    <div className="pt-3 border-t border-border">
+                                                        <p className="text-xs text-muted-foreground mb-2">Pending Invites</p>
+                                                        {collection.members.filter(m => m.status === 'PENDING').map((member) => (
+                                                            <div key={member.id} className="flex items-center justify-between py-2">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-sm font-medium opacity-50">
+                                                                        {member.user.name?.[0] || member.user.email[0]}
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm font-medium opacity-50">{member.user.name || 'User'}</p>
+                                                                        <p className="text-xs text-muted-foreground">{member.user.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Badge variant="outline" className="text-xs">Pending</Badge>
+                                                                    {canManage && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={() => handleRemoveMember(member.id, member.user.name)}
+                                                                        >
+                                                                            <X className="w-4 h-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Invite Member Button */}
+                                                {canManage && (
+                                                    <div className="pt-3 border-t border-border">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setShowMembersDropdown(false);
+                                                                setShowInviteModal(true);
+                                                            }}
+                                                            className="w-full"
+                                                        >
+                                                            <UserPlus className="w-4 h-4 mr-2" />
+                                                            Invite Member
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {isOwner && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteCollection}
+                                disabled={deletingCollection}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                {deletingCollection ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                    </>
+                                )}
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -571,132 +747,6 @@ export default function CollectionDetailPage() {
                 </Card>
             )}
 
-            {/* Members Section */}
-            {(isOwner || (collection.members && collection.members.length > 0)) && (
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Members</CardTitle>
-                            {canManage && (
-                                <Button size="sm" onClick={() => setShowInviteModal(true)}>
-                                    <UserPlus className="w-4 h-4 mr-2" />
-                                    Invite Member
-                                </Button>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {/* Owner */}
-                            {collection.userId && (
-                                <div className="flex items-center justify-between py-2 border-b border-border">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                                            {session?.user?.name?.[0] || session?.user?.email?.[0] || 'O'}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">{session?.user?.name || 'You'}</p>
-                                            <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
-                                        </div>
-                                    </div>
-                                    <Badge className={getRoleBadgeColor('OWNER')}>Owner</Badge>
-                                </div>
-                            )}
-
-                            {/* Members */}
-                            {collection.members?.filter(m => m.status === 'ACCEPTED').map((member) => (
-                                <div key={member.id} className="flex items-center justify-between py-2">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                                            {member.user.name?.[0] || member.user.email[0]}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">{member.user.name || 'User'}</p>
-                                            <p className="text-xs text-muted-foreground">{member.user.email}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {canManage ? (
-                                            <Select
-                                                value={member.role}
-                                                onValueChange={(value) => handleUpdateMemberRole(member.id, value as any)}
-                                                disabled={updatingMember === member.id}
-                                            >
-                                                <SelectTrigger className="w-24 h-8 text-xs">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="VIEWER">Viewer</SelectItem>
-                                                    <SelectItem value="CONTRIBUTOR">Contributor</SelectItem>
-                                                    <SelectItem value="ADMIN">Admin</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        ) : (
-                                            <Badge className={getRoleBadgeColor(member.role)}>
-                                                {member.role.toLowerCase()}
-                                            </Badge>
-                                        )}
-                                        {canManage && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleRemoveMember(member.id, member.user.name)}
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Pending Invites */}
-                            {collection.members && collection.members.filter(m => m.status === 'PENDING').length > 0 && (
-                                <div className="pt-3 border-t border-border">
-                                    <p className="text-xs text-muted-foreground mb-2">Pending Invites</p>
-                                    {collection.members.filter(m => m.status === 'PENDING').map((member) => (
-                                        <div key={member.id} className="flex items-center justify-between py-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-sm font-medium opacity-50">
-                                                    {member.user.name?.[0] || member.user.email[0]}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium opacity-50">{member.user.name || 'User'}</p>
-                                                    <p className="text-xs text-muted-foreground">{member.user.email}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="text-xs">Pending</Badge>
-                                                {canManage && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleRemoveMember(member.id, member.user.name)}
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {!isOwner && (
-                                <div className="pt-3 border-t border-border">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleLeaveCollection}
-                                        className="text-red-600 hover:text-red-700"
-                                    >
-                                        Leave Collection
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
             {/* Invite Modal */}
             {showInviteModal && (

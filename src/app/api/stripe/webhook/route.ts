@@ -62,6 +62,12 @@ export async function POST(request: NextRequest) {
           customerId: customerId || undefined,
         });
 
+        // Retrieve full session with expanded line_items
+        const fullSession = await stripe.checkout.sessions.retrieve(
+          session.id,
+          { expand: ['line_items'] }
+        );
+
         let user = null;
         if (userId) {
           user = await (prisma as any).user.findUnique({
@@ -76,11 +82,11 @@ export async function POST(request: NextRequest) {
 
         if (user) {
           const updateData: Record<string, unknown> = {
-            subscriptionStatus: 'active',
             plan: 'PRO',
+            stripeCustomerId: session.customer as string,
             stripeSubscriptionId: session.subscription as string,
-            stripePriceId:
-              (session as any).display_items?.[0]?.price?.id || session.amount_total,
+            subscriptionStatus: 'active',
+            stripePriceId: fullSession.line_items?.data[0]?.price?.id ?? null
           };
           await (prisma as any).user.update({
             where: { id: user.id },
@@ -110,13 +116,14 @@ export async function POST(request: NextRequest) {
 
         if (user) {
           const updateData: Record<string, unknown> = {
-            subscriptionStatus: subscription.status,
+            subscriptionStatus: subscription.cancel_at_period_end
+              ? 'canceling'
+              : subscription.status,
+            stripePriceId: subscription.items.data[0]?.price?.id ?? null,
+            subscriptionEndsAt: new Date(
+              (subscription as any).current_period_end * 1000
+            )
           };
-          const periodEnd = (subscription as { current_period_end?: number })
-            .current_period_end;
-          if (subscription.cancel_at_period_end && periodEnd) {
-            updateData.subscriptionEndsAt = new Date(periodEnd * 1000);
-          }
           await (prisma as any).user.update({
             where: { id: user.id },
             data: updateData,

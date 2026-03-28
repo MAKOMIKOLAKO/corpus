@@ -13,7 +13,7 @@ import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Ch
 import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
 
 export default function AccountPage() {
-    const { data: session } = useSession();
+    const { data: session, update } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [promoCode, setPromoCode] = useState('');
@@ -55,6 +55,13 @@ export default function AccountPage() {
         fetchSharedCollectionsCount();
         fetchProfile();
     }, []);
+
+    // Handle session refresh when upgraded=true
+    useEffect(() => {
+        if (searchParams?.get('upgraded') === 'true') {
+            update(); // forces session to re-fetch from DB
+        }
+    }, [searchParams, update]);
 
     // Handle hash navigation
     useEffect(() => {
@@ -471,6 +478,18 @@ export default function AccountPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
+                        {/* Success banner for upgrade */}
+                        {upgraded && session?.user?.plan === 'PRO' && (
+                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-green-800">
+                                    <CheckCircle className="w-5 h-5" />
+                                    <span className="font-medium">Welcome to Corpus Pro!</span>
+                                </div>
+                                <p className="text-green-700 text-sm mt-1">
+                                    Your account has been upgraded successfully. You now have access to unlimited entries and all premium features.
+                                </p>
+                            </div>
+                        )}
                         <div>
                             <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                             <p className="text-sm">{session?.user?.email}</p>
@@ -490,22 +509,79 @@ export default function AccountPage() {
 
                         {userPlan === 'PRO' && (
                             <div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    Manage your subscription, update payment methods, or cancel your plan.
-                                </p>
-                                <Button
-                                    onClick={handleManageSubscription}
-                                    disabled={portalLoading}
-                                >
-                                    {portalLoading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Loading...
-                                        </>
-                                    ) : (
-                                        'Manage Subscription'
+                                <div className="mb-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Label className="text-sm font-medium text-muted-foreground">Subscription Status</Label>
+                                        <Badge variant={(session?.user as any)?.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
+                                            {(session?.user as any)?.subscriptionStatus || 'Unknown'}
+                                        </Badge>
+                                    </div>
+                                    {(session?.user as any)?.subscriptionEndsAt && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {(session?.user as any)?.subscriptionStatus === 'canceling'
+                                                ? `Ends on ${new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}`
+                                                : `Next billing date: ${new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}`
+                                            }
+                                        </p>
                                     )}
-                                </Button>
+                                </div>
+
+                                {/* Status-specific messages and actions */}
+                                {(session?.user as any)?.subscriptionStatus === 'canceling' && (
+                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-3">
+                                        <p className="text-amber-800 text-sm">
+                                            Your Pro subscription is canceled and will end on {new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}. You'll keep Pro access until then.
+                                        </p>
+                                        <Button size="sm" className="mt-2" onClick={() => window.location.href = '/pricing'}>
+                                            Resubscribe
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {(session?.user as any)?.subscriptionStatus === 'past_due' && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
+                                        <p className="text-red-800 text-sm">
+                                            Your payment failed. Update your payment method to keep Pro access.
+                                        </p>
+                                        <Button
+                                            size="sm"
+                                            className="mt-2"
+                                            onClick={handleManageSubscription}
+                                            disabled={portalLoading}
+                                        >
+                                            {portalLoading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Loading...
+                                                </>
+                                            ) : (
+                                                'Update Payment Method'
+                                            )}
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {(session?.user as any)?.subscriptionStatus === 'active' && (
+                                    <p className="text-sm text-muted-foreground mb-3">
+                                        Manage your subscription, update payment methods, or cancel your plan.
+                                    </p>
+                                )}
+
+                                {(session?.user as any)?.subscriptionStatus !== 'canceling' && (session?.user as any)?.subscriptionStatus !== 'past_due' && (
+                                    <Button
+                                        onClick={handleManageSubscription}
+                                        disabled={portalLoading}
+                                    >
+                                        {portalLoading ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Loading...
+                                            </>
+                                        ) : (
+                                            'Manage Subscription'
+                                        )}
+                                    </Button>
+                                )}
                             </div>
                         )}
 

@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
     const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=8&fields=paperId,title,authors,year,abstract,venue,externalIds,openAccessPdf`;
 
     const response = await fetch(ssUrl, {
-      headers: { 
-        "x-api-key": process.env.SEMANTIC_SCHOLAR_API_KEY || "" 
+      headers: {
+        "x-api-key": process.env.SEMANTIC_SCHOLAR_API_KEY || ""
       },
       signal: controller.signal
     });
-    
+
     clearTimeout(timeoutId);
 
     if (response.status === 429) {
@@ -41,16 +41,31 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    const results = (data.data || []).map((paper: any) => ({
-      semanticScholarId: paper.paperId,
-      title: paper.title,
-      authors: (paper.authors || []).map((a: any) => a.name),
-      year: paper.year || null,
-      abstract: paper.abstract || null,
-      source: paper.venue || null,
-      doi: paper.externalIds?.DOI || null,
-      openAccessUrl: paper.openAccessPdf?.url || null
-    }));
+    const results = (data.data || []).map((paper: any) => {
+      // URL priority logic: openAccessPdf > DOI > Semantic Scholar page
+      let url = null;
+      if (paper.openAccessPdf?.url) {
+        url = paper.openAccessPdf.url;
+      } else if (paper.externalIds?.DOI) {
+        url = `https://doi.org/${paper.externalIds.DOI}`;
+      } else {
+        url = `https://www.semanticscholar.org/paper/${paper.paperId}`;
+      }
+
+      return {
+        semanticScholarId: paper.paperId,
+        title: paper.title,
+        authors: (paper.authors || []).map((a: any) => a.name),
+        year: paper.year || null,
+        abstract: paper.abstract || null,
+        source: paper.venue || null,
+        doi: paper.externalIds?.DOI || null,
+        url: url,
+        metadata: {
+          openAccessUrl: paper.openAccessPdf?.url || null
+        }
+      };
+    });
 
     return NextResponse.json({ results });
 
