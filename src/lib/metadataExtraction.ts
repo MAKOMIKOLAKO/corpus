@@ -230,3 +230,4 @@ export function cleanAndNormalizeMetadata(metadata: any): ExtractedMetadata {
     contentType: metadata.contentType || 'ARTICLE',
   };
 }
+
