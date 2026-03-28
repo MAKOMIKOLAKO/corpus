@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, X } from 'lucide-react';
+import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, X, Users, MessageSquare, ThumbsUp, UserCheck, Clock } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 
 const formatDate = (dateString: string) => {
@@ -451,22 +451,55 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
 
                         <div className="space-y-4 mb-6">
                             {Array.isArray(entryCollections) && entryCollections.length > 0 ? (
-                                entryCollections.map((collection: any) => (
-                                    <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
-                                        <div>
-                                            <h4 className="font-medium text-sm">{collection.name}</h4>
-                                            {collection.description && (
-                                                <p className="text-xs text-[var(--muted-foreground)] mt-1">{collection.description}</p>
-                                            )}
+                                entryCollections.map((collection: any) => {
+                                    const isJournalClub = collection.metadata?.isJournalClub;
+                                    const entryMetadata = collection.entryMetadata || {};
+
+                                    return (
+                                        <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="font-medium text-sm">{collection.name}</h4>
+                                                    {isJournalClub && (
+                                                        <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                                                            Journal Club
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {collection.description && (
+                                                    <p className="text-xs text-[var(--muted-foreground)] mb-2">{collection.description}</p>
+                                                )}
+
+                                                {/* Journal Club Information */}
+                                                {isJournalClub && (
+                                                    <div className="space-y-1">
+                                                        {entryMetadata.presentationDate && (
+                                                            <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+                                                                <Clock className="w-3 h-3" />
+                                                                <span>
+                                                                    Scheduled: {new Date(entryMetadata.presentationDate).toLocaleDateString()}
+                                                                    {entryMetadata.presenterName && ` - ${entryMetadata.presenterName}`}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {entryMetadata.presented && (
+                                                            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+                                                                <Users className="w-3 h-3" />
+                                                                <span>Presented</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => handleRemoveFromCollection(collection.id)}
+                                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm ml-2"
+                                            >
+                                                Remove
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => handleRemoveFromCollection(collection.id)}
-                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="text-center py-8 text-[var(--muted-foreground)] text-sm italic">
                                     Not in any collections yet.
