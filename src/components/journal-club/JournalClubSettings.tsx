@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { JournalClubMetadata } from '@/lib/journalClub';
 
@@ -37,7 +38,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
       const response = await fetch(`/api/journal-club/${collectionId}/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify(settings)
       });
 
       if (!response.ok) {
@@ -71,14 +72,51 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="text-center py-8">
-          <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-            <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+        <div className="grid gap-6">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Meeting Frequency</label>
+            <Select value={settings.meetingFrequency} onValueChange={(value) => setSettings(prev => ({ ...prev, meetingFrequency: value as 'weekly' | 'biweekly' | 'monthly' }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <h3 className="text-lg font-medium mb-2">Journal Club Settings</h3>
-          <p className="text-muted-foreground mb-6">
-            This journal club is currently active. Members can participate in discussions, voting, and scheduling presentations.
-          </p>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Next Meeting Date & Time</label>
+            <input
+              type="datetime-local"
+              value={settings.nextMeetingDate ? new Date(settings.nextMeetingDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, nextMeetingDate: e.target.value }))}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Meeting Time</label>
+            <input
+              type="time"
+              value={settings.meetingTime || ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, meetingTime: e.target.value }))}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Timezone</label>
+            <input
+              type="text"
+              value={settings.timezone || ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
+              placeholder="e.g., America/New_York"
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
         </div>
 
         <div className="flex justify-end pt-4">
