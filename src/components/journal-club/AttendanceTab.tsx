@@ -93,6 +93,12 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
       return;
     }
 
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newMeetingDate)) {
+      toast.error('Invalid date format');
+      return;
+    }
+
     if (!canManage) {
       toast.error('You do not have permission to create meetings');
       return;
@@ -105,7 +111,7 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           collectionId,
-          date: new Date(newMeetingDate).toISOString(),
+          date: newMeetingDate, // Send as date-only string
           notes: newMeetingNotes.trim() || null
         })
       });
@@ -220,7 +226,36 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
   }
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-32 bg-muted rounded-md animate-pulse mb-2"></div>
+            <div className="h-4 w-64 bg-muted rounded-md animate-pulse"></div>
+          </div>
+          <div className="h-10 w-32 bg-muted rounded-md animate-pulse"></div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-6 w-40 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-6 w-20 bg-muted rounded-md animate-pulse"></div>
+                  </div>
+                  <div className="h-4 w-3/4 bg-muted rounded-md animate-pulse"></div>
+                </div>
+                <div className="h-8 w-8 bg-muted rounded-md animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -371,7 +406,7 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
               <div>
                 <label className="text-sm font-medium">Meeting Date</label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   value={newMeetingDate}
                   onChange={(e) => setNewMeetingDate(e.target.value)}
                   className="w-full mt-1 px-3 py-2 border rounded-md"

@@ -19,8 +19,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
     isJournalClub: true,
     meetingFrequency: 'weekly',
     nextMeetingDate: '',
-    meetingDayOfWeek: undefined,
-    meetingTime: ''
+    meetingDayOfWeek: undefined
   });
   const [saving, setSaving] = useState(false);
 
@@ -88,34 +87,38 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Next Meeting Date & Time</label>
+            <label className="text-sm font-medium mb-2 block">Next Meeting Date</label>
             <input
-              type="datetime-local"
-              value={settings.nextMeetingDate ? new Date(settings.nextMeetingDate).toISOString().slice(0, 16) : ''}
+              type="date"
+              value={settings.nextMeetingDate ? settings.nextMeetingDate : ''}
               onChange={(e) => setSettings(prev => ({ ...prev, nextMeetingDate: e.target.value }))}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Meeting Time</label>
-            <input
-              type="time"
-              value={settings.meetingTime || ''}
-              onChange={(e) => setSettings(prev => ({ ...prev, meetingTime: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Timezone</label>
-            <input
-              type="text"
-              value={settings.timezone || ''}
-              onChange={(e) => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
-              placeholder="e.g., America/New_York"
-              className="w-full px-3 py-2 border rounded-md"
-            />
+            <label className="text-sm font-medium mb-2 block">Meeting Day of Week</label>
+            <Select
+              value={settings.meetingDayOfWeek?.toString() || ''}
+              onValueChange={(value) => setSettings(prev => ({
+                ...prev,
+                meetingDayOfWeek: value === '' ? undefined : parseInt(value, 10)
+              }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select day (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No specific day</SelectItem>
+                <SelectItem value="0">Sunday</SelectItem>
+                <SelectItem value="1">Monday</SelectItem>
+                <SelectItem value="2">Tuesday</SelectItem>
+                <SelectItem value="3">Wednesday</SelectItem>
+                <SelectItem value="4">Thursday</SelectItem>
+                <SelectItem value="5">Friday</SelectItem>
+                <SelectItem value="6">Saturday</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

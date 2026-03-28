@@ -3,14 +3,12 @@ import { Collection, Plan, CollectionMember } from '@prisma/client'
 export type JournalClubMetadata = {
   isJournalClub: true
   meetingFrequency: 'weekly' | 'biweekly' | 'monthly'
-  nextMeetingDate: string // ISO datetime string
+  nextMeetingDate: string // Date string "YYYY-MM-DD"
   meetingDayOfWeek?: number // 0-6, Sunday=0
-  meetingTime?: string // "HH:mm" format e.g. "14:00"
-  timezone?: string // IANA timezone e.g. "America/New_York"
 }
 
 export type JournalClubEntryMetadata = {
-  presentationDate?: string // ISO datetime string
+  presentationDate?: string // Date string "YYYY-MM-DD"
   presenterId?: string // userId
   presented?: boolean
   presenterName?: string // denormalized for display without extra query
@@ -64,24 +62,15 @@ export function getNextMeetingDates(
 }
 
 // Format date for display in UI
-export function formatJournalClubDate(dateString: string): string {
-  const date = new Date(dateString)
+export function formatJournalClubDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00')
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   })
-}
-
-// Format time for display in UI
-export function formatJournalClubTime(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
+  // Output: "Monday, March 30, 2026"
 }
 
 // Get user's role in a collection from membership data

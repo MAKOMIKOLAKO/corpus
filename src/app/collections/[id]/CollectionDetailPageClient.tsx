@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ interface Collection {
 export default function CollectionDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const apiKey = useApiKey();
     const { data: session } = useSession();
     const [collection, setCollection] = useState<Collection | null>(null);
@@ -109,6 +111,22 @@ export default function CollectionDetailPage() {
     const [activeTab, setActiveTab] = useState('entries');
     const [userPlan, setUserPlan] = useState('FREE');
     const [userRole, setUserRole] = useState<'ADMIN' | 'CONTRIBUTOR' | 'VIEWER' | null>(null);
+
+    // Initialize tab from URL params
+    useEffect(() => {
+        const tabFromUrl = searchParams.get('tab');
+        if (tabFromUrl && ['entries', 'schedule', 'discussion', 'votes', 'attendance'].includes(tabFromUrl)) {
+            setActiveTab(tabFromUrl);
+        }
+    }, [searchParams]);
+
+    // Update URL when tab changes
+    const handleTabChange = (tabId: string) => {
+        setActiveTab(tabId);
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.set('tab', tabId);
+        router.replace(`${window.location.pathname}?${newParams.toString()}`, { scroll: false });
+    };
 
     // Use scroll position restoration for collection pages
     useScrollPosition(`collection-${params.id}`);
@@ -981,7 +999,7 @@ export default function CollectionDetailPage() {
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => handleTabChange(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
                                 ? 'bg-blue-600 text-white dark:bg-blue-600 dark:text-white'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'

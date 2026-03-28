@@ -77,14 +77,19 @@ export async function POST(
       return NextResponse.json({ error: 'Date is required' }, { status: 400 });
     }
 
+    // Validate date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json({ error: 'Date must be in YYYY-MM-DD format' }, { status: 400 });
+    }
+
     // Get collection and check admin permissions
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
       include: {
         members: {
-          where: { 
-            userId, 
-            status: 'ACCEPTED' 
+          where: {
+            userId,
+            status: 'ACCEPTED'
           }
         },
         user: {
@@ -108,7 +113,7 @@ export async function POST(
     const meeting = await prisma.journalClubMeeting.create({
       data: {
         collectionId,
-        date: new Date(date),
+        date: new Date(date + 'T00:00:00Z'), // Normalize to midnight UTC
         notes: notes?.trim() || null
       }
     });

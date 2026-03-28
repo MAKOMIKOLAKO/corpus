@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, CheckCircle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, User, CheckCircle, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatJournalClubDate, formatJournalClubTime } from '@/lib/journalClub';
+import { formatJournalClubDate } from '@/lib/journalClub';
 import { toast } from 'sonner';
 
 interface ScheduledEntry {
@@ -99,8 +99,21 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
   };
 
   const handleSchedulePresentation = async () => {
-    if (!selectedEntryId || !selectedPresenterId || !presentationDate) {
-      toast.error('Please fill in all fields');
+    // Validation
+    if (!selectedEntryId) {
+      toast.error('Please select a paper to schedule');
+      return;
+    }
+    if (!selectedPresenterId) {
+      toast.error('Please select a presenter');
+      return;
+    }
+    if (!presentationDate) {
+      toast.error('Please select a presentation date');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(presentationDate)) {
+      toast.error('Invalid date format');
       return;
     }
 
@@ -113,7 +126,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
           collectionId,
           entryId: selectedEntryId,
           presenterId: selectedPresenterId,
-          presentationDate: new Date(presentationDate).toISOString()
+          presentationDate: presentationDate // Send as date-only string
         })
       });
 
@@ -183,7 +196,41 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
   }
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-48 bg-muted rounded-md animate-pulse mb-2"></div>
+            <div className="h-4 w-64 bg-muted rounded-md animate-pulse"></div>
+          </div>
+          <div className="h-10 w-32 bg-muted rounded-md animate-pulse"></div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border rounded-lg p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-4 w-32 bg-muted rounded-md animate-pulse"></div>
+                  </div>
+                  <div className="h-6 w-3/4 bg-muted rounded-md animate-pulse"></div>
+                  <div className="h-4 w-1/2 bg-muted rounded-md animate-pulse"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-4 w-24 bg-muted rounded-md animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-8 w-32 bg-muted rounded-md animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -232,10 +279,6 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">
                         {formatJournalClubDate(scheduled.presentationDate)}
-                      </span>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        {formatJournalClubTime(scheduled.presentationDate)}
                       </span>
                       {scheduled.presenterId === currentUserId && (
                         <Badge variant="default">You're presenting this</Badge>
@@ -321,44 +364,59 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Select Paper</label>
-                <Select value={selectedEntryId} onValueChange={(value) => setSelectedEntryId(value || '')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a paper to schedule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {unscheduledEntries.map((unscheduled) => (
-                      <SelectItem key={unscheduled.entry.id} value={unscheduled.entry.id}>
-                        {unscheduled.entry.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {unscheduledEntries.length === 0 ? (
+                  <select disabled className="w-full mt-1 px-3 py-2 border rounded-md bg-muted">
+                    <option>No unscheduled papers in this collection. Add papers to the collection first.</option>
+                  </select>
+                ) : (
+                  <Select value={selectedEntryId} onValueChange={(value) => setSelectedEntryId(value || '')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a paper to schedule" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-- Select --</SelectItem>
+                      {unscheduledEntries.map((unscheduled) => (
+                        <SelectItem key={unscheduled.entry.id} value={unscheduled.entry.id}>
+                          {unscheduled.entry.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div>
-                <label className="text-sm font-medium">Presentation Date & Time</label>
+                <label className="text-sm font-medium">Presentation Date</label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   value={presentationDate}
                   onChange={(e) => setPresentationDate(e.target.value)}
                   className="w-full mt-1 px-3 py-2 border rounded-md"
+                  min={new Date().toISOString().split('T')[0]} // Today as minimum date
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium">Presenter</label>
-                <Select value={selectedPresenterId} onValueChange={(value) => setSelectedPresenterId(value || '')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a presenter" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map((member) => (
-                      <SelectItem key={member.user.id} value={member.user.id}>
-                        {member.user.name || 'User'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {members.length === 0 ? (
+                  <select disabled className="w-full mt-1 px-3 py-2 border rounded-md bg-muted">
+                    <option>No members in this collection yet. Invite members before scheduling.</option>
+                  </select>
+                ) : (
+                  <Select value={selectedPresenterId} onValueChange={(value) => setSelectedPresenterId(value || '')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a presenter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-- Select --</SelectItem>
+                      {members.map((member) => (
+                        <SelectItem key={member.user.id} value={member.user.id}>
+                          {member.user.name || 'User'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="flex gap-2 pt-4">

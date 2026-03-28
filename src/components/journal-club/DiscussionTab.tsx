@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MessageSquare, Send, Trash2, ChevronDown } from 'lucide-react';
+import { MessageSquare, Trash2, Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,6 +41,7 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -72,6 +73,7 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
   };
 
   const fetchComments = async (entryId: string) => {
+    setCommentsLoading(true);
     try {
       const response = await fetch(`/api/journal-club/${collectionId}/comments/${entryId}`);
       if (!response.ok) throw new Error('Failed to fetch comments');
@@ -81,6 +83,8 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast.error('Failed to load comments');
+    } finally {
+      setCommentsLoading(false);
     }
   };
 
@@ -165,7 +169,34 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
   }
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="h-8 w-48 bg-muted rounded-md animate-pulse mb-2"></div>
+        <div className="h-4 w-64 bg-muted rounded-md animate-pulse mb-6"></div>
+
+        {/* Entry selector skeleton */}
+        <div className="h-10 w-full bg-muted rounded-md animate-pulse"></div>
+
+        {/* Content skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border rounded-lg p-4">
+              <div className="flex gap-3">
+                <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-24 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-3 w-16 bg-muted rounded-md animate-pulse"></div>
+                  </div>
+                  <div className="h-4 w-3/4 bg-muted rounded-md animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (entries.length === 0) {
@@ -180,18 +211,28 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
 
   return (
     <div className="space-y-6">
-      {/* Entry Selector */}
+      {/* Entry selector */}
       <div className="flex items-center gap-4">
-        <div className="flex-1">
+        {entries.length <= 5 ? (
+          <div className="flex gap-2 flex-wrap">
+            {entries.map((entry) => (
+              <Button
+                key={entry.id}
+                variant={selectedEntryId === entry.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedEntryId(entry.id)}
+              >
+                {entry.title.length > 30 ? entry.title.slice(0, 30) + '...' : entry.title}
+              </Button>
+            ))}
+          </div>
+        ) : (
           <Select value={selectedEntryId} onValueChange={(value) => setSelectedEntryId(value || '')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a paper to discuss">
-                {selectedEntry && (
-                  <span>Discussing: {selectedEntry?.title}</span>
-                )}
-              </SelectValue>
+            <SelectTrigger className="w-full max-w-md">
+              <SelectValue placeholder="Select a paper to discuss" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="">-- Select --</SelectItem>
               {entries.map((entry) => (
                 <SelectItem key={entry.id} value={entry.id}>
                   {entry.title}
@@ -199,7 +240,7 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
               ))}
             </SelectContent>
           </Select>
-        </div>
+        )}
       </div>
 
       {/* Selected Entry Info */}
@@ -225,44 +266,81 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {comments.length === 0 ? (
-            <div className="text-center py-8">
-              <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">No comments yet. Start the discussion.</p>
+          {selectedEntryId ? (
+            <div className="space-y-4">
+              {commentsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="border rounded-lg p-4">
+                      <div className="flex gap-3">
+                        <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="h-4 w-24 bg-muted rounded-md animate-pulse"></div>
+                            <div className="h-3 w-16 bg-muted rounded-md animate-pulse"></div>
+                          </div>
+                          <div className="h-4 w-3/4 bg-muted rounded-md animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {comments.length === 0 ? (
+                    <Card>
+                      <CardContent className="p-8 text-center">
+                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No discussions yet</h3>
+                        <p className="text-muted-foreground">Be the first to start a discussion about this paper.</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {comments.map((comment) => (
+                        <Card key={comment.id}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-medium">{comment.user.name || comment.user.username}</span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                                  </span>
+                                </div>
+                                <p className="text-sm">{comment.content}</p>
+                              </div>
+                              {comment.user.id === currentUserId && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  disabled={deleting === comment.id}
+                                >
+                                  {deleting === comment.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3 p-3 rounded-lg border">
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarFallback>
-                    {(comment.user.name || comment.user.username || 'U').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">
-                        {comment.user.name || comment.user.username}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                      </span>
-                    </div>
-                    {(comment.user.id === currentUserId) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteComment(comment.id)}
-                        disabled={deleting === comment.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
-                </div>
-              </div>
-            ))
+            <Card>
+              <CardContent className="p-8 text-center">
+                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Select a paper to start discussion</h3>
+                <p className="text-muted-foreground">Choose a paper from the options above to view and participate in discussions.</p>
+              </CardContent>
+            </Card>
           )}
         </CardContent>
       </Card>
