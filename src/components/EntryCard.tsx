@@ -152,8 +152,19 @@ export default function EntryCard({
                 if (!response.ok) return;
                 const data = await response.json();
 
-                if (!cancelled && Array.isArray(data)) {
-                    const filteredCollections = data
+                if (!cancelled && data) {
+                    // Handle the API response structure: { owned: [...], member: [...] }
+                    const allCollections = [];
+
+                    if (Array.isArray(data.owned)) {
+                        allCollections.push(...data.owned);
+                    }
+
+                    if (Array.isArray(data.member)) {
+                        allCollections.push(...data.member);
+                    }
+
+                    const filteredCollections = allCollections
                         .filter((c: any) => c && typeof c.id === 'string' && typeof c.name === 'string')
                         .map((c: any) => ({ id: c.id, name: c.name }));
 
