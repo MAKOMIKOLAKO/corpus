@@ -117,20 +117,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    // Apply rate limiting for write operations
-    const rateLimitResponse = rateLimits.api(request);
-    if (rateLimitResponse) {
-        return rateLimitResponse;
-    }
-
     try {
-        // Validate API key first
-        const validation = await validateApiKey(request);
-        if (!validation.valid) {
-            return validation.response;
-        }
-
-        // Get current user and check entry limits
         const userId = await getCurrentUserId();
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -139,7 +126,7 @@ export async function POST(request: NextRequest) {
         // Get user data to check plan limits
         const user = await prisma.user.findUnique({
             where: { id: userId },
-        }) as any;
+        });
 
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -150,180 +137,62 @@ export async function POST(request: NextRequest) {
             where: { userId }
         });
 
-        // Check if user can add more entries
-        if (!canAddEntry(user, currentEntryCount)) {
+        // Check if user can add more entries (limit 100 on free plan)
+        if (user.plan === 'FREE' && currentEntryCount >= 100) {
             return NextResponse.json(
                 { error: 'entry_limit_reached', limit: 100 },
-                {
-                    status: 403,
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                    }
-                }
+                { status: 403 }
             );
         }
 
-        let body;
-        try {
-            body = await request.json();
-        } catch (parseError) {
-            return NextResponse.json(
-                { error: 'Invalid JSON in request body' },
-                {
-                    status: 400,
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                    }
-                }
-            );
-        }
-
-        const authors = Array.isArray(body.authors)
-            ? body.authors
-            : typeof body.authors === 'string'
-                ? body.authors
-                    .split(',')
-                    .map((a: string) => a.trim())
-                    .filter(Boolean)
-                : [];
-
-
-        // Use the new duplicate handler
-        const duplicateCheck = await checkForDuplicates(body.url, body.doi, body.title);
-
-        if (duplicateCheck.isDuplicate) {
-            return NextResponse.json(
-                {
-                    error: 'Duplicate entry detected',
-                    duplicateEntry: duplicateCheck.duplicateEntry,
-                    confidence: duplicateCheck.confidence,
-                    reason: duplicateCheck.reason
-                },
-                {
-                    status: 409,
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                    }
-                }
-            );
-        }
-
-        // Check if AI generation should be skipped (for bulk entries)
-        const skipAI = body.skipAI === true;
-
-
-        const entryCreateData: any = {
-            title: body.title,
+        const body = await request.json();
+        const {
+            title,
             authors,
-            year: body.year ? parseInt(body.year, 10) : null,
-            contentType: body.contentType || 'PAPER',
-            url: body.url || null,
-            doi: body.doi || null,
-            source: body.source || null,
-            abstract: body.abstract || null,
-            publishers: Array.isArray(body.publishers) ? body.publishers : [],
-            publishDate: body.publishDate || null,
-            numberOfPages: typeof body.numberOfPages === 'number' ? body.numberOfPages : null,
-            description: body.description || null,
-            isbn13: Array.isArray(body.isbn13) ? body.isbn13 : [],
-            cover: body.cover || null,
-            summary: body.summary || null,
-            notes: body.notes || [],
-            readingStatus: body.readingStatus || 'UNREAD',
-            userId, // Add userId to associate entry with user
-        };
+            year,
+            contentType,
+            url,
+            doi,
+            isbn,
+            source,
+            abstract,
+            summary,
+            notes,
+            readingStatus,
+            metadata
+        } = body;
+
+        if (!title) {
+            return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+        }
 
         const entry = await prisma.entry.create({
-            data: entryCreateData,
+            data: {
+                title,
+                authors: authors || [],
+                year: year ? parseInt(year, 10) : null,
+                contentType: contentType || 'PAPER',
+                url: url || null,
+                doi: doi || null,
+                isbn13: isbn ? [isbn] : [],
+                source: source || null,
+                abstract: abstract || null,
+                summary: summary || null,
+                notes: JSON.stringify(notes || []) as any,
+                readingStatus: readingStatus || 'UNREAD',
+                userId,
+            },
         });
 
-        // Create signal for entry saved (fire-and-forget)
-        try {
-            // Don't await this signal creation
-            prisma.signal.create({
-                data: {
-                    userId: userId,
-                    type: "ENTRY_SAVED",
-                    entryId: entry.id,
-                    metadata: {
-                        title: entry.title,
-                        contentType: entry.contentType
-                    }
-                }
-            }).catch(err => console.error("Failed to create signal:", err));
-        } catch (error) {
-            // Fire-and-forget signal creation
-            console.error("Failed to create signal:", error);
-        }
+        return NextResponse.json({
+            id: entry.id,
+            title: entry.title,
+            contentType: entry.contentType,
+            createdAt: entry.createdAt
+        }, { status: 201 });
 
-        return NextResponse.json(entry, {
-            status: 201,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-            }
-        });
     } catch (error: any) {
         console.error('Error creating entry:', error);
-
-        // Provide detailed error message based on error type
-        let errorMessage = 'Failed to create entry';
-        let errorDetails = '';
-
-        if (error?.code === 'P2002') {
-            // Unique constraint violation
-            const field = error?.meta?.target?.[0] || 'unknown field';
-            errorMessage = `Entry already exists`;
-            errorDetails = `An entry with this ${field} already exists in your library`;
-        } else if (error?.code === 'P2025') {
-            // Record not found
-            errorMessage = 'Referenced data not found';
-            errorDetails = 'The entry references data that no longer exists';
-        } else if (error?.code === 'P2003') {
-            // Foreign key constraint
-            errorMessage = 'Invalid reference';
-            errorDetails = 'The entry contains invalid reference data';
-        } else if (error?.name === 'PrismaClientKnownRequestError') {
-            errorMessage = 'Database error';
-            errorDetails = `Database operation failed: ${error.message || 'Unknown database error'}`;
-        } else if (error?.name === 'PrismaClientUnknownRequestError') {
-            errorMessage = 'Database connection error';
-            errorDetails = 'Unable to connect to the database. Please try again later.';
-        } else if (error?.name === 'PrismaClientRustPanicError') {
-            errorMessage = 'Database system error';
-            errorDetails = 'The database encountered an unexpected error. Please try again.';
-        } else if (error?.name === 'PrismaClientInitializationError') {
-            errorMessage = 'Database initialization failed';
-            errorDetails = 'Failed to initialize database connection. Please refresh and try again.';
-        } else if (error?.name === 'PrismaClientValidationError') {
-            errorMessage = 'Invalid entry data';
-            errorDetails = 'The entry data is invalid or incomplete. Please check all fields.';
-        } else if (error?.message) {
-            errorMessage = error.message;
-            errorDetails = 'An unexpected error occurred while saving the entry.';
-        }
-
-        const errorResponse: any = {
-            error: errorMessage,
-            message: 'Failed to save entry to your library'
-        };
-
-        if (errorDetails) {
-            errorResponse.details = errorDetails;
-        }
-
-        if (process.env.NODE_ENV === 'development') {
-            errorResponse.debug = {
-                name: error?.name,
-                code: error?.code,
-                stack: error?.stack
-            };
-        }
-
-        return NextResponse.json(errorResponse, {
-            status: 500,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-            }
-        });
+        return NextResponse.json({ error: 'Failed to create entry' }, { status: 500 });
     }
 }
