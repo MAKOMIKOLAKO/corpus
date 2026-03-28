@@ -29,29 +29,53 @@ export async function POST(request: NextRequest) {
 
     // 4. If PAPER or BOOK create entry immediately
     if (inputType === 'PAPER' || inputType === 'BOOK') {
-      const entry = await prisma.entry.create({
-        data: {
-          ...payload,
+      try {
+        const entryData: any = {
+          title: payload.title,
+          authors: payload.authors || [],
+          year: payload.year ? parseInt(payload.year) : null,
+          contentType: payload.contentType || (inputType === 'PAPER' ? 'PAPER' : 'BOOK'),
+          source: payload.source || null,
+          abstract: payload.abstract || null,
+          doi: payload.doi || null,
+          url: payload.url || null,
+          isbn13: payload.isbn ? [payload.isbn] : [],
+          numberOfPages: payload.metadata?.pages ? parseInt(payload.metadata.pages) : null,
+          cover: payload.metadata?.coverUrl || null,
+          readingStatus: payload.readingStatus || 'UNREAD',
           userId,
-          notes: JSON.stringify(payload.notes || []) as any
-        }
-      });
+          notes: payload.notes || []
+        };
 
-      const queueItem = await prisma.queueItem.create({
-        data: {
-          userId,
-          status: 'COMPLETED',
-          inputType,
-          input,
-          payload: payload as any,
-          result: payload as any,
-          entryId: entry.id,
-          completedAt: new Date(),
-          position
-        }
-      });
+        const entry = await prisma.entry.create({
+          data: entryData
+        });
 
-      return NextResponse.json({ queueItem });
+        const queueItem = await prisma.queueItem.create({
+          data: {
+            userId,
+            status: 'COMPLETED',
+            inputType: inputType as any,
+            input,
+            payload: payload as any,
+            result: payload as any,
+            entryId: entry.id,
+            completedAt: new Date(),
+            position
+          }
+        });
+
+        return NextResponse.json({ queueItem });
+      } catch (err: any) {
+        // Handle duplicate DOI or URL
+        if (err.code === 'P2002') {
+          return NextResponse.json({ 
+            error: 'ALREADY_EXISTS',
+            message: 'This entry is already in your library.' 
+          }, { status: 409 });
+        }
+        throw err; // Re-throw for general catch
+      }
     }
 
     // 5. If URL, create PENDING and trigger processing

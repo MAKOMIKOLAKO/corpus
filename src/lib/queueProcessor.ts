@@ -40,20 +40,31 @@ export async function processUserQueue(userId: string): Promise<void> {
     let html = '';
     try {
       const response = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Corpus/1.0)" },
+        headers: { 
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9"
+        },
         signal: controller.signal
       });
       clearTimeout(timeoutId);
       
-      if (!response.ok) throw new Error("Could not reach that URL");
+      if (!response.ok) throw new Error(`Could not reach that URL (Status: ${response.status})`);
       html = await response.text();
+      
+      if (!html || html.length < 200) {
+        // Check if we got blanked
+        if (html.toLowerCase().includes('cloudflare') || html.toLowerCase().includes('bot') || html.length === 0) {
+           throw new Error("This site blocked our automated extraction. Please add it manually or try a different link.");
+        }
+      }
     } catch (err: any) {
       clearTimeout(timeoutId);
       await prisma.queueItem.update({
         where: { id: item.id },
         data: {
           status: "FAILED",
-          errorMessage: "Could not reach that URL",
+          errorMessage: err.name === 'AbortError' ? "Request timed out" : (err.message || "Could not reach that URL"),
           completedAt: new Date()
         }
       });
@@ -71,15 +82,14 @@ export async function processUserQueue(userId: string): Promise<void> {
       return match ? match[1].trim() : null;
     };
 
-    meta.ogTitle = getTag(/<meta\s+(?:property|name)="og:title"\s+content="([^"]+)"/i) || getTag(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:title"/i);
-    meta.ogDescription = getTag(/<meta\s+(?:property|name)="og:description"\s+content="([^"]+)"/i) || getTag(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:description"/i);
-    meta.ogSiteName = getTag(/<meta\s+(?:property|name)="og:site_name"\s+content="([^"]+)"/i) || getTag(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:site_name"/i);
-    meta.description = getTag(/<meta\s+name="description"\s+content="([^"]+)"/i) || getTag(/<meta\s+content="([^"]+)"\s+name="description"/i);
-    meta.author = getTag(/<meta\s+name="author"\s+content="([^"]+)"/i) || getTag(/<meta\s+content="([^"]+)"\s+name="author"/i);
-    meta.articlePublishedAt = getTag(/<meta\s+(?:property|name)="article:published_time"\s+content="([^"]+)"/i);
-    meta.articleAuthor = getTag(/<meta\s+(?:property|name)="article:author"\s+content="([^"]+)"/i);
+    meta.ogTitle = getTag(/property="og:title"\s+content="([^"]+)"/i) || getTag(/name="og:title"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+property="og:title"/i);
+    meta.ogDescription = getTag(/property="og:description"\s+content="([^"]+)"/i) || getTag(/name="og:description"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+property="og:description"/i);
+    meta.ogSiteName = getTag(/property="og:site_name"\s+content="([^"]+)"/i) || getTag(/name="og:site_name"\s+content="([^"]+)"/i);
+    meta.description = getTag(/name="description"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+name="description"/i);
+    meta.author = getTag(/name="author"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+name="author"/i);
+    meta.articlePublishedAt = getTag(/property="article:published_time"\s+content="([^"]+)"/i);
     meta.titleTag = getTag(/<title>([^<]+)<\/title>/i);
-    meta.doi = getTag(/<meta\s+name="citation_doi"\s+content="([^"]+)"/i);
+    meta.doi = getTag(/name="citation_doi"\s+content="([^"]+)"/i);
 
     // Body text: strip all HTML tags, trim to 4000
     const bodyText = html
@@ -92,24 +102,22 @@ export async function processUserQueue(userId: string): Promise<void> {
 
     // c. Build Gemini prompt
     const promptText = `Extract structured metadata from the following webpage content.
-Return ONLY a valid JSON object with no explanation, no markdown, no code blocks, using exactly this structure:
+Return ONLY a valid JSON object.
+Structure:
 {
-  "title": "the article or page title, not the site name",
-  "authors": ["array of author full names, empty array if none"],
+  "title": "the article or page title",
+  "authors": ["author names"],
   "year": number or null,
-  "description": "2-3 sentence summary of the content",
-  "source": "website or publication name",
-  "contentType": "one of: ARTICLE, BLOG, ESSAY, POLICY_REPORT, OTHER",
+  "description": "2-3 sentence summary",
+  "source": "website name",
+  "contentType": "ARTICLE | BLOG | ESSAY | POLICY_REPORT | OTHER",
   "doi": "string or null"
 }
 
 URL: ${url}
 Meta title: ${meta.ogTitle || meta.titleTag || ''}
 Meta description: ${meta.ogDescription || meta.description || ''}
-Meta author: ${meta.ogAuthor || meta.author || ''}
-Site name: ${meta.ogSiteName || ''}
-Published: ${meta.articlePublishedAt || ''}
-Body text: ${bodyText}`;
+Body text preview: ${bodyText}`;
 
     // d. Call Gemini Flash via fetch
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
@@ -117,12 +125,16 @@ Body text: ${bodyText}`;
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: {
+            response_mime_type: "application/json"
+        }
       })
     });
 
     if (!geminiResponse.ok) {
-        throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
+        const errorData = await geminiResponse.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || `Gemini API error: ${geminiResponse.statusText}`);
     }
 
     const geminiData = await geminiResponse.json();
@@ -163,21 +175,34 @@ Body text: ${bodyText}`;
     };
 
     // f. Create Entry
-    const entry = await prisma.entry.create({
-      data: {
-        title: payload.title,
-        authors: payload.authors,
-        year: payload.year,
-        abstract: payload.abstract,
-        source: payload.source,
-        contentType: payload.contentType as any,
-        doi: payload.doi,
-        url: payload.url,
-        readingStatus: "UNREAD",
-        notes: JSON.stringify(payload.notes) as any,
-        userId
+    let entry;
+    try {
+      entry = await prisma.entry.create({
+        data: {
+          title: payload.title,
+          authors: payload.authors,
+          year: payload.year,
+          abstract: payload.abstract,
+          source: payload.source,
+          contentType: payload.contentType as any,
+          doi: payload.doi,
+          url: payload.url,
+          readingStatus: "UNREAD",
+          notes: payload.notes || [],
+          userId
+        }
+      });
+    } catch (err: any) {
+      if (err.code === 'P2002') {
+        // If already exists, try to find it to link the queue item
+        entry = await prisma.entry.findUnique({
+          where: { url: payload.url }
+        });
+        if (!entry) throw new Error("Entry already exists but could not be retrieved");
+      } else {
+        throw err;
       }
-    });
+    }
 
     // 5. On success
     await prisma.queueItem.update({

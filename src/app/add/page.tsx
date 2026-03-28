@@ -562,12 +562,21 @@ function PreviewForm({ item, type, onBack, onSave }: {
         if (res.status === 403 && data.error === 'entry_limit_reached') {
           throw new Error('LIMIT_REACHED');
         }
+        if (res.status === 409 && data.error === 'ALREADY_EXISTS') {
+          throw new Error('ALREADY_EXISTS');
+        }
         throw new Error(data.error || 'Failed to save');
       }
 
       onSave(data.queueItem.entryId, formData.title);
     } catch (err: any) {
-      setError(err.message === 'LIMIT_REACHED' ? 'LIMIT' : err.message);
+      if (err.message === 'LIMIT_REACHED') {
+        setError('LIMIT');
+      } else if (err.message === 'ALREADY_EXISTS') {
+        setError('EXISTS');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -586,8 +595,19 @@ function PreviewForm({ item, type, onBack, onSave }: {
           <Link href="/billing" className="font-bold underline">Upgrade to Pro →</Link>
         </div>
       )}
+
+      {error === 'EXISTS' && (
+        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400 text-sm flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5" />
+          <div className="flex-1">
+            <p className="font-semibold">Already in your library</p>
+            <p className="opacity-80">This paper or book has already been saved.</p>
+          </div>
+          <Link href="/library" className="text-xs font-bold underline whitespace-nowrap">Open Library</Link>
+        </div>
+      )}
       
-      {error && error !== 'LIMIT' && (
+      {error && error !== 'LIMIT' && error !== 'EXISTS' && (
         <div className="p-3 text-red-600 dark:text-red-400 text-sm bg-red-500/5 border border-red-500/10 rounded-lg">
           {error}
         </div>
