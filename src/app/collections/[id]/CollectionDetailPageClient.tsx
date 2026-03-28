@@ -8,12 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2, Users, Calendar, MessageSquare, ThumbsUp, UserCheck } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
+import { isJournalClub, canManageJournalClub, canParticipate, getUserCollectionRole } from '@/lib/journalClub';
+import ScheduleTab from '@/components/journal-club/ScheduleTab';
+import DiscussionTab from '@/components/journal-club/DiscussionTab';
+import VotesTab from '@/components/journal-club/VotesTab';
+import AttendanceTab from '@/components/journal-club/AttendanceTab';
+import JournalClubSettings from '@/components/journal-club/JournalClubSettings';
+import CreateJournalClubButton from '@/components/journal-club/CreateJournalClubButton';
 
 interface CollectionMember {
     id: string;
@@ -39,6 +46,8 @@ interface Collection {
     publicSlug?: string | null;
     publicDescription?: string | null;
     publicViewCount?: number;
+    isShared?: boolean;
+    metadata?: any;
     entries: Array<{
         id: string;
         addedAt: string;
@@ -97,6 +106,9 @@ export default function CollectionDetailPage() {
     const [copiedSlug, setCopiedSlug] = useState(false);
     const [deletingCollection, setDeletingCollection] = useState(false);
     const [showMembersDropdown, setShowMembersDropdown] = useState(false);
+    const [activeTab, setActiveTab] = useState('entries');
+    const [userPlan, setUserPlan] = useState('FREE');
+    const [userRole, setUserRole] = useState<'ADMIN' | 'CONTRIBUTOR' | 'VIEWER' | null>(null);
 
     // Use scroll position restoration for collection pages
     useScrollPosition(`collection-${params.id}`);
@@ -124,6 +136,35 @@ export default function CollectionDetailPage() {
             document.removeEventListener('keydown', handleEscape);
         };
     }, [showMembersDropdown]);
+
+    useEffect(() => {
+        if (collection && session?.user) {
+            // Get user plan and role
+            const getUserInfo = async () => {
+                try {
+                    // Get user plan
+                    const userResponse = await fetch('/api/user/profile');
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        setUserPlan(userData.plan || 'FREE');
+                    }
+
+                    // Get user role in this collection
+                    if (collection.members) {
+                        const role = getUserCollectionRole(
+                            collection.members,
+                            session.user.id,
+                            collection.id
+                        );
+                        setUserRole(role);
+                    }
+                } catch (error) {
+                    console.error('Error getting user info:', error);
+                }
+            };
+            getUserInfo();
+        }
+    }, [collection, session?.user]);
 
     useEffect(() => {
         if (collection) {
@@ -391,13 +432,6 @@ export default function CollectionDetailPage() {
         return count;
     };
 
-    const filteredEntries = collection?.entries.filter(item =>
-        item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase())) ||
-        item.entry.topics.some(topic => topic.toLowerCase().includes(search.toLowerCase())) ||
-        item.entry.autoKeywords.some(keyword => keyword.toLowerCase().includes(search.toLowerCase()))
-    ) || [];
-
     const handleUpdateVisibility = async () => {
         setUpdatingVisibility(true);
         try {
@@ -440,6 +474,31 @@ export default function CollectionDetailPage() {
         }
     };
 
+    const isJournalClubCollection = collection ? isJournalClub(collection as any) : false;
+    const canManage = userRole ? canManageJournalClub(userPlan, userRole) : false;
+    const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
+
+    const filteredEntries = collection.entries.filter(item =>
+        item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
+        item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase()))
+    );
+
+    // Tab configuration
+    const tabs = [
+        { id: 'entries', label: 'Entries', icon: Search },
+    ];
+
+    if (isJournalClubCollection) {
+        tabs.push(
+            { id: 'schedule', label: 'Schedule', icon: Calendar },
+            { id: 'discussion', label: 'Discussion', icon: MessageSquare },
+            { id: 'votes', label: 'Votes', icon: ThumbsUp },
+            { id: 'attendance', label: 'Attendance', icon: UserCheck }
+        );
+    }
+
+    tabs.push({ id: 'members', label: 'Members', icon: Users });
+
     if (loading) {
         return <div className="text-center py-12">Loading collection...</div>;
     }
@@ -477,6 +536,18 @@ export default function CollectionDetailPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
+                        {/* Create Journal Club Button */}
+                        {!isJournalClubCollection && (
+                            <CreateJournalClubButton
+                                collectionId={collection.id}
+                                userPlan={userPlan as any}
+                                userRole={userRole}
+                                onUpdate={(updatedCollection) => {
+                                    setCollection(updatedCollection);
+                                }}
+                            />
+                        )}
+
                         {/* Members Button */}
                         {(isOwner || (collection.members && collection.members.length > 0)) && (
                             <div className="relative">
@@ -899,43 +970,142 @@ export default function CollectionDetailPage() {
                 </div>
             )}
 
-            <div className="flex items-center gap-2 border-b border-border pb-4">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search entries..."
-                        className="w-full pl-10 pr-4 py-2 border rounded-md bg-background text-sm"
-                    />
+            {/* Tabs */}
+            <div className="flex items-center gap-4 border-b border-border pb-4 mb-6">
+                <div className="flex gap-2">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                                }`}
+                        >
+                            <tab.icon className="w-4 h-4" />
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {filteredEntries.length === 0 ? (
-                <div className="text-center py-24 rounded-lg bg-[var(--background)]">
-                    <p className="text-[var(--muted-foreground)]">
-                        {search ? 'No entries found matching your search.' : 'No entries in this collection yet.'}
-                    </p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredEntries.map(item => (
-                        <div key={item.id} className="relative group">
-                            <EntryCard entry={item.entry} scrollPositionKey={`collection-${params.id}`} />
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleRemoveEntry(item.entry.id)}
-                                    disabled={removing === item.entry.id}
-                                >
-                                    <Trash2 className="w-3 h-3" />
-                                </Button>
-                            </div>
+            {/* Tab Content */}
+            {activeTab === 'entries' && (
+                <>
+                    <div className="flex items-center gap-2 border-b border-border pb-4">
+                        <div className="relative flex-1 max-w-sm">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search entries..."
+                                className="w-full pl-10 pr-4 py-2 border rounded-md bg-background text-sm"
+                            />
                         </div>
-                    ))}
-                </div>
+                    </div>
+
+                    {filteredEntries.length === 0 ? (
+                        <div className="text-center py-24 rounded-lg bg-[var(--background)]">
+                            <p className="text-[var(--muted-foreground)]">
+                                {search ? 'No entries found matching your search.' : 'No entries in this collection yet.'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {filteredEntries.map(item => (
+                                <div key={item.id} className="relative group">
+                                    <EntryCard entry={item.entry} scrollPositionKey={`collection-${params.id}`} />
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleRemoveEntry(item.entry.id)}
+                                            disabled={removing === item.entry.id}
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </>
+            )}
+
+            {activeTab === 'schedule' && isJournalClubCollection && (
+                <ScheduleTab
+                    collectionId={collection.id}
+                    isJournalClub={isJournalClubCollection}
+                    canManage={canManage}
+                    currentUserId={session?.user?.id || ''}
+                />
+            )}
+
+            {activeTab === 'discussion' && isJournalClubCollection && (
+                <DiscussionTab
+                    collectionId={collection.id}
+                    isJournalClub={isJournalClubCollection}
+                    canParticipate={canParticipateInJournalClub}
+                    currentUserId={session?.user?.id || ''}
+                />
+            )}
+
+            {activeTab === 'votes' && isJournalClubCollection && (
+                <VotesTab
+                    collectionId={collection.id}
+                    isJournalClub={isJournalClubCollection}
+                    canParticipate={canParticipateInJournalClub}
+                />
+            )}
+
+            {activeTab === 'attendance' && isJournalClubCollection && (
+                <AttendanceTab
+                    collectionId={collection.id}
+                    isJournalClub={isJournalClubCollection}
+                    canManage={canManage}
+                    currentUserId={session?.user?.id || ''}
+                />
+            )}
+
+            {activeTab === 'members' && (
+                <>
+                    {/* Members Dropdown Content */}
+                    <div className="space-y-4">
+                        {collection.members && collection.members.length > 0 && (
+                            <div className="space-y-3">
+                                <h3 className="text-lg font-medium">Collection Members</h3>
+                                {collection.members
+                                    .filter(member => member.status === 'ACCEPTED')
+                                    .map(member => (
+                                        <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">
+                                                    {(member.user.name || member.user.username || 'U').charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium">{member.user.name || member.user.username}</p>
+                                                    <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                                                </div>
+                                            </div>
+                                            <Badge variant="outline">{member.role}</Badge>
+                                        </div>
+                                    ))}
+                            </div>
+                        )}
+
+                        {/* Journal Club Settings */}
+                        {isJournalClubCollection && canManage && (
+                            <JournalClubSettings
+                                collectionId={collection.id}
+                                metadata={collection.metadata}
+                                onUpdate={(updatedMetadata) => {
+                                    setCollection(prev => prev ? { ...prev, metadata: updatedMetadata } : null);
+                                }}
+                            />
+                        )}
+                    </div>
+                </>
             )}
         </div>
     );

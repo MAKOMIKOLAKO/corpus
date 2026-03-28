@@ -9,7 +9,10 @@ import {
   Share2,
   MessageSquare,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Calendar,
+  Users,
+  ThumbsUp
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
@@ -17,7 +20,7 @@ import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 interface FeedSignal {
   id: string;
-  type: SignalType | 'ENTRY_ADDED_TO_COLLECTION' | 'COLLECTION_MEMBER_JOINED' | 'ENTRY_CREATED' | 'COLLECTION_CREATED';
+  type: SignalType | 'ENTRY_ADDED_TO_COLLECTION' | 'COLLECTION_MEMBER_JOINED' | 'ENTRY_CREATED' | 'COLLECTION_CREATED' | 'ENTRY_SCHEDULED' | 'PRESENTATION_MARKED_COMPLETE' | 'VOTE_CAST' | 'COMMENT_ADDED';
   createdAt: Date | string;
   user: {
     id: string;
@@ -54,6 +57,9 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
       case 'COLLECTION_MEMBER_JOINED': return <UserPlus size={18} className="text-purple-500" />;
       case 'ENTRY_SHARED': return <Share2 size={18} className="text-orange-500" />;
       case 'COMMENT_ADDED': return <MessageSquare size={18} className="text-pink-500" />;
+      case 'ENTRY_SCHEDULED': return <Calendar size={18} className="text-indigo-500" />;
+      case 'PRESENTATION_MARKED_COMPLETE': return <Users size={18} className="text-green-600" />;
+      case 'VOTE_CAST': return <ThumbsUp size={18} className="text-amber-500" />;
       default: return <Sparkles size={18} className="text-gray-400" />;
     }
   };
@@ -173,6 +179,129 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
               {signal.collection?.name || 'Untitled Collection'}
             </Link>
           </p>
+        );
+
+      case 'ENTRY_SCHEDULED':
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">
+              <span className="font-semibold text-foreground">{userName}</span> scheduled a presentation for{' '}
+              {signal.entry && (
+                <Link
+                  href={`/entries/${signal.entry.id}`}
+                  className="font-semibold text-primary hover:underline underline-offset-2"
+                >
+                  {signal.entry.title}
+                </Link>
+              )}
+              {signal.collection && (
+                <>
+                  {' '}in journal club{' '}
+                  <Link
+                    href={`/collections/${signal.collection.id}`}
+                    className="font-semibold text-primary hover:underline underline-offset-2"
+                  >
+                    {signal.collection.name}
+                  </Link>
+                </>
+              )}
+            </p>
+            {signal.metadata?.presentationDate && (
+              <p className="text-xs text-muted-foreground">
+                Scheduled for {new Date(signal.metadata.presentationDate).toLocaleDateString()}
+                {signal.metadata.presenterName && ` with ${signal.metadata.presenterName}`}
+              </p>
+            )}
+          </div>
+        );
+
+      case 'PRESENTATION_MARKED_COMPLETE':
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">
+              <span className="font-semibold text-foreground">{userName}</span> marked a presentation as complete{' '}
+              {signal.entry && (
+                <Link
+                  href={`/entries/${signal.entry.id}`}
+                  className="font-semibold text-primary hover:underline underline-offset-2"
+                >
+                  {signal.entry.title}
+                </Link>
+              )}
+              {signal.collection && (
+                <>
+                  {' '}in journal club{' '}
+                  <Link
+                    href={`/collections/${signal.collection.id}`}
+                    className="font-semibold text-primary hover:underline underline-offset-2"
+                  >
+                    {signal.collection.name}
+                  </Link>
+                </>
+              )}
+            </p>
+          </div>
+        );
+
+      case 'VOTE_CAST':
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">
+              <span className="font-semibold text-foreground">{userName}</span> voted for{' '}
+              {signal.entry && (
+                <Link
+                  href={`/entries/${signal.entry.id}`}
+                  className="font-semibold text-primary hover:underline underline-offset-2"
+                >
+                  {signal.entry.title}
+                </Link>
+              )}
+              {signal.collection && (
+                <>
+                  {' '}in journal club{' '}
+                  <Link
+                    href={`/collections/${signal.collection.id}`}
+                    className="font-semibold text-primary hover:underline underline-offset-2"
+                  >
+                    {signal.collection.name}
+                  </Link>
+                </>
+              )}
+            </p>
+          </div>
+        );
+
+      case 'COMMENT_ADDED':
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">
+              <span className="font-semibold text-foreground">{userName}</span> commented on{' '}
+              {signal.entry && (
+                <Link
+                  href={`/entries/${signal.entry.id}`}
+                  className="font-semibold text-primary hover:underline underline-offset-2"
+                >
+                  {signal.entry.title}
+                </Link>
+              )}
+              {signal.collection && (
+                <>
+                  {' '}in journal club{' '}
+                  <Link
+                    href={`/collections/${signal.collection.id}`}
+                    className="font-semibold text-primary hover:underline underline-offset-2"
+                  >
+                    {signal.collection.name}
+                  </Link>
+                </>
+              )}
+            </p>
+            {signal.metadata?.commentContent && (
+              <p className="text-xs text-muted-foreground italic mt-1">
+                "{signal.metadata.commentContent}"
+              </p>
+            )}
+          </div>
         );
 
       default:
