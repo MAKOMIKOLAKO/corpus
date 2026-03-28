@@ -20,14 +20,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Validate date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(presentationDate)) {
+      return NextResponse.json({ error: 'Date must be in YYYY-MM-DD format' }, { status: 400 });
+    }
+
     // Get collection and check permissions
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
       include: {
         members: {
-          where: { 
-            userId, 
-            status: 'ACCEPTED' 
+          where: {
+            userId,
+            status: 'ACCEPTED'
           }
         },
         user: {
@@ -89,8 +94,9 @@ export async function POST(request: NextRequest) {
 
     for (const ec of existingEntries) {
       const entryMeta = ec.entry.metadata as any;
+      // Compare date strings directly since both are now in YYYY-MM-DD format
       if (entryMeta?.presentationDate === presentationDate && !entryMeta?.presented) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'date_already_scheduled',
           message: 'Another paper is already scheduled for that date.'
         }, { status: 409 });

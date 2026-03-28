@@ -63,19 +63,21 @@ export async function PATCH(
     const {
       meetingFrequency,
       nextMeetingDate,
-      meetingDayOfWeek,
-      meetingTime,
-      timezone
+      meetingDayOfWeek
     } = body;
 
-    // Update metadata with new settings
+    // Validate nextMeetingDate format if provided
+    if (nextMeetingDate && !/^\d{4}-\d{2}-\d{2}$/.test(nextMeetingDate)) {
+      return NextResponse.json({ error: 'Date must be in YYYY-MM-DD format' }, { status: 400 });
+    }
+
+    // Update metadata with new settings (remove time-related fields)
     const updatedMetadata = {
       ...existingMeta,
       ...(meetingFrequency && { meetingFrequency }),
       ...(nextMeetingDate && { nextMeetingDate }),
-      ...(meetingDayOfWeek !== undefined && { meetingDayOfWeek }),
-      ...(meetingTime && { meetingTime }),
-      ...(timezone && { timezone })
+      ...(meetingDayOfWeek !== undefined && { meetingDayOfWeek })
+      // Note: meetingTime and timezone are removed from the new schema
     };
 
     // Update collection

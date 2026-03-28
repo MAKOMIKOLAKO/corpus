@@ -26,7 +26,7 @@ interface VotesTabProps {
 }
 
 export default function VotesTab({ collectionId, isJournalClub, canParticipate }: VotesTabProps) {
-  const [voteData, setVoteData] = useState<VoteData[]>([]);
+  const [votes, setVotes] = useState<VoteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
       if (!response.ok) throw new Error('Failed to fetch votes');
 
       const data = await response.json();
-      setVoteData(data || []);
+      setVotes(data || []);
     } catch (error) {
       console.error('Error fetching votes:', error);
       toast.error('Failed to load votes');
@@ -58,37 +58,49 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
     }
 
     setVoting(entryId);
+    const previousVotes = [...votes];
+    const voteItem = previousVotes.find(v => v.entryId === entryId);
+    const wasVoted = voteItem?.userHasVoted || false;
+    const previousVoteCount = voteItem?.voteCount || 0;
+
+    // Optimistic update
+    setVotes(prev => prev.map(v =>
+      v.entryId === entryId
+        ? { ...v, userHasVoted: !wasVoted, voteCount: wasVoted ? v.voteCount - 1 : v.voteCount + 1 }
+        : v
+    ));
+
     try {
-      const response = await fetch('/api/journal-club/vote', {
+      const response = await fetch(`/api/journal-club/${collectionId}/votes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          collectionId,
-          entryId
-        })
+        body: JSON.stringify({ entryId })
       });
 
       if (!response.ok) {
+        // Revert optimistic update
+        setVotes(previousVotes);
         if (response.status === 403) {
           toast.error('You do not have permission to vote');
         } else {
-          toast.error('Failed to cast vote');
+          toast.error('Failed to vote');
         }
         return;
       }
 
-      await fetchVotes();
-      toast.success('Vote cast successfully');
+      toast.success(wasVoted ? 'Vote removed' : 'Vote added');
     } catch (error) {
-      console.error('Error casting vote:', error);
-      toast.error('Failed to cast vote');
+      // Revert optimistic update
+      setVotes(previousVotes);
+      console.error('Error voting:', error);
+      toast.error('Failed to vote');
     } finally {
       setVoting(null);
     }
   };
 
   // Find top voted entry (2+ votes)
-  const topVotedEntry = voteData.find(item => item.voteCount >= 2);
+  const topVotedEntry = votes.find((item: VoteData) => item.voteCount >= 2);
 
   if (!isJournalClub) {
     return (
@@ -99,10 +111,35 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
   }
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="h-8 w-32 bg-muted rounded-md animate-pulse mb-2"></div>
+        <div className="h-4 w-64 bg-muted rounded-md animate-pulse mb-6"></div>
+
+        {/* Content skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border rounded-lg p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="h-6 w-3/4 bg-muted rounded-md animate-pulse"></div>
+                  <div className="h-4 w-1/2 bg-muted rounded-md animate-pulse"></div>
+                  <div className="flex items-center gap-4">
+                    <div className="h-4 w-16 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-8 w-24 bg-muted rounded-md animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-8 w-16 bg-muted rounded-md animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  if (voteData.length === 0) {
+  if (votes.length === 0) {
     return (
       <div className="text-center py-12">
         <ThumbsUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -168,7 +205,7 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
 
       {/* All Entries */}
       <div className="space-y-4">
-        {voteData.map((item) => (
+        {votes.map((item: VoteData) => (
           <Card key={item.entryId} className={
             item === topVotedEntry ? 'border-primary' : ''
           }>
