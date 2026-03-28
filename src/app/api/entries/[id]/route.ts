@@ -165,6 +165,11 @@ export async function DELETE(
       where: { id: params.id },
     });
 
+    await prisma.user.update({
+      where: { id: userId },
+      data: { entriesCount: { decrement: 1 } }
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Entry deleted successfully',

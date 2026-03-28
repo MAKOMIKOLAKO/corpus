@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PricingPage() {
@@ -75,11 +75,27 @@ export default function PricingPage() {
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>Up to 100 entries</span>
+                  <span>50 saved entries</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>All content types (articles, papers, books, etc.)</span>
+                  <span>1 personal collection</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Join shared collections as viewer</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Paper and book search</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>AI metadata extraction</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Full text search</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600" />
@@ -87,11 +103,27 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>Keywords and topic extraction</span>
+                  <span>Research connections and labs</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
-                  <span>Full search and filtering</span>
+                  <X className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-400">Unlimited entries (grayed out)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <X className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-400">Unlimited collections (grayed out)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <X className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-400">Create shared collections (grayed out)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <X className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-400">Batch entry actions (grayed out)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <X className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-400">Priority queue processing (grayed out)</span>
                 </li>
               </ul>
               <div className="mt-auto">
@@ -143,19 +175,35 @@ export default function PricingPage() {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-green-600" />
-                    <span>Unlimited entries</span>
+                    <span>Unlimited saved entries</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-green-600" />
-                    <span>Collections</span>
+                    <span>Everything in Free</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-green-600" />
-                    <span>Knowledge graph</span>
+                    <span>Unlimited personal collections</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-green-600" />
-                    <span>Priority support</span>
+                    <span>Create shared collections with role-based permissions</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Contribute to shared collections</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Batch entry actions</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Priority queue processing</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span>Early access to new features</span>
                   </li>
                 </ul>
               </div>

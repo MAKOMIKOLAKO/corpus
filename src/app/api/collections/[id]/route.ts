@@ -178,6 +178,13 @@ export async function DELETE(
       where: { id: params.id },
     });
 
+    if (!existing.isShared) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { personalCollectionsCount: { decrement: 1 } }
+      });
+    }
+
     return NextResponse.json(
       { message: 'Collection deleted successfully' },
       { headers: corsJsonHeaders() }

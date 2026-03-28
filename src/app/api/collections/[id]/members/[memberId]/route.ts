@@ -90,16 +90,37 @@ export async function PATCH(
               id: true,
               name: true,
               email: true,
+              username: true,
             },
           },
           collection: {
             select: {
               id: true,
               name: true,
+              isShared: true,
+              isPublic: true,
             },
           },
         },
       });
+
+      // Emit activity event for joining shared collection
+      if (status === 'ACCEPTED' && updatedMember.collection.isShared) {
+        await prisma.signal.create({
+          data: {
+            userId: session.user.id,
+            type: 'COLLECTION_MEMBER_JOINED',
+            collectionId: updatedMember.collection.id,
+            metadata: {
+              collectionName: updatedMember.collection.name,
+              collectionIsPublic: updatedMember.collection.isPublic,
+              newMemberUsername: updatedMember.user.username,
+              role: updatedMember.role
+            },
+            isPublic: updatedMember.collection.isPublic
+          }
+        });
+      }
 
       return NextResponse.json(updatedMember);
     }

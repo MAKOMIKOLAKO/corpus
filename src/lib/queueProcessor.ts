@@ -1,5 +1,6 @@
 import { prisma } from './prismaWithRetry';
 import type { ContentType, Prisma, ReadingStatus } from '@prisma/client';
+import { canAddEntry } from './plans';
 
 function getGeminiApiKey(): string | undefined {
   return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
@@ -102,13 +103,17 @@ function metaFallback(url: string, meta: ReturnType<typeof extractMeta>) {
 }
 
 async function userCanCreateEntry(userId: string): Promise<{ ok: true } | { ok: false; message: string }> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ 
+    where: { id: userId },
+    select: { plan: true, entriesCount: true }
+  });
   if (!user) return { ok: false, message: 'User not found' };
-  const count = await prisma.entry.count({ where: { userId } });
-  if (user.plan === 'FREE' && count >= 100) {
+  
+  const { allowed, reason } = canAddEntry(user.plan, user.entriesCount);
+  if (!allowed) {
     return {
       ok: false,
-      message: "You've reached the 100 entry limit on the free plan.",
+      message: `You've reached the ${user.plan === 'FREE' ? '50' : 'unlimited'} entry limit on your plan.`,
     };
   }
   return { ok: true };
@@ -121,7 +126,10 @@ export async function processUserQueue(userId: string): Promise<void> {
       status: 'PENDING',
       inputType: 'URL',
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [
+      { priority: 'desc' },
+      { createdAt: 'asc' }
+    ],
   });
 
   if (!pendingItem) return;
@@ -308,6 +316,11 @@ Body text: ${meta.bodyText}`;
           metadata: entryPayload.metadata as Prisma.InputJsonValue,
           userId,
         },
+      });
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { entriesCount: { increment: 1 } }
       });
     } catch (err: unknown) {
       const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : '';

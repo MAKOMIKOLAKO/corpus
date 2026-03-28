@@ -611,23 +611,14 @@ export default function AccountPage() {
                                             <>
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm font-medium">
-                                                        {sharedCollectionsCount} of {PLAN_LIMITS.FREE.sharedCollections} shared collections used
+                                                        Shared collections not available on free plan
                                                     </span>
-                                                    <Badge variant={sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections ? 'destructive' : 'secondary'}>
-                                                        {sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections ? 'Limit Reached' : 'Active'}
+                                                    <Badge variant="secondary">
+                                                        Upgrade Required
                                                     </Badge>
                                                 </div>
-                                                <div className="w-full bg-muted rounded-full h-2">
-                                                    <div
-                                                        className={`h-2 rounded-full transition-all ${sharedCollectionsCount >= PLAN_LIMITS.FREE.sharedCollections
-                                                            ? 'bg-red-500'
-                                                            : 'bg-primary'
-                                                            }`}
-                                                        style={{ width: `${Math.min((sharedCollectionsCount / PLAN_LIMITS.FREE.sharedCollections) * 100, 100)}%` }}
-                                                    />
-                                                </div>
                                                 <p className="text-xs text-muted-foreground mt-2">
-                                                    Free accounts can share up to 3 collections. Upgrade to Pro for unlimited.
+                                                    Upgrade to Pro to create unlimited shared collections with role-based permissions.
                                                 </p>
                                             </>
                                         ) : (

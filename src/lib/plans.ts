@@ -1,53 +1,132 @@
-import { User } from '@prisma/client'
+import { Plan } from '@prisma/client'
 
 export const PLAN_LIMITS = {
   FREE: {
-    maxEntries: 100,
-    collections: true,
-    graph: false,
-    sharedCollections: 3,
-    canBeAdmin: false,
+    maxEntries: 50,
+    maxPersonalCollections: 1,
+    canCreateSharedCollections: false,
+    canContributeToSharedCollections: false,
+    canViewSharedCollections: true,
+    queuePriority: 'standard',
+    batchActions: false,
+    advancedSearch: false,
   },
   PRO: {
     maxEntries: Infinity,
-    collections: true,
-    graph: true,
-    sharedCollections: Infinity,
-    canBeAdmin: true,
+    maxPersonalCollections: Infinity,
+    canCreateSharedCollections: true,
+    canContributeToSharedCollections: true,
+    canViewSharedCollections: true,
+    queuePriority: 'priority',
+    batchActions: true,
+    advancedSearch: true,
+  },
+  LIFETIME_PRO: {
+    maxEntries: Infinity,
+    maxPersonalCollections: Infinity,
+    canCreateSharedCollections: true,
+    canContributeToSharedCollections: true,
+    canViewSharedCollections: true,
+    queuePriority: 'priority',
+    batchActions: true,
+    advancedSearch: true,
   },
 } as const
 
-export type PlanType = keyof typeof PLAN_LIMITS
-export type FeatureType = 'collections' | 'graph'
+export type PlanLimits = typeof PLAN_LIMITS[keyof typeof PLAN_LIMITS]
 
-// Standalone user interface with plan field
-interface UserWithPlan {
-  id: string
-  plan: 'FREE' | 'PRO' | 'LIFETIME_PRO'
+export function getUserLimits(plan: Plan): PlanLimits {
+  return PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE
 }
 
-// Session user type
-interface SessionUser {
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  plan?: 'FREE' | 'PRO' | 'LIFETIME_PRO';
+export function canAddEntry(
+  plan: Plan,
+  currentEntryCount: number
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (currentEntryCount >= limits.maxEntries) {
+    return {
+      allowed: false,
+      reason: 'entry_limit_reached'
+    }
+  }
+  return { allowed: true }
 }
 
-export function getUserPlan(user: UserWithPlan | SessionUser | null): PlanType {
-  if (!user || !('plan' in user) || !user.plan) return 'FREE'
-  // Treat LIFETIME_PRO as PRO for plan limits
-  if (user.plan === 'LIFETIME_PRO') return 'PRO'
-  return user.plan
+export function canCreatePersonalCollection(
+  plan: Plan,
+  currentPersonalCollectionCount: number
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (currentPersonalCollectionCount >= limits.maxPersonalCollections) {
+    return {
+      allowed: false,
+      reason: 'personal_collection_limit_reached'
+    }
+  }
+  return { allowed: true }
 }
 
-export function canAddEntry(user: UserWithPlan | SessionUser | null, currentEntryCount: number): boolean {
-  const plan = getUserPlan(user)
-  const limit = PLAN_LIMITS[plan].maxEntries
-  return currentEntryCount < limit
+export function canCreateSharedCollection(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (!limits.canCreateSharedCollections) {
+    return {
+      allowed: false,
+      reason: 'shared_collections_pro_only'
+    }
+  }
+  return { allowed: true }
 }
 
-export function hasPaidFeature(user: UserWithPlan | SessionUser | null, feature: FeatureType): boolean {
-  const plan = getUserPlan(user)
-  return PLAN_LIMITS[plan][feature]
+export function canContributeToSharedCollection(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (!limits.canContributeToSharedCollections) {
+    return {
+      allowed: false,
+      reason: 'contribution_pro_only'
+    }
+  }
+  return { allowed: true }
+}
+
+export function canUseBatchActions(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (!limits.batchActions) {
+    return {
+      allowed: false,
+      reason: 'batch_actions_pro_only'
+    }
+  }
+  return { allowed: true }
+}
+
+export function canUseAdvancedSearch(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (!limits.advancedSearch) {
+    return {
+      allowed: false,
+      reason: 'advanced_search_pro_only'
+    }
+  }
+  return { allowed: true }
+}
+
+export function isPro(plan: Plan): boolean {
+  return plan === 'PRO' || plan === 'LIFETIME_PRO'
+}
+
+export function getUserPlan(user: { plan: Plan } | null): Plan {
+  return user?.plan || 'FREE'
+}
+
+export function hasPaidFeature(plan: Plan, feature: string): boolean {
+  return isPro(plan)
 }
