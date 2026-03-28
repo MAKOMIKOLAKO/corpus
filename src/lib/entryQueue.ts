@@ -201,14 +201,16 @@ class EntryQueue {
       data: {
         title: metadata.title,
         slug: slug || undefined,
-        authors: metadata.authors || [],
+        authors: Array.isArray(metadata.authors)
+          ? metadata.authors.map(a => typeof a === 'string' ? a : a.name || a.toString()).filter(Boolean)
+          : [],
         year: metadata.year,
         contentType: metadata.contentType || 'ARTICLE',
         url: metadata.url || null,
         doi: metadata.doi || null,
         source: metadata.source || null,
         abstract: metadata.abstract || null,
-        summary: metadata.summary || null,
+        summary: typeof metadata.summary === 'string' ? metadata.summary : null,
         userId,
         readingStatus: 'UNREAD',
       },
