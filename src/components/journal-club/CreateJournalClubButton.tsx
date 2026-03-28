@@ -29,7 +29,6 @@ export default function CreateJournalClubButton({
   const [nextMeetingDate, setNextMeetingDate] = useState('');
   const [meetingDayOfWeek, setMeetingDayOfWeek] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
-  const [timezone, setTimezone] = useState('');
 
   const handleCreate = async () => {
     if (!nextMeetingDate) {
@@ -47,8 +46,7 @@ export default function CreateJournalClubButton({
           meetingFrequency,
           nextMeetingDate: new Date(nextMeetingDate).toISOString(),
           meetingDayOfWeek: meetingDayOfWeek ? parseInt(meetingDayOfWeek) : undefined,
-          meetingTime,
-          timezone
+          meetingTime
         })
       });
 
@@ -155,20 +153,6 @@ export default function CreateJournalClubButton({
                   onChange={(e) => setMeetingTime(e.target.value)}
                   placeholder="14:00"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="timezone">Timezone (Optional)</Label>
-                <Input
-                  id="timezone"
-                  type="text"
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  placeholder="e.g., America/New_York"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  IANA timezone identifier
-                </p>
               </div>
 
               <div className="flex gap-2 pt-4">

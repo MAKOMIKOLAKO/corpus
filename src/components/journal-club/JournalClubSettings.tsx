@@ -22,8 +22,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
     meetingFrequency: 'weekly',
     nextMeetingDate: '',
     meetingDayOfWeek: undefined,
-    meetingTime: '',
-    timezone: ''
+    meetingTime: ''
   });
   const [saving, setSaving] = useState(false);
 
@@ -43,8 +42,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
           meetingFrequency: settings.meetingFrequency,
           nextMeetingDate: settings.nextMeetingDate,
           meetingDayOfWeek: settings.meetingDayOfWeek,
-          meetingTime: settings.meetingTime,
-          timezone: settings.timezone
+          meetingTime: settings.meetingTime
         })
       });
 
@@ -153,24 +151,9 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
               type="time"
               value={settings.meetingTime || ''}
               onChange={(e) => handleTimeChange(e.target.value)}
-              placeholder="14:00"
             />
           </div>
 
-          {/* Timezone */}
-          <div className="md:col-span-2">
-            <Label htmlFor="timezone">Timezone (Optional)</Label>
-            <Input
-              id="timezone"
-              type="text"
-              value={settings.timezone || ''}
-              onChange={(e) => handleTimezoneChange(e.target.value)}
-              placeholder="e.g., America/New_York"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              IANA timezone identifier (e.g., America/New_York, Europe/London)
-            </p>
-          </div>
         </div>
 
         <div className="flex justify-end pt-4">
