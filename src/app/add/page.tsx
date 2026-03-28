@@ -69,6 +69,7 @@ const StatusIcon = ({ status }: { status: string }) => {
 export default function AddEntryPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('PAPER');
+  const [sessionStartTime] = useState(new Date());
   const [queue, setQueue] = useState<{ items: QueueItem[]; processingCount: number; pendingCount: number }>({
     items: [],
     processingCount: 0,
@@ -94,8 +95,9 @@ export default function AddEntryPage() {
   useEffect(() => {
     fetchQueue();
     const interval = setInterval(() => {
+      // Check if any visible item is active
       const hasActive = queue.items.some(item => item.status === 'PENDING' || item.status === 'PROCESSING');
-      if (hasActive) {
+      if (hasActive || queue.items.length === 0) {
         fetchQueue();
       }
     }, 3000);
@@ -107,7 +109,18 @@ export default function AddEntryPage() {
       const res = await fetch('/api/queue');
       if (res.ok) {
         const data = await res.json();
-        setQueue(data);
+        // Filter: Show all active items, but only terminal items (COMPLETED/FAILED) 
+        // that were completed AFTER this page load session started.
+        const filteredItems = data.items.filter((item: QueueItem) => {
+          if (item.status === 'PENDING' || item.status === 'PROCESSING') return true;
+          if (!item.completedAt) return false;
+          return new Date(item.completedAt) > sessionStartTime;
+        });
+        
+        setQueue({
+          ...data,
+          items: filteredItems
+        });
       }
     } catch (err) {
       console.error('Failed to fetch queue', err);
