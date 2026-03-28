@@ -284,4 +284,27 @@
   .skip-link:focus {
     top: 6px;
   }
+
+  /* Mobile Responsiveness Global Fixes */
+  input, 
+  textarea, 
+  select {
+    font-size: 16px !important; /* Prevents iOS auto-zoom */
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  @media (max-width: 767px) {
+    h1 {
+      font-size: 1.5rem; /* text-2xl */
+    }
+    .page-title {
+      font-size: 1.875rem; /* text-3xl */
+    }
+    body {
+      font-size: 0.875rem; /* text-sm */
+    }
+  }
 }

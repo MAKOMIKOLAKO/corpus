@@ -25,6 +25,12 @@ export function AppShell({
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Close menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!session) return;
@@ -152,7 +158,9 @@ export function AppShell({
                 </span>
               </Link>
               <div className="flex-1" />
-              <nav className="flex items-center gap-2" role="navigation" aria-label="Main navigation">
+              
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center gap-2" role="navigation" aria-label="Main navigation">
                 {session ? (
                   <>
                     <Link
@@ -192,15 +200,6 @@ export function AppShell({
                         </span>
                       )}
                     </Link>
-                    {false && (
-                      <Link
-                        href="/graph"
-                        className="inline-flex items-center text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
-                        aria-current={pathname === "/graph" ? "page" : undefined}
-                      >
-                        graph
-                      </Link>
-                    )}
                     <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
                     <button
                       onClick={() => setShowFeedback(true)}
@@ -216,11 +215,84 @@ export function AppShell({
                   </>
                 ) : null}
               </nav>
+
+              {/* Mobile Hamburger Button */}
+              {session && (
+                <button
+                  className="md:hidden flex items-center justify-center p-2 text-[var(--foreground)] hover:bg-[var(--muted)] rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  aria-expanded={isMenuOpen}
+                  aria-label="Toggle menu"
+                >
+                  {isMenuOpen ? <span className="text-2xl">✕</span> : <span className="text-2xl">☰</span>}
+                </button>
+              )}
             </div>
+
+            {/* Mobile Navigation Menu */}
+            {isMenuOpen && session && (
+              <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]/98 backdrop-blur animate-in slide-in-from-top duration-300">
+                <nav className="flex flex-col p-4 space-y-2">
+                  <Link
+                    href="/add"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/add" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <Plus className="w-5 h-5" />
+                    add
+                  </Link>
+                  <Link
+                    href="/library"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/library" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    library
+                  </Link>
+                  <Link
+                    href="/collections"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/collections" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <Folder className="w-5 h-5" />
+                    collections
+                  </Link>
+                  <Link
+                    href="/connections"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/connections" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <Users className="w-5 h-5" />
+                    connections
+                    {pendingCount > 0 && (
+                      <span className="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] text-xs font-bold">
+                        {pendingCount > 9 ? '9+' : pendingCount}
+                      </span>
+                    )}
+                  </Link>
+                  <button
+                    onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}
+                    className="flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium hover:bg-[var(--muted)] transition-colors text-left"
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                    feedback
+                  </button>
+                  <div className="h-px bg-[var(--border)] my-2" />
+                  <div className="px-4 py-2">
+                    <p className="text-xs text-[var(--muted-foreground)] mb-2 uppercase tracking-wider font-semibold">Account</p>
+                    <Link
+                      href="/account/settings"
+                      className="flex items-center gap-3 h-12 rounded-md text-base font-medium hover:bg-[var(--muted)] transition-colors border border-[var(--border)] px-4"
+                    >
+                      Settings
+                    </Link>
+                  </div>
+                  <div className="pt-2">
+                    <SignOutButton className="w-full h-12 justify-start px-4 text-base font-medium text-red-500 hover:bg-red-500/10 rounded-md transition-colors" />
+                  </div>
+                </nav>
+              </div>
+            )}
           </header>
           <main
             id="main-content"
-            className="max-w-4xl mx-auto px-4 py-12"
+            className="max-w-4xl mx-auto px-4 py-6 sm:py-12"
             role="main"
             tabIndex={-1}
           >

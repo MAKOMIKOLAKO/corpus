@@ -360,7 +360,7 @@ export default function EntryCard({
                             </div>
 
                             {/* Tags section - properly aligned */}
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2">
                                 {/* Collection Dropdown */}
                                 <div className="relative min-w-0">
                                     <button
@@ -369,11 +369,11 @@ export default function EntryCard({
                                             e.stopPropagation();
                                             setIsCollectionOpen(!isCollectionOpen);
                                         }}
-                                        className="h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-accent"
+                                        className="h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-accent touch-manipulation"
                                         disabled={isUpdatingCollection}
                                     >
                                         <span className="truncate">{isUpdatingCollection ? '...' : currentCollectionName.toLowerCase()}</span>
-                                        <ChevronDown className="w-3 h-3" />
+                                        <ChevronDown className="w-4 h-4 sm:w-3 sm:h-3" />
                                     </button>
 
                                     {isCollectionOpen && (
@@ -415,7 +415,7 @@ export default function EntryCard({
                                             e.stopPropagation();
                                             setIsOpen(!isOpen);
                                         }}
-                                        className={`h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-2 py-1 border transition-colors ${statusVariant(currentStatus) === 'success'
+                                        className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
                                             ? 'border-[var(--accent)] bg-[var(--accent)]/20 text-[var(--accent)] hover:bg-[var(--accent)]/30'
                                             : statusVariant(currentStatus) === 'default'
                                                 ? 'border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--muted)]'
@@ -424,7 +424,7 @@ export default function EntryCard({
                                         disabled={isUpdating}
                                     >
                                         <span className="truncate">{isUpdating ? '...' : readingStatuses.find(s => s.value === currentStatus)?.label?.toLowerCase()}</span>
-                                        <ChevronDown className="w-3 h-3" />
+                                        <ChevronDown className="w-4 h-4 sm:w-3 sm:h-3" />
                                     </button>
 
                                     {isOpen && (
@@ -465,36 +465,36 @@ export default function EntryCard({
                             <div className="pt-3 border-t border-border/50">
                                 <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                                     <span>added {formatDate(entry.createdAt)}</span>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 sm:gap-2">
                                         {entry.url ? (
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                                                className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
                                                 onClick={handleOpenUrl}
                                             >
-                                                <ExternalLink className="w-3 h-3" />
+                                                <ExternalLink className="w-5 h-5 sm:w-3 sm:h-3" />
                                             </Button>
                                         ) : null}
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                                            className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
                                             onClick={handleShare}
                                         >
-                                            <Share className="w-3 h-3" />
+                                            <Share className="w-5 h-5 sm:w-3 sm:h-3" />
                                         </Button>
                                         {entry.url ? (
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                                                className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
                                                 onClick={handleCopyUrl}
                                             >
-                                                {didCopyUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                                {didCopyUrl ? <Check className="w-5 h-5 sm:w-3 sm:h-3" /> : <Copy className="w-5 h-5 sm:w-3 sm:h-3" />}
                                             </Button>
                                         ) : null}
                                     </div>

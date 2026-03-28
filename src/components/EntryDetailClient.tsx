@@ -283,20 +283,20 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             <label className="text-sm font-medium">Title</label>
                             <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium">Authors (comma-separated)</label>
-                                <input type="text" value={Array.isArray(formData.authors) ? formData.authors.join(', ') : formData.authors} onChange={e => setFormData({ ...formData, authors: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
+                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Authors (comma-separated)</label>
+                                <input type="text" value={Array.isArray(formData.authors) ? formData.authors.join(', ') : formData.authors} onChange={e => setFormData({ ...formData, authors: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Year</label>
-                                <input type="number" value={formData.year || ''} onChange={e => setFormData({ ...formData, year: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
+                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Year</label>
+                                <input type="number" value={formData.year || ''} onChange={e => setFormData({ ...formData, year: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium">Content Type</label>
-                                <select value={formData.contentType} onChange={e => setFormData({ ...formData, contentType: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md">
+                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Content Type</label>
+                                <select value={formData.contentType} onChange={e => setFormData({ ...formData, contentType: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation">
                                     <option value="PAPER">Paper</option>
                                     <option value="BLOG">Blog</option>
                                     <option value="ESSAY">Essay</option>
@@ -307,8 +307,8 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 </select>
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Reading Status</label>
-                                <select value={formData.readingStatus} onChange={e => setFormData({ ...formData, readingStatus: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md">
+                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Reading Status</label>
+                                <select value={formData.readingStatus} onChange={e => setFormData({ ...formData, readingStatus: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation">
                                     <option value="UNREAD">Unread</option>
                                     <option value="READING">Reading</option>
                                     <option value="READ">Read</option>
@@ -323,20 +323,20 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             <label className="text-sm font-medium">Abstract</label>
                             <textarea value={formData.abstract || ''} onChange={e => setFormData({ ...formData, abstract: e.target.value })} rows={5} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium">URL</label>
-                                <input type="text" value={formData.url || ''} onChange={e => setFormData({ ...formData, url: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
+                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">URL</label>
+                                <input type="text" value={formData.url || ''} onChange={e => setFormData({ ...formData, url: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
                             </div>
                             <div>
-                                <label className="text-sm font-medium">DOI</label>
-                                <input type="text" value={formData.doi || ''} onChange={e => setFormData({ ...formData, doi: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
+                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">DOI</label>
+                                <input type="text" value={formData.doi || ''} onChange={e => setFormData({ ...formData, doi: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
-                            <button onClick={() => { setIsEditing(false); setFormData(initialData); }} className="px-4 py-2 rounded-md text-sm font-medium hover:bg-[var(--muted)]">Cancel</button>
-                            <button onClick={handleSave} disabled={isSaving} className="bg-[var(--primary)] text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-[var(--border)]">
+                            <button onClick={() => { setIsEditing(false); setFormData(initialData); }} className="px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:bg-[var(--muted)] w-full sm:w-auto touch-manipulation">Cancel</button>
+                            <button onClick={handleSave} disabled={isSaving} className="bg-[var(--primary)] text-white px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 w-full sm:w-auto touch-manipulation">
                                 {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
@@ -345,15 +345,15 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
             ) : (
                 <div className="space-y-8">
                     <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
-                        <div className="absolute top-0 right-0 p-4 flex gap-2">
-                            <button onClick={openShareModal} className="p-2 text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors" title="Share Entry">
-                                <Share2 className="w-4 h-4" />
+                        <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
+                            <button onClick={openShareModal} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
+                                <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
                             </button>
-                            <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors" title="Edit Entry">
-                                <Edit2 className="w-4 h-4" />
+                            <button onClick={() => setIsEditing(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors touch-manipulation" title="Edit Entry">
+                                <Edit2 className="w-5 h-5 sm:w-4 sm:h-4" />
                             </button>
-                            <button onClick={handleDelete} className="p-2 text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors" title="Delete Entry">
-                                <Trash2 className="w-4 h-4" />
+                            <button onClick={handleDelete} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors touch-manipulation" title="Delete Entry">
+                                <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
                             </button>
                         </div>
 
@@ -369,12 +369,12 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             </span>
                         </div>
 
-                        <h1 className="text-3xl font-bold tracking-tight text-[var(--foreground)] mb-2 pr-16">{formData.title}</h1>
-                        <p className="text-lg text-[var(--muted-foreground)] mb-6 font-medium">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)] mb-2 pr-32 sm:pr-16">{formData.title}</h1>
+                        <p className="text-base sm:text-lg text-[var(--muted-foreground)] mb-6 font-medium">
                             {Array.isArray(formData.authors) ? formData.authors.join(', ') : formData.authors}
                         </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
                                     <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
@@ -474,11 +474,11 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                             <select
                                 value={selectedCollection}
                                 onChange={(e) => setSelectedCollection(e.target.value)}
-                                className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)]"
+                                className="flex-1 px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)] touch-manipulation"
                             >
                                 <option value="">Select a collection...</option>
                                 {Array.isArray(availableCollections) && availableCollections.map((collection: any) => (
@@ -490,7 +490,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             <button
                                 onClick={handleAddToCollection}
                                 disabled={!selectedCollection || isAddingToCollection}
-                                className="bg-[var(--foreground)] text-[var(--background)] px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                                className="bg-[var(--foreground)] text-[var(--background)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
                             >
                                 {isAddingToCollection ? 'Adding...' : 'Add to Collection'}
                             </button>
@@ -525,13 +525,13 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 onChange={e => setNewNote(e.target.value)}
                                 placeholder="Write a new note..."
                                 rows={3}
-                                className="w-full bg-transparent border-none focus:ring-0 outline-none text-sm resize-none"
+                                className="w-full bg-transparent border-none focus:ring-0 outline-none text-base resize-none"
                             />
                             <div className="flex justify-end mt-2 pt-2 border-t border-[var(--border)]">
                                 <button
                                     onClick={handleAddNote}
                                     disabled={!newNote.trim() || isAddingNote}
-                                    className="bg-[var(--foreground)] text-[var(--background)] px-4 py-1.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                                    className="bg-[var(--foreground)] text-[var(--background)] px-6 py-3 sm:py-1.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
                                 >
                                     {isAddingNote ? 'Adding...' : 'Add Note'}
                                 </button>

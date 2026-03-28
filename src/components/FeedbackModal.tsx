@@ -92,8 +92,8 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
     <>
       {trigger}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-2xl p-6 max-w-[480px] w-full mx-4 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium">Send us your feedback</h3>
               <Button variant="ghost" size="sm" onClick={() => handleOpenChange(false)}>
@@ -134,13 +134,13 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
                       <button
                         key={star}
                         type="button"
-                        className="p-1 hover:scale-110 transition-transform"
+                        className="p-2 hover:scale-110 transition-transform touch-manipulation"
                         onClick={() => setRating(star)}
                         onMouseEnter={() => setHoveredRating(star)}
                         onMouseLeave={() => setHoveredRating(0)}
                       >
                         <Star
-                          className={`w-6 h-6 ${star <= (hoveredRating || rating)
+                          className={`w-7 h-7 sm:w-6 sm:h-6 ${star <= (hoveredRating || rating)
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-300 dark:text-gray-600"
                             }`}
@@ -165,11 +165,11 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
                   <Button
                     type="submit"
                     disabled={!message.trim() || isSubmitting}
-                    className="flex-1"
+                    className="flex-1 h-11 sm:h-9 touch-manipulation"
                   >
                     {isSubmitting ? "Sending..." : "Send Feedback"}
                   </Button>
@@ -178,6 +178,7 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
                     variant="outline"
                     onClick={() => handleOpenChange(false)}
                     disabled={isSubmitting}
+                    className="h-11 sm:h-9 touch-manipulation"
                   >
                     Cancel
                   </Button>

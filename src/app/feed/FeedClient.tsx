@@ -236,44 +236,44 @@ export default function FeedClient() {
           <Card className="w-full">
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--foreground)] mb-2">
                     <span className="font-medium">@{signal.user.username || signal.user.name}</span>
                     <span className="text-[var(--muted-foreground)]"> added a new entry</span>
                   </p>
-
+ 
                   {signal.entry && (
                     <>
                       <h4
-                        className="font-medium text-[var(--foreground)] mb-1 cursor-pointer hover:text-[var(--primary)] transition-colors"
+                        className="font-medium text-[var(--foreground)] mb-1 cursor-pointer hover:text-[var(--primary)] transition-colors line-clamp-2"
                         onClick={() => router.push(`/entries/${signal.entry!.id}?from=/feed`)}
                       >
                         {signal.entry.title}
                       </h4>
-                      <p className="text-sm text-[var(--muted-foreground)] mb-2">
+                      <p className="text-sm text-[var(--muted-foreground)] mb-2 line-clamp-1">
                         {Array.isArray(signal.entry.authors) ? signal.entry.authors.slice(0, 3).join(", ") : ""}
                         {Array.isArray(signal.entry.authors) && signal.entry.authors.length > 3 && " et al."}
                         {signal.entry.year && ` (${signal.entry.year})`}
                       </p>
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="flex items-center gap-2 flex-wrap mb-3">
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-5">
                           {contentTypeLabels[signal.entry.contentType] || signal.entry.contentType}
                         </Badge>
                         {Array.isArray(signal.entry.topics) && signal.entry.topics.slice(0, 2).map(topic => (
-                          <Badge key={topic} variant="outline" className="text-xs">
+                          <Badge key={topic} variant="outline" className="text-[10px] py-0 px-1.5 h-5">
                             {topic}
                           </Badge>
                         ))}
                       </div>
                     </>
                   )}
-
+ 
                   <p className="text-xs text-[var(--muted-foreground)]">
                     {timeAgo(signal.createdAt)}
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-row sm:flex-col gap-2 shrink-0 mt-3 sm:mt-0">
                   {signal.entry && (
                     <>
                       <Button
@@ -281,6 +281,7 @@ export default function FeedClient() {
                         variant="outline"
                         onClick={() => handleSaveEntry(signal.entry!.id)}
                         disabled={savingEntry === signal.entry!.id || isOwnSignal}
+                        className="flex-1 sm:flex-none h-10 sm:h-9 touch-manipulation"
                       >
                         {savingEntry === signal.entry!.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -296,6 +297,7 @@ export default function FeedClient() {
                           entry={signal.entry}
                           owner={{ id: signal.user.id, name: signal.user.name, username: signal.user.username }}
                           size="sm"
+                          className="flex-1 sm:flex-none h-10 sm:h-9 touch-manipulation"
                         />
                       )}
                     </>
@@ -468,13 +470,13 @@ export default function FeedClient() {
             <h1 className="text-2xl font-bold text-[var(--foreground)] mb-4">Research Signals</h1>
 
             {/* Filter Tabs */}
-            <div className="flex gap-2 border-b border-[var(--border)]">
+            <div className="flex w-full border-b border-[var(--border)] mb-4">
               {(["all", "connections", "mine"] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
                   className={cn(
-                    "px-4 py-2 text-sm font-medium capitalize transition-colors border-b-2 -mb-px",
+                    "flex-1 sm:flex-none px-4 py-3 sm:py-2 text-sm font-medium capitalize transition-colors border-b-2 -mb-px touch-manipulation",
                     filter === f
                       ? "text-[var(--primary)] border-[var(--primary)]"
                       : "text-[var(--muted-foreground)] border-transparent hover:text-[var(--foreground)]"
@@ -482,7 +484,7 @@ export default function FeedClient() {
                 >
                   {f}
                   {f === "all" && unreadCount > 0 && (
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--primary)] text-[var(--primary-foreground)] rounded-full">
+                    <span className="ml-2 px-2 py-0.5 text-[10px] bg-[var(--primary)] text-[var(--primary-foreground)] rounded-full">
                       {unreadCount}
                     </span>
                   )}
@@ -604,7 +606,7 @@ export default function FeedClient() {
 
       {/* Entry Modal */}
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[480px] sm:max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedEntry?.title}</DialogTitle>
           </DialogHeader>

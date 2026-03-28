@@ -38,23 +38,23 @@ export function UsernameBanner({ onDismiss }: UsernameBannerProps) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto">
+            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
               <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex-1">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                <span className="font-medium">Welcome to Corpus!</span> Personalize your profile by setting a unique username that others can use to find you.
+                <span className="font-medium">Welcome to Corpus!</span> Personalize your profile by setting a unique username.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <Button
               size="sm"
               variant="default"
               onClick={handleSetUsername}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white h-10 sm:h-8 touch-manipulation flex-1 sm:flex-none"
             >
               <Settings className="h-4 w-4 mr-1" />
               Set Username
@@ -63,9 +63,9 @@ export function UsernameBanner({ onDismiss }: UsernameBannerProps) {
               size="sm"
               variant="ghost"
               onClick={handleDismiss}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 h-10 sm:h-8 touch-manipulation px-3"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>

@@ -53,7 +53,7 @@ interface Collection {
 // Loading skeleton component
 function CollectionsLoading() {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                     <CardHeader>
@@ -247,11 +247,12 @@ export default function CollectionsPage() {
             )}
 
             {/* Create Collection Button */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-2xl font-bold">Collections</h1>
                 <Button
                     onClick={() => setShowCreateModal(true)}
                     disabled={!session?.user || !hasPaidFeature(session.user, 'collections')}
+                    className="w-full sm:w-auto touch-manipulation h-11 sm:h-9"
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     New Collection
@@ -313,7 +314,7 @@ export default function CollectionsPage() {
             {myCollections.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-4">My Collections</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         {myCollections.map((collection) => (
                             <div key={collection.id} className="relative">
                                 <Link href={`/collections/${collection.id}`}>
@@ -405,8 +406,8 @@ export default function CollectionsPage() {
 
             {/* Create Collection Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-                    <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true">
+                    <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-2xl p-6 max-w-[480px] w-full mx-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium">Create New Collection</h3>
                             <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
@@ -416,13 +417,13 @@ export default function CollectionsPage() {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">Name *</label>
+                                <label className="block text-sm font-medium mb-1 uppercase tracking-tight text-[var(--muted-foreground)]">Name *</label>
                                 <input
                                     type="text"
                                     value={newCollection.name}
                                     onChange={(e) => setNewCollection({ ...newCollection, name: e.target.value })}
                                     onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
-                                    className={`w-full px-3 py-2 border rounded-md bg-background ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-red-500' : ''
+                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-red-500' : 'border-[var(--border)]'
                                         }`}
                                     placeholder="Enter collection name"
                                     aria-invalid={touched.name && (nameTooShort || nameTooLong)}
@@ -463,15 +464,15 @@ export default function CollectionsPage() {
                                 <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
                             )}
 
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2 pt-2">
                                 <Button
                                     onClick={handleCreateCollection}
                                     disabled={creating || !isValid}
-                                    className="flex-1"
+                                    className="flex-1 h-11 sm:h-9 touch-manipulation"
                                 >
                                     {creating ? (
                                         <span className="flex items-center">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                             Creating...
                                         </span>
                                     ) : 'Create'}
@@ -480,6 +481,7 @@ export default function CollectionsPage() {
                                     variant="outline"
                                     onClick={() => setShowCreateModal(false)}
                                     disabled={creating}
+                                    className="flex-1 h-11 sm:h-9 touch-manipulation"
                                 >
                                     Cancel
                                 </Button>
