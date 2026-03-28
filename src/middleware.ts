@@ -37,5 +37,5 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api/auth|api/fetch-youtube|api/fetch-url|api/fetch-metadata-ai|api/collections|api/entries|api/stripe|api/topics|api/keywords|api/users|api/connections|api/user|api/profile|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|api/fetch-youtube|api/fetch-url|api/fetch-metadata-ai|api/ai|api/collections|api/entries|api/stripe|api/topics|api/keywords|api/users|api/connections|api/user|api/profile|_next/static|_next/image|favicon.ico).*)"],
 };

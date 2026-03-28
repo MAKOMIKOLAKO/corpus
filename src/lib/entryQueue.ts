@@ -202,7 +202,7 @@ class EntryQueue {
         title: metadata.title,
         slug: slug || undefined,
         authors: Array.isArray(metadata.authors)
-          ? metadata.authors.map(a => typeof a === 'string' ? a : a.name || a.toString()).filter(Boolean)
+          ? metadata.authors.map((a: any) => typeof a === 'string' ? a : a.name || a.toString()).filter(Boolean)
           : [],
         year: metadata.year,
         contentType: metadata.contentType || 'ARTICLE',

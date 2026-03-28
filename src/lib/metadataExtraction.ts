@@ -4,6 +4,7 @@
  */
 
 import { ContentType } from '@prisma/client';
+import { fetchAndExtractText } from './textExtraction';
 
 export interface ExtractedMetadata {
   title: string;
@@ -22,28 +23,19 @@ export interface ExtractedMetadata {
  */
 export async function extractMetadataFromLink(url: string): Promise<ExtractedMetadata> {
   // Fetch visible text from the URL
-  const text = await fetchVisibleText(url);
+  const { text, title: extractedTitle, description, author } = await fetchAndExtractText(url);
 
   // Call LLM to extract structured metadata
-  const response = await fetch('/api/ai/extract-metadata', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      url,
-      text: text.slice(0, 8000), // Limit text to manage token usage
-    }),
-  });
+  // Since we're running server-side, we need to import the AI functions directly
+  const { extractMetadataFromAI } = await import('./aiExtraction');
+  const metadata = await extractMetadataFromAI(url, text);
 
-  if (!response.ok) {
-    throw new Error(`Failed to extract metadata: ${response.statusText}`);
-  }
-
-  const metadata = await response.json();
-
+  // Use extracted metadata if AI fails
   return cleanAndNormalizeMetadata({
-    ...metadata,
+    title: metadata.title || extractedTitle || 'Untitled',
+    authors: metadata.authors || (author ? [author] : []),
+    year: metadata.year,
+    summary: metadata.summary || description || '',
     url,
     contentType: 'ARTICLE',
   });
@@ -223,50 +215,12 @@ async function fetchPaperByDoi(doi: string): Promise<ExtractedMetadata> {
 }
 
 /**
- * Fetch visible text from a URL
- */
-async function fetchVisibleText(url: string): Promise<string> {
-  // Use a text extraction service or implement basic scraping
-  // For now, we'll use a simple approach with fetch
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch URL: ${response.statusText}`);
-  }
-
-  const html = await response.text();
-
-  // Basic HTML tag removal - in production, use a proper library
-  let text = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return text.slice(0, 10000); // Limit to 10k characters
-}
-
-/**
  * Generate a summary using LLM
  */
 export async function summarizeWithLLM(text: string, maxSentences: number = 2): Promise<string> {
-  const response = await fetch('/api/ai/summarize', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      text,
-      maxSentences,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to generate summary: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  return data.summary;
+  // Since we're running server-side, call the AI function directly
+  const { generateSummary } = await import('./aiExtraction');
+  return await generateSummary(text, maxSentences);
 }
 
 /**
