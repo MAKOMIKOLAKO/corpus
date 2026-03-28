@@ -53,6 +53,17 @@ export async function extractMetadataFromLink(url: string): Promise<ExtractedMet
  * Fetch book metadata from Open Library API
  */
 export async function fetchBookByTitle(title: string): Promise<ExtractedMetadata> {
+  // Check if input is an Open Library URL
+  if (title.startsWith('https://openlibrary.org/')) {
+    // Extract the key from the URL
+    const keyMatch = title.match(/\/works\/(OL\d+)W/);
+    if (keyMatch) {
+      const workKey = `/works/${keyMatch[1]}W`;
+      return await fetchBookByKey(workKey);
+    }
+  }
+
+  // Otherwise search by title
   const searchUrl = `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}&fields=key,title,author_name,first_publish_year,isbn,cover_i&limit=5`;
 
   const response = await fetch(searchUrl);
@@ -67,36 +78,51 @@ export async function fetchBookByTitle(title: string): Promise<ExtractedMetadata
   }
 
   const book = data.docs[0];
-  const coverUrl = book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` : undefined;
+  const workKey = book.key;
+
+  return await fetchBookByKey(workKey);
+}
+
+/**
+ * Fetch book by Open Library key
+ */
+async function fetchBookByKey(workKey: string): Promise<ExtractedMetadata> {
+  // Fetch detailed book information
+  const workUrl = `https://openlibrary.org${workKey}.json`;
+  const workResponse = await fetch(workUrl);
+
+  if (!workResponse.ok) {
+    throw new Error(`Failed to fetch book details: ${workResponse.statusText}`);
+  }
+
+  const workData = await workResponse.json();
 
   let summary = '';
-  if (book.key) {
-    // Fetch detailed book information including description
-    const workUrl = `https://openlibrary.org${book.key}.json`;
-    const workResponse = await fetch(workUrl);
-    if (workResponse.ok) {
-      const workData = await workResponse.json();
-      summary = workData.description?.type === 'text'
-        ? workData.description.value
-        : workData.description || '';
-    }
+  if (workData.description) {
+    summary = workData.description?.type === 'text'
+      ? workData.description.value
+      : workData.description || '';
   }
 
   // If no summary, use LLM to generate one
   if (!summary) {
-    summary = await summarizeWithLLM(`Book: ${book.title} by ${book.author_name?.join(', ')}`, 2);
+    summary = await summarizeWithLLM(`Book: ${workData.title} by ${workData.authors?.map((a: any) => a.name || a).join(', ')}`, 2);
   }
 
+  const coverUrl = workData.covers?.length > 0
+    ? `https://covers.openlibrary.org/b/id/${workData.covers[0]}-M.jpg`
+    : undefined;
+
   return cleanAndNormalizeMetadata({
-    title: book.title,
-    authors: book.author_name || [],
-    year: book.first_publish_year,
+    title: workData.title,
+    authors: workData.authors?.map((a: any) => a.name || a).filter(Boolean) || [],
+    year: workData.created?.value?.substring(0, 4) ? parseInt(workData.created.value.substring(0, 4)) : undefined,
     summary,
-    url: `https://openlibrary.org${book.key}`,
+    url: `https://openlibrary.org${workKey}`,
     source: 'Open Library',
     contentType: 'BOOK',
     cover: coverUrl,
-    isbn13: book.isbn || [],
+    isbn13: workData.isbn_13 || [],
   });
 }
 
@@ -104,6 +130,12 @@ export async function fetchBookByTitle(title: string): Promise<ExtractedMetadata
  * Fetch paper metadata from Semantic Scholar API
  */
 export async function fetchPaperByTitle(title: string): Promise<ExtractedMetadata> {
+  // Check if input is a DOI
+  if (title.startsWith('10.') && title.includes('/')) {
+    return await fetchPaperByDoi(title);
+  }
+
+  // Otherwise search by title
   const searchUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(title)}&fields=title,authors,year,abstract,venue,url,doi&limit=5`;
 
   const response = await fetch(searchUrl, {
@@ -123,6 +155,45 @@ export async function fetchPaperByTitle(title: string): Promise<ExtractedMetadat
   }
 
   const paper = data.data[0];
+
+  // Generate summary from abstract using LLM
+  let summary = '';
+  if (paper.abstract) {
+    summary = await summarizeWithLLM(paper.abstract, 2);
+  } else {
+    summary = await summarizeWithLLM(`Paper: ${paper.title} published in ${paper.venue}`, 2);
+  }
+
+  return cleanAndNormalizeMetadata({
+    title: paper.title,
+    authors: paper.authors?.map((a: any) => a.name) || [],
+    year: paper.year,
+    summary,
+    url: paper.url,
+    doi: paper.doi,
+    source: 'Semantic Scholar',
+    abstract: paper.abstract,
+    contentType: 'PAPER',
+  });
+}
+
+/**
+ * Fetch paper by DOI
+ */
+async function fetchPaperByDoi(doi: string): Promise<ExtractedMetadata> {
+  const lookupUrl = `https://api.semanticscholar.org/graph/v1/paper/DOI:${encodeURIComponent(doi)}?fields=title,authors,year,abstract,venue,url,doi`;
+
+  const response = await fetch(lookupUrl, {
+    headers: {
+      'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY || '',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch paper by DOI: ${response.statusText}`);
+  }
+
+  const paper = await response.json();
 
   // Generate summary from abstract using LLM
   let summary = '';
