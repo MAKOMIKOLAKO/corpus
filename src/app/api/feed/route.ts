@@ -148,7 +148,7 @@ export async function GET(request: Request) {
         return true; // Public collection signals are always visible
       }
       if (signal.type === "ENTRY_ADDED_TO_COLLECTION" && signal.collection) {
-        // Only show if collection is public or user is a member
+        // Only show if collection is public, user is the owner, or user is connected to the owner
         return signal.collection.isPublic || signal.userId === user.id || connectedUserIds.includes(signal.userId);
       }
       if (signal.type === "REFERENCE_REQUESTED") {
