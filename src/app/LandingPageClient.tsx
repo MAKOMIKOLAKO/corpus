@@ -290,29 +290,29 @@ export default function LandingPage() {
 
         <div className="relative z-10 mx-auto grid max-w-6xl gap-16 px-4 pb-24 pt-12 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
           <div data-reveal className={reveal}>
-            <h1 className="text-4xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+            <h1 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
               Where research gets done together.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted-foreground)]">
+            <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-[var(--muted-foreground)]">
               Corpus is the collaborative research platform for academics, researchers, and students. Save papers, discover connections, and build knowledge with your network — all in one place.
             </p>
-            <div className="mt-10 flex flex-wrap gap-4">
+            <div className="mt-10 flex flex-col sm:flex-row flex-wrap gap-4">
               <Link
                 href="/login"
-                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90`}
+                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90 w-full sm:w-auto touch-manipulation`}
               >
                 Get Started Free
               </Link>
               <a
                 href="#features"
-                className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/5"
+                className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 w-full sm:w-auto touch-manipulation"
               >
                 See how it works
               </a>
             </div>
           </div>
 
-          <div data-reveal className={`${reveal} delay-100`}>
+          <div data-reveal className={`${reveal} delay-100 hidden sm:block`}>
             <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--card)]/50 p-5 shadow-2xl backdrop-blur-sm">
               <div className="mb-4 flex items-center gap-2 border-b border-[var(--border)] pb-4">
                 <div className="flex gap-1.5">
@@ -359,14 +359,14 @@ export default function LandingPage() {
       <section id="features" className="scroll-mt-24 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Built for how researchers actually work</h2>
+            <h2 className="text-2xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Built for how researchers actually work</h2>
           </div>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-16 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
               <div
                 key={f.title}
                 data-reveal
-                className={`${reveal} group rounded-2xl border-[var(--border)] bg-[var(--card)]/30 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-[var(--accent)]`}
+                className={`${reveal} group rounded-2xl border-[var(--border)] bg-[var(--card)]/30 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-[var(--accent)] touch-manipulation`}
               >
                 <div className="mb-5">{f.icon}</div>
                 <h3 className="text-lg font-semibold text-[var(--foreground)]">{f.title}</h3>
@@ -386,6 +386,7 @@ export default function LandingPage() {
 
           <div className="relative mt-20 grid gap-12 lg:grid-cols-3 lg:gap-8">
             <div className="pointer-events-none absolute left-0 right-0 top-12 hidden h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent lg:block" aria-hidden />
+            <div className="pointer-events-none absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--accent)]/30 to-transparent lg:hidden" aria-hidden />
             {[
               {
                 n: "01",
@@ -406,11 +407,11 @@ export default function LandingPage() {
                 desc: "Search your library, explore the knowledge graph, and surface unexpected connections between your sources.",
               },
             ].map((step) => (
-              <div key={step.n} data-reveal className={`${reveal} relative text-center lg:text-left`}>
-                <div className="mb-6 flex justify-center lg:justify-start">
-                  <span className="text-5xl font-bold tabular-nums text-[var(--muted-foreground)]">{step.n}</span>
+              <div key={step.n} data-reveal className={`${reveal} relative pl-16 lg:pl-0 text-left`}>
+                <div className="mb-6 flex justify-start">
+                  <span className="text-4xl sm:text-5xl font-bold tabular-nums text-[var(--muted-foreground)]">{step.n}</span>
                 </div>
-                <div className="mb-4 flex justify-center lg:justify-start">{step.icon}</div>
+                <div className="mb-4 flex justify-start">{step.icon}</div>
                 <h3 className="text-xl font-semibold text-[var(--foreground)]">{step.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">{step.desc}</p>
               </div>
@@ -593,7 +594,7 @@ export default function LandingPage() {
               <div key={item.q} data-reveal className={`${reveal} overflow-hidden rounded-xl border-[var(--border)] bg-[var(--card)]/30`}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--muted)]/50"
+                  className="flex min-h-[48px] w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--muted)]/50 touch-manipulation"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                 >
@@ -610,11 +611,11 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section data-reveal className={`${reveal} border-t border-[var(--border)] bg-[var(--background)] py-24`}>
         <div className="mx-auto max-w-3xl px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Start building your research network today.</h2>
-          <p className="mt-4 text-[var(--muted-foreground)]">Free forever. No credit card required. Join researchers from leading universities.</p>
+          <h2 className="text-2xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Start building your research network today.</h2>
+          <p className="mt-4 text-sm sm:text-base text-[var(--muted-foreground)]">Free forever. No credit card required. Join researchers from leading universities.</p>
           <Link
             href="/login"
-            className={`mt-10 inline-flex min-w-[200px] justify-center rounded-lg px-8 py-4 text-base font-semibold text-white ${accentBg} shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400`}
+            className={`mt-10 inline-flex w-full sm:min-w-[200px] sm:w-auto justify-center rounded-lg px-8 py-4 text-base font-semibold text-white ${accentBg} shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 touch-manipulation`}
           >
             Get Started Free
           </Link>

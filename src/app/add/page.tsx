@@ -275,14 +275,13 @@ export default function AddEntryPage() {
 
   return (
     <div
-      className="mx-auto min-h-screen max-w-[720px] bg-[var(--background)] p-6 text-[var(--foreground)] theme-transition"
-      style={{ padding: 24 }}
+      className="mx-auto min-h-screen max-w-[720px] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-6 text-[var(--foreground)] theme-transition"
     >
       <header className="mb-8">
         <h1 className="mb-6 font-serif text-3xl font-bold text-[var(--foreground)]">Add to Library</h1>
 
         {!selectedResult && !saveConfirmation && (
-          <div className="flex gap-2 rounded-xl border border-[var(--border)] bg-[var(--muted)]/50 p-1">
+          <div className="flex flex-col sm:flex-row gap-2 rounded-xl border border-[var(--border)] bg-[var(--muted)]/50 p-2 sm:p-1">
             <TabButton
               active={activeTab === 'PAPER'}
               onClick={() => switchTab('PAPER')}
@@ -321,17 +320,17 @@ export default function AddEntryPage() {
           <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
             {activeTab === 'URL' ? (
               <div className="space-y-4">
-                <form onSubmit={handleAddUrl} className="flex gap-2">
+                <form onSubmit={handleAddUrl} className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     placeholder="https://..."
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+                    className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-4 sm:py-3 transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none touch-manipulation"
                   />
                   <button
                     type="submit"
-                    className="rounded-lg bg-[var(--accent)] px-6 py-3 font-medium whitespace-nowrap text-[var(--accent-foreground)] shadow-sm transition-all hover:opacity-90"
+                    className="rounded-lg bg-[var(--accent)] px-6 py-4 sm:py-3 font-medium whitespace-nowrap text-[var(--accent-foreground)] shadow-sm transition-all hover:opacity-90 active:scale-[0.98] mt-2 sm:mt-0 touch-manipulation"
                     style={{ backgroundColor: TAB_ACTIVE }}
                   >
                     Add to Queue
@@ -357,7 +356,7 @@ export default function AddEntryPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                <form onSubmit={handleSearch} className="flex gap-2">
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
                     <input
@@ -369,13 +368,13 @@ export default function AddEntryPage() {
                       }
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-3 pr-4 pl-11 transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-4 sm:py-3 pr-4 pl-11 transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none touch-manipulation"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isSearching}
-                    className="flex items-center gap-2 rounded-lg px-6 py-3 font-medium whitespace-nowrap text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-lg px-6 py-4 sm:py-3 font-medium whitespace-nowrap text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98] mt-2 sm:mt-0 touch-manipulation"
                     style={{ backgroundColor: TAB_ACTIVE }}
                   >
                     {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -462,7 +461,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
+      className={`flex-1 rounded-lg py-3.5 sm:py-2.5 text-sm font-medium transition-all touch-manipulation active:scale-[0.98] ${
         active
           ? 'text-white shadow-md'
           : 'border border-[var(--border)] border-dashed bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]'
@@ -858,7 +857,7 @@ function PreviewForm({
           <input
             value={formData.authors}
             onChange={(e) => setFormData({ ...formData, authors: e.target.value })}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-3 sm:py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none touch-manipulation"
           />
         </Field>
 
@@ -875,7 +874,7 @@ function PreviewForm({
             <select
               value={formData.contentType}
               onChange={(e) => setFormData({ ...formData, contentType: e.target.value })}
-              className="w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+              className="w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-3 sm:py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none touch-manipulation"
             >
               <option value="PAPER">Research Paper</option>
               <option value="BOOK">Book</option>
@@ -1112,17 +1111,17 @@ function PostSavePanel({
         <p className="mb-4 text-sm text-[var(--muted-foreground)]">{collectionMsg}</p>
       )}
 
-      <div className="mb-12 flex flex-wrap justify-center gap-3">
+      <div className="mb-12 flex flex-col sm:flex-row items-stretch sm:justify-center gap-3 w-full sm:w-auto px-4 sm:px-0">
         <div className="relative">
           <button
             type="button"
             onClick={() => setCollectionOpen((o) => !o)}
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]"
+            className="inline-flex w-full items-center justify-center sm:justify-start gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-4 sm:py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)] touch-manipulation"
           >
             + Add to Collection <ChevronDown className="h-4 w-4" />
           </button>
           {collectionOpen && (
-            <div className="absolute top-full right-0 z-20 mt-1 max-h-48 min-w-[200px] overflow-auto rounded-md border border-[var(--border)] bg-[var(--background)] shadow-lg">
+            <div className="absolute top-full left-0 right-0 sm:right-auto z-20 mt-1 max-h-48 min-w-[200px] overflow-auto rounded-md border border-[var(--border)] bg-[var(--background)] shadow-lg">
               {collections.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-[var(--muted-foreground)]">No collections yet</div>
               ) : (
@@ -1130,7 +1129,7 @@ function PostSavePanel({
                   <button
                     key={c.id}
                     type="button"
-                    className="block w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)]"
+                    className="block w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-[var(--muted)] touch-manipulation"
                     onClick={() => addToCollection(c.id, c.name)}
                   >
                     {c.name}
@@ -1144,7 +1143,7 @@ function PostSavePanel({
         <button
           type="button"
           onClick={() => setShareOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-4 sm:py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)] touch-manipulation"
         >
           Share <Share2 className="h-4 w-4" />
         </button>
@@ -1152,7 +1151,7 @@ function PostSavePanel({
         <button
           type="button"
           onClick={onViewEntry}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-4 sm:py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 touch-manipulation"
           style={{ backgroundColor: TAB_ACTIVE }}
         >
           View Entry <ExternalLink className="h-4 w-4" />

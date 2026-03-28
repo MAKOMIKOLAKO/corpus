@@ -124,13 +124,13 @@ export default function ProfilePageClient({
       </button>
 
       <div className="glass-card rounded-xl border border-[var(--border)] p-6 space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-2xl font-semibold shrink-0">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-3xl sm:text-2xl font-semibold shrink-0">
               {((profile.name || profile.username || '?')[0]).toUpperCase()}
             </div>
-            <div>
-              <h1 className="text-xl font-semibold">{profile.name || profile.username}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-xl font-semibold truncate">{profile.name || profile.username}</h1>
               {profile.username && (
                 <p className="text-sm text-[var(--muted-foreground)]">@{profile.username}</p>
               )}
@@ -140,62 +140,62 @@ export default function ProfilePageClient({
 
           {/* Connection actions */}
           {!isOwnProfile && currentUserId && (
-            <div className="shrink-0">
+            <div className="w-full sm:w-auto shrink-0">
               {!profile.connectionStatus && (
                 <Button
                   onClick={sendRequest}
                   disabled={acting}
                   variant="default"
-                  className="gap-1.5"
+                  className="w-full sm:w-auto gap-1.5 h-11 sm:h-9 touch-manipulation"
                 >
                   <UserPlus className="w-4 h-4" /> Connect
                 </Button>
               )}
               {profile.connectionStatus === 'PENDING' && profile.isSentByMe && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between sm:justify-end gap-2 p-2 sm:p-0 border sm:border-0 rounded-lg">
                   <span className="inline-flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]">
                     <Clock className="w-4 h-4" /> Pending
                   </span>
                   <button
                     onClick={remove}
                     disabled={acting}
-                    className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    className="p-2 sm:p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors touch-manipulation"
                     title="Cancel request"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5 sm:w-4 sm:h-4" />
                   </button>
                 </div>
               )}
               {profile.connectionStatus === 'PENDING' && !profile.isSentByMe && (
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => respond('ACCEPTED')}
                     disabled={acting}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-3 sm:px-3 sm:py-2 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 disabled:opacity-50 touch-manipulation"
                   >
                     <Check className="w-4 h-4" /> Accept
                   </button>
                   <button
                     onClick={() => respond('DECLINED')}
                     disabled={acting}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[var(--border)] text-sm hover:bg-[var(--accent)]/20 disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-3 sm:px-3 sm:py-2 rounded-md border border-[var(--border)] text-sm hover:bg-[var(--accent)]/20 disabled:opacity-50 touch-manipulation"
                   >
                     <X className="w-4 h-4" /> Decline
                   </button>
                 </div>
               )}
               {profile.connectionStatus === 'ACCEPTED' && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between sm:justify-end gap-2 p-2 sm:p-0 border sm:border-0 rounded-lg">
                   <span className="inline-flex items-center gap-1.5 text-sm text-green-600">
                     <UserCheck className="w-4 h-4" /> Connected
                   </span>
                   <button
                     onClick={remove}
                     disabled={acting}
-                    className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    className="p-2 sm:p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors touch-manipulation"
                     title="Remove connection"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5 sm:w-4 sm:h-4" />
                   </button>
                 </div>
               )}
@@ -210,7 +210,7 @@ export default function ProfilePageClient({
           {isOwnProfile && (
             <Link
               href="/account/settings"
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-md border border-[var(--border)] text-sm hover:bg-[var(--accent)]/20 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-4 py-3 sm:px-3 sm:py-2 rounded-md border border-[var(--border)] text-sm font-medium hover:bg-[var(--accent)]/20 transition-colors touch-manipulation h-11 sm:h-9"
             >
               Edit profile
             </Link>

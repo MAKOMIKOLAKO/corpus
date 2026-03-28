@@ -139,24 +139,24 @@ export default function ConnectionsPageClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--border)]">
+      <div className="flex w-full border-b border-[var(--border)]">
         {TABS.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium capitalize transition-colors relative flex items-center gap-2 ${tab === t
+            className={`flex-1 sm:flex-none px-2 sm:px-6 py-4 sm:py-2 text-xs sm:text-sm font-medium capitalize transition-colors relative flex items-center justify-center gap-2 touch-manipulation ${tab === t
               ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)] -mb-px'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
               }`}
           >
             {t}
             {t === 'requests' && pendingCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-bold">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] sm:text-xs font-bold">
                 {pendingCount}
               </span>
             )}
             {t === 'shared' && pendingShared > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-bold">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] sm:text-xs font-bold">
                 {pendingShared}
               </span>
             )}
@@ -177,7 +177,7 @@ export default function ConnectionsPageClient() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search by username or name…"
-                className="w-full pl-9 pr-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className="w-full pl-9 pr-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] touch-manipulation"
               />
             </div>
             {searching && <p className="text-xs text-[var(--muted-foreground)]">Searching…</p>}
@@ -328,8 +328,8 @@ export default function ConnectionsPageClient() {
             ) : (
               <ul className="space-y-3">
                 {receivedEntries.map(s => (
-                  <li key={s.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                    <div className="min-w-0 flex-1 space-y-1">
+                  <li key={s.id} className="flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-4 p-4 sm:p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+                    <div className="min-w-0 flex-1 space-y-2 sm:space-y-1">
                       <div className="flex items-center gap-2">
                         <BookOpen className="w-3.5 h-3.5 text-[var(--muted-foreground)] shrink-0" />
                         <p className="text-sm font-medium truncate">{s.entry.title}</p>
@@ -337,20 +337,20 @@ export default function ConnectionsPageClient() {
                       <p className="text-xs text-[var(--muted-foreground)]">
                         From <span className="font-medium">@{s.sender?.username || s.sender?.name}</span>
                       </p>
-                      {s.message && <p className="text-xs italic text-[var(--muted-foreground)]">&quot;{s.message}&quot;</p>}
+                      {s.message && <p className="text-xs italic text-[var(--muted-foreground)] leading-relaxed">&quot;{s.message}&quot;</p>}
                       <StatusBadge status={s.status} />
                     </div>
                     {s.status === 'PENDING' && (
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                         <button
                           onClick={() => respondToSharedEntry(s.id, 'ACCEPTED')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium hover:opacity-90 transition-opacity"
+                          className="inline-flex items-center justify-center gap-1 px-4 py-3 sm:px-2.5 sm:py-1.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium hover:opacity-90 transition-opacity touch-manipulation"
                         >
                           <Check className="w-3 h-3" /> Add to library
                         </button>
                         <button
                           onClick={() => respondToSharedEntry(s.id, 'DECLINED')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--border)] text-xs font-medium hover:bg-[var(--accent)]/20 transition-colors"
+                          className="inline-flex items-center justify-center gap-1 px-4 py-3 sm:px-2.5 sm:py-1.5 rounded-md border border-[var(--border)] text-xs font-medium hover:bg-[var(--accent)]/20 transition-colors touch-manipulation"
                         >
                           <X className="w-3 h-3" /> Decline
                         </button>
@@ -359,7 +359,7 @@ export default function ConnectionsPageClient() {
                     {s.status === 'ACCEPTED' && (
                       <Link
                         href={`/library`}
-                        className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--border)] text-xs hover:bg-[var(--accent)]/20 transition-colors"
+                        className="shrink-0 inline-flex items-center justify-center gap-1 px-4 py-3 sm:px-2.5 sm:py-1.5 rounded-md border border-[var(--border)] text-xs hover:bg-[var(--accent)]/20 transition-colors touch-manipulation"
                       >
                         View <ChevronRight className="w-3 h-3" />
                       </Link>

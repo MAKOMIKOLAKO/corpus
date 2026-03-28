@@ -161,7 +161,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-            <DialogContent className="max-w-md bg-white border rounded-lg shadow-2xl p-6 w-full">
+            <DialogContent className="max-w-[480px] sm:max-w-md bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-2xl p-6 w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Share2 className="w-5 h-5" />
@@ -184,7 +184,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                         <Button
                             variant="outline"
                             onClick={handleNativeShare}
-                            className="w-full justify-start"
+                            className="w-full justify-start h-11 sm:h-9 touch-manipulation"
                         >
                             <Share2 className="w-4 h-4 mr-2" />
                             Share via system
@@ -194,7 +194,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                             <Button
                                 variant="outline"
                                 onClick={handleCopyUrl}
-                                className="w-full justify-start"
+                                className="w-full justify-start h-11 sm:h-9 touch-manipulation"
                             >
                                 {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                                 {copied ? 'URL copied!' : 'Copy URL'}
@@ -205,7 +205,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                             <Button
                                 variant="outline"
                                 onClick={() => window.open(entry.url!, '_blank', 'noopener,noreferrer')}
-                                className="w-full justify-start"
+                                className="w-full justify-start h-11 sm:h-9 touch-manipulation"
                             >
                                 <ExternalLink className="w-4 h-4 mr-2" />
                                 Open in browser
@@ -228,7 +228,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                                 placeholder="Search connections by name or username..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9"
+                                className="pl-9 h-11 sm:h-9 touch-manipulation"
                             />
                         </div>
 
@@ -255,12 +255,12 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
 
                         {/* Search Results */}
                         {searchQuery && filteredUsers.length > 0 && (
-                            <div className="max-h-32 overflow-y-auto space-y-1">
+                            <div className="max-h-48 overflow-y-auto space-y-1 border border-[var(--border)] rounded-md bg-[var(--muted)]/20 p-1">
                                 {filteredUsers.map(user => (
                                     <div
                                         key={user.id}
                                         onClick={() => toggleUserSelection(user.id)}
-                                        className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm"
+                                        className="p-3 sm:p-2 rounded-md hover:bg-[var(--background)] cursor-pointer text-sm transition-colors touch-manipulation"
                                     >
                                         <div className="font-medium">
                                             {user.name || user.username || user.email}
@@ -278,7 +278,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                             <Button
                                 onClick={handleShareWithUsers}
                                 disabled={isSharing}
-                                className="w-full"
+                                className="w-full h-11 sm:h-9 touch-manipulation"
                             >
                                 {isSharing ? (
                                     'Sharing...'

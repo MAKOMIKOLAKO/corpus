@@ -80,8 +80,8 @@ export default function UsernameSetupModal() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999]">
-      <div className="bg-[var(--background)] rounded-xl p-8 max-w-md w-full border border-[var(--border)]">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]">
+      <div className="bg-[var(--background)] rounded-xl p-6 sm:p-8 max-w-[480px] w-full mx-4 border border-[var(--border)] max-h-[90vh] overflow-y-auto">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight mb-2">Choose your username</h1>
           <p className="text-sm text-[var(--muted-foreground)] mb-6">
@@ -102,7 +102,7 @@ export default function UsernameSetupModal() {
                 placeholder="yourhandle"
                 maxLength={20}
                 autoComplete="off"
-                className="w-full pl-7 pr-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className="w-full pl-7 pr-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] touch-manipulation h-11 sm:h-9"
                 autoFocus
               />
             </div>
@@ -123,7 +123,7 @@ export default function UsernameSetupModal() {
               placeholder="A short description about you…"
               maxLength={160}
               rows={3}
-              className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] touch-manipulation"
             />
             <p className="text-xs text-[var(--muted-foreground)] text-right">{bio.length}/160</p>
           </div>
@@ -131,7 +131,7 @@ export default function UsernameSetupModal() {
           <button
             type="submit"
             disabled={!availability?.available || saving}
-            className="w-full py-2 px-4 rounded-md bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full py-3 sm:py-2 px-4 rounded-md bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed h-11 sm:h-10 touch-manipulation"
           >
             {saving ? 'Saving…' : 'Confirm username'}
           </button>
