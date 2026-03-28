@@ -115,9 +115,9 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: user.id },
-            select: { 
-              plan: true, 
-              username: true, 
+            select: {
+              plan: true,
+              username: true,
               emailVerified: true,
               entriesCount: true,
               personalCollectionsCount: true
@@ -140,9 +140,9 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: (token as any).userId },
-            select: { 
-              username: true, 
-              plan: true, 
+            select: {
+              username: true,
+              plan: true,
               emailVerified: true,
               entriesCount: true,
               personalCollectionsCount: true
@@ -161,12 +161,62 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user && typeof (token as any).userId === "string") {
-        (session.user as any).id = (token as any).userId;
-        (session.user as any).plan = (token as any).plan || 'FREE';
-        (session.user as any).emailVerified = (token as any).emailVerified;
-        (session.user as any).username = (token as any).username || null;
-        (session.user as any).entriesCount = (token as any).entriesCount || 0;
-        (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
+        // Fetch fresh data from database on every session check
+        try {
+          const dbUser = await withRetry(() => prisma.user.findUnique({
+            where: { id: (token as any).userId },
+            select: {
+              plan: true,
+              subscriptionStatus: true,
+              subscriptionEndsAt: true,
+              entriesCount: true,
+              personalCollectionsCount: true
+            }
+          }));
+
+          if (dbUser) {
+            // Server-side expiry check as safety net for missed webhook events
+            if (
+              dbUser.plan === 'PRO' &&
+              dbUser.subscriptionEndsAt &&
+              dbUser.subscriptionEndsAt < new Date() &&
+              dbUser.subscriptionStatus !== 'active'
+            ) {
+              // Downgrade expired user to FREE
+              await withRetry(() => prisma.user.update({
+                where: { id: (token as any).userId },
+                data: { plan: 'FREE' }
+              }));
+              dbUser.plan = 'FREE';
+            }
+
+            (session.user as any).id = (token as any).userId;
+            (session.user as any).plan = dbUser.plan || 'FREE';
+            (session.user as any).subscriptionStatus = dbUser.subscriptionStatus;
+            (session.user as any).subscriptionEndsAt = dbUser.subscriptionEndsAt;
+            (session.user as any).emailVerified = (token as any).emailVerified;
+            (session.user as any).username = (token as any).username || null;
+            (session.user as any).entriesCount = dbUser.entriesCount || 0;
+            (session.user as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
+          } else {
+            // Fallback to token data if user not found
+            (session.user as any).id = (token as any).userId;
+            (session.user as any).plan = (token as any).plan || 'FREE';
+            (session.user as any).emailVerified = (token as any).emailVerified;
+            (session.user as any).username = (token as any).username || null;
+            (session.user as any).entriesCount = (token as any).entriesCount || 0;
+            (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
+          }
+        } catch (error) {
+          console.error('Error fetching fresh session data:', error);
+          // Fallback to token data
+          (session.user as any).id = (token as any).userId;
+          (session.user as any).plan = (token as any).plan || 'FREE';
+          (session.user as any).emailVerified = (token as any).emailVerified;
+          (session.user as any).username = (token as any).username || null;
+          (session.user as any).entriesCount = (token as any).entriesCount || 0;
+          (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
+        }
       }
       return session;
     },

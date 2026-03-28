@@ -34,6 +34,10 @@ interface Entry {
     year: number | null;
     contentType: string;
     url?: string | null;
+    doi?: string | null;
+    metadata?: {
+        openAccessUrl?: string | null;
+    } | null;
     readingStatus: 'UNREAD' | 'BACKLOG' | 'IN_PROGRESS' | 'READING' | 'COMPLETED' | 'READ' | 'DROPPED';
     createdAt: string | Date;
     collections?: {
@@ -118,6 +122,7 @@ export default function EntryCard({
     const [isUpdating, setIsUpdating] = useState(false);
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
+    const [didCopyDoi, setDidCopyDoi] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const apiKey = useApiKey();
 
@@ -232,6 +237,35 @@ export default function EntryCard({
 
             setDidCopyUrl(true);
             window.setTimeout(() => setDidCopyUrl(false), 1200);
+        } catch {
+            // ignore
+        }
+    };
+
+    const handleCopyDoi = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const doi = entry.doi?.trim();
+        if (!doi) return;
+
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(doi);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = doi;
+                el.setAttribute('readonly', '');
+                el.style.position = 'absolute';
+                el.style.left = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+
+            setDidCopyDoi(true);
+            window.setTimeout(() => setDidCopyDoi(false), 1200);
         } catch {
             // ignore
         }
@@ -497,42 +531,84 @@ export default function EntryCard({
                                     </div>
                                 </div>
 
-                                {/* Footer with date info */}
+                                {/* Footer with date info and paper links */}
                                 <div className="pt-3 border-t border-border/50">
-                                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                                        <span>added {formatDate(entry.createdAt)}</span>
-                                        <div className="flex items-center gap-1 sm:gap-2">
-                                            {entry.url ? (
+                                    <div className="flex flex-col gap-2">
+                                        {/* Paper links section */}
+                                        {(entry.url || entry.metadata?.openAccessUrl || entry.doi) && (
+                                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                                                {entry.metadata?.openAccessUrl && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950 dark:text-green-400 touch-manipulation"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            if (entry.metadata?.openAccessUrl) {
+                                                                window.open(entry.metadata.openAccessUrl, '_blank', 'noopener,noreferrer');
+                                                            }
+                                                        }}
+                                                    >
+                                                        Free PDF
+                                                        <ExternalLink className="w-3 h-3 ml-1" />
+                                                    </Button>
+                                                )}
+                                                {entry.url && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 px-2 text-muted-foreground hover:text-foreground touch-manipulation"
+                                                        onClick={handleOpenUrl}
+                                                    >
+                                                        View Paper
+                                                        <ExternalLink className="w-3 h-3 ml-1" />
+                                                    </Button>
+                                                )}
+                                                {entry.doi && (
+                                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                                        <span className="text-xs">DOI: {entry.doi}</span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground touch-manipulation"
+                                                            onClick={handleCopyDoi}
+                                                        >
+                                                            {didCopyDoi ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Date and action buttons */}
+                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                            <span>added {formatDate(entry.createdAt)}</span>
+                                            <div className="flex items-center gap-1 sm:gap-2">
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
-                                                    onClick={handleOpenUrl}
+                                                    onClick={handleShare}
                                                 >
-                                                    <ExternalLink className="w-5 h-5 sm:w-3 sm:h-3" />
+                                                    <Share className="w-5 h-5 sm:w-3 sm:h-3" />
                                                 </Button>
-                                            ) : null}
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
-                                                onClick={handleShare}
-                                            >
-                                                <Share className="w-5 h-5 sm:w-3 sm:h-3" />
-                                            </Button>
-                                            {entry.url ? (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
-                                                    onClick={handleCopyUrl}
-                                                >
-                                                    {didCopyUrl ? <Check className="w-5 h-5 sm:w-3 sm:h-3" /> : <Copy className="w-5 h-5 sm:w-3 sm:h-3" />}
-                                                </Button>
-                                            ) : null}
+                                                {entry.url && !entry.metadata?.openAccessUrl && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
+                                                        onClick={handleCopyUrl}
+                                                    >
+                                                        {didCopyUrl ? <Check className="w-5 h-5 sm:w-3 sm:h-3" /> : <Copy className="w-5 h-5 sm:w-3 sm:h-3" />}
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
