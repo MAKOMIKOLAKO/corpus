@@ -437,13 +437,7 @@ function QueuePanel({ queue, onRemove, onRetry }: {
               </div>
             </div>
 
-            <div className="flex-shrink-0">
-               {item.status === 'PENDING' && (
-                 <RemoveConfirmButton onRemove={() => onRemove(item.id)} />
-               )}
-               {item.status === 'PROCESSING' && (
-                 <span className="text-xs text-[var(--muted-foreground)] italic">Processing...</span>
-               )}
+            <div className="flex-shrink-0 flex items-center gap-2">
                {item.status === 'FAILED' && (
                  <button 
                   onClick={() => onRetry(item)}
@@ -451,6 +445,12 @@ function QueuePanel({ queue, onRemove, onRetry }: {
                  >
                    Retry
                  </button>
+               )}
+               {(item.status === 'PENDING' || item.status === 'FAILED' || item.status === 'COMPLETED') && (
+                 <RemoveConfirmButton onRemove={() => onRemove(item.id)} />
+               )}
+               {item.status === 'PROCESSING' && (
+                 <span className="text-xs text-[var(--muted-foreground)] italic">Processing...</span>
                )}
             </div>
           </div>
