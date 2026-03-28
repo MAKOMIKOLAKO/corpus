@@ -2,6 +2,7 @@
   "name": "knowledge-indexer",
   "version": "0.1.0",
   "private": true,
+  "description": "SECURITY: npm audit may report high severity in next@14; fix requires major Next upgrade — review GHSA advisories before npm audit fix --force.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -20,6 +21,8 @@
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/d3": "^7.4.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.0.0-rc.12",
     "class-variance-authority": "^0.7.1",
@@ -35,7 +38,8 @@
     "resend": "^6.9.4",
     "sonner": "^1.4.41",
     "stripe": "^20.4.1",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",

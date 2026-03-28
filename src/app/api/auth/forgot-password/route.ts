@@ -1,35 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prismaWithRetry';
 import { sendPasswordResetEmail } from '@/lib/email';
+import { forgotPasswordBodySchema } from '@/lib/validation';
 import crypto from 'crypto';
 
-export async function POST(req: NextRequest) {
-  try {
-    const { email } = await req.json();
+const MIN_RESPONSE_MS = 500;
 
-    if (!email || typeof email !== 'string') {
+async function ensureMinDelay(startedAt: number, ms: number) {
+  const elapsed = Date.now() - startedAt;
+  if (elapsed < ms) {
+    await new Promise((r) => setTimeout(r, ms - elapsed));
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const startedAt = Date.now();
+  try {
+    const raw = await req.json().catch(() => ({}));
+    const parsed = forgotPasswordBodySchema.safeParse(raw);
+    if (!parsed.success) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
       return NextResponse.json({ success: true });
     }
+    const { email } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    // Always return 200 — never reveal if email exists
     if (!user) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
       return NextResponse.json({ success: true });
     }
 
-    // Google-only users have no password — silently skip
     if (!user.passwordHash) {
+      await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
       return NextResponse.json({ success: true });
     }
 
-    // Delete any existing unused reset tokens for this user
     await prisma.passwordResetToken.deleteMany({
       where: { userId: user.id, usedAt: null },
     });
 
+    // SECURITY AUDIT: 64-char hex from 32 bytes (not Math.random).
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await prisma.passwordResetToken.create({
       data: { token, userId: user.id, expiresAt },
@@ -41,9 +54,11 @@ export async function POST(req: NextRequest) {
       console.error('Failed to send password reset email:', emailErr);
     }
 
+    await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('forgot-password error:', err);
+    await ensureMinDelay(startedAt, MIN_RESPONSE_MS);
     return NextResponse.json({ success: true });
   }
 }

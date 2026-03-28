@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
+import { connectionCreateSchema } from '@/lib/validation';
 
 const USER_SELECT = {
   id: true, username: true, name: true, bio: true, plan: true,
@@ -44,8 +45,15 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const userId = session.user.id as string;
 
-  const { receiverId } = await request.json();
-  if (!receiverId) return NextResponse.json({ error: 'receiverId is required' }, { status: 400 });
+  const raw = await request.json().catch(() => ({}));
+  const parsed = connectionCreateSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid input', details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const { receiverId } = parsed.data;
   if (receiverId === userId) return NextResponse.json({ error: 'You cannot connect with yourself' }, { status: 400 });
 
   const receiver = await prisma.user.findUnique({ where: { id: receiverId }, select: { id: true } });

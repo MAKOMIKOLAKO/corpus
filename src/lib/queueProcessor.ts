@@ -1,237 +1,358 @@
 import { prisma } from './prismaWithRetry';
+import type { ContentType, Prisma, ReadingStatus } from '@prisma/client';
+
+function getGeminiApiKey(): string | undefined {
+  return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+}
+
+function extractMeta(html: string) {
+  const getTag = (pattern: RegExp) => {
+    const match = html.match(pattern);
+    return match ? match[1].trim() : null;
+  };
+
+  const ogTitle =
+    getTag(/property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+property=["']og:title["']/i) ||
+    getTag(/name=["']og:title["']\s+content=["']([^"']+)["']/i);
+
+  const ogDescription =
+    getTag(/property=["']og:description["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+property=["']og:description["']/i) ||
+    getTag(/name=["']og:description["']\s+content=["']([^"']+)["']/i);
+
+  const ogSiteName =
+    getTag(/property=["']og:site_name["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+property=["']og:site_name["']/i) ||
+    getTag(/name=["']og:site_name["']\s+content=["']([^"']+)["']/i);
+
+  const metaDescription =
+    getTag(/name=["']description["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+name=["']description["']/i);
+
+  const metaAuthor =
+    getTag(/name=["']author["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+name=["']author["']/i);
+
+  const articlePublished =
+    getTag(/property=["']article:published_time["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+property=["']article:published_time["']/i);
+
+  const articleAuthor =
+    getTag(/property=["']article:author["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+property=["']article:author["']/i);
+
+  const titleTag = getTag(/<title[^>]*>([^<]+)<\/title>/i);
+
+  const citationDoi =
+    getTag(/name=["']citation_doi["']\s+content=["']([^"']+)["']/i) ||
+    getTag(/content=["']([^"']+)["']\s+name=["']citation_doi["']/i);
+
+  const bodyText = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gim, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gim, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 4000);
+
+  const extractedTitle = ogTitle || titleTag;
+  const extractedDescription = ogDescription || metaDescription;
+  const extractedAuthor = metaAuthor || articleAuthor;
+
+  return {
+    ogTitle,
+    ogDescription,
+    ogSiteName,
+    metaDescription,
+    metaAuthor,
+    articlePublished,
+    articleAuthor,
+    titleTag,
+    citationDoi,
+    bodyText,
+    extractedTitle,
+    extractedDescription,
+    extractedAuthor,
+  };
+}
+
+function metaFallback(url: string, meta: ReturnType<typeof extractMeta>) {
+  let year: number | null = null;
+  if (meta.articlePublished) {
+    const d = new Date(meta.articlePublished);
+    if (!Number.isNaN(d.getTime())) year = d.getFullYear();
+  }
+  const authors: string[] = [];
+  if (meta.extractedAuthor) {
+    meta.extractedAuthor.split(/[,;]/).forEach((a) => {
+      const t = a.trim();
+      if (t) authors.push(t);
+    });
+  }
+  return {
+    title: meta.extractedTitle || url,
+    authors,
+    year,
+    description: meta.extractedDescription,
+    source: meta.ogSiteName,
+    contentType: 'ARTICLE' as const,
+    doi: meta.citationDoi,
+  };
+}
+
+async function userCanCreateEntry(userId: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return { ok: false, message: 'User not found' };
+  const count = await prisma.entry.count({ where: { userId } });
+  if (user.plan === 'FREE' && count >= 100) {
+    return {
+      ok: false,
+      message: "You've reached the 100 entry limit on the free plan.",
+    };
+  }
+  return { ok: true };
+}
 
 export async function processUserQueue(userId: string): Promise<void> {
-  // 1. Find the oldest PENDING URL item for this user
   const pendingItem = await prisma.queueItem.findFirst({
     where: {
       userId,
-      status: "PENDING",
-      inputType: "URL"
+      status: 'PENDING',
+      inputType: 'URL',
     },
-    orderBy: { createdAt: "asc" }
+    orderBy: { createdAt: 'asc' },
   });
 
   if (!pendingItem) return;
 
-  // 2. Check if user already has a PROCESSING item
   const processingItem = await prisma.queueItem.findFirst({
-    where: { userId, status: "PROCESSING" }
+    where: { userId, status: 'PROCESSING' },
   });
 
   if (processingItem) return;
 
-  // 3. Mark the item as PROCESSING
   const item = await prisma.queueItem.update({
     where: { id: pendingItem.id },
-    data: { 
-      status: "PROCESSING",
-      startedAt: new Date()
-    }
+    data: {
+      status: 'PROCESSING',
+      startedAt: new Date(),
+    },
   });
 
-  try {
-    // 4. Process the URL
-    const url = item.input;
+  const url = item.input;
 
-    // a. Fetch the webpage with 10s timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    
-    let html = '';
-    try {
-      const response = await fetch(url, {
-        headers: { 
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9"
-        },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) throw new Error(`Could not reach that URL (Status: ${response.status})`);
-      html = await response.text();
-      
-      if (!html || html.length < 200) {
-        // Check if we got blanked
-        if (html.toLowerCase().includes('cloudflare') || html.toLowerCase().includes('bot') || html.length === 0) {
-           throw new Error("This site blocked our automated extraction. Please add it manually or try a different link.");
-        }
-      }
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      await prisma.queueItem.update({
-        where: { id: item.id },
-        data: {
-          status: "FAILED",
-          errorMessage: err.name === 'AbortError' ? "Request timed out" : (err.message || "Could not reach that URL"),
-          completedAt: new Date()
-        }
-      });
-      // Recursive call for next item
-      processUserQueue(userId).catch(console.error);
+  const failAndContinue = async (errorMessage: string) => {
+    await prisma.queueItem.update({
+      where: { id: item.id },
+      data: {
+        status: 'FAILED',
+        errorMessage,
+        completedAt: new Date(),
+      },
+    });
+    await processUserQueue(userId);
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  let html = '';
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Corpus/1.0)',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      await failAndContinue('Could not reach that URL');
       return;
     }
+    html = await response.text();
+  } catch {
+    clearTimeout(timeoutId);
+    await failAndContinue('Could not reach that URL');
+    return;
+  }
 
-    // b. Extract HTML content
-    const meta: any = {};
-    
-    // Simple regex extraction for basic tags
-    const getTag = (pattern: RegExp) => {
-      const match = html.match(pattern);
-      return match ? match[1].trim() : null;
-    };
+  const meta = extractMeta(html);
 
-    meta.ogTitle = getTag(/property="og:title"\s+content="([^"]+)"/i) || getTag(/name="og:title"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+property="og:title"/i);
-    meta.ogDescription = getTag(/property="og:description"\s+content="([^"]+)"/i) || getTag(/name="og:description"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+property="og:description"/i);
-    meta.ogSiteName = getTag(/property="og:site_name"\s+content="([^"]+)"/i) || getTag(/name="og:site_name"\s+content="([^"]+)"/i);
-    meta.description = getTag(/name="description"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+name="description"/i);
-    meta.author = getTag(/name="author"\s+content="([^"]+)"/i) || getTag(/content="([^"]+)"\s+name="author"/i);
-    meta.articlePublishedAt = getTag(/property="article:published_time"\s+content="([^"]+)"/i);
-    meta.titleTag = getTag(/<title>([^<]+)<\/title>/i);
-    meta.doi = getTag(/name="citation_doi"\s+content="([^"]+)"/i);
-
-    // Body text: strip all HTML tags, trim to 4000
-    const bodyText = html
-      .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '')
-      .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 4000);
-
-    // c. Build Gemini prompt
-    const promptText = `Extract structured metadata from the following webpage content.
-Return ONLY a valid JSON object.
-Structure:
+  const promptText = `Extract structured metadata from the following webpage content.
+Return ONLY a valid JSON object with no explanation, no markdown,
+no code blocks, using exactly this structure:
 {
-  "title": "the article or page title",
-  "authors": ["author names"],
+  "title": "the article or page title, not the site name",
+  "authors": ["array of author full names, empty array if none"],
   "year": number or null,
-  "description": "2-3 sentence summary",
-  "source": "website name",
-  "contentType": "ARTICLE | BLOG | ESSAY | POLICY_REPORT | OTHER",
+  "description": "2-3 sentence summary of the content",
+  "source": "website or publication name",
+  "contentType": "one of: ARTICLE, BLOG, ESSAY, POLICY_REPORT, OTHER",
   "doi": "string or null"
 }
 
 URL: ${url}
-Meta title: ${meta.ogTitle || meta.titleTag || ''}
-Meta description: ${meta.ogDescription || meta.description || ''}
-Body text preview: ${bodyText}`;
+Meta title: ${meta.extractedTitle || ''}
+Meta description: ${meta.extractedDescription || ''}
+Meta author: ${meta.extractedAuthor || ''}
+Site name: ${meta.ogSiteName || ''}
+Published: ${meta.articlePublished || ''}
+Body text: ${meta.bodyText}`;
 
-    // d. Call Gemini Flash via fetch
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
-    const geminiResponse = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }],
-        generationConfig: {
-            response_mime_type: "application/json"
-        }
-      })
-    });
+  const apiKey = getGeminiApiKey();
+  let geminiResult: {
+    title?: string;
+    authors?: string[];
+    year?: number | null;
+    description?: string | null;
+    source?: string | null;
+    contentType?: string;
+    doi?: string | null;
+  };
 
-    if (!geminiResponse.ok) {
-        const errorData = await geminiResponse.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || `Gemini API error: ${geminiResponse.statusText}`);
-    }
+  const fallback = metaFallback(url, meta);
 
-    const geminiData = await geminiResponse.json();
-    let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    // Clean up markdown fences
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-    let geminiResult: any;
+  if (!apiKey) {
+    geminiResult = fallback;
+  } else {
     try {
-      geminiResult = JSON.parse(text);
-    } catch (e) {
-      // Fallback to meta tags
-      geminiResult = {
-        title: meta.ogTitle || meta.titleTag || url,
-        authors: meta.author ? [meta.author] : [],
-        year: meta.articlePublishedAt ? new Date(meta.articlePublishedAt).getFullYear() : null,
-        description: meta.ogDescription || meta.description || null,
-        source: meta.ogSiteName || null,
-        contentType: "ARTICLE",
-        doi: meta.doi || null
-      };
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const geminiResponse = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: {
+            response_mime_type: 'application/json',
+          },
+        }),
+      });
+
+      if (!geminiResponse.ok) {
+        geminiResult = fallback;
+      } else {
+        const geminiData = await geminiResponse.json();
+        let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+        try {
+          geminiResult = JSON.parse(text);
+        } catch {
+          geminiResult = fallback;
+        }
+      }
+    } catch {
+      geminiResult = fallback;
     }
+  }
 
-    // e. Build entry payload
-    const payload = {
-      title: geminiResult.title || meta.ogTitle || meta.titleTag || url,
-      authors: geminiResult.authors || (meta.author ? [meta.author] : []),
-      year: geminiResult.year || (meta.articlePublishedAt ? new Date(meta.articlePublishedAt).getFullYear() : null),
-      abstract: geminiResult.description || meta.ogDescription || meta.description || null,
-      source: geminiResult.source || meta.ogSiteName || null,
-      contentType: geminiResult.contentType || "ARTICLE",
-      doi: geminiResult.doi || meta.doi || null,
-      url: url,
-      readingStatus: "UNREAD",
-      notes: [],
-      metadata: {}
-    };
+  const allowedTypes: ContentType[] = [
+    'ARTICLE',
+    'BLOG',
+    'ESSAY',
+    'POLICY_REPORT',
+    'OTHER',
+    'PAPER',
+    'BOOK',
+  ];
+  const rawType = String(geminiResult.contentType || 'ARTICLE')
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+  const contentType = allowedTypes.includes(rawType as ContentType)
+    ? (rawType as ContentType)
+    : 'ARTICLE';
 
-    // f. Create Entry
+  let year: number | null = null;
+  if (typeof geminiResult.year === 'number' && !Number.isNaN(geminiResult.year)) {
+    year = geminiResult.year;
+  } else if (geminiResult.year != null) {
+    const n = Number(geminiResult.year);
+    if (!Number.isNaN(n)) year = n;
+  }
+  if (year === null) year = fallback.year;
+
+  const entryPayload = {
+    title: geminiResult.title || meta.extractedTitle || url,
+    authors: Array.isArray(geminiResult.authors) ? geminiResult.authors : fallback.authors,
+    year,
+    abstract: geminiResult.description ?? meta.extractedDescription ?? null,
+    source: geminiResult.source ?? meta.ogSiteName ?? null,
+    contentType,
+    doi: geminiResult.doi ?? meta.citationDoi ?? null,
+    url,
+    readingStatus: 'UNREAD' as ReadingStatus,
+    notes: [] as unknown[],
+    metadata: {} as Record<string, unknown>,
+  };
+
+  const limitCheck = await userCanCreateEntry(userId);
+  if (!limitCheck.ok) {
+    await failAndContinue(limitCheck.message);
+    return;
+  }
+
+  try {
     let entry;
     try {
       entry = await prisma.entry.create({
         data: {
-          title: payload.title,
-          authors: payload.authors,
-          year: payload.year,
-          abstract: payload.abstract,
-          source: payload.source,
-          contentType: payload.contentType as any,
-          doi: payload.doi,
-          url: payload.url,
-          readingStatus: "UNREAD",
-          notes: payload.notes || [],
-          userId
-        }
+          title: entryPayload.title,
+          authors: entryPayload.authors,
+          year: entryPayload.year,
+          abstract: entryPayload.abstract,
+          source: entryPayload.source,
+          contentType: entryPayload.contentType,
+          doi: entryPayload.doi,
+          url: entryPayload.url,
+          readingStatus: 'UNREAD',
+          notes: [],
+          metadata: entryPayload.metadata as Prisma.InputJsonValue,
+          userId,
+        },
       });
-    } catch (err: any) {
-      if (err.code === 'P2002') {
-        // If already exists, try to find it to link the queue item
-        entry = await prisma.entry.findUnique({
-          where: { url: payload.url }
+    } catch (err: unknown) {
+      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : '';
+      if (code === 'P2002') {
+        entry = await prisma.entry.findFirst({
+          where: { userId, url: entryPayload.url },
         });
-        if (!entry) throw new Error("Entry already exists but could not be retrieved");
+        if (!entry) {
+          throw new Error('Entry already exists but could not be retrieved');
+        }
       } else {
         throw err;
       }
     }
 
-    // 5. On success
     await prisma.queueItem.update({
       where: { id: item.id },
       data: {
-        status: "COMPLETED",
-        result: payload as any,
+        status: 'COMPLETED',
+        result: entryPayload as object,
         entryId: entry.id,
-        completedAt: new Date()
-      }
+        completedAt: new Date(),
+      },
     });
-
-  } catch (error: any) {
-    // 6. On unhandled error
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : 'Processing failed';
     console.error('Queue processing error:', error);
     await prisma.queueItem.update({
       where: { id: item.id },
       data: {
-        status: "FAILED",
-        errorMessage: error.message || "Processing failed",
-        completedAt: new Date()
-      }
+        status: 'FAILED',
+        errorMessage: message || 'Processing failed',
+        completedAt: new Date(),
+      },
     });
-  } finally {
-    // 7. Recursive call
-    processUserQueue(userId).catch(console.error);
   }
+
+  await processUserQueue(userId);
 }
 
 export async function triggerQueueProcessing(userId: string): Promise<void> {
-  processUserQueue(userId).catch(console.error);
+  try {
+    await processUserQueue(userId);
+  } catch (e) {
+    console.error('triggerQueueProcessing:', e);
+  }
 }

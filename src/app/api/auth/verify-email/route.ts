@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prismaWithRetry';
 
+/** Tokens are created with crypto.randomBytes(32).toString('hex') (64 hex chars). */
+
 export async function POST(req: NextRequest) {
   try {
     const { token } = await req.json();
@@ -38,7 +40,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('verify-email error:', err);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    console.error('[api/auth/verify-email]', err);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again.' },
+      { status: 500 }
+    );
   }
 }
