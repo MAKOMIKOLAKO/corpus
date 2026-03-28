@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -117,6 +117,8 @@ export default function EntryCard({
     const [isOpen, setIsOpen] = useState(false);
     const [isCollectionOpen, setIsCollectionOpen] = useState(false);
     const [isTitleHovered, setIsTitleHovered] = useState(false);
+    const collectionDropdownRef = useRef<HTMLDivElement>(null);
+    const statusDropdownRef = useRef<HTMLDivElement>(null);
     const [currentStatus, setCurrentStatus] = useState(entry.readingStatus);
     const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -167,6 +169,23 @@ export default function EntryCard({
             cancelled = true;
         };
     }, [apiKey]);
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (collectionDropdownRef.current && !collectionDropdownRef.current.contains(event.target as Node)) {
+                setIsCollectionOpen(false);
+            }
+            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleStatusChange = async (newStatus: typeof entry.readingStatus) => {
         if (newStatus === currentStatus) {
@@ -313,6 +332,10 @@ export default function EntryCard({
             await removeFromAllCollections();
             if (collectionId) {
                 await addToCollection(collectionId);
+                const collection = collections.find((c) => c.id === collectionId);
+                toast.success(`Added to "${collection?.name}"`);
+            } else {
+                toast.success('Removed from collection');
             }
 
             setAssignedCollectionIds(collectionId ? [collectionId] : []);
@@ -322,6 +345,7 @@ export default function EntryCard({
             );
         } catch (error) {
             console.error('Error updating collection:', error);
+            toast.error('Failed to update collection');
         } finally {
             setIsUpdatingCollection(false);
             setIsCollectionOpen(false);
@@ -432,7 +456,7 @@ export default function EntryCard({
                                 {/* Tags section - properly aligned */}
                                 <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2">
                                     {/* Collection Dropdown */}
-                                    <div className="relative min-w-0">
+                                    <div className="relative min-w-0" ref={collectionDropdownRef}>
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
@@ -478,7 +502,7 @@ export default function EntryCard({
                                     </div>
 
                                     {/* Reading Status Dropdown */}
-                                    <div className="relative min-w-0">
+                                    <div className="relative min-w-0" ref={statusDropdownRef}>
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
