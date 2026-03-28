@@ -1,31 +1,8 @@
 import { MetadataRoute } from 'next'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/lib/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://usecorpus.app'
-
-  // Get all papers
-  const papers = await prisma.entry.findMany({
-    where: {
-      contentType: 'PAPER',
-      slug: { not: null }
-    },
-    select: {
-      slug: true
-    }
-  })
-
-  // Get all public collections
-  const publicCollections = await prisma.collection.findMany({
-    where: {
-      publicSlug: { not: null }
-    },
-    select: {
-      publicSlug: true
-    }
-  })
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://usecorpus.app'
 
   // Static pages
   const staticPages = [
@@ -33,11 +10,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: baseUrl,
       changeFrequency: 'daily' as const,
       priority: 1,
-    },
-    {
-      url: `${baseUrl}/papers`,
-      changeFrequency: 'daily' as const,
-      priority: 0.9,
     },
     {
       url: `${baseUrl}/pricing`,
@@ -51,19 +23,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Paper pages
-  const paperPages = papers.map((paper) => ({
-    url: `${baseUrl}/paper/${paper.slug}`,
-    changeFrequency: 'monthly' as const,
-    priority: 0.7,
-  }))
+  let publicCollectionPages: any[] = []
 
-  // Public collection pages
-  const publicCollectionPages = publicCollections.map((collection) => ({
-    url: `${baseUrl}/c/${collection.publicSlug}`,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+  try {
+    // Get all public collections
+    const publicCollections = await prisma.collection.findMany({
+      where: {
+        publicSlug: { not: null }
+      },
+      select: {
+        publicSlug: true
+      },
+      take: 100 // Limit for sitemap during build
+    })
 
-  return [...staticPages, ...paperPages, ...publicCollectionPages]
+    // Public collection pages
+    publicCollectionPages = publicCollections.map((collection) => ({
+      url: `${baseUrl}/c/${collection.publicSlug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  } catch (error) {
+    console.error('Error fetching data for sitemap:', error)
+  }
+
+  return [...staticPages, ...publicCollectionPages]
 }
