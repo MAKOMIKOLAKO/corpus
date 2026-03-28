@@ -67,9 +67,24 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // Update user's entry count - removed as field doesn't exist in schema
-
-        // Fire and forget enrichment - REMOVED
+        // Create signal for entry saved (fire-and-forget)
+        try {
+            // Don't await this signal creation
+            prisma.signal.create({
+                data: {
+                    userId: userId,
+                    type: "ENTRY_SAVED",
+                    entryId: entry.id,
+                    metadata: {
+                        title: entry.title,
+                        contentType: 'PAPER'
+                    }
+                }
+            }).catch(err => console.error("Failed to create signal:", err));
+        } catch (error) {
+            // Fire-and-forget signal creation
+            console.error("Failed to create signal:", error);
+        }
 
         return NextResponse.json(entry);
 

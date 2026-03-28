@@ -107,9 +107,12 @@ const timeAgo = (date: string) => {
   return "Just now";
 };
 
+import { useApiKey } from '@/hooks/useApiKey';
+
 export default function FeedClient() {
   const { data: session } = useSession();
   const router = useRouter();
+  const apiKey = useApiKey();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "connections" | "mine">("all");
@@ -164,13 +167,13 @@ export default function FeedClient() {
   useEffect(() => {
     fetchSignals();
     fetchSidebarData();
-  }, [fetchSignals]);
+  }, [filter]); // Only depend on filter, not fetchSignals
 
   useEffect(() => {
     if (page > 1) {
       fetchMoreSignals();
     }
-  }, [page, fetchMoreSignals]);
+  }, [page, filter]); // Depend on page and filter, not fetchMoreSignals
 
   const fetchSidebarData = async () => {
     // TODO: Implement suggested connections and active collections
@@ -182,8 +185,41 @@ export default function FeedClient() {
   const handleSaveEntry = async (entryId: string) => {
     setSavingEntry(entryId);
     try {
-      // TODO: Implement save to library
-      toast.success("Entry saved to your library");
+      // First, get the entry details
+      const entryResponse = await fetch(`/api/entries/${entryId}`);
+      if (!entryResponse.ok) {
+        toast.error("Failed to get entry details");
+        return;
+      }
+
+      const entry = await entryResponse.json();
+
+      // Create a copy of the entry for the user
+      const response = await fetch('/api/entries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey || ''
+        },
+        body: JSON.stringify({
+          title: entry.title,
+          authors: entry.authors,
+          year: entry.year,
+          abstract: entry.abstract,
+          source: entry.source,
+          doi: entry.doi,
+          url: entry.url,
+          contentType: entry.contentType,
+          skipAI: true // Skip AI processing since we already have the metadata
+        })
+      });
+
+      if (response.ok) {
+        toast.success("Entry saved to your library");
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Failed to save entry");
+      }
     } catch (error) {
       toast.error("Failed to save entry");
     } finally {
