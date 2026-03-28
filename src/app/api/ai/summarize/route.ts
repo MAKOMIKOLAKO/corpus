@@ -3,9 +3,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/genai';
+import { Chat, GoogleGenAI } from '@google/genai';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
+// Initialize GoogleGenAI and chat
+const genai = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_AI_API_KEY || ''
+});
+const chat = new Chat((genai as any).models.apiClient, genai.models, 'gemini-pro');
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,10 +29,8 @@ ${text}
 
 Summary:`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const summary = response.text()?.trim();
+    const response = await chat.sendMessage({ message: prompt });
+    const summary = response.text?.trim();
 
     if (!summary) {
       throw new Error('No response from AI');
