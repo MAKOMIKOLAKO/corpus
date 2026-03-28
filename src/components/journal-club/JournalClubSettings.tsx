@@ -102,7 +102,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
               value={settings.meetingDayOfWeek?.toString() || ''}
               onValueChange={(value) => setSettings(prev => ({
                 ...prev,
-                meetingDayOfWeek: value === '' ? undefined : parseInt(value, 10)
+                meetingDayOfWeek: value === '' ? undefined : (value ? parseInt(value, 10) : undefined)
               }))}
             >
               <SelectTrigger>
