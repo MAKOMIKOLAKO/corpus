@@ -151,12 +151,17 @@ export default function CollectionDetailPage() {
 
                     // Get user role in this collection
                     if (collection.members) {
-                        const role = getUserCollectionRole(
-                            collection.members as any,
-                            session.user.id,
-                            collection.id
-                        );
-                        setUserRole(role);
+                        // Check if user is the owner first
+                        if (collection.userId === session.user.id) {
+                            setUserRole('ADMIN'); // Owner has admin privileges
+                        } else {
+                            const role = getUserCollectionRole(
+                                collection.members as any,
+                                session.user.id,
+                                collection.id
+                            );
+                            setUserRole(role);
+                        }
                     }
                 } catch (error) {
                     console.error('Error getting user info:', error);
