@@ -14,20 +14,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      collectionId,
-      name,
-      description,
-      meetingFrequency,
-      nextMeetingDate,
-      meetingDayOfWeek,
-      meetingTime,
-      timezone
-    } = body;
+    const { collectionId } = body;
 
     // Validate required fields
-    if (!meetingFrequency || !nextMeetingDate) {
-      return NextResponse.json({ error: 'Meeting frequency and next meeting date are required' }, { status: 400 });
+    if (!collectionId) {
+      return NextResponse.json({ error: 'Collection ID is required' }, { status: 400 });
     }
 
     // Get user to check plan
@@ -77,12 +68,7 @@ export async function POST(request: NextRequest) {
         data: {
           isShared: true, // Journal clubs are always shared
           metadata: {
-            isJournalClub: true,
-            meetingFrequency,
-            nextMeetingDate,
-            meetingDayOfWeek,
-            meetingTime,
-            timezone
+            isJournalClub: true
           }
         },
         include: {
@@ -95,53 +81,8 @@ export async function POST(request: NextRequest) {
         }
       });
     } else {
-      // Create new collection as journal club
-      if (!name?.trim()) {
-        return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-      }
-
-      // Check if user can create shared collections
-      const { allowed, reason } = canCreateSharedCollection(user.plan);
-      if (!allowed) {
-        return NextResponse.json({ error: reason }, { status: 403 });
-      }
-
-      collection = await prisma.collection.create({
-        data: {
-          name: name.trim(),
-          description: description?.trim() || null,
-          isShared: true, // Journal clubs are always shared
-          userId,
-          metadata: {
-            isJournalClub: true,
-            meetingFrequency,
-            nextMeetingDate,
-            meetingDayOfWeek,
-            meetingTime,
-            timezone
-          }
-        },
-        include: {
-          _count: {
-            select: { entries: true, members: true }
-          },
-          members: {
-            where: { status: 'ACCEPTED' }
-          }
-        }
-      });
-
-      // Create CollectionMember record for creator with role ADMIN
-      await prisma.collectionMember.create({
-        data: {
-          collectionId: collection.id,
-          userId,
-          role: 'ADMIN',
-          invitedBy: userId,
-          status: 'ACCEPTED',
-          acceptedAt: new Date()
-        }
-      });
+      // Creating new journal clubs from scratch is not supported
+      return NextResponse.json({ error: 'Only converting existing collections to journal clubs is supported' }, { status: 400 });
     }
 
     return NextResponse.json(collection);
