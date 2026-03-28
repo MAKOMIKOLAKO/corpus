@@ -26,18 +26,22 @@ export async function extractMetadataFromAI(url: string, text: string): Promise<
     throw new Error('Google AI API key is not configured');
   }
 
-  const prompt = `Extract structured metadata from the following web content. Return a valid JSON object with these exact fields:
-- title: The main title of the content
-- authors: Array of author names (empty array if none found)
-- year: Publication year as a number (null if not found)
-- summary: A two-sentence summary of the content
+  const prompt = `Extract structured metadata from the following web content. You MUST respond with a valid JSON object only. Do not include any explanations, markdown formatting, or text outside the JSON.
+
+Required JSON format:
+{
+  "title": "The main title of the content",
+  "authors": ["Author name 1", "Author name 2"] or [],
+  "year": 2024 or null,
+  "summary": "A two-sentence summary of the content"
+}
 
 URL: ${url}
 
 Content:
-${text.slice(0, 8000)} // Limit text to manage token usage
+${text.slice(0, 8000)}
 
-Respond with only the JSON object, no other text.`;
+JSON Response:`;
 
   try {
     const response = await chat.sendMessage({ message: prompt });
@@ -50,14 +54,44 @@ Respond with only the JSON object, no other text.`;
 
     console.log('AI Response Content:', content);
 
-    // Extract JSON from response
+    // Try to extract JSON from response - handle various formats
+    let jsonText = '';
+
+    // Method 1: Look for JSON object in the response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('AI Response: No JSON found in:', content);
-      throw new Error('No JSON found in AI response');
+    if (jsonMatch) {
+      jsonText = jsonMatch[0];
+    } else {
+      // Method 2: Try to parse the entire response as JSON
+      try {
+        JSON.parse(content);
+        jsonText = content;
+      } catch {
+        // Method 3: Look for JSON between ```json and ``` markers
+        const codeBlockMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (codeBlockMatch) {
+          jsonText = codeBlockMatch[1];
+        } else {
+          console.error('AI Response: No JSON found in:', content);
+          throw new Error('No JSON found in AI response');
+        }
+      }
     }
 
-    const metadata = JSON.parse(jsonMatch[0]);
+    // Clean up the JSON text
+    jsonText = jsonText
+      .replace(/[\u201C\u201D]/g, '"') // Replace smart quotes
+      .replace(/[\u2018\u2019]/g, "'") // Replace smart apostrophes
+      .trim();
+
+    let metadata;
+    try {
+      metadata = JSON.parse(jsonText);
+    } catch (parseError: any) {
+      console.error('JSON Parse Error:', parseError);
+      console.error('Attempted to parse:', jsonText);
+      throw new Error(`Invalid JSON from AI: ${parseError?.message || 'Unknown parse error'}`);
+    }
 
     // Validate structure
     if (!metadata.title || typeof metadata.title !== 'string') {
@@ -79,8 +113,60 @@ Respond with only the JSON object, no other text.`;
     return metadata;
   } catch (error: any) {
     console.error('Failed to parse AI response:', error);
-    throw new Error('Invalid JSON response from AI');
+
+    // Fallback: Try to extract basic metadata from the text itself
+    const fallbackMetadata = {
+      title: extractTitleFromText(text),
+      authors: [], // Can't reliably extract authors without AI
+      year: extractYearFromText(text) || undefined,
+      summary: extractBasicSummary(text)
+    };
+
+    console.log('Using fallback metadata extraction');
+    return fallbackMetadata;
   }
+}
+
+/**
+ * Extract basic metadata from text without AI
+ */
+function extractTitleFromText(text: string): string {
+  // Look for title patterns - first line, or common title indicators
+  const lines = text.split('\n').filter(line => line.trim().length > 0);
+
+  // Try to find a title-like line (shorter, not just URLs or dates)
+  for (const line of lines.slice(0, 5)) {
+    const trimmed = line.trim();
+    if (trimmed.length > 10 && trimmed.length < 200 &&
+      !trimmed.startsWith('http') &&
+      !/^\d{4}$/.test(trimmed) &&
+      !trimmed.toLowerCase().includes('skip to')) {
+      return trimmed;
+    }
+  }
+
+  return 'Untitled';
+}
+
+function extractYearFromText(text: string): number | null {
+  // Look for 4-digit years between 1900 and current year
+  const yearMatch = text.match(/\b(19|20)\d{2}\b/g);
+  if (yearMatch) {
+    const currentYear = new Date().getFullYear();
+    for (const year of yearMatch) {
+      const yearNum = parseInt(year);
+      if (yearNum >= 1900 && yearNum <= currentYear) {
+        return yearNum;
+      }
+    }
+  }
+  return null;
+}
+
+function extractBasicSummary(text: string): string {
+  // Take first few sentences as summary
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
+  return sentences.slice(0, 2).join('. ').trim() + (sentences.length > 2 ? '.' : '');
 }
 
 /**
