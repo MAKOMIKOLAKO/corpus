@@ -99,7 +99,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
             <Label htmlFor="frequency">Meeting Frequency</Label>
             <Select
               value={settings.meetingFrequency}
-              onValueChange={handleFrequencyChange}
+              onValueChange={(value) => value && handleFrequencyChange(value)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -128,7 +128,7 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
             <Label htmlFor="dayOfWeek">Meeting Day of Week (Optional)</Label>
             <Select
               value={settings.meetingDayOfWeek?.toString() || ''}
-              onValueChange={handleDayOfWeekChange}
+              onValueChange={(value) => value && handleDayOfWeekChange(value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select day" />

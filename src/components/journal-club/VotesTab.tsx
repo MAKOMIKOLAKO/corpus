@@ -40,7 +40,7 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
     try {
       const response = await fetch(`/api/journal-club/${collectionId}/votes`);
       if (!response.ok) throw new Error('Failed to fetch votes');
-      
+
       const data = await response.json();
       setVoteData(data);
     } catch (error) {
@@ -74,15 +74,15 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
       }
 
       const result = await response.json();
-      
+
       // Update the vote data optimistically
-      setVoteData(prev => prev.map(item => 
-        item.entryId === entryId 
-          ? { 
-              ...item, 
-              voteCount: result.voteCount,
-              userHasVoted: result.action === 'added'
-            }
+      setVoteData(prev => prev.map(item =>
+        item.entryId === entryId
+          ? {
+            ...item,
+            voteCount: result.voteCount,
+            userHasVoted: result.action === 'added'
+          }
           : item
       ));
 
@@ -194,16 +194,14 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
                       <ThumbsUp className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{item.voteCount} votes</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
+                    <a
+                      href={`/entries/${item.entryId}`}
+                      target="_blank"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-3"
                     >
-                      <a href={`/entries/${item.entryId}`} target="_blank">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Paper
-                      </a>
-                    </Button>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Paper
+                    </a>
                   </div>
                 </div>
                 <Button
