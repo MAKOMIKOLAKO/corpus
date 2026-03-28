@@ -28,12 +28,12 @@ interface EntryPreviewProps {
   showActions?: boolean;
 }
 
-export function EntryPreview({ 
-  entry, 
-  onSave, 
-  onCancel, 
+export function EntryPreview({
+  entry,
+  onSave,
+  onCancel,
   isLoading = false,
-  showActions = true 
+  showActions = true
 }: EntryPreviewProps) {
   const [editedEntry, setEditedEntry] = useState<Entry>(entry);
   const [isEditing, setIsEditing] = useState(false);
@@ -153,7 +153,7 @@ export function EntryPreview({
                 </div>
               ) : (
                 <p className="text-gray-900">
-                  {editedEntry.authors.length > 0 
+                  {editedEntry.authors.length > 0
                     ? editedEntry.authors.join(', ')
                     : 'No authors listed'
                   }
@@ -204,9 +204,9 @@ export function EntryPreview({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       URL
                     </label>
-                    <a 
-                      href={editedEntry.url} 
-                      target="_blank" 
+                    <a
+                      href={editedEntry.url}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-700 text-sm truncate block"
                     >
@@ -256,3 +256,5 @@ export function EntryPreview({
     </div>
   );
 }
+
+export default EntryPreview;

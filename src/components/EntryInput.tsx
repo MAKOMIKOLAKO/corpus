@@ -26,7 +26,7 @@ export function EntryInput({ onSubmit, disabled = false }: EntryInputProps) {
 
   const handleSubmit = () => {
     if (!input.trim()) return;
-    
+
     onSubmit(mode, input.trim());
     setInput('');
     inputRef.current?.focus();
@@ -48,8 +48,8 @@ export function EntryInput({ onSubmit, disabled = false }: EntryInputProps) {
           disabled={disabled}
           className={`
             px-4 py-2 rounded-lg font-medium transition-colors
-            ${mode === 'link' 
-              ? 'bg-blue-600 text-white' 
+            ${mode === 'link'
+              ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -62,8 +62,8 @@ export function EntryInput({ onSubmit, disabled = false }: EntryInputProps) {
           disabled={disabled}
           className={`
             px-4 -py-2 rounded-lg font-medium transition-colors
-            ${mode === 'book' 
-              ? 'bg-blue-600 text-white' 
+            ${mode === 'book'
+              ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -76,8 +76,8 @@ export function EntryInput({ onSubmit, disabled = false }: EntryInputProps) {
           disabled={disabled}
           className={`
             px-4 py-2 rounded-lg font-medium transition-colors
-            ${mode === 'paper' 
-              ? 'bg-blue-600 text-white' 
+            ${mode === 'paper'
+              ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -103,7 +103,7 @@ export function EntryInput({ onSubmit, disabled = false }: EntryInputProps) {
             disabled:bg-gray-50 disabled:text-gray-500
           `}
         />
-        
+
         {/* Submit Button */}
         <button
           onClick={handleSubmit}
@@ -128,3 +128,5 @@ export function EntryInput({ onSubmit, disabled = false }: EntryInputProps) {
     </div>
   );
 }
+
+export default EntryInput;

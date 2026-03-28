@@ -15,7 +15,7 @@ import { Entry } from '@prisma/client';
 export function EntryCreationManager() {
   const [createdEntries, setCreatedEntries] = useState<Entry[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
-  
+
   const { queue, stats, submitEntry, clearCompleted, isPolling } = useEntryCreation({
     onEntryCreated: (entry) => {
       setCreatedEntries(prev => [...prev, entry]);
@@ -55,7 +55,7 @@ export function EntryCreationManager() {
               </button>
             )}
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-gray-600">{stats.pending}</div>
@@ -84,12 +84,11 @@ export function EntryCreationManager() {
             {queue.map((item: QueueSubmission) => (
               <div key={item.id} className="flex items-center justify-between p-2 bg-white rounded">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    item.status === 'pending' ? 'bg-gray-400' :
-                    item.status === 'processing' ? 'bg-blue-600 animate-pulse' :
-                    item.status === 'completed' ? 'bg-green-600' :
-                    'bg-red-600'
-                  }`} />
+                  <div className={`w-2 h-2 rounded-full ${item.status === 'pending' ? 'bg-gray-400' :
+                      item.status === 'processing' ? 'bg-blue-600 animate-pulse' :
+                        item.status === 'completed' ? 'bg-green-600' :
+                          'bg-red-600'
+                    }`} />
                   <span className="text-sm text-gray-700 truncate max-w-md">
                     {item.input}
                   </span>
@@ -164,3 +163,5 @@ export function EntryCreationManager() {
     </div>
   );
 }
+
+export default EntryCreationManager;
