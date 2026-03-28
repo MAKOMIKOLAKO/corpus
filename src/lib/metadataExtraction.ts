@@ -99,9 +99,15 @@ async function fetchBookByKey(workKey: string): Promise<ExtractedMetadata> {
 
   let summary = '';
   if (workData.description) {
-    summary = workData.description?.type === 'text'
-      ? workData.description.value
-      : workData.description || '';
+    if (typeof workData.description === 'string') {
+      summary = workData.description;
+    } else if (workData.description?.type === 'text') {
+      summary = workData.description.value || '';
+    } else if (workData.description?.value) {
+      summary = workData.description.value;
+    }
+    // Clean up quotes and extra formatting
+    summary = summary.replace(/^"|"$/g, '').trim();
   }
 
   // If no summary, use LLM to generate one
@@ -301,4 +307,3 @@ export function cleanAndNormalizeMetadata(metadata: any): ExtractedMetadata {
     contentType: metadata.contentType || 'ARTICLE',
   };
 }
-
