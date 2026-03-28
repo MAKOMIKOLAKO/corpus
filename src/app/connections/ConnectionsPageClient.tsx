@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, UserCheck, Clock, Search, X, Check, Trash2, BookOpen, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type User = { id: string; username: string | null; name: string | null; bio: string | null };
 type Connection = { id: string; status: string; otherUser: User; requesterId?: string; receiverId?: string };
@@ -428,12 +429,14 @@ function ConnectionActionButton({
   if (currentUserId && user.id === currentUserId) return null;
   if (!user.connectionStatus) {
     return (
-      <button
+      <Button
         onClick={() => onConnect(user.id)}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium hover:opacity-90 transition-opacity"
+        variant="default"
+        size="sm"
+        className="gap-1 h-7 text-xs font-medium"
       >
         <UserPlus className="w-3 h-3" /> Connect
-      </button>
+      </Button>
     );
   }
   if (user.connectionStatus === 'PENDING' && user.isSentByMe) {

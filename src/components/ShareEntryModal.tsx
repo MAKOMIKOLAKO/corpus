@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Dialog, SolidDialogContent, DialogHeader, DialogTitle } from '@/components/ui/solid-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -160,8 +160,8 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
     const filteredUsers = users.filter(user => !selectedUsers.includes(user.id));
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <SolidDialogContent className="max-w-md">
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="max-w-md bg-white border rounded-lg shadow-2xl p-6 w-full">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Share2 className="w-5 h-5" />
@@ -299,7 +299,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                         )}
                     </div>
                 </div>
-            </SolidDialogContent>
+            </DialogContent>
         </Dialog>
     );
 }

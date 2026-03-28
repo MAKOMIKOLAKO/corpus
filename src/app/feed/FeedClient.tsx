@@ -558,7 +558,7 @@ export default function FeedClient() {
                           {conn.mutualConnections} mutual connections
                         </p>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="default">
                         Connect
                       </Button>
                     </div>

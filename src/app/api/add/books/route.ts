@@ -33,18 +33,48 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    const results = (data.docs || []).map((doc: any) => ({
-      openLibraryKey: doc.key,
-      title: doc.title,
-      authors: doc.author_name || [],
-      year: doc.first_publish_year || null,
-      isbn: doc.isbn?.[0] || null,
-      publisher: doc.publisher?.[0] || null,
-      pages: doc.number_of_pages_median || null,
-      coverUrl: doc.cover_i 
-        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` 
-        : null
-    }));
+    const docs = data.docs || [];
+
+    // Fetch details for each book to get the description
+    const detailedDocs = await Promise.allSettled(
+      docs.map((doc: any) => 
+        doc.key 
+          ? fetch(`https://openlibrary.org${doc.key}.json`).then(r => r.json())
+          : Promise.resolve(null)
+      )
+    );
+
+    const results = docs.map((doc: any, index: number) => {
+      const detailsResult = detailedDocs[index];
+      const details = detailsResult.status === 'fulfilled' ? detailsResult.value : null;
+      
+      let description = null;
+      if (details?.description) {
+        if (typeof details.description === 'string') {
+          description = details.description;
+        } else if (details.description.value) {
+          description = details.description.value;
+        }
+      }
+
+      if (description && description.length > 500) {
+        description = description.slice(0, 497) + '...';
+      }
+
+      return {
+        openLibraryKey: doc.key,
+        title: doc.title,
+        authors: doc.author_name || [],
+        year: doc.first_publish_year || null,
+        isbn: doc.isbn?.[0] || null,
+        publisher: doc.publisher?.[0] || null,
+        pages: doc.number_of_pages_median || null,
+        coverUrl: doc.cover_i 
+          ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` 
+          : null,
+        description: description
+      };
+    });
 
     return NextResponse.json({ results });
 
