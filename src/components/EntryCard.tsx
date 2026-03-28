@@ -472,7 +472,7 @@ export default function EntryCard({
                                         </button>
 
                                         {isCollectionOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[160px]">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[160px] backdrop-blur-none opacity-100">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
@@ -660,19 +660,6 @@ export default function EntryCard({
                     url: entry.url,
                 }}
             />
-
-            {/* Close dropdown when clicking outside */}
-            {(isOpen || isCollectionOpen) && (
-                <div
-                    className="fixed inset-0 z-[50] bg-black/20 dark:bg-black/40"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsOpen(false);
-                        setIsCollectionOpen(false);
-                    }}
-                />
-            )}
         </>
     );
 }
