@@ -57,7 +57,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPastPresentations, setShowPastPresentations] = useState(false);
   const [scheduling, setScheduling] = useState(false);
-  
+
   // Form state
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [selectedPresenterId, setSelectedPresenterId] = useState('');
@@ -74,7 +74,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
       // Get all entries in collection
       const entriesResponse = await fetch(`/api/collections/${collectionId}`);
       if (!entriesResponse.ok) throw new Error('Failed to fetch entries');
-      
+
       const collectionData = await entriesResponse.json();
       const allEntries = collectionData.entries || [];
 
@@ -110,7 +110,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
       // Sort scheduled entries by date
       scheduled.sort((a, b) => new Date(a.presentationDate).getTime() - new Date(b.presentationDate).getTime());
-      
+
       setScheduledEntries(scheduled);
       setUnscheduledEntries(unscheduled);
     } catch (error) {
@@ -218,16 +218,20 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
       {/* Calendar Export */}
       <div className="flex gap-2">
-        <Button variant="outline" asChild>
-          <a href={`/api/journal-club/${collectionId}/calendar`} download>
-            Download .ics
-          </a>
-        </Button>
-        <Button variant="outline" asChild>
-          <a href={`/api/journal-club/${collectionId}/calendar/links`} target="_blank">
-            Google Calendar Links
-          </a>
-        </Button>
+        <a
+          href={`/api/journal-club/${collectionId}/calendar`}
+          download
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+        >
+          Download .ics
+        </a>
+        <a
+          href={`/api/journal-club/${collectionId}/calendar/links`}
+          target="_blank"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+        >
+          Google Calendar Links
+        </a>
       </div>
 
       {/* Upcoming Presentations */}
@@ -349,7 +353,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Select Paper</label>
-                <Select value={selectedEntryId} onValueChange={setSelectedEntryId}>
+                <Select value={selectedEntryId} onValueChange={(value) => setSelectedEntryId(value || '')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a paper to schedule" />
                   </SelectTrigger>
@@ -375,14 +379,14 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
               <div>
                 <label className="text-sm font-medium">Presenter</label>
-                <Select value={selectedPresenterId} onValueChange={setSelectedPresenterId}>
+                <Select value={selectedPresenterId} onValueChange={(value) => setSelectedPresenterId(value || '')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a presenter" />
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((member) => (
                       <SelectItem key={member.user.id} value={member.user.id}>
-                        {member.user.name || member.user.username}
+                        {member.user.name || 'User'}
                       </SelectItem>
                     ))}
                   </SelectContent>

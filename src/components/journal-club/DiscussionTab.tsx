@@ -60,17 +60,17 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
     try {
       const response = await fetch(`/api/collections/${collectionId}`);
       if (!response.ok) throw new Error('Failed to fetch entries');
-      
+
       const collectionData = await response.json();
       const allEntries = collectionData.entries || [];
-      
+
       // Sort entries alphabetically by title
       const sortedEntries = allEntries
         .map((ec: any) => ec.entry)
         .sort((a: Entry, b: Entry) => a.title.localeCompare(b.title));
-      
+
       setEntries(sortedEntries);
-      
+
       // Select first entry by default
       if (sortedEntries.length > 0 && !selectedEntryId) {
         setSelectedEntryId(sortedEntries[0].id);
@@ -85,11 +85,11 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
 
   const fetchComments = async () => {
     if (!selectedEntryId) return;
-    
+
     try {
       const response = await fetch(`/api/journal-club/${collectionId}/comments/${selectedEntryId}`);
       if (!response.ok) throw new Error('Failed to fetch comments');
-      
+
       const commentsData = await response.json();
       setComments(commentsData);
     } catch (error) {
@@ -191,7 +191,7 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
       {/* Entry Selector */}
       <div className="flex items-center gap-4">
         <div className="flex-1">
-          <Select value={selectedEntryId} onValueChange={setSelectedEntryId}>
+          <Select value={selectedEntryId} onValueChange={(value) => setSelectedEntryId(value || '')}>
             <SelectTrigger>
               <SelectValue placeholder="Select a paper to discuss">
                 {selectedEntry && (

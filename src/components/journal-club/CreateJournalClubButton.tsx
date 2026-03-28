@@ -17,11 +17,11 @@ interface CreateJournalClubButtonProps {
   onUpdate: (updatedCollection: any) => void;
 }
 
-export default function CreateJournalClubButton({ 
-  collectionId, 
-  userPlan, 
-  userRole, 
-  onUpdate 
+export default function CreateJournalClubButton({
+  collectionId,
+  userPlan,
+  userRole,
+  onUpdate
 }: CreateJournalClubButtonProps) {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -129,7 +129,7 @@ export default function CreateJournalClubButton({
                 <Label htmlFor="dayOfWeek">Meeting Day of Week (Optional)</Label>
                 <Select
                   value={meetingDayOfWeek}
-                  onValueChange={setMeetingDayOfWeek}
+                  onValueChange={(value) => setMeetingDayOfWeek(value || '')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select day" />

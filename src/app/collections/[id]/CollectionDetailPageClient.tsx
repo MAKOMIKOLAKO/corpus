@@ -152,7 +152,7 @@ export default function CollectionDetailPage() {
                     // Get user role in this collection
                     if (collection.members) {
                         const role = getUserCollectionRole(
-                            collection.members,
+                            collection.members as any,
                             session.user.id,
                             collection.id
                         );
@@ -475,13 +475,13 @@ export default function CollectionDetailPage() {
     };
 
     const isJournalClubCollection = collection ? isJournalClub(collection as any) : false;
-    const canManage = userRole ? canManageJournalClub(userPlan, userRole) : false;
+    const canManageJournalClubFeature = userRole ? canManageJournalClub(userPlan as any, userRole) : false;
     const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
 
-    const filteredEntries = collection.entries.filter(item =>
+    const filteredEntries = collection?.entries.filter(item =>
         item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
         item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase()))
-    );
+    ) || [];
 
     // Tab configuration
     const tabs = [
@@ -1037,7 +1037,7 @@ export default function CollectionDetailPage() {
                 <ScheduleTab
                     collectionId={collection.id}
                     isJournalClub={isJournalClubCollection}
-                    canManage={canManage}
+                    canManage={canManageJournalClubFeature}
                     currentUserId={session?.user?.id || ''}
                 />
             )}
@@ -1063,7 +1063,7 @@ export default function CollectionDetailPage() {
                 <AttendanceTab
                     collectionId={collection.id}
                     isJournalClub={isJournalClubCollection}
-                    canManage={canManage}
+                    canManage={canManageJournalClubFeature}
                     currentUserId={session?.user?.id || ''}
                 />
             )}
@@ -1081,10 +1081,10 @@ export default function CollectionDetailPage() {
                                         <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">
-                                                    {(member.user.name || member.user.username || 'U').charAt(0).toUpperCase()}
+                                                    {(member.user.name || 'U').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium">{member.user.name || member.user.username}</p>
+                                                    <p className="font-medium">{member.user.name || 'User'}</p>
                                                     <p className="text-sm text-muted-foreground">{member.user.email}</p>
                                                 </div>
                                             </div>
@@ -1095,7 +1095,7 @@ export default function CollectionDetailPage() {
                         )}
 
                         {/* Journal Club Settings */}
-                        {isJournalClubCollection && canManage && (
+                        {isJournalClubCollection && canManageJournalClubFeature && (
                             <JournalClubSettings
                                 collectionId={collection.id}
                                 metadata={collection.metadata}
