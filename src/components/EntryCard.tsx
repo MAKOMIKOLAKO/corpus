@@ -51,24 +51,16 @@ interface Entry {
 
 const readingStatuses = [
     { value: 'UNREAD', label: 'Unread' },
-    { value: 'BACKLOG', label: 'Backlog' },
-    { value: 'IN_PROGRESS', label: 'In Progress' },
     { value: 'READING', label: 'Reading' },
     { value: 'COMPLETED', label: 'Completed' },
-    { value: 'READ', label: 'Read' },
-    { value: 'DROPPED', label: 'Dropped' },
 ];
 
 const statusVariant = (status: string) => {
     switch (status) {
-        case 'READ':
         case 'COMPLETED':
             return 'success';
         case 'READING':
-        case 'IN_PROGRESS':
             return 'default';
-        case 'DROPPED': return 'destructive';
-        case 'BACKLOG': return 'outline';
         default: return 'secondary';
     }
 };
