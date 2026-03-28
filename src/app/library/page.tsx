@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import HomePageClient from '@/components/HomePageClient';
 import EntryCard from '@/components/EntryCard';
 import LibraryPageWrapper from '@/components/LibraryPageWrapper';
-import LibraryBatchClient from '@/components/LibraryBatchClient';
+import LibraryPageClient from './LibraryPageClient';
 import { ContentType, ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -133,87 +133,20 @@ export default async function LibraryPage({
                         </div>
                     </div>
 
-                    <LibraryBatchClient user={{
-                        plan: user.plan,
-                        entriesCount: user.entriesCount || 0,
-                        personalCollectionsCount: user.personalCollectionsCount || 0
-                    }}>
-                        {({ isSelectionMode, selectedIds, toggleSelection }) => (
-                            <>
-                                {/* Search and Filters */}
-                                <HomePageClient
-                                    initialSearch={search || ''}
-                                    initialContentType={contentType || ''}
-                                    initialReadingStatus={readingStatus || ''}
-                                    initialYear={year || ''}
-                                    initialTopic={topic || ''}
-                                    initialSortBy={sortBy || 'newest'}
-                                />
-
-                                {/* Results Section */}
-                                <div className="space-y-4">
-                                    {/* Results Header */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-sm text-muted-foreground">
-                                            {entries.length === 0
-                                                ? 'no entries found'
-                                                : `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
-                                            }
-                                        </div>
-                                        {(search || contentType || readingStatus || year || sortBy !== 'newest') && (
-                                            <Link
-                                                href="/library"
-                                                className="text-xs text-primary hover:underline underline-offset-2"
-                                            >
-                                                clear all filters
-                                            </Link>
-                                        )}
-                                    </div>
-
-                                    {/* Entry Grid */}
-                                    <Suspense fallback={<EntriesLoading />}>
-                                        {entries.length === 0 ? (
-                                            <div className="text-center py-24 rounded-xl bg-muted/30 border border-border/50">
-                                                {/* ... empty state ... */}
-                                                <div className="space-y-4">
-                                                    <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-                                                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                                                            <path d="M2 17l10 5 10-5" />
-                                                            <path d="M2 12l10 5 10-5" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <h3 className="font-medium text-foreground">no entries found</h3>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {search || contentType || readingStatus || year
-                                                                ? 'try adjusting your search or filters'
-                                                                : 'add your first paper to get started'
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-visible">
-                                                {entries.map(entry => (
-                                                    <EntryCard
-                                                        key={entry.id}
-                                                        entry={entry}
-                                                        selectionMode={{
-                                                            enabled: isSelectionMode,
-                                                            isSelected: selectedIds.includes(entry.id),
-                                                            onToggle: toggleSelection
-                                                        }}
-                                                    />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </Suspense>
-                                </div>
-                            </>
-                        )}
-                    </LibraryBatchClient>
+                    <LibraryPageClient
+                        user={{
+                            plan: user.plan,
+                            entriesCount: user.entriesCount || 0,
+                            personalCollectionsCount: user.personalCollectionsCount || 0
+                        }}
+                        search={search}
+                        contentType={contentType}
+                        readingStatus={readingStatus}
+                        year={year}
+                        topic={topic}
+                        sortBy={sortBy}
+                        entries={entries}
+                    />
                 </div>
             </div>
         </LibraryPageWrapper>
