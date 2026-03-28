@@ -51,16 +51,6 @@ export const analytics = {
   addToLibraryClicked: (userId?: string, entryId?: string) =>
     trackAnalyticsEvent('ADD_TO_LIBRARY_CLICKED', userId, { entryId }),
 
-  // Onboarding events
-  onboardingStarted: (userId?: string) =>
-    trackAnalyticsEvent('ONBOARDING_STARTED', userId),
-
-  onboardingStepCompleted: (userId?: string, stepNumber?: number) =>
-    trackAnalyticsEvent('ONBOARDING_STEP_COMPLETED', userId, { stepNumber }),
-
-  onboardingFinished: (userId?: string) =>
-    trackAnalyticsEvent('ONBOARDING_FINISHED', userId),
-
   // Feedback events
   feedbackModalOpened: (userId?: string) =>
     trackAnalyticsEvent('FEEDBACK_MODAL_OPENED', userId),
