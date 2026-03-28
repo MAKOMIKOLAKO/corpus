@@ -34,12 +34,14 @@ const readingStatuses = [
     { value: 'UNREAD', label: 'Unread' },
     { value: 'READING', label: 'Reading' },
     { value: 'READ', label: 'Read' },
+    { value: 'DROPPED', label: 'Dropped' },
 ];
 
 const statusVariant = (status: string) => {
     switch (status) {
         case 'READ': return 'success';
         case 'READING': return 'default';
+        case 'DROPPED': return 'destructive';
         default: return 'secondary';
     }
 };
@@ -303,13 +305,18 @@ export default function EntryCard({
                             {/* Header with title and metadata */}
                             <div className="space-y-3">
                                 <div className="relative h-12">
-                                    <CardTitle
-                                        className="font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2 cursor-help"
-                                        onMouseEnter={() => setIsTitleHovered(true)}
-                                        onMouseLeave={() => setIsTitleHovered(false)}
-                                    >
-                                        {displayTitle}
-                                    </CardTitle>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <CardTitle
+                                            className="font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2 cursor-help flex-1"
+                                            onMouseEnter={() => setIsTitleHovered(true)}
+                                            onMouseLeave={() => setIsTitleHovered(false)}
+                                        >
+                                            {displayTitle}
+                                        </CardTitle>
+                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wider py-0 px-1.5 h-4 whitespace-nowrap border-border/50 text-muted-foreground font-bold">
+                                            {entry.contentType.replace('_', ' ').toLowerCase()}
+                                        </Badge>
+                                    </div>
 
                                     {/* Custom tooltip for full title */}
                                     {isTitleHovered && entry.title.length > 50 && (

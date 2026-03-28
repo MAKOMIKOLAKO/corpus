@@ -9,14 +9,25 @@ datasource db {
 
 enum ContentType {
   PAPER
+  BOOK
+  ARTICLE
   BLOG
   ESSAY
-  ARTICLE
   POLICY_REPORT
-  BOOK
-  VIDEO
-  SOCIAL_POST
   OTHER
+}
+
+enum QueueItemStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum QueueInputType {
+  URL
+  PAPER
+  BOOK
 }
 
 enum ReadingStatus {
@@ -117,6 +128,7 @@ model User {
   receivedReferenceRequests ReferenceRequest[] @relation("ReferenceOwner")
   analyticsEvents       AnalyticsEvent[]
   feedback              Feedback[]
+  queueItems            QueueItem[]
 }
 
 model PasswordResetToken {
@@ -305,4 +317,21 @@ model Feedback {
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+model QueueItem {
+  id           String          @id @default(cuid())
+  userId       String
+  status       QueueItemStatus @default(PENDING)
+  inputType    QueueInputType
+  input        String
+  payload      Json?
+  result       Json?
+  entryId      String?
+  errorMessage String?
+  position     Int
+  createdAt    DateTime        @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

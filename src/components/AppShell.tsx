@@ -9,7 +9,7 @@ import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { Users, BookOpen, Folder, MessageSquare, HelpCircle } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, HelpCircle, Plus } from "lucide-react";
 
 export function AppShell({
   children,
@@ -172,6 +172,14 @@ export function AppShell({
               <nav className="flex items-center gap-2 ml-8" role="navigation" aria-label="Main navigation">
                 {session ? (
                   <>
+                    <Link
+                      href="/add"
+                      className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                      aria-current={pathname === "/add" ? "page" : undefined}
+                    >
+                      <Plus className="w-4 h-4" />
+                      add
+                    </Link>
                     <Link
                       href="/library"
                       className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
