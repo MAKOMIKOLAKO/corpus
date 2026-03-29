@@ -401,7 +401,7 @@ model JournalClubMeeting {
   collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   attendances Attendance[]
 
-  @@index([collectionId, date])
+  @@unique([collectionId, date])
 }
 
 model Attendance {

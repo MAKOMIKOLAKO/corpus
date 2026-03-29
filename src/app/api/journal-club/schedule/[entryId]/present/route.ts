@@ -1,76 +1,83 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
-import { canManageJournalClub } from '@/lib/journalClub';
+// AUDIT: 2026-03-28
+// Found: Owner without membership blocked; wrong plan for canManage; meeting date TZ; attendance missing owner; awaited signals
+// Fixed: isOwner + presenter OR canManage; actingUserPlan; UTC date string; upsert meeting + createMany attendance; fire-and-forget signal
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import { getCurrentUserId } from '@/lib/session'
+import { prisma } from '@/lib/prismaWithRetry'
+import { canManageJournalClub, isJournalClub } from '@/lib/journalClub'
+import {
+  getAcceptedMemberAndOwnerUserIds,
+  getJournalClubAccess,
+  getManageRole
+} from '@/lib/journalClubAccess'
+
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { entryId: string } }
 ) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { entryId } = params;
-    const body = await request.json();
-    const { collectionId } = body;
+    const { entryId } = params
+    if (!entryId?.trim()) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const body = await request.json()
+    const collectionId =
+      typeof body.collectionId === 'string' ? body.collectionId.trim() : ''
 
     if (!collectionId) {
-      return NextResponse.json({ error: 'Collection ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Collection ID is required' }, { status: 400 })
     }
 
-    // Get collection and check permissions
+    const access = await getJournalClubAccess(collectionId, userId)
+    if (!access || !access.isMember) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const collection = await prisma.collection.findUnique({
-      where: { id: collectionId },
-      include: {
-        members: {
-          where: { 
-            userId, 
-            status: 'ACCEPTED' 
-          }
-        },
-        user: {
-          select: { plan: true }
-        }
-      }
-    });
-
+      where: { id: collectionId }
+    })
     if (!collection) {
-      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Check if user can manage journal club OR is the presenter
-    const membership = collection.members[0];
-    const userPlan = collection.user?.plan || 'FREE';
-    
-    // Get entry to check if user is presenter
+    if (!isJournalClub(collection)) {
+      return NextResponse.json(
+        { error: 'This collection is not a journal club' },
+        { status: 400 }
+      )
+    }
+
+    const { isOwner, membership, actingUserPlan } = access
+    const manageRole = getManageRole(isOwner, membership)
+
     const entry = await prisma.entry.findUnique({
       where: { id: entryId },
       select: { metadata: true, title: true }
-    });
+    })
 
     if (!entry) {
-      return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    const entryMeta = entry.metadata as any;
-    const isPresenter = entryMeta?.presenterId === userId;
-    
-    if (!membership || (!canManageJournalClub(userPlan, membership.role) && !isPresenter)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    const entryMeta = entry.metadata as Record<string, unknown> | null
+    const isPresenter = entryMeta?.presenterId === userId
+    const canManage = canManageJournalClub(actingUserPlan, manageRole)
+    if (!canManage && !isPresenter) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Verify this is a journal club
-    const collectionMeta = collection.metadata as any;
-    if (!collectionMeta?.isJournalClub) {
-      return NextResponse.json({ error: 'Not a journal club collection' }, { status: 400 });
-    }
-
-    // Check if entry belongs to this collection
     const entryCollection = await prisma.entryCollection.findUnique({
       where: {
         entryId_collectionId: {
@@ -78,71 +85,61 @@ export async function PATCH(
           collectionId
         }
       }
-    });
+    })
 
     if (!entryCollection) {
-      return NextResponse.json({ error: 'Entry not found in collection' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'This paper is not in this collection' },
+        { status: 404 }
+      )
     }
 
-    // Check if entry is scheduled
     if (!entryMeta?.presentationDate) {
-      return NextResponse.json({ error: 'Entry is not scheduled for presentation' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Entry is not scheduled for presentation' },
+        { status: 400 }
+      )
     }
 
-    // Update entry metadata to mark as presented
+    const dateStr = String(entryMeta.presentationDate)
+    const meetingDate = new Date(dateStr + 'T00:00:00.000Z')
+
     const updatedEntry = await prisma.entry.update({
       where: { id: entryId },
       data: {
         metadata: {
-          ...entryMeta,
+          ...(entryMeta || {}),
           presented: true
         }
       }
-    });
+    })
 
-    // Auto-create JournalClubMeeting record for this date if it doesn't exist
-    try {
-      const existingMeeting = await prisma.journalClubMeeting.findFirst({
-        where: {
+    const meeting = await prisma.journalClubMeeting.upsert({
+      where: {
+        collectionId_date: {
           collectionId,
-          date: new Date(entryMeta.presentationDate)
+          date: meetingDate
         }
-      });
-
-      if (!existingMeeting) {
-        // Create meeting and pre-populate attendance records
-        const meeting = await prisma.journalClubMeeting.create({
-          data: {
-            collectionId,
-            date: new Date(entryMeta.presentationDate)
-          }
-        });
-
-        // Get all accepted collection members
-        const members = await prisma.collectionMember.findMany({
-          where: {
-            collectionId,
-            status: 'ACCEPTED'
-          }
-        });
-
-        // Create attendance records for all members (default ABSENT)
-        await prisma.attendance.createMany({
-          data: members.map(member => ({
-            meetingId: meeting.id,
-            userId: member.userId,
-            status: 'ABSENT'
-          }))
-        });
+      },
+      update: {},
+      create: {
+        collectionId,
+        date: meetingDate
       }
-    } catch (meetingError) {
-      console.error('Failed to create meeting record:', meetingError);
-      // Don't fail the request if meeting creation fails
-    }
+    })
 
-    // Emit PRESENTATION_MARKED_COMPLETE activity event (fire and forget)
-    try {
-      await prisma.signal.create({
+    const userIds = await getAcceptedMemberAndOwnerUserIds(collectionId)
+    await prisma.attendance.createMany({
+      data: userIds.map((uid) => ({
+        meetingId: meeting.id,
+        userId: uid,
+        status: 'ABSENT' as const
+      })),
+      skipDuplicates: true
+    })
+
+    prisma.signal
+      .create({
         data: {
           userId,
           type: 'PRESENTATION_MARKED_COMPLETE',
@@ -151,19 +148,24 @@ export async function PATCH(
           metadata: {
             entryTitle: entry.title,
             collectionName: collection.name,
-            presentationDate: entryMeta.presentationDate
+            presentationDate: dateStr
           },
           isPublic: false
         }
-      });
-    } catch (signalError) {
-      console.error('Failed to create activity signal:', signalError);
-      // Don't fail the request if activity creation fails
-    }
+      })
+      .catch((err) =>
+        console.error('[journal-club/present] signal:', err)
+      )
 
-    return NextResponse.json(updatedEntry);
+    return NextResponse.json(updatedEntry)
   } catch (error) {
-    console.error('Error marking presentation as complete:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/present]:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      return NextResponse.json(GENERIC_500, { status: 500 })
+    }
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }

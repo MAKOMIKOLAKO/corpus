@@ -1,64 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
-import { canManageJournalClub } from '@/lib/journalClub';
+// AUDIT: 2026-03-28
+// Found: Admin check used owner plan; collection owner without membership not admin
+// Fixed: actingUserPlan + isOwner for delete auth; 404 policy
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import { getCurrentUserId } from '@/lib/session'
+import { prisma } from '@/lib/prismaWithRetry'
+import { canManageJournalClub } from '@/lib/journalClub'
+import {
+  getJournalClubAccess,
+  getManageRole
+} from '@/lib/journalClubAccess'
+
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { commentId: string } }
 ) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { commentId } = params;
+    const { commentId } = params
+    if (!commentId?.trim()) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
-    // Get comment with collection and user info
     const comment = await prisma.entryComment.findUnique({
       where: { id: commentId },
-      include: {
-        collection: {
-          include: {
-            members: {
-              where: { 
-                userId, 
-                status: 'ACCEPTED' 
-              }
-            },
-            user: {
-              select: { plan: true }
-            }
-          }
-        }
+      select: {
+        id: true,
+        userId: true,
+        collectionId: true
       }
-    });
+    })
 
     if (!comment) {
-      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Check if user is the comment author or an admin of the collection
-    const isAuthor = comment.userId === userId;
-    const membership = comment.collection.members[0];
-    const userPlan = comment.collection.user?.plan || 'FREE';
-    const isAdmin = membership && canManageJournalClub(userPlan, membership.role);
+    const access = await getJournalClubAccess(comment.collectionId, userId)
+    if (!access || !access.isMember) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const isAuthor = comment.userId === userId
+    const { isOwner, membership, actingUserPlan } = access
+    const manageRole = getManageRole(isOwner, membership)
+    const isAdmin = canManageJournalClub(actingUserPlan, manageRole)
 
     if (!isAuthor && !isAdmin) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Delete comment
     await prisma.entryComment.delete({
       where: { id: commentId }
-    });
+    })
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting comment:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/comment DELETE]:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      return NextResponse.json(GENERIC_500, { status: 500 })
+    }
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }

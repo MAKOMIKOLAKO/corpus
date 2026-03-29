@@ -1,9 +1,13 @@
+// AUDIT: 2026-03-28
+// Found: getNextMeetingDates monthly used setMonth (skipped days e.g. Jan 31); canManageJournalClub lacked owner note in comment
+// Fixed: Monthly uses UTC year/month clamp; documented owner must pass ADMIN for canManageJournalClub
+
 import { Collection, Plan, CollectionMember } from '@prisma/client'
 
 export type JournalClubMetadata = {
   isJournalClub: true
   meetingFrequency: 'weekly' | 'biweekly' | 'monthly'
-  nextMeetingDate: string // Date string "YYYY-MM-DD"
+  nextMeetingDate: string | null
   meetingDayOfWeek?: number // 0-6, Sunday=0
 }
 
@@ -16,12 +20,16 @@ export type JournalClubEntryMetadata = {
 
 // Check if a collection is a journal club
 export function isJournalClub(collection: Collection): boolean {
-  const meta = collection.metadata as any
+  const meta = collection.metadata as Record<string, unknown> | null | undefined
   return meta?.isJournalClub === true
 }
 
-// Check if user can manage a journal club (create, schedule, assign)
-// Requires Pro plan AND ADMIN role in the collection
+/**
+ * Schedule/manage journal club (create meetings, schedule papers, settings).
+ * Requires Pro (or lifetime Pro) AND ADMIN role in the collection.
+ * Callers must pass role `'ADMIN'` when the user is the collection owner
+ * (owners may have no CollectionMember row).
+ */
 export function canManageJournalClub(
   userPlan: Plan,
   userRole: 'ADMIN' | 'CONTRIBUTOR' | 'VIEWER'
@@ -40,22 +48,39 @@ export function canParticipate(
   return userRole !== null
 }
 
-// Generate next meeting dates based on frequency
+/**
+ * Generate next meeting dates. Uses UTC calendar math for monthly so
+ * e.g. Jan 31 + 1 month becomes Feb 28/29, not March 2–3.
+ */
 export function getNextMeetingDates(
   startDate: Date,
   frequency: 'weekly' | 'biweekly' | 'monthly',
   count: number
 ): Date[] {
   const dates: Date[] = []
-  let current = new Date(startDate)
+  let y = startDate.getUTCFullYear()
+  let m = startDate.getUTCMonth()
+  let d = startDate.getUTCDate()
+
   for (let i = 0; i < count; i++) {
-    dates.push(new Date(current))
+    dates.push(new Date(Date.UTC(y, m, d)))
+
     if (frequency === 'weekly') {
-      current.setDate(current.getDate() + 7)
+      const t = Date.UTC(y, m, d)
+      const n = new Date(t + 7 * 24 * 60 * 60 * 1000)
+      y = n.getUTCFullYear()
+      m = n.getUTCMonth()
+      d = n.getUTCDate()
     } else if (frequency === 'biweekly') {
-      current.setDate(current.getDate() + 14)
+      const t = Date.UTC(y, m, d)
+      const n = new Date(t + 14 * 24 * 60 * 60 * 1000)
+      y = n.getUTCFullYear()
+      m = n.getUTCMonth()
+      d = n.getUTCDate()
     } else {
-      current.setMonth(current.getMonth() + 1)
+      m += 1
+      const dim = new Date(Date.UTC(y, m + 1, 0)).getUTCDate()
+      if (d > dim) d = dim
     }
   }
   return dates
@@ -63,14 +88,17 @@ export function getNextMeetingDates(
 
 // Format date for display in UI
 export function formatJournalClubDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-  // Output: "Monday, March 30, 2026"
+  try {
+    const date = new Date(dateStr + 'T00:00:00')
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  } catch {
+    return dateStr
+  }
 }
 
 // Get user's role in a collection from membership data
@@ -80,7 +108,10 @@ export function getUserCollectionRole(
   collectionId: string
 ): 'ADMIN' | 'CONTRIBUTOR' | 'VIEWER' | null {
   const membership = memberships.find(
-    m => m.userId === userId && m.collectionId === collectionId && m.status === 'ACCEPTED'
+    (m) =>
+      m.userId === userId &&
+      m.collectionId === collectionId &&
+      m.status === 'ACCEPTED'
   )
   return membership?.role || null
 }
