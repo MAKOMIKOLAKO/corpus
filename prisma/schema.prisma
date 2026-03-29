@@ -98,6 +98,15 @@ enum AttendanceStatus {
   EXCUSED
 }
 
+enum EntrySource {
+  MANUAL
+  SMART_ALERT
+}
+
+enum NotificationType {
+  SMART_ALERT
+}
+
 model Topic {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -149,6 +158,8 @@ model User {
   comments              EntryComment[]
   votes                 Vote[]
   attendances           Attendance[]
+  watchQueries          WatchQuery[]
+  notifications         Notification[]
 }
 
 model PasswordResetToken {
@@ -181,7 +192,8 @@ model Entry {
   contentType   ContentType   @default(PAPER)
   url           String?       @unique
   doi           String?       @unique
-  source        String?
+  source        EntrySource    @default(MANUAL)
+  addedByQueryId String?
   abstract      String?
   publishers    String[]      @default([])
   publishDate   String?
@@ -204,6 +216,7 @@ model Entry {
   referenceRequests ReferenceRequest[]
   comments      EntryComment[]
   votes         Vote[]
+  watchQuery    WatchQuery?       @relation("WatchQueryEntries", fields: [addedByQueryId], references: [id])
 }
 
 model Collection {
@@ -225,6 +238,24 @@ model Collection {
   comments         EntryComment[]
   votes            Vote[]
   meetings         JournalClubMeeting[]
+  watchQueries     WatchQuery[]
+}
+
+model WatchQuery {
+  id            String    @id @default(cuid())
+  userId        String
+  query         String
+  collectionId  String
+  isActive      Boolean   @default(true)
+  lastCheckedAt DateTime?
+  createdAt     DateTime  @default(now())
+  
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  entries       Entry[]   @relation("WatchQueryEntries")
+  
+  @@index([userId])
+  @@index([lastCheckedAt])
 }
 
 model EntryCollection {
@@ -414,4 +445,18 @@ model Attendance {
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  message   String           @db.Text
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
 }

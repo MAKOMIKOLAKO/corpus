@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardTitle } from '@/components/ui/card';
-import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2, Brain } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import ShareEntryModal from '@/components/ShareEntryModal';
 
@@ -35,6 +35,7 @@ interface Entry {
     contentType: string;
     url?: string | null;
     doi?: string | null;
+    source?: 'MANUAL' | 'SMART_ALERT';
     metadata?: {
         openAccessUrl?: string | null;
     } | null;
@@ -428,6 +429,12 @@ export default function EntryCard({
                                             <Badge variant="outline" className="text-[10px] uppercase tracking-wider py-0 px-1.5 h-4 whitespace-nowrap border-border/50 text-muted-foreground font-bold">
                                                 {contentTypeLabel(entry.contentType)}
                                             </Badge>
+                                            {entry.source === 'SMART_ALERT' && (
+                                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 whitespace-nowrap bg-blue-100 text-blue-700 border-blue-200">
+                                                    <Brain className="h-2.5 w-2.5 mr-1" />
+                                                    Smart Alert
+                                                </Badge>
+                                            )}
                                         </div>
 
                                         {/* Custom tooltip for full title */}

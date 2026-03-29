@@ -8,7 +8,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { Users, BookOpen, Folder, MessageSquare, Plus } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Bell } from "lucide-react";
 
 export function AppShell({
   children,
@@ -158,7 +158,7 @@ export function AppShell({
                 </span>
               </Link>
               <div className="flex-1" />
-              
+
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-2" role="navigation" aria-label="Main navigation">
                 {session ? (
@@ -199,6 +199,22 @@ export function AppShell({
                           {pendingCount > 9 ? '9+' : pendingCount}
                         </span>
                       )}
+                    </Link>
+                    <Link
+                      href="/alerts"
+                      className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                      aria-current={pathname === "/alerts" ? "page" : undefined}
+                    >
+                      <Brain className="w-4 h-4" />
+                      alerts
+                    </Link>
+                    <Link
+                      href="/notifications"
+                      className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                      aria-current={pathname === "/notifications" ? "page" : undefined}
+                    >
+                      <Bell className="w-4 h-4" />
+                      notifications
                     </Link>
                     <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
                     <button
@@ -265,6 +281,20 @@ export function AppShell({
                         {pendingCount > 9 ? '9+' : pendingCount}
                       </span>
                     )}
+                  </Link>
+                  <Link
+                    href="/alerts"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/alerts" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <Brain className="w-5 h-5" />
+                    alerts
+                  </Link>
+                  <Link
+                    href="/notifications"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/notifications" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <Bell className="w-5 h-5" />
+                    notifications
                   </Link>
                   <button
                     onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}
