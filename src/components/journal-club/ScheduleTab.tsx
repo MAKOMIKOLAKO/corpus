@@ -135,10 +135,29 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
   const handleSchedulePresentation = async () => {
     // Validation
+    if (!selectedEntryId) {
+      toast.error('Please select a paper to schedule');
+      return;
+    }
+    if (!selectedPresenterId) {
+      toast.error('Please select a presenter');
+      return;
+    }
+    if (!presentationDate) {
+      toast.error('Please select a presentation date');
+      return;
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(presentationDate)) {
       toast.error('Invalid date format');
       return;
     }
+
+    console.log('Debug - Scheduling presentation:', {
+      collectionId,
+      entryId: selectedEntryId,
+      presenterId: selectedPresenterId,
+      presentationDate
+    });
 
     setScheduling(selectedEntryId);
     try {
@@ -153,14 +172,17 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
         })
       });
 
+      console.log('Debug - Schedule API Response:', response.status, response.statusText);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error('Debug - Schedule API Error:', error);
         if (error.error === 'date_already_scheduled') {
           toast.error('Another paper is already scheduled for that date. Please choose a different date.');
         } else if (response.status === 403) {
           toast.error('You do not have permission to schedule presentations.');
         } else {
-          toast.error('Failed to schedule presentation');
+          toast.error(`Failed to schedule presentation: ${error.error || 'Unknown error'}`);
         }
         return;
       }
