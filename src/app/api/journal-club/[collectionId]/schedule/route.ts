@@ -38,9 +38,16 @@ export async function GET(
       }
     });
 
+    console.log('Debug - Entry Collections:', entryCollections.map(ec => ({
+      entryId: ec.entry.id,
+      title: ec.entry.title,
+      metadata: ec.entry.metadata
+    })));
+
     // Filter out entries that are already scheduled
     const unscheduledEntries = entryCollections.filter(ec => {
       const entryMeta = ec.entry.metadata as any;
+      console.log('Debug - Entry metadata for', ec.entry.title, ':', entryMeta);
       return !entryMeta?.presentationDate;
     }).map(ec => ({
       id: ec.id,
@@ -51,6 +58,8 @@ export async function GET(
         year: ec.entry.year
       }
     }));
+
+    console.log('Debug - Final unscheduled entries:', unscheduledEntries);
 
     return NextResponse.json(unscheduledEntries);
   } catch (error) {
