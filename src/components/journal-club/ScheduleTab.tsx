@@ -389,18 +389,17 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
                 ) : (
                   <Select value={selectedEntryId} onValueChange={(value) => setSelectedEntryId(value || '')}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose a paper to schedule" />
+                      <SelectValue placeholder="Choose a paper to schedule">
+                        {selectedEntryId && unscheduledEntries.find(e => e.entry.id === selectedEntryId)?.entry.title}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">-- Select --</SelectItem>
-                      {unscheduledEntries.map((unscheduled) => {
-                        console.log('Debug - Rendering unscheduled entry:', unscheduled);
-                        return (
-                          <SelectItem key={unscheduled.entry.id} value={unscheduled.entry.id}>
-                            {unscheduled.entry.title || 'No Title'}
-                          </SelectItem>
-                        );
-                      })}
+                      {unscheduledEntries.map((unscheduled) => (
+                        <SelectItem key={unscheduled.entry.id} value={unscheduled.entry.id}>
+                          {unscheduled.entry.title || 'No Title'}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
