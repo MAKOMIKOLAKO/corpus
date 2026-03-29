@@ -1,4 +1,4 @@
-its generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -105,6 +105,9 @@ enum EntrySource {
 
 enum NotificationType {
   SMART_ALERT
+  CONNECTION_REQUEST
+  SHARED_ENTRY
+  COLLECTION_INVITE
 }
 
 model Topic {
@@ -256,6 +259,7 @@ model WatchQuery {
   
   @@index([userId])
   @@index([lastCheckedAt])
+  @@index([isActive, lastCheckedAt])
 }
 
 model EntryCollection {
@@ -453,10 +457,13 @@ model Notification {
   type      NotificationType
   message   String           @db.Text
   read      Boolean          @default(false)
+  metadata  Json?
   createdAt DateTime         @default(now())
   
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
+  @@index([userId, read])
+  @@index([userId, createdAt])
   @@index([createdAt])
 }

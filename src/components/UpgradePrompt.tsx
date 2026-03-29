@@ -10,7 +10,8 @@ interface UpgradePromptProps {
   onClose?: () => void;
   reason: 'entry_limit_reached' | 'shared_collections_pro_only' |
   'personal_collection_limit_reached' | 'batch_actions_pro_only' |
-  'contribution_pro_only' | 'advanced_search_pro_only' | 'journal_club_pro_only';
+  'contribution_pro_only' | 'advanced_search_pro_only' | 'journal_club_pro_only' |
+  'alerts_pro_only';
   variant?: 'inline' | 'modal' | 'toast';
 }
 
@@ -68,6 +69,13 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         return {
           title: "Journal Club is a Pro feature",
           description: "Create journal clubs with scheduling, presenter assignment, voting, and attendance tracking. Organize your lab's paper reading sessions in one place.",
+          cta: "Upgrade to Pro →",
+          href: "/settings/billing"
+        };
+      case 'alerts_pro_only':
+        return {
+          title: "Smart Alerts is a Pro feature",
+          description: "Define up to 5 research interests and Corpus will automatically find and add new relevant papers to your library every day.",
           cta: "Upgrade to Pro →",
           href: "/settings/billing"
         };
