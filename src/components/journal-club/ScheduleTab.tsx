@@ -430,7 +430,9 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
                 ) : (
                   <Select value={selectedPresenterId} onValueChange={(value) => setSelectedPresenterId(value || '')}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose a presenter" />
+                      <SelectValue placeholder="Choose a presenter">
+                        {selectedPresenterId && allPresenters.find(p => p.user.id === selectedPresenterId)?.user.name}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">-- Select --</SelectItem>
