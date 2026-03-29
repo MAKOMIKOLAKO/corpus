@@ -8,13 +8,13 @@ type VerifyState = "loading" | "success" | "error";
 
 export default function VerifyEmailPage() {
   const params = useParams();
-  const token = params.token as string;
+  const token = params?.token as string;
 
   const [state, setState] = useState<VerifyState>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!params || !token) {
       setState("error");
       setErrorMsg("Invalid verification link.");
       return;
@@ -38,7 +38,7 @@ export default function VerifyEmailPage() {
         setState("error");
         setErrorMsg("Something went wrong. Please try again.");
       });
-  }, [token]);
+  }, [params, token]);
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
