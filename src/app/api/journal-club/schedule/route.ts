@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
     // Check if user can manage journal club
     const membership = collection.members[0];
     const userPlan = collection.user?.plan || 'FREE';
-    if (!membership || !canManageJournalClub(userPlan, membership.role)) {
+    const isOwner = collection.userId === userId;
+    const userRole = isOwner ? 'ADMIN' : membership?.role;
+
+    if (!isOwner && (!membership || !canManageJournalClub(userPlan, membership.role))) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -72,18 +75,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Entry not found in collection' }, { status: 404 });
     }
 
-    // Check if presenter is a member of the collection
-    const presenterMembership = await prisma.collectionMember.findUnique({
-      where: {
-        collectionId_userId: {
-          collectionId,
-          userId: presenterId
+    // Check if presenter is a member of the collection or the owner
+    if (presenterId !== collection.userId) {
+      const presenterMembership = await prisma.collectionMember.findUnique({
+        where: {
+          collectionId_userId: {
+            collectionId,
+            userId: presenterId
+          }
         }
-      }
-    });
+      });
 
-    if (!presenterMembership || presenterMembership.status !== 'ACCEPTED') {
-      return NextResponse.json({ error: 'Presenter is not a collection member' }, { status: 400 });
+      if (!presenterMembership || presenterMembership.status !== 'ACCEPTED') {
+        return NextResponse.json({ error: 'Presenter is not a collection member' }, { status: 400 });
+      }
     }
 
     // Check for scheduling conflicts
