@@ -120,7 +120,9 @@ export default function CollectionDetailPage() {
     };
 
     // Use scroll position restoration for collection pages
-    useScrollPosition(`collection-${params.id}`);
+    if (params) {
+        useScrollPosition(`collection-${params.id}`);
+    }
 
     useEffect(() => {
         if (params.id) {
