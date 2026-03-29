@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
         data: {
           isShared: true, // Journal clubs are always shared
           metadata: {
-            isJournalClub: true
+            isJournalClub: true,
+            meetingFrequency: 'weekly', // Default frequency
+            nextMeetingDate: null // Will be set by user in settings
           }
         },
         include: {
