@@ -8,7 +8,8 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Bell } from "lucide-react";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { Users, BookOpen, Folder, MessageSquare, Plus, Brain } from "lucide-react";
 
 export function AppShell({
   children,
@@ -208,14 +209,7 @@ export function AppShell({
                       <Brain className="w-4 h-4" />
                       alerts
                     </Link>
-                    <Link
-                      href="/notifications"
-                      className="inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
-                      aria-current={pathname === "/notifications" ? "page" : undefined}
-                    >
-                      <Bell className="w-4 h-4" />
-                      notifications
-                    </Link>
+                    <NotificationDropdown />
                     <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
                     <button
                       onClick={() => setShowFeedback(true)}
@@ -289,13 +283,9 @@ export function AppShell({
                     <Brain className="w-5 h-5" />
                     alerts
                   </Link>
-                  <Link
-                    href="/notifications"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/notifications" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}
-                  >
-                    <Bell className="w-5 h-5" />
-                    notifications
-                  </Link>
+                  <div onClick={() => setIsMenuOpen(false)}>
+                    <NotificationDropdown />
+                  </div>
                   <button
                     onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}
                     className="flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium hover:bg-[var(--muted)] transition-colors text-left"
