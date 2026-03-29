@@ -103,6 +103,7 @@ export default function CollectionDetailPage() {
 
     // Initialize tab from URL params
     useEffect(() => {
+        if (!searchParams) return;
         const tabFromUrl = searchParams.get('tab');
         if (tabFromUrl && ['entries', 'members'].includes(tabFromUrl)) {
             setActiveTab(tabFromUrl);
