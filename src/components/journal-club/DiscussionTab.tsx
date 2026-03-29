@@ -24,7 +24,7 @@ interface Comment {
 interface Entry {
   id: string;
   title: string;
-  authors: string[];
+  authors: string[] | null;
   year: number | null;
 }
 
@@ -63,7 +63,14 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
       if (!response.ok) throw new Error('Failed to fetch entries');
 
       const data = await response.json();
-      setEntries(data || []);
+      // Transform the data structure from the API to match what the component expects
+      const transformedEntries = data.map((item: any) => ({
+        id: item.entry.id,
+        title: item.entry.title,
+        authors: item.entry.authors,
+        year: item.entry.year
+      }));
+      setEntries(transformedEntries || []);
     } catch (error) {
       console.error('Error fetching entries:', error);
       toast.error('Failed to load entries');
@@ -249,8 +256,8 @@ export default function DiscussionTab({ collectionId, isJournalClub, canParticip
           <CardContent className="p-4">
             <h3 className="font-semibold mb-1">{selectedEntry.title}</h3>
             <p className="text-sm text-muted-foreground">
-              {selectedEntry.authors.slice(0, 3).join(', ')}
-              {selectedEntry.authors.length > 3 && ' et al.'}
+              {selectedEntry.authors?.slice(0, 3).join(', ') || 'Unknown authors'}
+              {selectedEntry.authors && selectedEntry.authors.length > 3 && ' et al.'}
               {selectedEntry.year && ` (${selectedEntry.year})`}
             </p>
           </CardContent>
