@@ -105,7 +105,7 @@ export async function PATCH(
     if (d.title !== undefined) data.title = d.title;
     if (d.authors !== undefined) data.authors = d.authors;
     if (d.year !== undefined) data.year = d.year;
-    if (d.source !== undefined) data.source = d.source;
+    if (d.source !== undefined && d.source !== null) data.source = d.source;
     if (d.url !== undefined) data.url = d.url ?? null;
     if (d.doi !== undefined) data.doi = d.doi ?? null;
     if (d.abstract !== undefined) data.abstract = d.abstract ?? null;
