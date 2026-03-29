@@ -170,7 +170,8 @@ export const authOptions: NextAuthOptions = {
               subscriptionStatus: true,
               subscriptionEndsAt: true,
               entriesCount: true,
-              personalCollectionsCount: true
+              personalCollectionsCount: true,
+              timezone: true // Include timezone in session
             }
           }));
 
@@ -198,6 +199,7 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).username = (token as any).username || null;
             (session.user as any).entriesCount = dbUser.entriesCount || 0;
             (session.user as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
+            (session.user as any).timezone = dbUser.timezone ?? 'UTC'; // Default to 'UTC' if timezone is not set
           } else {
             // Fallback to token data if user not found
             (session.user as any).id = (token as any).userId;
@@ -206,6 +208,7 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).username = (token as any).username || null;
             (session.user as any).entriesCount = (token as any).entriesCount || 0;
             (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
+            (session.user as any).timezone = 'UTC'; // Default to 'UTC' if user is not found in DB
           }
         } catch (error) {
           console.error('Error fetching fresh session data:', error);
@@ -216,6 +219,7 @@ export const authOptions: NextAuthOptions = {
           (session.user as any).username = (token as any).username || null;
           (session.user as any).entriesCount = (token as any).entriesCount || 0;
           (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
+          (session.user as any).timezone = 'UTC'; // Default to 'UTC' on error
         }
       }
       return session;

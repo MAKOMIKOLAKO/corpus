@@ -136,6 +136,7 @@ model User {
   usernameBannerShown   Boolean     @default(false)
   entriesCount          Int         @default(0)
   personalCollectionsCount Int       @default(0)
+  timezone              String      @default("UTC")
 
   entries               Entry[]
   collections           Collection[]

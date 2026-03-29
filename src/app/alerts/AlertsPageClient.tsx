@@ -14,6 +14,7 @@ import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
 import { toast } from 'sonner';
+import { useTimezone } from '@/hooks/useTimezone';
 
 interface Collection {
   id: string;
@@ -103,6 +104,7 @@ function AlertsLoading() {
 export default function AlertsPageClient() {
   const { data: session, status } = useSession();
   const apikey = useApiKey();
+  const timezone = useTimezone();
 
   const [watchQueries, setWatchQueries] = useState<WatchQuery[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -524,9 +526,9 @@ export default function AlertsPageClient() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null, timezone: string) => {
     if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString();
+    return formatDate(dateString, timezone);
   };
 
   if (status === 'loading' || loading) {
@@ -934,7 +936,7 @@ export default function AlertsPageClient() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
-                          <span>Last checked {formatDate(watchQuery.lastCheckedAt)}</span>
+                          <span>Last checked {formatDate(watchQuery.lastCheckedAt, timezone)}</span>
                         </div>
                         <div>
                           <span className="font-medium text-[var(--foreground)]">{watchQuery._count?.entries ?? 0}</span> papers added

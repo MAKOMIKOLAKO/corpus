@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { toISOString } from '@/lib/dateUtils';
 
 const MAX_WATCH_QUERIES_PER_USER = parseInt(process.env.MAX_WATCH_QUERIES_PER_USER || '5');
 
@@ -30,28 +31,27 @@ export async function GET() {
     }
 
     const watchQueries = await prisma.watchQuery.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      include: {
-        collection: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        _count: {
-          select: {
-            entries: true,
-          },
-        },
+      select: {
+        id: true,
+        userId: true,
+        query: true,
+        collectionId: true,
+        maxPapers: true,
+        isActive: true,
+        lastCheckedAt: true,
+        createdAt: true, // Ensure createdAt is included
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json(watchQueries);
+    const formattedQueries = watchQueries.map((query) => ({
+      ...query,
+      createdAt: toISOString(query.createdAt), // Format createdAt as ISO string
+    }));
+
+    return NextResponse.json(formattedQueries);
   } catch (error) {
     console.error('Error fetching watch queries:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
