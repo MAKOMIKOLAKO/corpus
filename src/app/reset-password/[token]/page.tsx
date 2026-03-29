@@ -9,7 +9,7 @@ type TokenState = "loading" | "valid" | "invalid" | "expired";
 export default function ResetPasswordPage() {
   const params = useParams();
   const router = useRouter();
-  const token = params.token as string;
+  const token = params?.token as string;
 
   const [tokenState, setTokenState] = useState<TokenState>("loading");
   const [password, setPassword] = useState("");

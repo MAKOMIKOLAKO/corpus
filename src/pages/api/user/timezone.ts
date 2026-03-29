@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../lib/authOptions";
 import prisma from "../../../lib/prisma";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 // Validate the timezone is a real IANA timezone
 function isValidTimezone(tz: string): boolean {
@@ -12,7 +13,7 @@ function isValidTimezone(tz: string): boolean {
   }
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "PATCH") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -30,7 +31,7 @@ export default async function handler(req, res) {
   try {
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { timezone },
+      data: { timezone } as any,
     });
 
     return res.status(200).json({ success: true, timezone });
