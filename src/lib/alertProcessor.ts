@@ -1,4 +1,4 @@
-import { prisma } from './prisma'
+import prisma from './prisma'
 import { ALERT_CONFIG, normalizeTitle } from './alerts'
 import { GoogleGenAI, Chat } from '@google/genai'
 
@@ -17,7 +17,7 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
 
   // Fetch all active queries not checked in last 23 hours
   const cutoff = new Date(Date.now() - ALERT_CONFIG.minHoursBetweenChecks * 60 * 60 * 1000)
-  
+
   const queries = await prisma.watchQuery.findMany({
     where: {
       isActive: true,
@@ -55,7 +55,7 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
         break
       }
     } catch (error) {
-      const message = `Query ${query.id}: ${(error as Error).message}` 
+      const message = `Query ${query.id}: ${(error as Error).message}`
       console.error(`[alertProcessor] ${message}`)
       results.errors.push(message)
       // Continue processing other queries even if one fails
@@ -104,20 +104,20 @@ export async function processQuery(query: {
   // Process in batches of 5 to avoid rate limits
   const relevant: typeof candidates = []
   const batchSize = 5
-  
+
   for (let i = 0; i < candidates.length; i += batchSize) {
     const batch = candidates.slice(i, i + batchSize)
     const results = await Promise.allSettled(
       batch.map(paper => checkRelevance(query.query, paper))
     )
-    
+
     for (let j = 0; j < results.length; j++) {
       const result = results[j]
       if (result.status === 'fulfilled' && result.value === true) {
         relevant.push(batch[j])
       }
     }
-    
+
     // Pause between batches
     if (i + batchSize < candidates.length) {
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -269,7 +269,7 @@ async function fetchCandidatePapers(
     }
 
     const data = await response.json()
-    
+
     return (data.data || []).map((paper: any): CandidatePaper => ({
       semanticScholarId: paper.paperId,
       title: paper.title || 'Untitled',
@@ -278,7 +278,7 @@ async function fetchCandidatePapers(
       abstract: paper.abstract || null,
       doi: paper.externalIds?.DOI || null,
       url: paper.externalIds?.DOI
-        ? `https://doi.org/${paper.externalIds.DOI}` 
+        ? `https://doi.org/${paper.externalIds.DOI}`
         : `https://www.semanticscholar.org/paper/${paper.paperId}`,
       venue: paper.venue || null,
       openAccessUrl: paper.openAccessPdf?.url || null
@@ -323,7 +323,7 @@ Answer with only YES or NO. No explanation.`
 
     const result = await chat.sendMessage({ message: prompt })
     const answer = result.text?.trim()?.toUpperCase()
-    
+
     return answer === 'YES'
   } catch (error) {
     console.error('[alertProcessor] Gemini relevance check failed:', error)
