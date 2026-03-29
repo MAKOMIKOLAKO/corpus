@@ -143,6 +143,7 @@ export default function AlertsPageClient() {
   const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null);
   const [selectedContainer, setSelectedContainer] = useState<AlertContainerDetail | null>(null);
   const [loadingContainerDetail, setLoadingContainerDetail] = useState(false);
+  const [containerLifecycleMessage, setContainerLifecycleMessage] = useState<string | null>(null);
   const [actingOnEntryId, setActingOnEntryId] = useState<string | null>(null);
   const [bulkActionLoading, setBulkActionLoading] = useState<'approve_all' | 'reject_all' | null>(null);
 
@@ -234,6 +235,7 @@ export default function AlertsPageClient() {
       const data = await response.json();
       setSelectedContainer(data as AlertContainerDetail);
       setSelectedContainerId(containerId);
+      setContainerLifecycleMessage(null);
     } catch (error) {
       console.error('Error fetching container details:', error);
       toast.error('Failed to load container details');
@@ -385,13 +387,20 @@ export default function AlertsPageClient() {
         throw new Error('Failed to update alert entry');
       }
 
+      const data = await response.json();
+
+      if (data?.containerDeleted) {
+        setContainers((prev) => prev.filter((container) => container.id !== selectedContainerId));
+        setSelectedContainerId(null);
+        setSelectedContainer(null);
+        setContainerLifecycleMessage('All papers in this container were processed, so it was automatically deleted.');
+        toast.success(action === 'approve' ? 'Paper approved. Container completed and deleted.' : 'Paper rejected. Container completed and deleted.');
+        return;
+      }
+
       setSelectedContainer((prev) => {
         if (!prev) return prev;
-        const nextEntries = prev.entries.map((entry) =>
-          entry.id === entryId
-            ? { ...entry, status: (action === 'approve' ? 'APPROVED' : 'REJECTED') as AlertContainerEntry['status'] }
-            : entry
-        );
+        const nextEntries = prev.entries.filter((entry) => entry.id !== entryId);
         const counts = nextEntries.reduce(
           (acc, entry) => {
             if (entry.status === 'PENDING') acc.pending += 1;
@@ -407,10 +416,11 @@ export default function AlertsPageClient() {
       setContainers((prev) =>
         prev.map((container) => {
           if (container.id !== selectedContainerId) return container;
+          const nextPending = Math.max(0, container.counts.pending - 1);
           return {
             ...container,
             counts: {
-              pending: Math.max(0, container.counts.pending - 1),
+              pending: nextPending,
               approved: container.counts.approved + (action === 'approve' ? 1 : 0),
               rejected: container.counts.rejected + (action === 'reject' ? 1 : 0),
             },
@@ -444,6 +454,15 @@ export default function AlertsPageClient() {
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || 'Failed bulk action');
+      }
+
+      if (data?.containerDeleted) {
+        setContainers((prev) => prev.filter((container) => container.id !== selectedContainerId));
+        setSelectedContainerId(null);
+        setSelectedContainer(null);
+        setContainerLifecycleMessage('All papers in this container were processed, so it was automatically deleted.');
+        toast.success(action === 'approve_all' ? 'Approved all pending papers. Container deleted.' : 'Rejected all pending papers. Container deleted.');
+        return;
       }
 
       await fetchContainerDetail(selectedContainerId);
@@ -644,6 +663,7 @@ export default function AlertsPageClient() {
   }
 
   const activeQueryCount = watchQueries.filter(q => q.isActive).length;
+  const pendingEntries = selectedContainer?.entries.filter((entry) => entry.status === 'PENDING') ?? [];
 
   return (
     <div className="space-y-8">
@@ -942,7 +962,9 @@ export default function AlertsPageClient() {
               </CardHeader>
               <CardContent>
                 {!selectedContainerId ? (
-                  <p className="text-sm text-[var(--muted-foreground)]">Select a container to review staged papers.</p>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    {containerLifecycleMessage ?? 'Select a container to review staged papers.'}
+                  </p>
                 ) : loadingContainerDetail ? (
                   <p className="text-sm text-[var(--muted-foreground)]">Loading container details...</p>
                 ) : !selectedContainer ? (
@@ -977,10 +999,10 @@ export default function AlertsPageClient() {
                     </div>
 
                     <div className="max-h-[520px] overflow-y-auto space-y-3 pr-1">
-                      {selectedContainer.entries.length === 0 ? (
-                        <p className="text-sm text-[var(--muted-foreground)]">No papers in this container.</p>
+                      {pendingEntries.length === 0 ? (
+                        <p className="text-sm text-[var(--muted-foreground)]">All papers in this container have been processed.</p>
                       ) : (
-                        selectedContainer.entries.map((entry) => (
+                        pendingEntries.map((entry) => (
                           <div key={entry.id} className="rounded-lg border border-[var(--border)] p-3 space-y-2">
                             <div className="flex items-start justify-between gap-3">
                               <div>
@@ -990,9 +1012,7 @@ export default function AlertsPageClient() {
                                   {entry.year ? ` • ${entry.year}` : ''}
                                 </p>
                               </div>
-                              <Badge variant={entry.status === 'PENDING' ? 'outline' : entry.status === 'APPROVED' ? 'default' : 'secondary'}>
-                                {entry.status}
-                              </Badge>
+                              <Badge variant="outline">PENDING</Badge>
                             </div>
 
                             {entry.abstract && (
@@ -1008,26 +1028,24 @@ export default function AlertsPageClient() {
                                 <span className="text-xs text-[var(--muted-foreground)]">No source URL</span>
                               )}
 
-                              {entry.status === 'PENDING' && (
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={actingOnEntryId === entry.id}
-                                    onClick={() => handleContainerEntryAction(entry.id, 'approve')}
-                                  >
-                                    {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={actingOnEntryId === entry.id}
-                                    onClick={() => handleContainerEntryAction(entry.id, 'reject')}
-                                  >
-                                    {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Reject
-                                  </Button>
-                                </div>
-                              )}
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={actingOnEntryId === entry.id}
+                                  onClick={() => handleContainerEntryAction(entry.id, 'approve')}
+                                >
+                                  {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={actingOnEntryId === entry.id}
+                                  onClick={() => handleContainerEntryAction(entry.id, 'reject')}
+                                >
+                                  {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Reject
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))

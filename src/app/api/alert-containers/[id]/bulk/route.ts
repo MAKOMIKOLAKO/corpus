@@ -56,11 +56,29 @@ export async function PATCH(
       }
     }
 
+    const pendingCount = await db.alertEntry.count({
+      where: {
+        containerId: params.id,
+        container: { userId },
+        status: 'PENDING',
+      },
+    });
+
+    let containerDeleted = false;
+    if (pendingCount === 0) {
+      await db.alertContainer.deleteMany({
+        where: { id: params.id, userId },
+      });
+      containerDeleted = true;
+    }
+
     return NextResponse.json({
       success: true,
       processed,
       failed,
       action: parsed.data.action,
+      pendingCount,
+      containerDeleted,
     });
   } catch (error) {
     console.error('[api/alert-containers/[id]/bulk PATCH]', error);

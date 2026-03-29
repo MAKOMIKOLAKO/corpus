@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import { approveAlertEntry, rejectAlertEntry } from '@/lib/alertContainerActions';
 
@@ -23,13 +24,33 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    if (parsed.data.action === 'approve') {
-      const result = await approveAlertEntry(userId, params.id, params.entryId);
-      return NextResponse.json({ success: true, result });
+    const result = parsed.data.action === 'approve'
+      ? await approveAlertEntry(userId, params.id, params.entryId)
+      : await rejectAlertEntry(userId, params.id, params.entryId);
+
+    const db = prisma as any;
+    const pendingCount = await db.alertEntry.count({
+      where: {
+        containerId: params.id,
+        container: { userId },
+        status: 'PENDING',
+      },
+    });
+
+    let containerDeleted = false;
+    if (pendingCount === 0) {
+      await db.alertContainer.deleteMany({
+        where: { id: params.id, userId },
+      });
+      containerDeleted = true;
     }
 
-    const result = await rejectAlertEntry(userId, params.id, params.entryId);
-    return NextResponse.json({ success: true, result });
+    return NextResponse.json({
+      success: true,
+      result,
+      containerDeleted,
+      pendingCount,
+    });
   } catch (error) {
     const message = (error as Error).message;
     if (message.includes('not found')) {
