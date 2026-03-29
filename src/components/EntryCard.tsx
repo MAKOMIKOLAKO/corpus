@@ -56,6 +56,16 @@ const readingStatuses = [
     { value: 'COMPLETED', label: 'Completed' },
 ];
 
+const contentTypes = [
+    'PAPER',
+    'BOOK',
+    'ARTICLE',
+    'BLOG',
+    'ESSAY',
+    'POLICY_REPORT',
+    'OTHER',
+] as const;
+
 const statusVariant = (status: string) => {
     switch (status) {
         case 'COMPLETED':
@@ -112,10 +122,14 @@ export default function EntryCard({
     const [isTitleHovered, setIsTitleHovered] = useState(false);
     const collectionDropdownRef = useRef<HTMLDivElement>(null);
     const statusDropdownRef = useRef<HTMLDivElement>(null);
+    const contentTypeDropdownRef = useRef<HTMLDivElement>(null);
     const [currentStatus, setCurrentStatus] = useState(entry.readingStatus);
+    const [currentContentType, setCurrentContentType] = useState(entry.contentType);
     const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isUpdatingContentType, setIsUpdatingContentType] = useState(false);
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
+    const [isContentTypeOpen, setIsContentTypeOpen] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
     const [didCopyDoi, setDidCopyDoi] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -184,6 +198,9 @@ export default function EntryCard({
             if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
+            if (contentTypeDropdownRef.current && !contentTypeDropdownRef.current.contains(event.target as Node)) {
+                setIsContentTypeOpen(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
@@ -222,6 +239,39 @@ export default function EntryCard({
             toast.error('Failed to update status');
         } finally {
             setIsUpdating(false);
+        }
+    };
+
+    const handleContentTypeChange = async (newType: typeof contentTypes[number]) => {
+        if (newType === currentContentType) {
+            setIsContentTypeOpen(false);
+            return;
+        }
+
+        const previousType = currentContentType;
+        setCurrentContentType(newType);
+        setIsContentTypeOpen(false);
+        setIsUpdatingContentType(true);
+
+        try {
+            const response = await fetch(`/api/entries/${entry.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                },
+                body: JSON.stringify({ contentType: newType }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update content type');
+            }
+        } catch (error) {
+            console.error('Error updating content type:', error);
+            setCurrentContentType(previousType);
+            toast.error('Failed to update content type');
+        } finally {
+            setIsUpdatingContentType(false);
         }
     };
 
@@ -415,27 +465,16 @@ export default function EntryCard({
                     <Card className={`group h-full hover:shadow-lg transition-all duration-200 border-border/50 hover:border-foreground/20 overflow-visible ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`}>
                         <CardContent className="p-5 overflow-visible">
                             <div className="space-y-4">
-                                {/* Header with title and metadata */}
+                                {/* Header with title, tags, and metadata */}
                                 <div className="space-y-3">
-                                    <div className="relative h-12">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <CardTitle
-                                                className="font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2 cursor-help flex-1"
-                                                onMouseEnter={() => setIsTitleHovered(true)}
-                                                onMouseLeave={() => setIsTitleHovered(false)}
-                                            >
-                                                {displayTitle}
-                                            </CardTitle>
-                                            <Badge variant="outline" className="text-[10px] uppercase tracking-wider py-0 px-1.5 h-4 whitespace-nowrap border-border/50 text-muted-foreground font-bold">
-                                                {contentTypeLabel(entry.contentType)}
-                                            </Badge>
-                                            {entry.source && entry.source === 'SMART_ALERT' && (
-                                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 whitespace-nowrap bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
-                                                    <Brain className="h-2.5 w-2.5 mr-1" />
-                                                    Smart Alert
-                                                </Badge>
-                                            )}
-                                        </div>
+                                    <div className="relative">
+                                        <CardTitle
+                                            className="font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2 cursor-help"
+                                            onMouseEnter={() => setIsTitleHovered(true)}
+                                            onMouseLeave={() => setIsTitleHovered(false)}
+                                        >
+                                            {displayTitle}
+                                        </CardTitle>
 
                                         {/* Custom tooltip for full title */}
                                         {isTitleHovered && entry.title.length > 50 && (
@@ -447,6 +486,55 @@ export default function EntryCard({
                                                     <div className="w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-background"></div>
                                                 </div>
                                             </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <div
+                                            className="relative"
+                                            ref={contentTypeDropdownRef}
+                                            onMouseEnter={() => setIsContentTypeOpen(true)}
+                                            onMouseLeave={() => setIsContentTypeOpen(false)}
+                                        >
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setIsContentTypeOpen((prev) => !prev);
+                                                }}
+                                                className="group/content-type"
+                                                disabled={isUpdatingContentType}
+                                            >
+                                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider py-0 px-2 h-6 whitespace-nowrap border-border/50 text-muted-foreground font-bold gap-1">
+                                                    {isUpdatingContentType ? 'UPDATING...' : contentTypeLabel(currentContentType)}
+                                                    <ChevronDown className={`h-3 w-3 transition-opacity ${isContentTypeOpen ? 'opacity-100' : 'opacity-0 group-hover/content-type:opacity-100'}`} />
+                                                </Badge>
+                                            </button>
+
+                                            {isContentTypeOpen && (
+                                                <div className="absolute top-full left-0 mt-1 z-[70] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[160px]">
+                                                    {contentTypes.map((type) => (
+                                                        <button
+                                                            key={type}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                handleContentTypeChange(type);
+                                                            }}
+                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${type === currentContentType ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''}`}
+                                                        >
+                                                            {contentTypeLabel(type)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {entry.source && entry.source === 'SMART_ALERT' && (
+                                            <Badge variant="secondary" className="text-[10px] py-0 px-2 h-6 whitespace-nowrap bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
+                                                <Brain className="h-2.5 w-2.5 mr-1" />
+                                                Smart Alert
+                                            </Badge>
                                         )}
                                     </div>
 
