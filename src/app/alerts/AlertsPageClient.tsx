@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Bell, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Bell, CheckCircle, XCircle, Play, Pause } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -36,6 +36,28 @@ interface WatchQuery {
 
 const MAX_QUERIES_PER_USER = 5;
 
+// Loading skeleton component
+function AlertsLoading() {
+  return (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i} className="animate-pulse">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="h-5 bg-[var(--muted)] rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-[var(--muted)] rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-[var(--muted)] rounded w-2/3"></div>
+              </div>
+              <div className="h-8 w-20 bg-[var(--muted)] rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function AlertsPageClient() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -46,6 +68,7 @@ export default function AlertsPageClient() {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [togglingQuery, setTogglingQuery] = useState<string | null>(null);
 
   // Form state
   const [newQuery, setNewQuery] = useState('');
@@ -172,8 +195,34 @@ export default function AlertsPageClient() {
     }
   };
 
+  const handleToggleQuery = async (queryId: string, isActive: boolean) => {
+    setTogglingQuery(queryId);
+    try {
+      const response = await fetch(`/api/watch-queries/${queryId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apikey || '',
+        },
+        body: JSON.stringify({ isActive: !isActive }),
+      });
+
+      if (!response.ok) throw new Error('Failed to toggle alert');
+
+      setWatchQueries(prev => prev.map(q =>
+        q.id === queryId ? { ...q, isActive: !isActive } : q
+      ));
+      toast.success(`Alert ${!isActive ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      console.error('Error toggling watch query:', error);
+      toast.error('Failed to toggle alert');
+    } finally {
+      setTogglingQuery(null);
+    }
+  };
+
   const handleDeleteQuery = async (queryId: string) => {
-    if (!confirm('Are you sure you want to deactivate this alert?')) return;
+    if (!confirm('Are you sure you want to delete this alert? This will deactivate it.')) return;
 
     try {
       const response = await fetch(`/api/watch-queries/${queryId}`, {
@@ -183,7 +232,7 @@ export default function AlertsPageClient() {
         },
       });
 
-      if (!response.ok) throw new Error('Failed to deactivate alert');
+      if (!response.ok) throw new Error('Failed to delete alert');
 
       setWatchQueries(prev => prev.map(q =>
         q.id === queryId ? { ...q, isActive: false } : q
@@ -202,9 +251,15 @@ export default function AlertsPageClient() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-12">
+        <div className="space-y-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold tracking-tight">Smart Alerts</h1>
+              <p className="text-sm text-[var(--muted-foreground)]">Automatically discover relevant papers for your research interests</p>
+            </div>
+          </div>
+          <AlertsLoading />
         </div>
       </div>
     );
@@ -212,194 +267,270 @@ export default function AlertsPageClient() {
 
   if (!isPro) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Smart Alerts</h1>
-          <p className="text-muted-foreground">Automatically discover relevant papers for your research interests</p>
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-12">
+        <div className="space-y-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold tracking-tight">Smart Alerts</h1>
+              <p className="text-sm text-[var(--muted-foreground)]">Automatically discover relevant papers for your research interests</p>
+            </div>
+          </div>
+          <UpgradeBanner
+            message="Smart Alerts require a Pro plan. Get automatic paper discovery and intelligent filtering with Smart Alerts."
+            ctaText="Upgrade to Pro"
+          />
         </div>
-        <UpgradeBanner
-          message="Smart Alerts require a Pro plan. Get automatic paper discovery and intelligent filtering with Smart Alerts."
-          ctaText="Upgrade to Pro"
-        />
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Smart Alerts</h1>
-        <p className="text-muted-foreground">
-          Automatically discover relevant papers for your research interests
-        </p>
-      </div>
+  const activeQueryCount = watchQueries.filter(q => q.isActive).length;
 
-      <div className="mb-6">
-        <Button
-          onClick={() => setShowCreateForm(true)}
-          disabled={watchQueries.filter(q => q.isActive).length >= MAX_QUERIES_PER_USER}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Create Alert
-        </Button>
-        {watchQueries.filter(q => q.isActive).length >= MAX_QUERIES_PER_USER && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Maximum of {MAX_QUERIES_PER_USER} active alerts reached
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-6 sm:py-12">
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Smart Alerts</h1>
+            <p className="text-sm text-[var(--muted-foreground)]">Automatically discover relevant papers for your research interests</p>
+          </div>
+          <Button
+            onClick={() => setShowCreateForm(true)}
+            disabled={activeQueryCount >= MAX_QUERIES_PER_USER}
+            className="gap-2 touch-manipulation h-11 sm:h-9"
+          >
+            <Plus className="w-4 h-4" />
+            Create Alert
+          </Button>
+        </div>
+
+        {/* Query Limit Indicator */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Your Alerts</h2>
+          <Badge variant="secondary" className="text-xs">
+            {activeQueryCount} / {MAX_QUERIES_PER_USER}
+          </Badge>
+        </div>
+        {activeQueryCount >= MAX_QUERIES_PER_USER && (
+          <p className="text-sm text-[var(--muted-foreground)]">
+            You've reached the maximum number of active alerts. Deactivate an alert to create a new one.
           </p>
         )}
-      </div>
 
-      {showCreateForm && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Create New Alert</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateQuery} className="space-y-4">
-              <div>
-                <Label htmlFor="query">Search Query</Label>
-                <Input
-                  id="query"
-                  value={newQuery}
-                  onChange={(e) => setNewQuery(e.target.value)}
-                  placeholder="e.g., machine learning healthcare, quantum computing, climate change"
-                  className="mt-1"
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Enter keywords or phrases describing your research interests
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="collection">Target Collection</Label>
-                <Select value={selectedCollectionId} onValueChange={(value) => setSelectedCollectionId(value || '')}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select a collection or create new" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Create new collection automatically</SelectItem>
-                    {collections.map((collection) => (
-                      <SelectItem key={collection.id} value={collection.id}>
-                        {collection.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Papers will be added to this collection. Leave empty to create a new collection.
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Alert'
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="space-y-4">
-        {watchQueries.length === 0 ? (
+        {/* Create New Alert Form */}
+        {showCreateForm && (
           <Card>
-            <CardContent className="py-8 text-center">
-              <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No alerts yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first alert to start discovering relevant papers automatically
-              </p>
-              <Button onClick={() => setShowCreateForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Alert
-              </Button>
+            <CardHeader>
+              <CardTitle>Create New Alert</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateQuery} className="space-y-4">
+                <div>
+                  <Label htmlFor="query">Research Interest</Label>
+                  <Input
+                    id="query"
+                    value={newQuery}
+                    onChange={(e) => setNewQuery(e.target.value)}
+                    placeholder="e.g., machine learning healthcare, quantum computing, climate change"
+                    className="mt-1"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                    Enter keywords or phrases describing your research interests
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="collection">Target Collection</Label>
+                  <Select value={selectedCollectionId} onValueChange={(value) => setSelectedCollectionId(value || '')}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select a collection or create new" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Create new collection automatically</SelectItem>
+                      {collections.map((collection) => (
+                        <SelectItem key={collection.id} value={collection.id}>
+                          {collection.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                    Papers will be added to this collection. Leave empty to create a new collection.
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={submitting} className="flex-1 sm:flex-none">
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Alert'
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateForm(false)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
-        ) : (
-          watchQueries.map((watchQuery) => (
-            <Card key={watchQuery.id} className={!watchQuery.isActive ? 'opacity-60' : ''}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Search className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-semibold">{watchQuery.query}</h3>
-                      <Badge variant={watchQuery.isActive ? 'default' : 'secondary'}>
-                        {watchQuery.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+        )}
+
+        {/* Active Queries Section */}
+        <div className="space-y-4">
+          {watchQueries.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Brain className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No alerts yet</h3>
+                <p className="text-sm text-[var(--muted-foreground)] mb-4">
+                  Create your first alert to start discovering relevant papers automatically
+                </p>
+                <Button onClick={() => setShowCreateForm(true)} className="touch-manipulation h-11 sm:h-9">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Alert
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            watchQueries.map((watchQuery) => (
+              <Card key={watchQuery.id} className={!watchQuery.isActive ? 'opacity-60' : ''}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Search className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
+                        <h3 className="font-semibold text-base truncate">{watchQuery.query}</h3>
+                        <Badge variant={watchQuery.isActive ? 'default' : 'secondary'} className="text-xs">
+                          {watchQuery.isActive ? 'Active' : 'Paused'}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-[var(--muted-foreground)] mb-2">
+                        <div className="flex items-center gap-1">
+                          <FileText className="h-4 w-4" />
+                          <Link
+                            href={`/collections/${watchQuery.collection.id}`}
+                            className="hover:text-[var(--foreground)] transition-colors"
+                          >
+                            {watchQuery.collection.name}
+                          </Link>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Last checked: {formatDate(watchQuery.lastCheckedAt)}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
+                        <span>
+                          {watchQuery._count.entries} paper{watchQuery._count.entries !== 1 ? 's' : ''} added
+                        </span>
+                        <span>
+                          Created {new Date(watchQuery.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <Link
-                          href={`/collections/${watchQuery.collection.id}`}
-                          className="hover:text-foreground"
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {watchQuery.isActive ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleToggleQuery(watchQuery.id, watchQuery.isActive)}
+                          disabled={togglingQuery === watchQuery.id}
                         >
-                          {watchQuery.collection.name}
-                        </Link>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Last checked: {formatDate(watchQuery.lastCheckedAt)}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">
-                        {watchQuery._count.entries} papers added
-                      </span>
-                      <span className="text-muted-foreground">
-                        Created {new Date(watchQuery.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {watchQuery.isActive && (
+                          {togglingQuery === watchQuery.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Pause className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleQuery(watchQuery.id, watchQuery.isActive)}
+                          disabled={togglingQuery === watchQuery.id}
+                        >
+                          {togglingQuery === watchQuery.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                       <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
                         onClick={() => handleDeleteQuery(watchQuery.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      <div className="mt-8 p-4 bg-muted rounded-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <Bell className="h-5 w-5" />
-          <h4 className="font-semibold">How Smart Alerts Work</h4>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li>• Daily search for new papers matching your query</li>
-          <li>• AI-powered relevance filtering using Gemini</li>
-          <li>• Automatic deduplication to prevent duplicates</li>
-          <li>• Papers added to your selected collection</li>
-          <li>• Notifications when new papers are discovered</li>
-        </ul>
+
+        {/* How It Works Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              <CardTitle>How Smart Alerts Work</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center text-sm font-semibold">
+                    1
+                  </div>
+                  <h4 className="font-semibold">Daily Search</h4>
+                </div>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  We search for new papers matching your research interests every day
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center text-sm font-semibold">
+                    2
+                  </div>
+                  <h4 className="font-semibold">AI Filtering</h4>
+                </div>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Gemini AI analyzes each paper for relevance to your specific interests
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center text-sm font-semibold">
+                    3
+                  </div>
+                  <h4 className="font-semibold">Auto-Add & Notify</h4>
+                </div>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Relevant papers are added to your collection and you're notified
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
