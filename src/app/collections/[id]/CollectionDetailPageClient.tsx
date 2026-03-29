@@ -496,7 +496,7 @@ export default function CollectionDetailPage() {
         }
     };
 
-    const isJournalClubCollection = collection ? isJournalClub(collection as any) : false;
+    const isJournalClubCollection = collection ? (console.log('Collection metadata:', collection.metadata), isJournalClub(collection as any)) : false;
     const canManageJournalClubFeature = userRole ? canManageJournalClub(userPlan as any, userRole) : false;
     const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
 
