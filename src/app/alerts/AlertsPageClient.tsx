@@ -744,36 +744,38 @@ export default function AlertsPageClient() {
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-3">
               {containers.map((container) => (
-                <Card
-                  key={container.id}
-                  className={`cursor-pointer border-[var(--border)] transition-colors ${selectedContainerId === container.id ? 'ring-2 ring-[var(--accent)]' : 'hover:border-[var(--muted-foreground)]/20'}`}
-                  onClick={() => fetchContainerDetail(container.id)}
-                >
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-[var(--foreground)] line-clamp-2">{container.query}</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteContainer(container.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <Badge variant="outline">Pending {container.counts.pending}</Badge>
-                      <Badge variant="outline">Approved {container.counts.approved}</Badge>
-                      <Badge variant="outline">Rejected {container.counts.rejected}</Badge>
-                    </div>
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      Updated {new Date(container.updatedAt).toLocaleString()}
-                    </p>
-                  </CardContent>
-                </Card>
+                container && (
+                  <Card
+                    key={container?.id}
+                    className={`cursor-pointer border-[var(--border)] transition-colors ${selectedContainerId === container?.id ? 'ring-2 ring-[var(--accent)]' : 'hover:border-[var(--muted-foreground)]/20'}`}
+                    onClick={() => fetchContainerDetail(container?.id)}
+                  >
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-medium text-[var(--foreground)] line-clamp-2">{container?.query}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteContainer(container?.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <Badge variant="outline">Pending {container?.counts?.pending}</Badge>
+                        <Badge variant="outline">Approved {container?.counts?.approved}</Badge>
+                        <Badge variant="outline">Rejected {container?.counts?.rejected}</Badge>
+                      </div>
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Updated {new Date(container?.updatedAt).toLocaleString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )
               ))}
             </div>
 
@@ -824,51 +826,53 @@ export default function AlertsPageClient() {
                         <p className="text-sm text-[var(--muted-foreground)]">All papers in this container have been processed.</p>
                       ) : (
                         pendingEntries.map((entry) => (
-                          <div key={entry.id} className="rounded-lg border border-[var(--border)] p-3 space-y-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-sm font-medium text-[var(--foreground)]">{entry.title}</p>
-                                <p className="text-xs text-[var(--muted-foreground)]">
-                                  {entry.authors.slice(0, 4).join(', ')}{entry.authors.length > 4 ? '…' : ''}
-                                  {entry.year ? ` • ${entry.year}` : ''}
-                                </p>
+                          entry && (
+                            <div key={entry?.id} className="rounded-lg border border-[var(--border)] p-3 space-y-2">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-medium text-[var(--foreground)]">{entry?.title}</p>
+                                  <p className="text-xs text-[var(--muted-foreground)]">
+                                    {entry?.authors?.slice(0, 4).join(', ')}{entry?.authors?.length > 4 ? '…' : ''}
+                                    {entry?.year ? ` • ${entry.year}` : ''}
+                                  </p>
+                                </div>
+                                <Badge variant="outline">PENDING</Badge>
                               </div>
-                              <Badge variant="outline">PENDING</Badge>
-                            </div>
 
-                            {entry.abstract && (
-                              <p className="text-xs text-[var(--muted-foreground)] line-clamp-4">{entry.abstract}</p>
-                            )}
-
-                            <div className="flex items-center justify-between gap-2">
-                              {entry.url ? (
-                                <a href={entry.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--accent)] hover:underline">
-                                  Open source
-                                </a>
-                              ) : (
-                                <span className="text-xs text-[var(--muted-foreground)]">No source URL</span>
+                              {entry?.abstract && (
+                                <p className="text-xs text-[var(--muted-foreground)] line-clamp-4">{entry.abstract}</p>
                               )}
 
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={actingOnEntryId === entry.id}
-                                  onClick={() => handleContainerEntryAction(entry.id, 'approve')}
-                                >
-                                  {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={actingOnEntryId === entry.id}
-                                  onClick={() => handleContainerEntryAction(entry.id, 'reject')}
-                                >
-                                  {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Reject
-                                </Button>
+                              <div className="flex items-center justify-between gap-2">
+                                {entry?.url ? (
+                                  <a href={entry.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--accent)] hover:underline">
+                                    Open source
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-[var(--muted-foreground)]">No source URL</span>
+                                )}
+
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={actingOnEntryId === entry?.id}
+                                    onClick={() => handleContainerEntryAction(entry?.id, 'approve')}
+                                  >
+                                    {actingOnEntryId === entry?.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={actingOnEntryId === entry?.id}
+                                    onClick={() => handleContainerEntryAction(entry?.id, 'reject')}
+                                  >
+                                    {actingOnEntryId === entry?.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Reject
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          )
                         ))
                       )}
                     </div>
@@ -910,91 +914,97 @@ export default function AlertsPageClient() {
         ) : (
           <div className="space-y-4">
             {watchQueries.map((watchQuery) => (
-              <Card key={watchQuery.id} className={`${!watchQuery.isActive ? 'opacity-70' : ''} border-[var(--border)] shadow-sm transition-colors hover:border-[var(--muted-foreground)]/20`}>
-                <CardContent className="p-5 sm:p-6">
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 flex-1 space-y-4">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--muted-foreground)]">
-                          <Search className="h-4 w-4" />
+              watchQuery && (
+                <Card key={watchQuery?.id} className={`${!watchQuery?.isActive ? 'opacity-70' : ''} border-[var(--border)] shadow-sm transition-colors hover:border-[var(--muted-foreground)]/20`}>
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0 flex-1 space-y-4">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--muted-foreground)]">
+                            <Search className="h-4 w-4" />
+                          </div>
+                          <h3 className="text-base font-semibold leading-6 text-[var(--foreground)] sm:text-lg">{watchQuery?.query}</h3>
+                          <Badge variant={watchQuery?.isActive ? 'default' : 'secondary'} className="px-2.5 py-0.5 text-xs">
+                            {watchQuery?.isActive ? 'Active' : 'Paused'}
+                          </Badge>
                         </div>
-                        <h3 className="text-base font-semibold leading-6 text-[var(--foreground)] sm:text-lg">{watchQuery.query}</h3>
-                        <Badge variant={watchQuery.isActive ? 'default' : 'secondary'} className="px-2.5 py-0.5 text-xs">
-                          {watchQuery.isActive ? 'Active' : 'Paused'}
-                        </Badge>
+
+                        <div className="grid gap-3 text-sm text-[var(--muted-foreground)] sm:grid-cols-2">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 flex-shrink-0" />
+                            {watchQuery?.collection ? (
+                              <Link
+                                href={`/collections/${watchQuery.collection.id}`}
+                                className="truncate font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
+                              >
+                                {watchQuery.collection.name}
+                              </Link>
+                            ) : (
+                              <span className="text-[var(--muted-foreground)]">No collection</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            <span>Last checked {formatDate(watchQuery?.lastCheckedAt, timezone)}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-[var(--foreground)]">{watchQuery?._count?.entries ?? 0}</span> papers added
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span>Max/run</span>
+                            <Select
+                              value={String(watchQuery?.maxPapers ?? 5)}
+                              onValueChange={(value) => handleUpdateMaxPapers(watchQuery?.id, value ?? '5')}
+                            >
+                              <SelectTrigger className="h-8 w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 10 }, (_, i) => i + 1).map((count) => (
+                                  <SelectItem key={count} value={String(count)}>
+                                    {count}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            Created {new Date(watchQuery?.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="grid gap-3 text-sm text-[var(--muted-foreground)] sm:grid-cols-2">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 flex-shrink-0" />
-                          <Link
-                            href={`/collections/${watchQuery.collection.id}`}
-                            className="truncate font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                          >
-                            {watchQuery.collection.name}
-                          </Link>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 flex-shrink-0" />
-                          <span>Last checked {formatDate(watchQuery.lastCheckedAt, timezone)}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-[var(--foreground)]">{watchQuery._count?.entries ?? 0}</span> papers added
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span>Max/run</span>
-                          <Select
-                            value={String(watchQuery.maxPapers ?? 5)}
-                            onValueChange={(value) => handleUpdateMaxPapers(watchQuery.id, value ?? '5')}
-                          >
-                            <SelectTrigger className="h-8 w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 10 }, (_, i) => i + 1).map((count) => (
-                                <SelectItem key={count} value={String(count)}>
-                                  {count}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          Created {new Date(watchQuery.createdAt).toLocaleDateString()}
-                        </div>
+                      <div className="flex items-center gap-2 self-start">
+                        <Button
+                          variant={watchQuery?.isActive ? 'secondary' : 'outline'}
+                          size="sm"
+                          onClick={() => handleToggleQuery(watchQuery?.id, watchQuery?.isActive)}
+                          disabled={togglingQuery === watchQuery?.id}
+                          className="h-9 gap-2"
+                        >
+                          {togglingQuery === watchQuery?.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : watchQuery?.isActive ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                          {watchQuery?.isActive ? 'Pause' : 'Resume'}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteQuery(watchQuery?.id)}
+                          className="h-9 gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 self-start">
-                      <Button
-                        variant={watchQuery.isActive ? 'secondary' : 'outline'}
-                        size="sm"
-                        onClick={() => handleToggleQuery(watchQuery.id, watchQuery.isActive)}
-                        disabled={togglingQuery === watchQuery.id}
-                        className="h-9 gap-2"
-                      >
-                        {togglingQuery === watchQuery.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : watchQuery.isActive ? (
-                          <Pause className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                        {watchQuery.isActive ? 'Pause' : 'Resume'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteQuery(watchQuery.id)}
-                        className="h-9 gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )
             ))}
           </div>
         )}
