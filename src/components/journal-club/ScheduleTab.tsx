@@ -71,13 +71,26 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
   const fetchScheduleData = async () => {
     try {
+      console.log('Debug - Starting fetchScheduleData for collection:', collectionId);
+
       const [scheduledRes, unscheduledRes, collectionRes] = await Promise.all([
         fetch(`/api/journal-club/${collectionId}/meetings`),
         fetch(`/api/journal-club/${collectionId}/schedule`),
         fetch(`/api/collections/${collectionId}`)
       ]);
 
+      console.log('Debug - API Response Status:', {
+        scheduled: scheduledRes.status,
+        unscheduled: unscheduledRes.status,
+        collection: collectionRes.status
+      });
+
       if (!scheduledRes.ok || !unscheduledRes.ok || !collectionRes.ok) {
+        console.error('Debug - API Response Not OK:', {
+          scheduled: scheduledRes.statusText,
+          unscheduled: unscheduledRes.statusText,
+          collection: collectionRes.statusText
+        });
         throw new Error('Failed to fetch schedule data');
       }
 
