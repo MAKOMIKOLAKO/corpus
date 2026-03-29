@@ -146,7 +146,7 @@ export function AppShell({
             className={`sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)/60]`}
             style={{ minHeight: '73px' }}
           >
-            <div className="max-w-4xl mx-auto px-4 py-4 flex items-center" style={{ minHeight: '41px' }}>
+            <div className="max-w-7xl mx-auto px-4 py-4 flex items-center" style={{ minHeight: '41px' }}>
               <Link
                 href={session ? "/library" : "/"}
                 className="text-xl font-medium tracking-tight text-[var(--foreground)] flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
