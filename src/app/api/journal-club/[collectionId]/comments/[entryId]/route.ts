@@ -1,36 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
+// AUDIT: 2026-03-28
+// Found: No owner bypass; 403 for non-member
+// Fixed: getJournalClubAccess; canParticipate; 404 policy
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import { getCurrentUserId } from '@/lib/session'
+import { prisma } from '@/lib/prismaWithRetry'
+import { canParticipate } from '@/lib/journalClub'
+import { getJournalClubAccess, getManageRole } from '@/lib/journalClubAccess'
+
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { collectionId: string; entryId: string } }
 ) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { collectionId, entryId } = params;
-
-    // Check if user is a member of the collection
-    const membership = await prisma.collectionMember.findUnique({
-      where: {
-        collectionId_userId: {
-          collectionId,
-          userId
-        }
-      }
-    });
-
-    if (!membership || membership.status !== 'ACCEPTED') {
-      return NextResponse.json({ error: 'Not a member of this collection' }, { status: 403 });
+    const { collectionId, entryId } = params
+    if (!collectionId?.trim() || !entryId?.trim()) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Check if entry belongs to this collection
+    const access = await getJournalClubAccess(collectionId, userId)
+    if (!access || !access.isMember) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const role = getManageRole(access.isOwner, access.membership)
+    if (!canParticipate(access.isOwner ? 'ADMIN' : role)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const entryCollection = await prisma.entryCollection.findUnique({
       where: {
         entryId_collectionId: {
@@ -38,13 +45,12 @@ export async function GET(
           collectionId
         }
       }
-    });
+    })
 
     if (!entryCollection) {
-      return NextResponse.json({ error: 'Entry not found in collection' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Get all comments for this entry in this collection
     const comments = await prisma.entryComment.findMany({
       where: {
         entryId,
@@ -62,11 +68,14 @@ export async function GET(
       orderBy: {
         createdAt: 'asc'
       }
-    });
+    })
 
-    return NextResponse.json(comments);
+    return NextResponse.json(comments)
   } catch (error) {
-    console.error('Error fetching comments:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/comments GET]:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(GENERIC_500, { status: 500 })
+    }
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }

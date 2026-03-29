@@ -1,31 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
+// AUDIT: 2026-03-28
+// Found: Private access ignored owner; no isJournalClub; response was { events }; Google dates used ISO Z range
+// Fixed: getJournalClubAccess; 404 if not JC; top-level array { title, date, googleCalendarUrl }; all-day YYYYMMDD dates
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import type { Collection } from '@prisma/client'
+import { prisma } from '@/lib/prismaWithRetry'
+import { getCurrentUserId } from '@/lib/session'
+import { isJournalClub } from '@/lib/journalClub'
+import { getJournalClubAccess } from '@/lib/journalClubAccess'
 
-interface CalendarEvent {
-  title: string;
-  googleCalendarUrl: string;
-  date: string;
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
+
+function formatGoogleDate(dateStr: string): string {
+  return dateStr.replace(/-/g, '')
 }
 
-function generateGoogleCalendarUrl(title: string, date: string, description: string): string {
-  const startDate = new Date(date);
-  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour duration
-
-  const formatDate = (date: Date) => {
-    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  };
-
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: title,
-    dates: `${formatDate(startDate)}/${formatDate(endDate)}`,
-    details: description
-  });
-
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+function buildGoogleCalendarUrl(
+  title: string,
+  dateStr: string,
+  details: string
+): string {
+  const googleUrl = new URL('https://calendar.google.com/calendar/render')
+  googleUrl.searchParams.set('action', 'TEMPLATE')
+  googleUrl.searchParams.set('text', title)
+  const d = formatGoogleDate(dateStr)
+  googleUrl.searchParams.set('dates', `${d}/${d}`)
+  googleUrl.searchParams.set('details', details)
+  return googleUrl.toString()
 }
 
 export async function GET(
@@ -33,74 +36,76 @@ export async function GET(
   { params }: { params: { collectionId: string } }
 ) {
   try {
-    const { collectionId } = params;
+    const { collectionId } = params
+    if (!collectionId?.trim()) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
-    // Get collection to check if it's public
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
-      select: { isPublic: true, name: true }
-    });
+      select: { isPublic: true, metadata: true }
+    })
 
     if (!collection) {
-      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // If collection is private, check authentication and membership
+    if (!isJournalClub(collection as Collection)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     if (!collection.isPublic) {
-      const userId = await getCurrentUserId();
+      const userId = await getCurrentUserId()
       if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
-
-      const membership = await prisma.collectionMember.findUnique({
-        where: {
-          collectionId_userId: {
-            collectionId,
-            userId
-          }
-        }
-      });
-
-      if (!membership || membership.status !== 'ACCEPTED') {
-        return NextResponse.json({ error: 'Not a member of this collection' }, { status: 403 });
+      const access = await getJournalClubAccess(collectionId, userId)
+      if (!access || !access.isMember) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
     }
 
-    // Get all entries in this collection with presentation dates
     const entryCollections = await prisma.entryCollection.findMany({
       where: { collectionId },
       include: {
         entry: {
           select: {
-            id: true,
             title: true,
             abstract: true,
             metadata: true
           }
         }
       }
-    });
+    })
 
-    // Build calendar events from scheduled entries
-    const events: CalendarEvent[] = [];
+    const links: {
+      title: string
+      date: string
+      googleCalendarUrl: string
+    }[] = []
+
     for (const ec of entryCollections) {
-      const entryMeta = ec.entry.metadata as any;
-      if (entryMeta?.presentationDate) {
-        const description = `Presenter: ${entryMeta.presenterName || 'TBD'}\n\n${
-          ec.entry.abstract ? ec.entry.abstract.substring(0, 200) + '...' : 'No abstract available'
-        }`;
+      const meta = ec.entry.metadata as Record<string, unknown> | null
+      if (!meta?.presentationDate) continue
 
-        events.push({
-          title: ec.entry.title,
-          googleCalendarUrl: generateGoogleCalendarUrl(ec.entry.title, entryMeta.presentationDate, description),
-          date: entryMeta.presentationDate
-        });
-      }
+      const dateStr = String(meta.presentationDate)
+      const details = `Presenter: ${meta.presenterName || 'TBD'}\n\n${
+        ec.entry.abstract || ''
+      }`
+      links.push({
+        title: ec.entry.title,
+        date: dateStr,
+        googleCalendarUrl: buildGoogleCalendarUrl(
+          ec.entry.title,
+          dateStr,
+          details
+        )
+      })
     }
 
-    return NextResponse.json({ events });
+    return NextResponse.json(links)
   } catch (error) {
-    console.error('Error generating calendar links:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/calendar/links]:', error)
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }

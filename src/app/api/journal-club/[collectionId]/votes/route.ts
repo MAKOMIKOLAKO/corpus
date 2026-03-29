@@ -1,36 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
+// AUDIT: 2026-03-28
+// Found: GET had no owner bypass; 403 on non-member; wrong scheduled filter; N+1 counts; POST missing (UI calls POST here)
+// Fixed: getJournalClubAccess; 404; exclude any presentationDate; groupBy + user votes; POST delegates to executeJournalClubVote; rate limit on POST
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import { getCurrentUserId } from '@/lib/session'
+import { prisma } from '@/lib/prismaWithRetry'
+import { getJournalClubAccess } from '@/lib/journalClubAccess'
+import { executeJournalClubVote } from '@/lib/journalClubVote'
+import { rateLimit } from '@/lib/rateLimit'
+
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { collectionId: string } }
 ) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { collectionId } = params;
-
-    // Check if user is a member of the collection
-    const membership = await prisma.collectionMember.findUnique({
-      where: {
-        collectionId_userId: {
-          collectionId,
-          userId
-        }
-      }
-    });
-
-    if (!membership || membership.status !== 'ACCEPTED') {
-      return NextResponse.json({ error: 'Not a member of this collection' }, { status: 403 });
+    const { collectionId } = params
+    if (!collectionId?.trim()) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Get all entries in this collection
+    const access = await getJournalClubAccess(collectionId, userId)
+    if (!access || !access.isMember) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const entryCollections = await prisma.entryCollection.findMany({
       where: { collectionId },
       include: {
@@ -44,53 +47,113 @@ export async function GET(
           }
         }
       }
-    });
+    })
 
-    // Get vote counts for each entry
-    const voteData = await Promise.all(
-      entryCollections.map(async (ec) => {
-        const entryMeta = ec.entry.metadata as any;
-        
-        // Skip entries that are already scheduled
-        if (entryMeta?.presentationDate && !entryMeta?.presented) {
-          return null;
-        }
+    const eligible = entryCollections.filter((ec) => {
+      const entryMeta = ec.entry.metadata as Record<string, unknown> | null
+      return !entryMeta?.presentationDate
+    })
 
-        const voteCount = await prisma.vote.count({
-          where: {
-            entryId: ec.entryId,
-            collectionId
-          }
-        });
+    if (eligible.length === 0) {
+      return NextResponse.json([])
+    }
 
-        const userVote = await prisma.vote.findUnique({
-          where: {
-            entryId_collectionId_userId: {
-              entryId: ec.entryId,
-              collectionId,
-              userId
-            }
-          }
-        });
+    const eligibleEntryIds = eligible.map((ec) => ec.entryId)
 
-        return {
-          entryId: ec.entryId,
-          voteCount,
-          userHasVoted: !!userVote,
-          entry: ec.entry
-        };
+    const [counts, userVotes] = await Promise.all([
+      prisma.vote.groupBy({
+        by: ['entryId'],
+        where: {
+          collectionId,
+          entryId: { in: eligibleEntryIds }
+        },
+        _count: { id: true }
+      }),
+      prisma.vote.findMany({
+        where: {
+          collectionId,
+          userId,
+          entryId: { in: eligibleEntryIds }
+        },
+        select: { entryId: true }
       })
-    );
+    ])
 
-    // Filter out null entries (already scheduled ones)
-    const filteredVoteData = voteData.filter(item => item !== null);
+    const countByEntry = new Map(counts.map((c) => [c.entryId, c._count.id]))
+    const userVotedIds = new Set(userVotes.map((v) => v.entryId))
 
-    // Sort by vote count descending
-    filteredVoteData.sort((a, b) => b!.voteCount - a!.voteCount);
+    const filteredVoteData = eligible.map((ec) => ({
+      entryId: ec.entryId,
+      voteCount: countByEntry.get(ec.entryId) ?? 0,
+      userHasVoted: userVotedIds.has(ec.entryId),
+      entry: ec.entry
+    }))
 
-    return NextResponse.json(filteredVoteData);
+    filteredVoteData.sort((a, b) => b.voteCount - a.voteCount)
+
+    return NextResponse.json(filteredVoteData)
   } catch (error) {
-    console.error('Error fetching votes:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/votes GET]:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(GENERIC_500, { status: 500 })
+    }
+    return NextResponse.json(GENERIC_500, { status: 500 })
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { collectionId: string } }
+) {
+  try {
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { success } = rateLimit(`jc-vote:${userId}`, 30, 60_000)
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please slow down.' },
+        { status: 429 }
+      )
+    }
+
+    const { collectionId } = params
+    const trimmedCollectionId = collectionId?.trim() ?? ''
+    if (!trimmedCollectionId) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const body = await request.json()
+    const entryId =
+      typeof body.entryId === 'string' ? body.entryId.trim() : ''
+
+    if (!entryId) {
+      return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 })
+    }
+
+    const result = await executeJournalClubVote(
+      userId,
+      trimmedCollectionId,
+      entryId
+    )
+    if (!result.ok) {
+      return NextResponse.json(result.body, { status: result.status })
+    }
+
+    return NextResponse.json({
+      action: result.action,
+      voteCount: result.voteCount
+    })
+  } catch (error) {
+    console.error('[journal-club/votes POST]:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      return NextResponse.json(GENERIC_500, { status: 500 })
+    }
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }

@@ -1,54 +1,73 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
+// AUDIT: 2026-03-28
+// Found: Private access ignored collection owner; no isJournalClub check; ICS lines not folded at 75 chars
+// Fixed: getJournalClubAccess for private; 404 if not JC; foldICSLine; CRLF throughout; generic 500
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prismaWithRetry'
+import { getCurrentUserId } from '@/lib/session'
+import type { Collection } from '@prisma/client'
+import { isJournalClub } from '@/lib/journalClub'
+import { getJournalClubAccess } from '@/lib/journalClubAccess'
+
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
 
 interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
+  id: string
+  title: string
+  description: string
+  date: string
+}
+
+/** RFC 5545: fold long lines at 75 octets with CRLF + single space on continuation. */
+function foldICSLine(line: string): string {
+  const max = 75
+  if (line.length <= max) return line
+  return line.slice(0, max) + '\r\n ' + foldICSLine(line.slice(max))
 }
 
 function generateICS(events: CalendarEvent[]): string {
-  const lines = [
+  const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Corpus//Journal Club//EN',
     'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-  ];
+    'METHOD:PUBLISH'
+  ]
 
   for (const event of events) {
-    const dtStamp = formatICSDate(new Date());
-    const dtStart = formatICSDate(new Date(event.date));
-    const dtEnd = formatICSDate(
-      new Date(new Date(event.date).getTime() + 60 * 60 * 1000)
-    ); // 1 hour duration default
+    const dtStamp = formatICSDateUtc(new Date())
+    const start = new Date(event.date + 'T00:00:00.000Z')
+    const end = new Date(start.getTime() + 60 * 60 * 1000)
+    const dtStart = formatICSDateUtc(start)
+    const dtEnd = formatICSDateUtc(end)
     lines.push(
       'BEGIN:VEVENT',
-      `UID:${event.id}@usecorpus.app`,
-      `DTSTAMP:${dtStamp}`,
-      `DTSTART:${dtStart}`,
-      `DTEND:${dtEnd}`,
-      `SUMMARY:${escapeICS(event.title)}`,
-      `DESCRIPTION:${escapeICS(event.description)}`,
+      foldICSLine(`UID:${event.id}@usecorpus.app`),
+      foldICSLine(`DTSTAMP:${dtStamp}`),
+      foldICSLine(`DTSTART:${dtStart}`),
+      foldICSLine(`DTEND:${dtEnd}`),
+      foldICSLine(`SUMMARY:${escapeICS(event.title)}`),
+      foldICSLine(`DESCRIPTION:${escapeICS(event.description)}`),
       'END:VEVENT'
-    );
+    )
   }
 
-  lines.push('END:VCALENDAR');
-  return lines.join('\r\n');
+  lines.push('END:VCALENDAR')
+  return lines.join('\r\n')
 }
 
-function formatICSDate(date: Date): string {
-  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+function formatICSDateUtc(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
 }
 
 function escapeICS(str: string): string {
-  return str.replace(/\\/g, '\\\\').replace(/;/g, '\\;')
-    .replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n')
 }
 
 export async function GET(
@@ -56,40 +75,35 @@ export async function GET(
   { params }: { params: { collectionId: string } }
 ) {
   try {
-    const { collectionId } = params;
+    const { collectionId } = params
+    if (!collectionId?.trim()) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
-    // Get collection to check if it's public
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
-      select: { isPublic: true, name: true }
-    });
+      select: { isPublic: true, name: true, metadata: true }
+    })
 
     if (!collection) {
-      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // If collection is private, check authentication and membership
+    if (!isJournalClub(collection as Collection)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     if (!collection.isPublic) {
-      const userId = await getCurrentUserId();
+      const userId = await getCurrentUserId()
       if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
-
-      const membership = await prisma.collectionMember.findUnique({
-        where: {
-          collectionId_userId: {
-            collectionId,
-            userId
-          }
-        }
-      });
-
-      if (!membership || membership.status !== 'ACCEPTED') {
-        return NextResponse.json({ error: 'Not a member of this collection' }, { status: 403 });
+      const access = await getJournalClubAccess(collectionId, userId)
+      if (!access || !access.isMember) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
     }
 
-    // Get all entries in this collection with presentation dates
     const entryCollections = await prisma.entryCollection.findMany({
       where: { collectionId },
       include: {
@@ -102,37 +116,37 @@ export async function GET(
           }
         }
       }
-    });
+    })
 
-    // Build calendar events from scheduled entries
-    const events: CalendarEvent[] = [];
+    const events: CalendarEvent[] = []
     for (const ec of entryCollections) {
-      const entryMeta = ec.entry.metadata as any;
+      const entryMeta = ec.entry.metadata as Record<string, unknown> | null
       if (entryMeta?.presentationDate) {
+        const dateStr = String(entryMeta.presentationDate)
+        const abstract = ec.entry.abstract
         const description = `Presenter: ${entryMeta.presenterName || 'TBD'}\n\n${
-          ec.entry.abstract ? ec.entry.abstract.substring(0, 200) + '...' : 'No abstract available'
-        }`;
+          abstract ? abstract.substring(0, 200) + '...' : 'No abstract available'
+        }`
 
         events.push({
           id: ec.entry.id,
           title: ec.entry.title,
           description,
-          date: entryMeta.presentationDate
-        });
+          date: dateStr
+        })
       }
     }
 
-    // Generate ICS content
-    const icsContent = generateICS(events);
+    const icsContent = generateICS(events)
 
     return new Response(icsContent, {
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': `attachment; filename="journal-club-${collectionId}.ics"`
       }
-    });
+    })
   } catch (error) {
-    console.error('Error generating calendar:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/calendar]:', error)
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }

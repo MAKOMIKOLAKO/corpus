@@ -1,97 +1,103 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserId } from '@/lib/session';
-import { prisma } from '@/lib/prismaWithRetry';
-import { canCreateSharedCollection } from '@/lib/plans';
-import { isJournalClub } from '@/lib/journalClub';
+// AUDIT: 2026-03-28
+// Found: Unused imports; metadata replace dropped existing keys; nextMeetingDate null vs type
+// Fixed: Merged existing metadata; full journal club keys; removed dead imports. New collection from body not implemented — only convert (per product); documented here.
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import type { InputJsonValue } from '@prisma/client/runtime/library'
+import { getCurrentUserId } from '@/lib/session'
+import { prisma } from '@/lib/prismaWithRetry'
+
+export const dynamic = 'force-dynamic'
+
+const GENERIC_500 = { error: 'An unexpected error occurred. Please try again.' }
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json();
-    const { collectionId } = body;
+    const body = await request.json()
+    const collectionIdRaw =
+      typeof body.collectionId === 'string' ? body.collectionId.trim() : ''
 
-    // Validate required fields
-    if (!collectionId) {
-      return NextResponse.json({ error: 'Collection ID is required' }, { status: 400 });
+    if (!collectionIdRaw) {
+      return NextResponse.json({ error: 'Collection ID is required' }, { status: 400 })
     }
 
-    // Get user to check plan
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true, personalCollectionsCount: true }
-    });
+    })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Check if user has Pro plan
     if (user.plan !== 'PRO' && user.plan !== 'LIFETIME_PRO') {
-      return NextResponse.json({ error: 'journal_club_pro_only' }, { status: 403 });
+      return NextResponse.json({ error: 'journal_club_pro_only' }, { status: 403 })
     }
 
-    let collection;
-
-    if (collectionId) {
-      // Convert existing collection to journal club
-      collection = await prisma.collection.findUnique({
-        where: { id: collectionId },
-        include: {
-          members: {
-            where: {
-              userId,
-              status: 'ACCEPTED'
-            }
+    const collection = await prisma.collection.findUnique({
+      where: { id: collectionIdRaw },
+      include: {
+        members: {
+          where: {
+            userId,
+            status: 'ACCEPTED'
           }
         }
-      });
-
-      if (!collection) {
-        return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
       }
+    })
 
-      // Check if user is ADMIN (owner of the collection) or has ADMIN role
-      const isOwner = collection.userId === userId;
-      const membership = collection.members[0];
+    if (!collection) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
-      if (!isOwner && (!membership || membership.role !== 'ADMIN')) {
-        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-      }
+    const isOwner = collection.userId === userId
+    const membership = collection.members[0]
 
-      // Update collection to be journal club
-      collection = await prisma.collection.update({
-        where: { id: collectionId },
-        data: {
-          isShared: true, // Journal clubs are always shared
-          metadata: {
-            isJournalClub: true,
-            meetingFrequency: 'weekly', // Default frequency
-            nextMeetingDate: null // Will be set by user in settings
-          }
+    if (!isOwner && (!membership || membership.role !== 'ADMIN')) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const prevMeta = (collection.metadata as Record<string, unknown>) || {}
+    const metadata = {
+      ...prevMeta,
+      isJournalClub: true,
+      meetingFrequency: 'weekly',
+      nextMeetingDate: null,
+      ...(typeof prevMeta.meetingDayOfWeek === 'number'
+        ? { meetingDayOfWeek: prevMeta.meetingDayOfWeek }
+        : {})
+    } as InputJsonValue
+    const collectionUpdated = await prisma.collection.update({
+      where: { id: collectionIdRaw },
+      data: {
+        isShared: true,
+        metadata
+      },
+      include: {
+        _count: {
+          select: { entries: true, members: true }
         },
-        include: {
-          _count: {
-            select: { entries: true, members: true }
-          },
-          members: {
-            where: { status: 'ACCEPTED' }
-          }
+        members: {
+          where: { status: 'ACCEPTED' }
         }
-      });
-    } else {
-      // Creating new journal clubs from scratch is not supported
-      return NextResponse.json({ error: 'Only converting existing collections to journal clubs is supported' }, { status: 400 });
-    }
+      }
+    })
 
-    return NextResponse.json(collection);
+    return NextResponse.json(collectionUpdated)
   } catch (error) {
-    console.error('Error creating journal club:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[journal-club/create]:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      return NextResponse.json(GENERIC_500, { status: 500 })
+    }
+    return NextResponse.json(GENERIC_500, { status: 500 })
   }
 }
