@@ -112,6 +112,7 @@ export default function CollectionDetailPage() {
 
     // Update URL when tab changes
     const handleTabChange = (tabId: string) => {
+        if (!searchParams) return;
         setActiveTab(tabId);
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('tab', tabId);
