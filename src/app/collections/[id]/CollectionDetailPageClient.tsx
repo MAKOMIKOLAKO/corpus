@@ -37,6 +37,7 @@ interface CollectionMember {
 }
 
 interface Collection extends CollectionWithMetadata {
+    activeAlertCount?: number;
     entries?: Array<{
         id: string;
         addedAt: string;
@@ -486,6 +487,7 @@ export default function CollectionDetailPage() {
     };
 
     const isJournalClubCollection = collection ? isJournalClub(collection) : false;
+    const hasActiveAlerts = (collection?.activeAlertCount ?? 0) > 0;
     const canManageJournalClubFeature = userRole ? canManageJournalClub(userPlan as any, userRole) : false;
     const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
 
@@ -549,14 +551,22 @@ export default function CollectionDetailPage() {
                     <div className="flex items-center gap-2">
                         {/* Create Journal Club Button */}
                         {!isJournalClubCollection && (
-                            <CreateJournalClubButton
-                                collectionId={collection.id}
-                                userPlan={userPlan as any}
-                                userRole={userRole}
-                                onUpdate={(updatedCollection) => {
-                                    setCollection(updatedCollection);
-                                }}
-                            />
+                            <div className="flex flex-col items-end gap-1">
+                                <CreateJournalClubButton
+                                    collectionId={collection.id}
+                                    userPlan={userPlan as any}
+                                    userRole={userRole}
+                                    hasActiveAlerts={hasActiveAlerts}
+                                    onUpdate={(updatedCollection) => {
+                                        setCollection(updatedCollection);
+                                    }}
+                                />
+                                {hasActiveAlerts && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Pause or delete active alerts before converting this collection.
+                                    </p>
+                                )}
+                            </div>
                         )}
 
                         {/* Members Button */}

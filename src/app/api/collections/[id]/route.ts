@@ -79,7 +79,17 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(collection, { headers: corsJsonHeaders() });
+    const activeAlertCount = await prisma.watchQuery.count({
+      where: {
+        collectionId: collection.id,
+        isActive: true,
+      },
+    });
+
+    return NextResponse.json(
+      { ...collection, activeAlertCount },
+      { headers: corsJsonHeaders() }
+    );
   } catch (error) {
     console.error('[api/collections/[id] GET]', error);
     return NextResponse.json(

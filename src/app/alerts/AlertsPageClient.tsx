@@ -28,7 +28,7 @@ interface WatchQuery {
   lastCheckedAt: string | null;
   createdAt: string;
   collection: Collection;
-  _count: {
+  _count?: {
     entries: number;
   };
 }
@@ -80,6 +80,7 @@ export default function AlertsPageClient() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [togglingQuery, setTogglingQuery] = useState<string | null>(null);
+  const [runningDebugCheck, setRunningDebugCheck] = useState(false);
 
   // Form state
   const [newQuery, setNewQuery] = useState('');
@@ -131,7 +132,19 @@ export default function AlertsPageClient() {
       if (!response.ok) throw new Error('Failed to fetch collections');
 
       const data = await response.json();
-      setCollections(data.filter((col: any) => col.isOwner));
+      const ownedCollections = Array.isArray(data)
+        ? data.filter((col: any) => col?.isOwner)
+        : Array.isArray(data?.owned)
+          ? data.owned
+          : [];
+
+      setCollections(
+        ownedCollections.map((col: any) => ({
+          id: col.id,
+          name: col.name,
+          description: col.description ?? null,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching collections:', error);
     }
@@ -203,6 +216,51 @@ export default function AlertsPageClient() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRunAlertsNow = async () => {
+    if (runningDebugCheck) return;
+
+    setRunningDebugCheck(true);
+    try {
+      const response = await fetch('/api/watch-queries/run-now', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apikey || '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to run alerts now');
+      }
+
+      const processed = Number(data?.processed ?? 0);
+      const papersAdded = Number(data?.papersAdded ?? 0);
+      const errors = Array.isArray(data?.errors) ? data.errors : [];
+
+      if (processed === 0) {
+        toast.info('No active alerts to run.');
+      } else {
+        toast.success(`Debug run complete: ${papersAdded} paper${papersAdded === 1 ? '' : 's'} added across ${processed} alert${processed === 1 ? '' : 's'}.`);
+      }
+
+      if (errors.length > 0) {
+        toast.error(`Debug run had ${errors.length} error${errors.length === 1 ? '' : 's'}. Check server logs for details.`);
+      }
+
+      await fetchWatchQueries();
+    } catch (error) {
+      console.error('Error running alerts now:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to run alerts now');
+      }
+    } finally {
+      setRunningDebugCheck(false);
     }
   };
 
@@ -327,15 +385,37 @@ export default function AlertsPageClient() {
               <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
               {activeQueryCount} of {MAX_QUERIES_PER_USER} active alerts used
             </div>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              disabled={activeQueryCount >= MAX_QUERIES_PER_USER}
-              size="lg"
-              className="h-11 gap-2 px-5"
-            >
-              <Plus className="h-4 w-4" />
-              Create Alert
-            </Button>
+            <div className="flex flex-col gap-2 sm:items-end sm:flex-row sm:gap-3">
+              <Button
+                variant="outline"
+                onClick={handleRunAlertsNow}
+                disabled={runningDebugCheck || activeQueryCount === 0}
+                size="lg"
+                className="h-11 gap-2 px-5"
+                title={activeQueryCount === 0 ? 'Create and activate at least one alert first' : 'Run active alerts immediately for debugging'}
+              >
+                {runningDebugCheck ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Running...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4" />
+                    Debug Run Now
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                disabled={activeQueryCount >= MAX_QUERIES_PER_USER}
+                size="lg"
+                className="h-11 gap-2 px-5"
+              >
+                <Plus className="h-4 w-4" />
+                Create Alert
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -484,7 +564,7 @@ export default function AlertsPageClient() {
                           <span>Last checked {formatDate(watchQuery.lastCheckedAt)}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-[var(--foreground)]">{watchQuery._count.entries}</span> papers added
+                          <span className="font-medium text-[var(--foreground)]">{watchQuery._count?.entries ?? 0}</span> papers added
                         </div>
                         <div>
                           Created {new Date(watchQuery.createdAt).toLocaleDateString()}
