@@ -8,19 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2, Users, Calendar, MessageSquare, ThumbsUp, UserCheck } from 'lucide-react';
+import { ArrowLeft, Search, Trash2, UserPlus, X, ChevronDown, Globe, Eye, Copy, Check, ExternalLink, Loader2, Users } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { isJournalClub, canManageJournalClub, canParticipate, getUserCollectionRole, CollectionWithMetadata } from '@/lib/journalClub';
-import ScheduleTab from '@/components/journal-club/ScheduleTab';
-import DiscussionTab from '@/components/journal-club/DiscussionTab';
-import VotesTab from '@/components/journal-club/VotesTab';
-import AttendanceTab from '@/components/journal-club/AttendanceTab';
-import JournalClubSettings from '@/components/journal-club/JournalClubSettings';
-import CreateJournalClubButton from '@/components/journal-club/CreateJournalClubButton';
 
 interface CollectionMember {
     id: string;
@@ -36,7 +29,16 @@ interface CollectionMember {
     };
 }
 
-interface Collection extends CollectionWithMetadata {
+interface Collection {
+    id: string;
+    name: string;
+    description?: string | null;
+    isPublic?: boolean;
+    publicSlug?: string | null;
+    publicViewCount?: number;
+    publicDescription?: string | null;
+    userId?: string | null;
+    metadata?: any;
     activeAlertCount?: number;
     entries?: Array<{
         id: string;
@@ -98,13 +100,11 @@ export default function CollectionDetailPage() {
     const [deletingCollection, setDeletingCollection] = useState(false);
     const [showMembersDropdown, setShowMembersDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState('entries');
-    const [userPlan, setUserPlan] = useState('FREE');
-    const [userRole, setUserRole] = useState<'ADMIN' | 'CONTRIBUTOR' | 'VIEWER' | null>(null);
 
     // Initialize tab from URL params
     useEffect(() => {
         const tabFromUrl = searchParams.get('tab');
-        if (tabFromUrl && ['entries', 'schedule', 'discussion', 'votes', 'attendance'].includes(tabFromUrl)) {
+        if (tabFromUrl && ['entries', 'members'].includes(tabFromUrl)) {
             setActiveTab(tabFromUrl);
         }
     }, [searchParams]);
@@ -143,40 +143,6 @@ export default function CollectionDetailPage() {
             document.removeEventListener('keydown', handleEscape);
         };
     }, [showMembersDropdown]);
-
-    useEffect(() => {
-        if (collection && session?.user) {
-            // Get user plan and role
-            const getUserInfo = async () => {
-                try {
-                    // Get user plan
-                    const userResponse = await fetch('/api/user/profile');
-                    if (userResponse.ok) {
-                        const userData = await userResponse.json();
-                        setUserPlan(userData.plan || 'FREE');
-                    }
-
-                    // Get user role in this collection
-                    if (collection.members) {
-                        // Check if user is the owner first
-                        if (collection.userId === session.user.id) {
-                            setUserRole('ADMIN'); // Owner has admin privileges
-                        } else {
-                            const role = getUserCollectionRole(
-                                collection.members as any,
-                                session.user.id,
-                                collection.id
-                            );
-                            setUserRole(role);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error getting user info:', error);
-                }
-            };
-            getUserInfo();
-        }
-    }, [collection, session?.user]);
 
     useEffect(() => {
         if (collection) {
@@ -486,11 +452,6 @@ export default function CollectionDetailPage() {
         }
     };
 
-    const isJournalClubCollection = collection ? isJournalClub(collection) : false;
-    const hasActiveAlerts = (collection?.activeAlertCount ?? 0) > 0;
-    const canManageJournalClubFeature = userRole ? canManageJournalClub(userPlan as any, userRole) : false;
-    const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
-
     const filteredEntries = collection?.entries?.filter(item =>
         item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
         item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase()))
@@ -499,18 +460,8 @@ export default function CollectionDetailPage() {
     // Tab configuration
     const tabs = [
         { id: 'entries', label: 'Entries', icon: Search },
+        { id: 'members', label: 'Members', icon: Users },
     ];
-
-    if (isJournalClubCollection) {
-        tabs.push(
-            { id: 'schedule', label: 'Schedule', icon: Calendar },
-            { id: 'discussion', label: 'Discussion', icon: MessageSquare },
-            { id: 'votes', label: 'Votes', icon: ThumbsUp },
-            { id: 'attendance', label: 'Attendance', icon: UserCheck }
-        );
-    }
-
-    tabs.push({ id: 'members', label: 'Members', icon: Users });
 
     if (loading) {
         return <div className="text-center py-12">Loading collection...</div>;
@@ -549,26 +500,6 @@ export default function CollectionDetailPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Create Journal Club Button */}
-                        {!isJournalClubCollection && (
-                            <div className="flex flex-col items-end gap-1">
-                                <CreateJournalClubButton
-                                    collectionId={collection.id}
-                                    userPlan={userPlan as any}
-                                    userRole={userRole}
-                                    hasActiveAlerts={hasActiveAlerts}
-                                    onUpdate={(updatedCollection) => {
-                                        setCollection(updatedCollection);
-                                    }}
-                                />
-                                {hasActiveAlerts && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Pause or delete active alerts before converting this collection.
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
                         {/* Members Button */}
                         {(isOwner || (collection.members && collection.members.length > 0)) && (
                             <div className="relative">
@@ -1054,42 +985,6 @@ export default function CollectionDetailPage() {
                 </>
             )}
 
-            {activeTab === 'schedule' && isJournalClubCollection && (
-                <ScheduleTab
-                    collectionId={collection.id}
-                    isJournalClub={isJournalClubCollection}
-                    canManage={canManageJournalClubFeature}
-                    currentUserId={session?.user?.id || ''}
-                />
-            )}
-
-            {activeTab === 'discussion' && isJournalClubCollection && (
-                <DiscussionTab
-                    collectionId={collection.id}
-                    isJournalClub={isJournalClubCollection}
-                    canParticipate={canParticipateInJournalClub}
-                    currentUserId={session?.user?.id || ''}
-                />
-            )}
-
-            {activeTab === 'votes' && isJournalClubCollection && (
-                <VotesTab
-                    collectionId={collection.id}
-                    isJournalClub={isJournalClubCollection}
-                    canParticipate={canParticipateInJournalClub}
-                    votingEnabled={(collection.metadata?.votingEnabled as boolean) ?? true}
-                />
-            )}
-
-            {activeTab === 'attendance' && isJournalClubCollection && (
-                <AttendanceTab
-                    collectionId={collection.id}
-                    isJournalClub={isJournalClubCollection}
-                    canManage={canManageJournalClubFeature}
-                    currentUserId={session?.user?.id || ''}
-                />
-            )}
-
             {activeTab === 'members' && (
                 <>
                     {/* Members Dropdown Content */}
@@ -1116,16 +1011,6 @@ export default function CollectionDetailPage() {
                             </div>
                         )}
 
-                        {/* Journal Club Settings */}
-                        {isJournalClubCollection && canManageJournalClubFeature && (
-                            <JournalClubSettings
-                                collectionId={collection.id}
-                                metadata={collection.metadata}
-                                onUpdate={(updatedMetadata) => {
-                                    setCollection(prev => prev ? { ...prev, metadata: updatedMetadata } : null);
-                                }}
-                            />
-                        )}
                     </div>
                 </>
             )}
