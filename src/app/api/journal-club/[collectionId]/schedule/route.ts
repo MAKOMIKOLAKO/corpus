@@ -44,6 +44,12 @@ export async function GET(
       metadata: ec.entry.metadata
     })));
 
+    // If no entries found, return empty array immediately
+    if (entryCollections.length === 0) {
+      console.log('Debug - No entries found in collection');
+      return NextResponse.json([]);
+    }
+
     // Filter out entries that are already scheduled
     const unscheduledEntries = entryCollections.filter(ec => {
       const entryMeta = ec.entry.metadata as any;
