@@ -29,11 +29,25 @@ export async function POST() {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { plan: true },
+      select: { plan: true, lastFeedViewedAt: true, createdAt: true },
     });
 
     if (!user || user.plan === 'FREE') {
       return NextResponse.json({ error: 'Pro plan required' }, { status: 403 });
+    }
+
+    // Check if user has been active in the last 12 days
+    const activeUserCutoff = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000);
+    const isUserActive =
+      !user.lastFeedViewedAt || // Never viewed feed
+      user.lastFeedViewedAt >= activeUserCutoff || // Viewed feed recently  
+      user.createdAt >= activeUserCutoff // Recently joined
+
+    if (!isUserActive) {
+      return NextResponse.json({
+        error: 'Account must be active within the last 12 days to run alerts manually',
+        lastActivity: user.lastFeedViewedAt
+      }, { status: 403 });
     }
 
     const queries = await prisma.watchQuery.findMany({
