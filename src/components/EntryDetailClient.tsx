@@ -60,6 +60,10 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
     }, []);
 
     const handleBack = () => {
+        if (!searchParams) {
+            router.back();
+            return;
+        }
         const from = searchParams.get('from');
         if (from) {
             // If we have a 'from' parameter, navigate back to that page
