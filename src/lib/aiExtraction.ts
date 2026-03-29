@@ -9,7 +9,7 @@ import { Chat, GoogleGenAI } from '@google/genai';
 const genai = new GoogleGenAI({
   apiKey: process.env.GOOGLE_AI_API_KEY || ''
 });
-const chat = new Chat((genai as any).models.apiClient, genai.models, 'gemini-pro');
+const chat = new Chat((genai as any).models.apiClient, genai.models, 'gemini-2.5-flash');
 
 export interface AIMetadata {
   title: string;
