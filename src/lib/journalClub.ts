@@ -2,13 +2,29 @@
 // Found: getNextMeetingDates monthly used setMonth (skipped days e.g. Jan 31); canManageJournalClub lacked owner note in comment
 // Fixed: Monthly uses UTC year/month clamp; documented owner must pass ADMIN for canManageJournalClub
 
-import { Collection, Plan, CollectionMember } from '@prisma/client'
+import { Plan, CollectionMember } from '@prisma/client'
+
+// Collection interface with metadata support
+export interface CollectionWithMetadata {
+  id: string
+  name: string
+  description: string | null
+  userId: string | null
+  createdAt: Date
+  isPublic: boolean
+  publicSlug: string | null
+  publicDescription: string | null
+  publicViewCount: number
+  isShared: boolean
+  metadata: Record<string, unknown> | null
+}
 
 export type JournalClubMetadata = {
   isJournalClub: true
   meetingFrequency: 'weekly' | 'biweekly' | 'monthly'
   nextMeetingDate: string | null
   meetingDayOfWeek?: number // 0-6, Sunday=0
+  votingEnabled?: boolean // Admin toggle for voting
 }
 
 export type JournalClubEntryMetadata = {
@@ -19,7 +35,7 @@ export type JournalClubEntryMetadata = {
 }
 
 // Check if a collection is a journal club
-export function isJournalClub(collection: Collection): boolean {
+export function isJournalClub(collection: CollectionWithMetadata): boolean {
   const meta = collection.metadata as Record<string, unknown> | null | undefined
   return meta?.isJournalClub === true
 }

@@ -19,7 +19,8 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
     isJournalClub: true,
     meetingFrequency: 'weekly',
     nextMeetingDate: '',
-    meetingDayOfWeek: undefined
+    meetingDayOfWeek: undefined,
+    votingEnabled: true
   });
   const [saving, setSaving] = useState(false);
 
@@ -119,6 +120,22 @@ export default function JournalClubSettings({ collectionId, metadata, onUpdate }
                 <SelectItem value="6">Saturday</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Enable Voting</label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="votingEnabled"
+                checked={settings.votingEnabled ?? true}
+                onChange={(e) => setSettings(prev => ({ ...prev, votingEnabled: e.target.checked }))}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="votingEnabled" className="text-sm text-muted-foreground">
+                Allow members to vote on papers for future discussions
+              </label>
+            </div>
           </div>
         </div>
 

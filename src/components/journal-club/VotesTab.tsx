@@ -23,9 +23,10 @@ interface VotesTabProps {
   collectionId: string;
   isJournalClub: boolean;
   canParticipate: boolean;
+  votingEnabled?: boolean;
 }
 
-export default function VotesTab({ collectionId, isJournalClub, canParticipate }: VotesTabProps) {
+export default function VotesTab({ collectionId, isJournalClub, canParticipate, votingEnabled = true }: VotesTabProps) {
   const [votes, setVotes] = useState<VoteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState<string | null>(null);
@@ -106,6 +107,18 @@ export default function VotesTab({ collectionId, isJournalClub, canParticipate }
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">This collection is not a journal club.</p>
+      </div>
+    );
+  }
+
+  if (!votingEnabled) {
+    return (
+      <div className="text-center py-12">
+        <ThumbsUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Voting is disabled</h3>
+        <p className="text-muted-foreground">
+          The admin has disabled voting for this journal club. Contact an admin to enable voting.
+        </p>
       </div>
     );
   }

@@ -14,7 +14,7 @@ import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { isJournalClub, canManageJournalClub, canParticipate, getUserCollectionRole } from '@/lib/journalClub';
+import { isJournalClub, canManageJournalClub, canParticipate, getUserCollectionRole, CollectionWithMetadata } from '@/lib/journalClub';
 import ScheduleTab from '@/components/journal-club/ScheduleTab';
 import DiscussionTab from '@/components/journal-club/DiscussionTab';
 import VotesTab from '@/components/journal-club/VotesTab';
@@ -36,18 +36,7 @@ interface CollectionMember {
     };
 }
 
-interface Collection {
-    id: string;
-    name: string;
-    description: string | null;
-    userId: string | null;
-    createdAt: string;
-    isPublic?: boolean;
-    publicSlug?: string | null;
-    publicDescription?: string | null;
-    publicViewCount?: number;
-    isShared?: boolean;
-    metadata?: any;
+interface Collection extends CollectionWithMetadata {
     entries?: Array<{
         id: string;
         addedAt: string;
@@ -496,7 +485,7 @@ export default function CollectionDetailPage() {
         }
     };
 
-    const isJournalClubCollection = collection ? (console.log('Collection metadata:', collection.metadata), isJournalClub(collection as any)) : false;
+    const isJournalClubCollection = collection ? isJournalClub(collection) : false;
     const canManageJournalClubFeature = userRole ? canManageJournalClub(userPlan as any, userRole) : false;
     const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
 
@@ -1078,6 +1067,7 @@ export default function CollectionDetailPage() {
                     collectionId={collection.id}
                     isJournalClub={isJournalClubCollection}
                     canParticipate={canParticipateInJournalClub}
+                    votingEnabled={(collection.metadata?.votingEnabled as boolean) ?? true}
                 />
             )}
 
