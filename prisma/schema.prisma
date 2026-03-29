@@ -80,22 +80,12 @@ enum SignalType {
   PAPER_SHARED
   REFERENCE_REQUESTED
   COLLECTION_MEMBER_JOINED
-  ENTRY_SCHEDULED
-  PRESENTATION_MARKED_COMPLETE
-  VOTE_CAST
-  COMMENT_ADDED
 }
 
 enum ReferenceRequestStatus {
   PENDING
   ACKNOWLEDGED
   DISMISSED
-}
-
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  EXCUSED
 }
 
 enum EntrySource {
@@ -164,9 +154,6 @@ model User {
   analyticsEvents       AnalyticsEvent[]
   feedback              Feedback[]
   queueItems            QueueItem[]
-  comments              EntryComment[]
-  votes                 Vote[]
-  attendances           Attendance[]
   watchQueries          WatchQuery[]
   notifications         Notification[]
   alertContainers       AlertContainer[]
@@ -224,8 +211,6 @@ model Entry {
   sharedEntries SharedEntry[]
   signals       Signal[]
   referenceRequests ReferenceRequest[]
-  comments      EntryComment[]
-  votes         Vote[]
   watchQuery    WatchQuery?       @relation("WatchQueryEntries", fields: [addedByQueryId], references: [id])
 }
 
@@ -245,9 +230,6 @@ model Collection {
   entries          EntryCollection[]
   members          CollectionMember[]
   signals          Signal[]
-  comments         EntryComment[]
-  votes            Vote[]
-  meetings         JournalClubMeeting[]
   watchQueries     WatchQuery[]
   alertContainers  AlertContainer[]
 }
@@ -446,58 +428,6 @@ model QueueItem {
   startedAt    DateTime?
   completedAt  DateTime?
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model EntryComment {
-  id           String   @id @default(cuid())
-  entryId      String
-  collectionId String
-  userId       String
-  content      String   @db.Text
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  entry        Entry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([entryId, collectionId])
-}
-
-model Vote {
-  id           String   @id @default(cuid())
-  entryId      String
-  collectionId String
-  userId       String
-  createdAt    DateTime @default(now())
-  entry        Entry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([entryId, collectionId, userId])
-}
-
-model JournalClubMeeting {
-  id        String   @id @default(cuid())
-  collectionId String
-  date      DateTime
-  notes     String?  @db.Text
-  createdAt DateTime @default(now())
-  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  attendances Attendance[]
-
-  @@unique([collectionId, date])
-}
-
-model Attendance {
-  id        String           @id @default(cuid())
-  meetingId String
-  userId    String
-  status    AttendanceStatus @default(ABSENT)
-  recordedAt DateTime         @default(now())
-  meeting   JournalClubMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([meetingId, userId])
 }
 
 model Notification {

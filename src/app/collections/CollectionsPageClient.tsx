@@ -237,10 +237,6 @@ export default function CollectionsPage() {
     const myCollections = collections.filter(c => !c.isDiscovery);
     const discoveryCollections = collections.filter(c => c.isDiscovery);
 
-    // Separate Journal Clubs from regular collections
-    const journalClubs = myCollections.filter(c => c.metadata?.isJournalClub);
-    const regularCollections = myCollections.filter(c => !c.metadata?.isJournalClub);
-
     return (
         <div className="space-y-6">
             {/* Upgrade Banner for Collections Feature */}
@@ -315,82 +311,12 @@ export default function CollectionsPage() {
                 </div>
             )}
 
-            {/* Journal Clubs */}
-            {journalClubs.length > 0 && (
-                <div>
-                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <Calendar className="w-5 h-5" />
-                        Journal Clubs
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        {journalClubs.map((collection) => (
-                            <div key={collection.id} className="relative">
-                                <Link href={`/collections/${collection.id}`}>
-                                    <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-blue-200 dark:border-blue-800">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <CardTitle className="text-xl truncate">{collection.name}</CardTitle>
-                                                        <Badge variant="default" className="bg-blue-600 text-xs">Journal Club</Badge>
-                                                    </div>
-                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                        {collection.isOwner && (
-                                                            <Badge variant="default" className="text-xs">Owner</Badge>
-                                                        )}
-                                                        {!collection.isOwner && collection.userRole === 'ADMIN' && (
-                                                            <Badge variant="default" className="text-xs">Admin</Badge>
-                                                        )}
-                                                        {!collection.isOwner && collection.userRole === 'CONTRIBUTOR' && (
-                                                            <Badge variant="outline" className="text-xs">Contributor</Badge>
-                                                        )}
-                                                        {!collection.isOwner && collection.userRole === 'VIEWER' && (
-                                                            <Badge variant="outline" className="text-xs">Member</Badge>
-                                                        )}
-                                                        {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
-                                                            <Badge variant="secondary" className="text-xs">Shared</Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {collection.description && (
-                                                <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
-                                                    {collection.description}
-                                                </p>
-                                            )}
-                                        </CardHeader>
-                                        <CardContent className="pt-3">
-                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center gap-1">
-                                                        <FileText className="w-4 h-4" />
-                                                        <span className="font-medium">{collection._count.entries}</span>
-                                                        <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
-                                                    </div>
-                                                    {collection.isPublic && (
-                                                        <div className="flex items-center gap-1">
-                                                            <Eye className="w-4 h-4" />
-                                                            <span className="font-medium">{collection.publicViewCount || 0}</span>
-                                                            <span>views</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Regular Collections */}
-            {regularCollections.length > 0 && (
+            {/* Collections */}
+            {myCollections.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-4">Collections</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        {regularCollections.map((collection) => (
+                        {myCollections.map((collection) => (
                             <div key={collection.id} className="relative">
                                 <Link href={`/collections/${collection.id}`}>
                                     <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
