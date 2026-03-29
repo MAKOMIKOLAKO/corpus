@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { formatMonthYear } from "../../lib/dateUtils";
+import { useTimezone } from "../../hooks/useTimezone";
 
 interface User {
   id: string;
@@ -38,6 +40,8 @@ export default function ProfileClient({ user, totalConnections }: Props) {
   const [loading, setLoading] = useState(false);
 
   const isOwnProfile = session?.user?.id === user.id;
+
+  const timezone = useTimezone();
 
   const checkConnectionStatus = useCallback(async () => {
     try {
@@ -81,13 +85,6 @@ export default function ProfileClient({ user, totalConnections }: Props) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long'
-    });
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Profile Header */}
@@ -119,7 +116,7 @@ export default function ProfileClient({ user, totalConnections }: Props) {
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  Joined {formatDate(user.createdAt)}
+                  Joined {formatMonthYear(user.createdAt, timezone)}
                 </span>
 
                 <span className="flex items-center gap-1">

@@ -14,6 +14,8 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { formatDate } from '../../lib/dateUtils';
+import { useTimezone } from '../../hooks/useTimezone';
 
 interface ChartProps {
   data: any[];
@@ -36,6 +38,8 @@ export function MetricsChart({
   xAxisKey = 'date',
   yAxisKey = 'count'
 }: ChartProps) {
+  const timezone = useTimezone();
+
   if (type === 'line') {
     return (
       <div className="bg-white shadow rounded-lg p-6">
@@ -45,11 +49,11 @@ export function MetricsChart({
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey={xAxisKey}
-              tickFormatter={(value) => new Date(value).toLocaleDateString()}
+              tickFormatter={(value) => formatDate(value, timezone)}
             />
             <YAxis />
             <Tooltip
-              labelFormatter={(value) => new Date(value).toLocaleDateString()}
+              labelFormatter={(value) => formatDate(value, timezone)}
             />
             <Line
               type="monotone"

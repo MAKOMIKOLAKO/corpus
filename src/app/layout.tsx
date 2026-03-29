@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { AppShell } from "@/components/AppShell";
+import { TimezoneSync } from "@/components/TimezoneSync";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });

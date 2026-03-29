@@ -8,6 +8,7 @@ declare module "next-auth" {
       email?: string | null
       image?: string | null
       plan: "FREE" | "PRO" | "LIFETIME_PRO"
+      timezone: string // Add timezone property
     }
   }
 }

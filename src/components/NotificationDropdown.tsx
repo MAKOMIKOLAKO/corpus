@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
+import { formatRelativeTime } from '../lib/dateUtils';
+import { useTimezone } from '../hooks/useTimezone';
 
 interface Notification {
   id: string;
@@ -30,6 +32,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const timezone = useTimezone();
 
   // Fetch notification count
   const fetchNotificationCount = async () => {
@@ -141,17 +144,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
 
   // Format relative time
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatRelativeTime(dateString, timezone);
   };
 
   // Close dropdown when clicking outside
