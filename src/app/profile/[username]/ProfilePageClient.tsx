@@ -171,7 +171,7 @@ export default function ProfilePageClient({
                   <button
                     onClick={() => respond('ACCEPTED')}
                     disabled={acting}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-3 sm:px-3 sm:py-2 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 disabled:opacity-50 touch-manipulation"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-3 sm:px-3 sm:py-2 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] text-sm font-medium hover:opacity-90 disabled:opacity-50 touch-manipulation"
                   >
                     <Check className="w-4 h-4" /> Accept
                   </button>

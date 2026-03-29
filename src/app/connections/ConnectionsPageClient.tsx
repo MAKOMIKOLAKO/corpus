@@ -145,18 +145,18 @@ export default function ConnectionsPageClient() {
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 sm:flex-none px-2 sm:px-6 py-4 sm:py-2 text-xs sm:text-sm font-medium capitalize transition-colors relative flex items-center justify-center gap-2 touch-manipulation ${tab === t
-              ? 'text-[var(--foreground)] border-b-2 border-[var(--primary)] -mb-px'
+              ? 'text-[var(--foreground)] border-b-2 border-[var(--accent)] -mb-px'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
               }`}
           >
             {t}
             {t === 'requests' && pendingCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] sm:text-xs font-bold">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] text-[10px] sm:text-xs font-bold">
                 {pendingCount}
               </span>
             )}
             {t === 'shared' && pendingShared > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] sm:text-xs font-bold">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] text-[10px] sm:text-xs font-bold">
                 {pendingShared}
               </span>
             )}
@@ -262,7 +262,7 @@ export default function ConnectionsPageClient() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => respondToConnection(c.id, 'ACCEPTED')}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] text-xs font-medium hover:opacity-90 transition-opacity"
                       >
                         <Check className="w-3 h-3" /> Accept
                       </button>
@@ -344,7 +344,7 @@ export default function ConnectionsPageClient() {
                       <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                         <button
                           onClick={() => respondToSharedEntry(s.id, 'ACCEPTED')}
-                          className="inline-flex items-center justify-center gap-1 px-4 py-3 sm:px-2.5 sm:py-1.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium hover:opacity-90 transition-opacity touch-manipulation"
+                          className="inline-flex items-center justify-center gap-1 px-4 py-3 sm:px-2.5 sm:py-1.5 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] text-xs font-medium hover:opacity-90 transition-opacity touch-manipulation"
                         >
                           <Check className="w-3 h-3" /> Add to library
                         </button>
@@ -445,7 +445,7 @@ function ConnectionActionButton({
   if (user.connectionStatus === 'PENDING' && !user.isSentByMe) {
     return (
       <div className="flex gap-1">
-        <button onClick={() => onRespond(user.connectionId, 'ACCEPTED')} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] text-xs hover:opacity-90">
+        <button onClick={() => onRespond(user.connectionId, 'ACCEPTED')} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] text-xs hover:opacity-90">
           <Check className="w-3 h-3" /> Accept
         </button>
         <button onClick={() => onRespond(user.connectionId, 'DECLINED')} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--border)] text-xs hover:bg-[var(--accent)]/20">

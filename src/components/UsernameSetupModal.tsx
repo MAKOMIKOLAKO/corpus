@@ -131,7 +131,7 @@ export default function UsernameSetupModal() {
           <button
             type="submit"
             disabled={!availability?.available || saving}
-            className="w-full py-3 sm:py-2 px-4 rounded-md bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed h-11 sm:h-10 touch-manipulation"
+            className="w-full py-3 sm:py-2 px-4 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed h-11 sm:h-10 touch-manipulation"
           >
             {saving ? 'Saving…' : 'Confirm username'}
           </button>
