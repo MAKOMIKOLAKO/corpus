@@ -87,6 +87,11 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
         collectionRes.json()
       ]);
 
+      console.log('Debug - Scheduled Data:', scheduledData);
+      console.log('Debug - Unscheduled Data:', unscheduledData);
+      console.log('Debug - Collection Data:', collectionData);
+      console.log('Debug - Collection Members:', collectionData.members);
+
       setScheduledEntries(scheduledData || []);
       setUnscheduledEntries(unscheduledData || []);
       setMembers(collectionData.members || []);
