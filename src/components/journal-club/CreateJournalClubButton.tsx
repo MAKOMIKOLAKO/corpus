@@ -10,6 +10,7 @@ interface CreateJournalClubButtonProps {
   collectionId: string;
   userPlan: Plan;
   userRole: 'ADMIN' | 'CONTRIBUTOR' | 'VIEWER' | null;
+  hasActiveAlerts?: boolean;
   onUpdate: (updatedCollection: any) => void;
 }
 
@@ -17,6 +18,7 @@ export default function CreateJournalClubButton({
   collectionId,
   userPlan,
   userRole,
+  hasActiveAlerts = false,
   onUpdate
 }: CreateJournalClubButtonProps) {
   const [creating, setCreating] = useState(false);
@@ -36,6 +38,8 @@ export default function CreateJournalClubButton({
         const error = await response.json();
         if (error.error === 'journal_club_pro_only') {
           toast.error('Journal Club is a Pro feature. Please upgrade to continue.');
+        } else if (error.error === 'collection_has_active_alerts') {
+          toast.error('Collections used by active alerts cannot be converted to Journal Club. Pause or delete those alerts first.');
         } else if (response.status === 403) {
           toast.error('You do not have permission to create a journal club.');
         } else if (response.status === 404) {
@@ -67,11 +71,12 @@ export default function CreateJournalClubButton({
   return (
     <Button
       onClick={handleCreate}
-      disabled={creating}
+      disabled={creating || hasActiveAlerts}
+      title={hasActiveAlerts ? 'Collections used by active alerts cannot be converted to Journal Club.' : undefined}
       className="w-full sm:w-auto"
     >
       <Calendar className="h-4 w-4 mr-2" />
-      {creating ? 'Creating...' : 'Convert to Journal Club'}
+      {creating ? 'Creating...' : hasActiveAlerts ? 'Used by Active Alerts' : 'Convert to Journal Club'}
     </Button>
   );
 }

@@ -63,6 +63,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    const activeAlertCount = await prisma.watchQuery.count({
+      where: {
+        collectionId: collectionIdRaw,
+        isActive: true
+      }
+    })
+
+    if (activeAlertCount > 0) {
+      return NextResponse.json(
+        { error: 'collection_has_active_alerts' },
+        { status: 409 }
+      )
+    }
+
     const prevMeta = (collection.metadata as Record<string, unknown>) || {}
     const metadata = {
       ...prevMeta,
