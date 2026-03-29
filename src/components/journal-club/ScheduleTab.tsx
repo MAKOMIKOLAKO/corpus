@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 import { Calendar, User, CheckCircle, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatJournalClubDate } from '@/lib/journalClub';
-import { toast } from 'sonner';
 
 interface ScheduledEntry {
   id: string;
@@ -50,9 +51,11 @@ interface ScheduleTabProps {
 }
 
 export default function ScheduleTab({ collectionId, isJournalClub, canManage, currentUserId }: ScheduleTabProps) {
+  const { data: session } = useSession();
   const [scheduledEntries, setScheduledEntries] = useState<ScheduledEntry[]>([]);
   const [unscheduledEntries, setUnscheduledEntries] = useState<UnscheduledEntry[]>([]);
   const [members, setMembers] = useState<CollectionMember[]>([]);
+  const [collection, setCollection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [scheduling, setScheduling] = useState<string | null>(null);
   const [unassigning, setUnassigning] = useState<string | null>(null);
@@ -107,6 +110,7 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
       setScheduledEntries(scheduledData || []);
       setUnscheduledEntries(unscheduledData || []);
+      setCollection(collectionData);
       setMembers(collectionData.members || []);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
@@ -116,20 +120,21 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
     }
   };
 
+  // Combine collection owner with members for presenters
+  const allPresenters = [
+    // Add collection owner if they're not already in members
+    ...(collection?.userId && !members.find(m => m.user.id === collection.userId) ? [{
+      user: {
+        id: collection.userId,
+        name: session?.user?.name || 'You',
+        email: session?.user?.email || ''
+      }
+    }] : []),
+    ...members
+  ];
+
   const handleSchedulePresentation = async () => {
     // Validation
-    if (!selectedEntryId) {
-      toast.error('Please select a paper to schedule');
-      return;
-    }
-    if (!selectedPresenterId) {
-      toast.error('Please select a presenter');
-      return;
-    }
-    if (!presentationDate) {
-      toast.error('Please select a presentation date');
-      return;
-    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(presentationDate)) {
       toast.error('Invalid date format');
       return;
@@ -418,9 +423,9 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
               <div>
                 <label className="text-sm font-medium">Presenter</label>
-                {members.length === 0 ? (
+                {allPresenters.length === 0 ? (
                   <select disabled className="w-full mt-1 px-3 py-2 border rounded-md bg-muted">
-                    <option>No members in this collection yet. Invite members before scheduling.</option>
+                    <option>No presenters available.</option>
                   </select>
                 ) : (
                   <Select value={selectedPresenterId} onValueChange={(value) => setSelectedPresenterId(value || '')}>
@@ -429,9 +434,9 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">-- Select --</SelectItem>
-                      {members.map((member) => (
-                        <SelectItem key={member.user.id} value={member.user.id}>
-                          {member.user.name || 'User'}
+                      {allPresenters.map((presenter) => (
+                        <SelectItem key={presenter.user.id} value={presenter.user.id}>
+                          {presenter.user.name || 'User'}
                         </SelectItem>
                       ))}
                     </SelectContent>
