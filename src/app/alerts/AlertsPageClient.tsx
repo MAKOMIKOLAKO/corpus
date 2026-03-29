@@ -33,6 +33,32 @@ interface WatchQuery {
   };
 }
 
+interface DebugRunPaper {
+  id: string;
+  title: string;
+  doi: string | null;
+  url: string | null;
+  createdAt: string;
+}
+
+interface DebugRunQueryResult {
+  queryId: string;
+  queryText: string;
+  collectionId: string;
+  papersAdded: number;
+  notificationSent: boolean;
+  retrievedPapers: DebugRunPaper[];
+  error?: string;
+}
+
+interface DebugRunResult {
+  ranAt: string;
+  processed: number;
+  papersAdded: number;
+  errors: string[];
+  queryResults: DebugRunQueryResult[];
+}
+
 const MAX_QUERIES_PER_USER = 5;
 
 // Loading skeleton component
@@ -81,6 +107,7 @@ export default function AlertsPageClient() {
   const [submitting, setSubmitting] = useState(false);
   const [togglingQuery, setTogglingQuery] = useState<string | null>(null);
   const [runningDebugCheck, setRunningDebugCheck] = useState(false);
+  const [lastDebugRun, setLastDebugRun] = useState<DebugRunResult | null>(null);
 
   // Form state
   const [newQuery, setNewQuery] = useState('');
@@ -240,11 +267,27 @@ export default function AlertsPageClient() {
       const processed = Number(data?.processed ?? 0);
       const papersAdded = Number(data?.papersAdded ?? 0);
       const errors = Array.isArray(data?.errors) ? data.errors : [];
+      const queryResults = Array.isArray(data?.queryResults)
+        ? (data.queryResults as DebugRunQueryResult[])
+        : [];
+
+      setLastDebugRun({
+        ranAt: new Date().toISOString(),
+        processed,
+        papersAdded,
+        errors,
+        queryResults,
+      });
 
       if (processed === 0) {
         toast.info('No active alerts to run.');
       } else {
         toast.success(`Debug run complete: ${papersAdded} paper${papersAdded === 1 ? '' : 's'} added across ${processed} alert${processed === 1 ? '' : 's'}.`);
+      }
+
+      const notificationsSent = queryResults.filter((q) => q.notificationSent).length;
+      if (notificationsSent > 0) {
+        toast.success(`Notifications sent for ${notificationsSent} alert${notificationsSent === 1 ? '' : 's'}.`);
       }
 
       if (errors.length > 0) {
@@ -419,6 +462,75 @@ export default function AlertsPageClient() {
           </div>
         </div>
       </section>
+
+      {lastDebugRun && (
+        <Card className="border-[var(--border)] shadow-sm">
+          <CardHeader className="space-y-2 pb-4">
+            <CardTitle className="text-xl font-semibold">Last Debug Run</CardTitle>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Ran {new Date(lastDebugRun.ranAt).toLocaleString()} • {lastDebugRun.papersAdded} paper{lastDebugRun.papersAdded === 1 ? '' : 's'} added across {lastDebugRun.processed} alert{lastDebugRun.processed === 1 ? '' : 's'}.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {lastDebugRun.queryResults.length === 0 ? (
+              <p className="text-sm text-[var(--muted-foreground)]">No query-level results were returned for this run.</p>
+            ) : (
+              <div className="space-y-3">
+                {lastDebugRun.queryResults.map((result) => (
+                  <div key={result.queryId} className="rounded-lg border border-[var(--border)] p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-[var(--foreground)]">{result.queryText}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={result.error ? 'destructive' : 'secondary'}>
+                          {result.error ? 'Error' : `${result.papersAdded} added`}
+                        </Badge>
+                        <Badge variant={result.notificationSent ? 'default' : 'outline'}>
+                          {result.notificationSent ? 'Notification sent' : 'No notification'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {result.error ? (
+                      <p className="text-sm text-red-600">{result.error}</p>
+                    ) : result.retrievedPapers.length === 0 ? (
+                      <p className="text-sm text-[var(--muted-foreground)]">No new papers retrieved for this alert.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {result.retrievedPapers.map((paper) => (
+                          <div key={paper.id} className="text-sm text-[var(--foreground)] flex flex-wrap items-center gap-2">
+                            <span>• {paper.title}</span>
+                            {paper.url && (
+                              <a
+                                href={paper.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[var(--accent)] hover:underline"
+                              >
+                                Open
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {lastDebugRun.errors.length > 0 && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                <p className="text-sm font-medium text-red-700">Run errors</p>
+                <ul className="mt-1 space-y-1">
+                  {lastDebugRun.errors.map((error, idx) => (
+                    <li key={`${error}-${idx}`} className="text-sm text-red-600">{error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {activeQueryCount >= MAX_QUERIES_PER_USER && (
         <Card className="border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20">
