@@ -489,12 +489,12 @@ export default function LandingPage() {
                 <h3 className="text-2xl font-semibold text-[var(--foreground)]">Pro</h3>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-5xl font-bold text-[var(--foreground)]">
-                    {billing === "monthly" ? "$6" : "$2.50"}
+                    {billing === "monthly" ? "$7" : "$5"}
                   </span>
                   <span className="text-[var(--muted-foreground)]">/month</span>
                 </div>
                 <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                  {billing === "monthly" ? "Billed monthly" : "$30 billed annually"}
+                  {billing === "monthly" ? "Billed monthly" : "$60 billed annually"}
                 </p>
               </div>
 
@@ -542,7 +542,7 @@ export default function LandingPage() {
               className={`rounded-full px-4 py-2 font-medium transition ${billing === "annual" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:text-[var(--foreground)]"}`}
             >
               Annual
-              <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save $6/month</span>
+              <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save $24/year</span>
             </button>
           </div>
         </div>

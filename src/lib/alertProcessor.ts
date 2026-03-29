@@ -15,8 +15,9 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
     errors: []
   }
 
-  // Fetch all active queries not checked in last 23 hours
+  // Fetch all active queries not checked in last 23 hours and for users active in last 12 days
   const cutoff = new Date(Date.now() - ALERT_CONFIG.minHoursBetweenChecks * 60 * 60 * 1000)
+  const activeUserCutoff = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000) // 12 days ago
 
   const queries = await prisma.watchQuery.findMany({
     where: {
@@ -24,10 +25,17 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
       OR: [
         { lastCheckedAt: null },
         { lastCheckedAt: { lt: cutoff } }
-      ]
+      ],
+      user: {
+        OR: [
+          { lastFeedViewedAt: { gte: activeUserCutoff } },
+          { lastFeedViewedAt: null }, // Include users who haven't viewed feed yet
+          { createdAt: { gte: activeUserCutoff } } // Include recently created users
+        ]
+      }
     },
     include: {
-      user: { select: { id: true, plan: true } }
+      user: { select: { id: true, plan: true, lastFeedViewedAt: true, createdAt: true } }
     }
   })
 
@@ -38,10 +46,22 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
     try {
       // Skip if user is no longer Pro (plan may have expired)
       if (query.user.plan === 'FREE') {
+        console.log(`[alertProcessor] Skipping user ${query.user.id} - FREE plan`)
         await prisma.watchQuery.update({
           where: { id: query.id },
           data: { isActive: false }
         })
+        continue
+      }
+
+      // Additional activity check (double-check the filtering)
+      const isUserActive =
+        !query.user.lastFeedViewedAt || // Never viewed feed
+        query.user.lastFeedViewedAt >= activeUserCutoff || // Viewed feed recently
+        query.user.createdAt >= activeUserCutoff // Recently joined
+
+      if (!isUserActive) {
+        console.log(`[alertProcessor] Skipping inactive user ${query.user.id} - last activity: ${query.user.lastFeedViewedAt}`)
         continue
       }
 
@@ -79,7 +99,6 @@ export async function processQuery(query: {
 
   // Step 1: Fetch candidate papers from Semantic Scholar
   const candidates = await fetchCandidatePapers(query.query)
-  console.log(`[alertProcessor] Found ${candidates.length} candidates`)
 
   if (candidates.length === 0) {
     await prisma.watchQuery.update({
@@ -104,7 +123,6 @@ export async function processQuery(query: {
   // Step 3: Filter candidates by relevance using Gemini
   // Process in batches of 5 to avoid rate limits
   const candidatesWithAbstractCount = candidates.filter((paper) => Boolean(paper.abstract)).length
-  console.log(`[alertProcessor] Sending ${candidatesWithAbstractCount} candidates with abstracts to Gemini relevance check`)
 
   const relevant: typeof candidates = []
   const batchSize = 5
@@ -128,7 +146,6 @@ export async function processQuery(query: {
     }
   }
 
-  console.log(`[alertProcessor] ${relevant.length} papers passed relevance check`)
 
   // Step 4: Stage relevant papers into alert container
   const db = prisma as any
@@ -155,20 +172,16 @@ export async function processQuery(query: {
 
     // Deduplication check
     if (paper.doi && existingDOIs.has(paper.doi)) {
-      console.log(`[alertProcessor] Skipping duplicate DOI: ${paper.doi}`)
       continue
     }
     const normalizedTitle = normalizeTitle(paper.title)
     if (existingTitles.has(normalizedTitle)) {
-      console.log(`[alertProcessor] Skipping duplicate title: ${paper.title}`)
       continue
     }
     if (existingContainerExternalIds.has(externalId)) {
-      console.log(`[alertProcessor] Skipping duplicate container externalId: ${externalId}`)
       continue
     }
     if (existingContainerTitles.has(normalizedTitle)) {
-      console.log(`[alertProcessor] Skipping duplicate container title: ${paper.title}`)
       continue
     }
 
@@ -356,7 +369,6 @@ async function checkRelevance(
   if (!paper.abstract) {
     // No abstract — use title only with lower confidence
     // Default to false for papers without abstracts
-    console.log('[alertProcessor] Skipping relevance check: no abstract for paper', paper.title)
     return false
   }
 
@@ -371,7 +383,6 @@ Is this paper directly relevant to the user's research interest?
 Answer with only YES or NO. No explanation.`
 
   try {
-    console.log(`[alertProcessor] Checking Gemini relevance for: "${paper.title}"`)
     const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || ''
     if (!geminiApiKey) {
       throw new Error('GEMINI_API_KEY or GOOGLE_AI_API_KEY is required for relevance filtering')
@@ -387,7 +398,6 @@ Answer with only YES or NO. No explanation.`
     const answer = result.text?.trim()?.toUpperCase()
 
     const isRelevant = answer === 'YES'
-    console.log(`[alertProcessor] Gemini result: ${answer} -> relevant=${isRelevant}`)
     return isRelevant
   } catch (error) {
     console.error('[alertProcessor] Gemini relevance check failed:', error)

@@ -47,8 +47,8 @@ export default function PricingPage() {
     }
   };
 
-  const monthlyPrice = 6;
-  const annualPrice = 30;
+  const monthlyPrice = 7;
+  const annualPrice = 60;
 
   return (
     <div className="min-h-screen bg-background">
