@@ -46,9 +46,10 @@ export async function POST() {
         userId: true,
         query: true,
         collectionId: true,
+        maxPapers: true,
       },
       orderBy: { createdAt: 'desc' },
-    });
+    } as any);
 
     let processed = 0;
     let papersAdded = 0;
@@ -60,24 +61,37 @@ export async function POST() {
       try {
         const added = await processQuery(query);
 
-        const retrievedPapers = await prisma.entry.findMany({
+        const latestContainer = await (prisma as any).alertContainer.findFirst({
           where: {
             userId: session.user.id,
-            addedByQueryId: query.id,
+            watchQueryId: query.id,
             createdAt: {
               gte: queryStartedAt,
             },
           },
           orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            title: true,
-            doi: true,
-            url: true,
-            createdAt: true,
-          },
-          take: 15,
+          select: { id: true },
         });
+
+        const retrievedPapers = latestContainer
+          ? await (prisma as any).alertEntry.findMany({
+            where: {
+              containerId: latestContainer.id,
+              createdAt: {
+                gte: queryStartedAt,
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              url: true,
+              createdAt: true,
+              metadata: true,
+            },
+            take: 15,
+          })
+          : [];
 
         const notificationCount = await prisma.notification.count({
           where: {
@@ -100,10 +114,10 @@ export async function POST() {
           collectionId: query.collectionId,
           papersAdded: added,
           notificationSent: notificationCount > 0,
-          retrievedPapers: retrievedPapers.map((paper) => ({
+          retrievedPapers: retrievedPapers.map((paper: any) => ({
             id: paper.id,
             title: paper.title,
-            doi: paper.doi,
+            doi: paper.metadata?.doi ?? null,
             url: paper.url,
             createdAt: paper.createdAt.toISOString(),
           })),

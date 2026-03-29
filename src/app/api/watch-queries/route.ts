@@ -9,6 +9,7 @@ const MAX_WATCH_QUERIES_PER_USER = parseInt(process.env.MAX_WATCH_QUERIES_PER_US
 const createWatchQuerySchema = z.object({
   query: z.string().min(1).max(500),
   collectionId: z.string().optional(),
+  maxPapers: z.number().int().min(1).max(10).optional(),
 });
 
 export async function GET() {
@@ -124,12 +125,18 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         query: validatedData.query,
         collectionId,
-      },
+        maxPapers: validatedData.maxPapers ?? 5,
+      } as any,
       include: {
         collection: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        _count: {
+          select: {
+            entries: true,
           },
         },
       },
