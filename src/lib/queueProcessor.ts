@@ -1,6 +1,7 @@
 import { prisma } from './prismaWithRetry';
 import type { ContentType, Prisma, ReadingStatus } from '@prisma/client';
 import { canAddEntry } from './plans';
+import { toEntrySource } from '@/lib/utils';
 
 function getGeminiApiKey(): string | undefined {
   return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
@@ -307,7 +308,7 @@ Body text: ${meta.bodyText}`;
           authors: entryPayload.authors,
           year: entryPayload.year,
           abstract: entryPayload.abstract,
-          source: entryPayload.source || undefined,
+          source: toEntrySource(entryPayload.source),
           contentType: entryPayload.contentType,
           doi: entryPayload.doi,
           url: entryPayload.url,
