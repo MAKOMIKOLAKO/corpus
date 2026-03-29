@@ -203,7 +203,7 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/alerts"
-                      className={`inline-flex items-center gap-2 text-sm font-semibold leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-3 py-1.5 border ${pathname === "/alerts" ? "bg-[var(--accent)] text-[var(--accent-foreground)] border-[var(--accent)] shadow-sm" : "text-[var(--foreground)] border-[var(--border)] bg-[var(--card)] hover:bg-[var(--muted)] hover:border-[var(--muted-foreground)]/20"}`}
+                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/alerts" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
                       aria-current={pathname === "/alerts" ? "page" : undefined}
                     >
                       <Brain className="w-4 h-4" />
@@ -278,7 +278,7 @@ export function AppShell({
                   </Link>
                   <Link
                     href="/alerts"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-semibold transition-colors border ${pathname === "/alerts" ? "bg-[var(--accent)] text-[var(--accent-foreground)] border-[var(--accent)]" : "border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/alerts" ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
                   >
                     <Brain className="w-5 h-5" />
                     alerts
