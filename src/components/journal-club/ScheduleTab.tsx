@@ -71,25 +71,25 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
 
   const fetchScheduleData = async () => {
     try {
-      const [scheduledRes, unscheduledRes, membersRes] = await Promise.all([
+      const [scheduledRes, unscheduledRes, collectionRes] = await Promise.all([
         fetch(`/api/journal-club/${collectionId}/meetings`),
         fetch(`/api/journal-club/${collectionId}/schedule`),
-        fetch(`/api/collections/${collectionId}/members`)
+        fetch(`/api/collections/${collectionId}`)
       ]);
 
-      if (!scheduledRes.ok || !unscheduledRes.ok || !membersRes.ok) {
+      if (!scheduledRes.ok || !unscheduledRes.ok || !collectionRes.ok) {
         throw new Error('Failed to fetch schedule data');
       }
 
-      const [scheduledData, unscheduledData, membersData] = await Promise.all([
+      const [scheduledData, unscheduledData, collectionData] = await Promise.all([
         scheduledRes.json(),
         unscheduledRes.json(),
-        membersRes.json()
+        collectionRes.json()
       ]);
 
       setScheduledEntries(scheduledData || []);
       setUnscheduledEntries(unscheduledData || []);
-      setMembers(membersData || []);
+      setMembers(collectionData.members || []);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
       toast.error('Failed to load schedule data');

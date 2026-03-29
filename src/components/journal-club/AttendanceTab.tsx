@@ -63,22 +63,22 @@ export default function AttendanceTab({ collectionId, isJournalClub, canManage, 
 
   const fetchAttendanceData = async () => {
     try {
-      const [meetingsRes, membersRes] = await Promise.all([
+      const [meetingsRes, collectionRes] = await Promise.all([
         fetch(`/api/journal-club/${collectionId}/meetings`),
-        fetch(`/api/collections/${collectionId}/members`)
+        fetch(`/api/collections/${collectionId}`)
       ]);
 
-      if (!meetingsRes.ok || !membersRes.ok) {
+      if (!meetingsRes.ok || !collectionRes.ok) {
         throw new Error('Failed to fetch attendance data');
       }
 
-      const [meetingsData, membersData] = await Promise.all([
+      const [meetingsData, collectionData] = await Promise.all([
         meetingsRes.json(),
-        membersRes.json()
+        collectionRes.json()
       ]);
 
       setMeetings(meetingsData || []);
-      setMembers(membersData || []);
+      setMembers(collectionData.members || []);
     } catch (error) {
       console.error('Error fetching attendance data:', error);
       toast.error('Failed to load attendance data');
