@@ -73,6 +73,7 @@ export async function processQuery(query: {
   userId: string
   query: string
   collectionId: string
+  maxPapers?: number
 }): Promise<number> {
   console.log(`[alertProcessor] Processing query: "${query.query}"`)
 
@@ -129,79 +130,93 @@ export async function processQuery(query: {
 
   console.log(`[alertProcessor] ${relevant.length} papers passed relevance check`)
 
-  // Step 4: Deduplicate and create entries
-  let papersAdded = 0
-  const newEntryIds: string[] = []
-  const MAX_ENTRIES_PER_RUN = 10 // max per query per day
+  // Step 4: Stage relevant papers into alert container
+  const db = prisma as any
+  const container = await getOrCreateAlertContainer(query)
 
-  for (const paper of relevant.slice(0, MAX_ENTRIES_PER_RUN)) {
+  const existingContainerEntries = await db.alertEntry.findMany({
+    where: { containerId: container.id },
+    select: { externalId: true, title: true },
+  })
+
+  const existingContainerExternalIds = new Set(
+    existingContainerEntries.map((entry: { externalId: string }) => entry.externalId)
+  )
+  const existingContainerTitles = new Set(
+    existingContainerEntries.map((entry: { title: string }) => normalizeTitle(entry.title))
+  )
+
+  let papersAdded = 0
+  const stagedAlertEntryIds: string[] = []
+  const maxPerRun = Math.max(1, Math.min(query.maxPapers ?? 5, 10))
+
+  for (const paper of relevant.slice(0, maxPerRun)) {
+    const externalId = paper.doi || paper.semanticScholarId
+
     // Deduplication check
     if (paper.doi && existingDOIs.has(paper.doi)) {
       console.log(`[alertProcessor] Skipping duplicate DOI: ${paper.doi}`)
       continue
     }
-    if (existingTitles.has(normalizeTitle(paper.title))) {
+    const normalizedTitle = normalizeTitle(paper.title)
+    if (existingTitles.has(normalizedTitle)) {
       console.log(`[alertProcessor] Skipping duplicate title: ${paper.title}`)
+      continue
+    }
+    if (existingContainerExternalIds.has(externalId)) {
+      console.log(`[alertProcessor] Skipping duplicate container externalId: ${externalId}`)
+      continue
+    }
+    if (existingContainerTitles.has(normalizedTitle)) {
+      console.log(`[alertProcessor] Skipping duplicate container title: ${paper.title}`)
       continue
     }
 
     try {
-      // Create the entry
-      const entry = await prisma.entry.create({
+      const alertEntry = await db.alertEntry.create({
         data: {
+          containerId: container.id,
+          externalId,
           title: paper.title,
           authors: paper.authors,
           year: paper.year,
           abstract: paper.abstract,
-          doi: paper.doi,
           url: paper.url,
-          source: 'SMART_ALERT',
-          contentType: 'PAPER',
-          userId: query.userId,
-          readingStatus: 'UNREAD',
-          notes: [],
-          addedByQueryId: query.id,
           metadata: {
+            doi: paper.doi,
+            venue: paper.venue,
             openAccessUrl: paper.openAccessUrl,
-            semanticScholarId: paper.semanticScholarId
+            semanticScholarId: paper.semanticScholarId,
           }
         }
       })
 
-      // Increment user entry count
-      await prisma.user.update({
-        where: { id: query.userId },
-        data: { entriesCount: { increment: 1 } }
-      })
-
-      // Add to the alert's collection
-      await prisma.entryCollection.create({
-        data: { entryId: entry.id, collectionId: query.collectionId }
-      })
-
       // Track for deduplication within this run
       if (paper.doi) existingDOIs.add(paper.doi)
-      existingTitles.add(normalizeTitle(paper.title))
+      existingTitles.add(normalizedTitle)
+      existingContainerExternalIds.add(externalId)
+      existingContainerTitles.add(normalizedTitle)
 
-      newEntryIds.push(entry.id)
+      stagedAlertEntryIds.push(alertEntry.id)
       papersAdded++
     } catch (error) {
-      console.error(`[alertProcessor] Failed to create entry for: ${paper.title}`, error)
+      console.error(`[alertProcessor] Failed to stage alert entry for: ${paper.title}`, error)
     }
   }
 
-  // Step 5: Create notification if papers were added
+  // Step 5: Create notification if papers were staged
   if (papersAdded > 0) {
     await prisma.notification.create({
       data: {
         userId: query.userId,
         type: 'SMART_ALERT',
-        message: `${papersAdded} new paper${papersAdded === 1 ? '' : 's'} added for "${query.query}"`,
+        message: `${papersAdded} new paper${papersAdded === 1 ? '' : 's'} ready for review for "${query.query}"`,
         metadata: {
           queryId: query.id,
+          containerId: container.id,
           collectionId: query.collectionId,
           paperCount: papersAdded,
-          entryIds: newEntryIds
+          alertEntryIds: stagedAlertEntryIds,
         }
       }
     })
@@ -214,6 +229,38 @@ export async function processQuery(query: {
   })
 
   return papersAdded
+}
+
+async function getOrCreateAlertContainer(query: {
+  id: string
+  userId: string
+  query: string
+  collectionId: string
+}) {
+  const db = prisma as any
+  const existingContainer = await db.alertContainer.findFirst({
+    where: {
+      userId: query.userId,
+      watchQueryId: query.id,
+      entries: {
+        some: { status: 'PENDING' }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  if (existingContainer) {
+    return existingContainer
+  }
+
+  return db.alertContainer.create({
+    data: {
+      userId: query.userId,
+      watchQueryId: query.id,
+      query: query.query,
+      collectionId: query.collectionId,
+    }
+  })
 }
 
 interface CandidatePaper {

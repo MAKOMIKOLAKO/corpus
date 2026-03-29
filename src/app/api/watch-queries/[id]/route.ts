@@ -9,6 +9,7 @@ const updateWatchQuerySchema = z.object({
   isActive: z.boolean().optional(),
   query: z.string().min(1).max(500).optional(),
   collectionId: z.string().optional(),
+  maxPapers: z.number().int().min(1).max(10).optional(),
 });
 
 export async function DELETE(

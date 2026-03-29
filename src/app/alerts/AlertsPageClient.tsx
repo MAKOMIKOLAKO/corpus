@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Bell, Play, Pause, Sparkles } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Bell, Play, Pause, Sparkles, Check, XCircle, Inbox, ListChecks } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -24,6 +24,7 @@ interface Collection {
 interface WatchQuery {
   id: string;
   query: string;
+  maxPapers?: number;
   isActive: boolean;
   lastCheckedAt: string | null;
   createdAt: string;
@@ -57,6 +58,35 @@ interface DebugRunResult {
   papersAdded: number;
   errors: string[];
   queryResults: DebugRunQueryResult[];
+}
+
+interface AlertContainerSummary {
+  id: string;
+  query: string;
+  collectionId: string | null;
+  watchQueryId: string;
+  createdAt: string;
+  updatedAt: string;
+  counts: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+}
+
+interface AlertContainerEntry {
+  id: string;
+  title: string;
+  authors: string[];
+  year: number | null;
+  abstract: string | null;
+  url: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+}
+
+interface AlertContainerDetail extends AlertContainerSummary {
+  entries: AlertContainerEntry[];
 }
 
 const MAX_QUERIES_PER_USER = 5;
@@ -108,10 +138,18 @@ export default function AlertsPageClient() {
   const [togglingQuery, setTogglingQuery] = useState<string | null>(null);
   const [runningDebugCheck, setRunningDebugCheck] = useState(false);
   const [lastDebugRun, setLastDebugRun] = useState<DebugRunResult | null>(null);
+  const [containers, setContainers] = useState<AlertContainerSummary[]>([]);
+  const [loadingContainers, setLoadingContainers] = useState(false);
+  const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null);
+  const [selectedContainer, setSelectedContainer] = useState<AlertContainerDetail | null>(null);
+  const [loadingContainerDetail, setLoadingContainerDetail] = useState(false);
+  const [actingOnEntryId, setActingOnEntryId] = useState<string | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState<'approve_all' | 'reject_all' | null>(null);
 
   // Form state
   const [newQuery, setNewQuery] = useState('');
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
+  const [newQueryMaxPapers, setNewQueryMaxPapers] = useState<string>('5');
 
   const isPro = hasPaidFeature(session?.user?.plan || 'FREE', 'smart_alerts');
 
@@ -145,6 +183,64 @@ export default function AlertsPageClient() {
       setLoading(false);
     }
   }, [session?.user?.id, apikey]);
+
+  const fetchContainers = useCallback(async () => {
+    if (!session?.user?.id) return;
+
+    setLoadingContainers(true);
+    try {
+      const response = await fetch('/api/alert-containers', {
+        headers: {
+          'x-api-key': apikey || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch alert containers');
+      }
+
+      const data = await response.json();
+      const list = Array.isArray(data) ? (data as AlertContainerSummary[]) : [];
+      setContainers(list);
+
+      if (selectedContainerId) {
+        const exists = list.some((container) => container.id === selectedContainerId);
+        if (!exists) {
+          setSelectedContainerId(null);
+          setSelectedContainer(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching alert containers:', error);
+      toast.error('Failed to load alert containers');
+    } finally {
+      setLoadingContainers(false);
+    }
+  }, [session?.user?.id, apikey, selectedContainerId]);
+
+  const fetchContainerDetail = useCallback(async (containerId: string) => {
+    setLoadingContainerDetail(true);
+    try {
+      const response = await fetch(`/api/alert-containers/${containerId}`, {
+        headers: {
+          'x-api-key': apikey || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch container details');
+      }
+
+      const data = await response.json();
+      setSelectedContainer(data as AlertContainerDetail);
+      setSelectedContainerId(containerId);
+    } catch (error) {
+      console.error('Error fetching container details:', error);
+      toast.error('Failed to load container details');
+    } finally {
+      setLoadingContainerDetail(false);
+    }
+  }, [apikey]);
 
   const fetchCollections = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -181,8 +277,9 @@ export default function AlertsPageClient() {
     if (status === 'authenticated' && apikey) {
       fetchWatchQueries();
       fetchCollections();
+      fetchContainers();
     }
-  }, [status, apikey, fetchWatchQueries, fetchCollections]);
+  }, [status, apikey, fetchWatchQueries, fetchCollections, fetchContainers]);
 
   const handleCreateQuery = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,6 +306,7 @@ export default function AlertsPageClient() {
         body: JSON.stringify({
           query: newQuery.trim(),
           collectionId: selectedCollectionId || undefined,
+          maxPapers: Number(newQueryMaxPapers),
         }),
       });
 
@@ -227,6 +325,7 @@ export default function AlertsPageClient() {
       setWatchQueries(prev => [newWatchQuery, ...prev]);
       setNewQuery('');
       setSelectedCollectionId('');
+      setNewQueryMaxPapers('5');
       setShowCreateForm(false);
       toast.success('Alert created successfully');
 
@@ -243,6 +342,145 @@ export default function AlertsPageClient() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdateMaxPapers = async (queryId: string, value: string) => {
+    const nextValue = Number(value);
+    try {
+      const response = await fetch(`/api/watch-queries/${queryId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apikey || '',
+        },
+        body: JSON.stringify({ maxPapers: nextValue }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update max papers');
+
+      setWatchQueries((prev) => prev.map((q) => (q.id === queryId ? { ...q, maxPapers: nextValue } : q)));
+      toast.success('Max papers updated');
+    } catch (error) {
+      console.error('Error updating max papers:', error);
+      toast.error('Failed to update max papers');
+    }
+  };
+
+  const handleContainerEntryAction = async (entryId: string, action: 'approve' | 'reject') => {
+    if (!selectedContainerId || !selectedContainer) return;
+
+    setActingOnEntryId(entryId);
+    try {
+      const response = await fetch(`/api/alert-containers/${selectedContainerId}/entries/${entryId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apikey || '',
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update alert entry');
+      }
+
+      setSelectedContainer((prev) => {
+        if (!prev) return prev;
+        const nextEntries = prev.entries.map((entry) =>
+          entry.id === entryId
+            ? { ...entry, status: (action === 'approve' ? 'APPROVED' : 'REJECTED') as AlertContainerEntry['status'] }
+            : entry
+        );
+        const counts = nextEntries.reduce(
+          (acc, entry) => {
+            if (entry.status === 'PENDING') acc.pending += 1;
+            if (entry.status === 'APPROVED') acc.approved += 1;
+            if (entry.status === 'REJECTED') acc.rejected += 1;
+            return acc;
+          },
+          { pending: 0, approved: 0, rejected: 0 }
+        );
+        return { ...prev, entries: nextEntries, counts };
+      });
+
+      setContainers((prev) =>
+        prev.map((container) => {
+          if (container.id !== selectedContainerId) return container;
+          return {
+            ...container,
+            counts: {
+              pending: Math.max(0, container.counts.pending - 1),
+              approved: container.counts.approved + (action === 'approve' ? 1 : 0),
+              rejected: container.counts.rejected + (action === 'reject' ? 1 : 0),
+            },
+          };
+        })
+      );
+
+      toast.success(action === 'approve' ? 'Paper approved' : 'Paper rejected');
+    } catch (error) {
+      console.error('Error updating alert entry:', error);
+      toast.error('Failed to update alert entry');
+    } finally {
+      setActingOnEntryId(null);
+    }
+  };
+
+  const handleBulkAction = async (action: 'approve_all' | 'reject_all') => {
+    if (!selectedContainerId) return;
+
+    setBulkActionLoading(action);
+    try {
+      const response = await fetch(`/api/alert-containers/${selectedContainerId}/bulk`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apikey || '',
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed bulk action');
+      }
+
+      await fetchContainerDetail(selectedContainerId);
+      await fetchContainers();
+      toast.success(action === 'approve_all' ? 'Approved all pending papers' : 'Rejected all pending papers');
+    } catch (error) {
+      console.error('Error running bulk action:', error);
+      toast.error('Bulk action failed');
+    } finally {
+      setBulkActionLoading(null);
+    }
+  };
+
+  const handleDeleteContainer = async (containerId: string) => {
+    if (!confirm('Delete this alert container and all staged papers?')) return;
+
+    try {
+      const response = await fetch(`/api/alert-containers/${containerId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-api-key': apikey || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete container');
+      }
+
+      setContainers((prev) => prev.filter((container) => container.id !== containerId));
+      if (selectedContainerId === containerId) {
+        setSelectedContainerId(null);
+        setSelectedContainer(null);
+      }
+      toast.success('Container deleted');
+    } catch (error) {
+      console.error('Error deleting container:', error);
+      toast.error('Failed to delete container');
     }
   };
 
@@ -295,6 +533,7 @@ export default function AlertsPageClient() {
       }
 
       await fetchWatchQueries();
+      await fetchContainers();
     } catch (error) {
       console.error('Error running alerts now:', error);
       if (error instanceof Error) {
@@ -589,6 +828,25 @@ export default function AlertsPageClient() {
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="max-papers">Max papers per run</Label>
+                <Select value={newQueryMaxPapers} onValueChange={(value) => setNewQueryMaxPapers(value ?? '5')}>
+                  <SelectTrigger id="max-papers" className="h-11 w-48">
+                    <SelectValue placeholder="Select max papers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((count) => (
+                      <SelectItem key={count} value={String(count)}>
+                        {count}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Choose how many papers this alert can stage each run (1-10).
+                </p>
+              </div>
+
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
@@ -616,6 +874,172 @@ export default function AlertsPageClient() {
           </CardContent>
         </Card>
       )}
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Alert Containers</h2>
+            <p className="text-sm text-[var(--muted-foreground)]">Review staged papers before they enter your library.</p>
+          </div>
+          <Badge variant="secondary" className="px-2.5 py-1 text-xs">
+            {containers.length} containers
+          </Badge>
+        </div>
+
+        {loadingContainers ? (
+          <Card>
+            <CardContent className="p-6 text-sm text-[var(--muted-foreground)]">Loading containers...</CardContent>
+          </Card>
+        ) : containers.length === 0 ? (
+          <Card className="border-dashed shadow-none">
+            <CardContent className="flex flex-col items-center px-6 py-10 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--muted)] text-[var(--muted-foreground)]">
+                <Inbox className="h-6 w-6" />
+              </div>
+              <p className="text-sm text-[var(--muted-foreground)]">No alert containers yet. Run your alerts to stage papers for review.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              {containers.map((container) => (
+                <Card
+                  key={container.id}
+                  className={`cursor-pointer border-[var(--border)] transition-colors ${selectedContainerId === container.id ? 'ring-2 ring-[var(--accent)]' : 'hover:border-[var(--muted-foreground)]/20'}`}
+                  onClick={() => fetchContainerDetail(container.id)}
+                >
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-medium text-[var(--foreground)] line-clamp-2">{container.query}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteContainer(container.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <Badge variant="outline">Pending {container.counts.pending}</Badge>
+                      <Badge variant="outline">Approved {container.counts.approved}</Badge>
+                      <Badge variant="outline">Rejected {container.counts.rejected}</Badge>
+                    </div>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      Updated {new Date(container.updatedAt).toLocaleString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="border-[var(--border)]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Container Review</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!selectedContainerId ? (
+                  <p className="text-sm text-[var(--muted-foreground)]">Select a container to review staged papers.</p>
+                ) : loadingContainerDetail ? (
+                  <p className="text-sm text-[var(--muted-foreground)]">Loading container details...</p>
+                ) : !selectedContainer ? (
+                  <p className="text-sm text-[var(--muted-foreground)]">Container not found.</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                        <ListChecks className="h-4 w-4" />
+                        {selectedContainer.counts.pending} pending
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={selectedContainer.counts.pending === 0 || bulkActionLoading !== null}
+                          onClick={() => handleBulkAction('approve_all')}
+                        >
+                          {bulkActionLoading === 'approve_all' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          Approve All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={selectedContainer.counts.pending === 0 || bulkActionLoading !== null}
+                          onClick={() => handleBulkAction('reject_all')}
+                        >
+                          {bulkActionLoading === 'reject_all' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                          Reject All
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="max-h-[520px] overflow-y-auto space-y-3 pr-1">
+                      {selectedContainer.entries.length === 0 ? (
+                        <p className="text-sm text-[var(--muted-foreground)]">No papers in this container.</p>
+                      ) : (
+                        selectedContainer.entries.map((entry) => (
+                          <div key={entry.id} className="rounded-lg border border-[var(--border)] p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-[var(--foreground)]">{entry.title}</p>
+                                <p className="text-xs text-[var(--muted-foreground)]">
+                                  {entry.authors.slice(0, 4).join(', ')}{entry.authors.length > 4 ? '…' : ''}
+                                  {entry.year ? ` • ${entry.year}` : ''}
+                                </p>
+                              </div>
+                              <Badge variant={entry.status === 'PENDING' ? 'outline' : entry.status === 'APPROVED' ? 'default' : 'secondary'}>
+                                {entry.status}
+                              </Badge>
+                            </div>
+
+                            {entry.abstract && (
+                              <p className="text-xs text-[var(--muted-foreground)] line-clamp-4">{entry.abstract}</p>
+                            )}
+
+                            <div className="flex items-center justify-between gap-2">
+                              {entry.url ? (
+                                <a href={entry.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--accent)] hover:underline">
+                                  Open source
+                                </a>
+                              ) : (
+                                <span className="text-xs text-[var(--muted-foreground)]">No source URL</span>
+                              )}
+
+                              {entry.status === 'PENDING' && (
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={actingOnEntryId === entry.id}
+                                    onClick={() => handleContainerEntryAction(entry.id, 'approve')}
+                                  >
+                                    {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={actingOnEntryId === entry.id}
+                                    onClick={() => handleContainerEntryAction(entry.id, 'reject')}
+                                  >
+                                    {actingOnEntryId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Reject
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </section>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -677,6 +1101,24 @@ export default function AlertsPageClient() {
                         </div>
                         <div>
                           <span className="font-medium text-[var(--foreground)]">{watchQuery._count?.entries ?? 0}</span> papers added
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span>Max/run</span>
+                          <Select
+                            value={String(watchQuery.maxPapers ?? 5)}
+                            onValueChange={(value) => handleUpdateMaxPapers(watchQuery.id, value ?? '5')}
+                          >
+                            <SelectTrigger className="h-8 w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 10 }, (_, i) => i + 1).map((count) => (
+                                <SelectItem key={count} value={String(count)}>
+                                  {count}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div>
                           Created {new Date(watchQuery.createdAt).toLocaleDateString()}
