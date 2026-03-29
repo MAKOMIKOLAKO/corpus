@@ -220,7 +220,7 @@ export default function CollectionDetailPage() {
     };
 
     const handleRemoveEntry = async (entryId: string) => {
-        if (!confirm('Remove this entry from the collection?')) return;
+        if (!entryId || !confirm('Remove this entry from the collection?')) return;
 
         setRemoving(entryId);
         try {
@@ -457,8 +457,10 @@ export default function CollectionDetailPage() {
     };
 
     const filteredEntries = collection?.entries?.filter(item =>
-        item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase()))
+        item &&
+        item.entry &&
+        (item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
+            item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase())))
     ) || [];
 
     // Tab configuration
@@ -970,14 +972,14 @@ export default function CollectionDetailPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredEntries.map(item => (
-                                <div key={item.id} className="relative group">
-                                    <EntryCard entry={item.entry} scrollPositionKey={`collection-${params?.id}`} />
+                                <div key={item?.id} className="relative group">
+                                    <EntryCard entry={item?.entry} scrollPositionKey={`collection-${params?.id}`} />
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            onClick={() => handleRemoveEntry(item.entry.id)}
-                                            disabled={removing === item.entry.id}
+                                            onClick={() => handleRemoveEntry(item?.entry?.id)}
+                                            disabled={removing === item?.entry?.id}
                                         >
                                             <Trash2 className="w-3 h-3" />
                                         </Button>
