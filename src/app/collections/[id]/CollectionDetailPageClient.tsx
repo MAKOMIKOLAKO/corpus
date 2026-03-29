@@ -48,7 +48,7 @@ interface Collection {
     publicViewCount?: number;
     isShared?: boolean;
     metadata?: any;
-    entries: Array<{
+    entries?: Array<{
         id: string;
         addedAt: string;
         entry: {
@@ -275,7 +275,7 @@ export default function CollectionDetailPage() {
                 // Update local state to maintain scroll position
                 setCollection(prev => prev ? {
                     ...prev,
-                    entries: prev.entries.filter(item => item.entry.id !== entryId),
+                    entries: prev.entries?.filter(item => item.entry.id !== entryId) || [],
                     _count: {
                         entries: prev._count.entries - 1
                     }
@@ -500,7 +500,7 @@ export default function CollectionDetailPage() {
     const canManageJournalClubFeature = userRole ? canManageJournalClub(userPlan as any, userRole) : false;
     const canParticipateInJournalClub = userRole ? canParticipate(userRole) : false;
 
-    const filteredEntries = collection?.entries.filter(item =>
+    const filteredEntries = collection?.entries?.filter(item =>
         item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
         item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase()))
     ) || [];
