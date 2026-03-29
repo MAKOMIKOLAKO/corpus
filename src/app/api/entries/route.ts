@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         url: d.url ?? null,
         doi: d.doi ?? null,
         isbn13: d.isbn ? [d.isbn] : [],
-        source: d.source ?? null,
+        source: d.source || undefined,
         abstract: d.abstract ?? null,
         summary: d.summary ?? null,
         notes: notesValue,

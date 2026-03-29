@@ -41,7 +41,7 @@ export async function GET(
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId }
     })
-    if (!collection || !isJournalClub(collection)) {
+    if (!collection || !isJournalClub(collection as any)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -95,7 +95,7 @@ export async function POST(
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId }
     })
-    if (!collection || !isJournalClub(collection)) {
+    if (!collection || !isJournalClub(collection as any)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 

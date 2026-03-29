@@ -99,12 +99,8 @@ export const entryCreateSchema = z.object({
   ),
   isbn: z.string().max(20).nullable().optional(),
   source: z
-    .union([z.string().max(500), z.null()])
-    .optional()
-    .transform((v) => {
-      if (v === null || v === undefined) return undefined;
-      return collapseSpaces(v);
-    }),
+    .enum(["MANUAL", "SMART_ALERT"])
+    .optional(),
   abstract: z
     .union([z.string().max(10000), z.null()])
     .optional()
