@@ -36,8 +36,13 @@ export type JournalClubEntryMetadata = {
 
 // Check if a collection is a journal club
 export function isJournalClub(collection: CollectionWithMetadata): boolean {
-  const meta = collection.metadata as Record<string, unknown> | null | undefined
-  return meta?.isJournalClub === true
+  try {
+    const meta = collection.metadata
+    if (!meta || typeof meta !== 'object') return false
+    return (meta as any).isJournalClub === true
+  } catch {
+    return false
+  }
 }
 
 /**

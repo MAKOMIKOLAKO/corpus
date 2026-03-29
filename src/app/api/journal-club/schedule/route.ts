@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    if (!isJournalClub(collection)) {
+    if (!isJournalClub(collection as any)) {
       return NextResponse.json(
         { error: 'This collection is not a journal club' },
         { status: 400 }

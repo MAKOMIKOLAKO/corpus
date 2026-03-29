@@ -50,7 +50,7 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    if (!isJournalClub(collection as Collection)) {
+    if (!isJournalClub(collection as any)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -89,9 +89,8 @@ export async function GET(
       if (!meta?.presentationDate) continue
 
       const dateStr = String(meta.presentationDate)
-      const details = `Presenter: ${meta.presenterName || 'TBD'}\n\n${
-        ec.entry.abstract || ''
-      }`
+      const details = `Presenter: ${meta.presenterName || 'TBD'}\n\n${ec.entry.abstract || ''
+        }`
       links.push({
         title: ec.entry.title,
         date: dateStr,
