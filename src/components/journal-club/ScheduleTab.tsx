@@ -393,11 +393,14 @@ export default function ScheduleTab({ collectionId, isJournalClub, canManage, cu
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">-- Select --</SelectItem>
-                      {unscheduledEntries.map((unscheduled) => (
-                        <SelectItem key={unscheduled.entry.id} value={unscheduled.entry.id}>
-                          {unscheduled.entry.title}
-                        </SelectItem>
-                      ))}
+                      {unscheduledEntries.map((unscheduled) => {
+                        console.log('Debug - Rendering unscheduled entry:', unscheduled);
+                        return (
+                          <SelectItem key={unscheduled.entry.id} value={unscheduled.entry.id}>
+                            {unscheduled.entry.title || 'No Title'}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 )}
