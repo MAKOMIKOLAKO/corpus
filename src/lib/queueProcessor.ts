@@ -103,12 +103,12 @@ function metaFallback(url: string, meta: ReturnType<typeof extractMeta>) {
 }
 
 async function userCanCreateEntry(userId: string): Promise<{ ok: true } | { ok: false; message: string }> {
-  const user = await prisma.user.findUnique({ 
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { plan: true, entriesCount: true }
   });
   if (!user) return { ok: false, message: 'User not found' };
-  
+
   const { allowed, reason } = canAddEntry(user.plan, user.entriesCount);
   if (!allowed) {
     return {
@@ -307,7 +307,7 @@ Body text: ${meta.bodyText}`;
           authors: entryPayload.authors,
           year: entryPayload.year,
           abstract: entryPayload.abstract,
-          source: entryPayload.source,
+          source: entryPayload.source || undefined,
           contentType: entryPayload.contentType,
           doi: entryPayload.doi,
           url: entryPayload.url,
