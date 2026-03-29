@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             authors: Array.isArray(p.authors) ? (p.authors as string[]) : [],
             year: year !== null && !Number.isNaN(year) ? year : null,
             contentType: (p.contentType as ContentType) || (inputType === 'PAPER' ? 'PAPER' : 'BOOK'),
-            source: (p.source as string) || undefined,
+            source: (p.source as "MANUAL" | "SMART_ALERT" | undefined),
             abstract: (p.abstract as string) || null,
             description: (p.description as string) || null,
             summary: (p.summary as string) || null,
