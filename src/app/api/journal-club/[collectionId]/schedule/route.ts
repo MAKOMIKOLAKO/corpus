@@ -16,17 +16,30 @@ export async function GET(
 
     const { collectionId } = params;
 
-    // Check if user is a member of the collection
-    const membership = await prisma.collectionMember.findUnique({
-      where: {
-        collectionId_userId: {
-          collectionId,
-          userId
-        }
-      }
+    // Check if user is a member of the collection or the owner
+    const collection = await prisma.collection.findUnique({
+      where: { id: collectionId }
     });
 
-    if (!membership || membership.status !== 'ACCEPTED') {
+    if (!collection) {
+      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+    }
+
+    const isOwner = collection.userId === userId;
+
+    let membership = null;
+    if (!isOwner) {
+      membership = await prisma.collectionMember.findUnique({
+        where: {
+          collectionId_userId: {
+            collectionId,
+            userId
+          }
+        }
+      });
+    }
+
+    if (!isOwner && (!membership || membership.status !== 'ACCEPTED')) {
       return NextResponse.json({ error: 'Not a member of this collection' }, { status: 403 });
     }
 
