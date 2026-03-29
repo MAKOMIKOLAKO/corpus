@@ -120,16 +120,16 @@ export default function CollectionDetailPage() {
     };
 
     // Use scroll position restoration for collection pages
-    if (params) {
+    if (params?.id) {
         useScrollPosition(`collection-${params.id}`);
     }
 
     useEffect(() => {
-        if (params.id) {
+        if (params?.id) {
             fetchCollection();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params.id]);
+    }, [params?.id]);
 
     // Handle Escape key for dropdowns
     useEffect(() => {
@@ -177,7 +177,7 @@ export default function CollectionDetailPage() {
 
     const fetchCollection = async () => {
         try {
-            const response = await fetch(`/api/collections/${params.id}`);
+            const response = await fetch(`/api/collections/${params?.id}`);
             if (response.ok) {
                 const data = await response.json();
                 setCollection(data);
@@ -224,7 +224,7 @@ export default function CollectionDetailPage() {
 
         setRemoving(entryId);
         try {
-            const response = await fetch(`/api/collections/${params.id}/entries/${entryId}`, {
+            const response = await fetch(`/api/collections/${params?.id}/entries/${entryId}`, {
                 method: 'DELETE',
                 headers: {
                     'x-api-key': apiKey,
@@ -263,7 +263,7 @@ export default function CollectionDetailPage() {
                 setInviting(false);
                 return;
             }
-            const response = await fetch(`/api/collections/${params.id}/members`, {
+            const response = await fetch(`/api/collections/${params?.id}/members`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -295,7 +295,7 @@ export default function CollectionDetailPage() {
     const handleUpdateMemberRole = async (memberId: string, newRole: 'VIEWER' | 'CONTRIBUTOR' | 'ADMIN') => {
         setUpdatingMember(memberId);
         try {
-            const response = await fetch(`/api/collections/${params.id}/members/${memberId}`, {
+            const response = await fetch(`/api/collections/${params?.id}/members/${memberId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -320,7 +320,7 @@ export default function CollectionDetailPage() {
         if (!confirm(`Remove ${memberName || 'this member'} from the collection?`)) return;
 
         try {
-            const response = await fetch(`/api/collections/${params.id}/members/${memberId}`, {
+            const response = await fetch(`/api/collections/${params?.id}/members/${memberId}`, {
                 method: 'DELETE',
             });
 
@@ -341,7 +341,7 @@ export default function CollectionDetailPage() {
         if (!userMembership) return;
 
         try {
-            const response = await fetch(`/api/collections/${params.id}/members/${userMembership.id}`, {
+            const response = await fetch(`/api/collections/${params?.id}/members/${userMembership.id}`, {
                 method: 'DELETE',
             });
 
@@ -365,7 +365,7 @@ export default function CollectionDetailPage() {
 
         setDeletingCollection(true);
         try {
-            const response = await fetch(`/api/collections/${params.id}`, {
+            const response = await fetch(`/api/collections/${params?.id}`, {
                 method: 'DELETE',
                 headers: { 'x-api-key': apiKey },
             });
@@ -417,7 +417,7 @@ export default function CollectionDetailPage() {
     const handleUpdateVisibility = async () => {
         setUpdatingVisibility(true);
         try {
-            const response = await fetch(`/api/collections/${params.id}/visibility`, {
+            const response = await fetch(`/api/collections/${params?.id}/visibility`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -971,7 +971,7 @@ export default function CollectionDetailPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredEntries.map(item => (
                                 <div key={item.id} className="relative group">
-                                    <EntryCard entry={item.entry} scrollPositionKey={`collection-${params.id}`} />
+                                    <EntryCard entry={item.entry} scrollPositionKey={`collection-${params?.id}`} />
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Button
                                             variant="destructive"

@@ -10,7 +10,7 @@ export function TimezoneSync() {
     if (!session?.user) return;
 
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const storedTimezone = session.user.timezone;
+    const storedTimezone = (session.user as any)?.timezone;
 
     // Only update if different and detected timezone is valid
     if (detectedTimezone && detectedTimezone !== storedTimezone) {

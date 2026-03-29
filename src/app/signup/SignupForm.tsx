@@ -6,8 +6,8 @@ import { useState, SyntheticEvent } from "react";
 
 export default function SignupForm() {
   const searchParams = useSearchParams();
-  const error = searchParams.get("error");
-  const callbackUrl = searchParams.get("callbackUrl") || "/library";
+  const error = searchParams?.get("error");
+  const callbackUrl = searchParams?.get("callbackUrl") || "/library";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
