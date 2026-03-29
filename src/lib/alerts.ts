@@ -5,7 +5,7 @@ export const ALERT_LIMITS = {
 } as const
 
 export const ALERT_CONFIG = {
-  maxCandidatesPerQuery: 30,
+  maxCandidatesPerQuery: 50,
   minHoursBetweenChecks: 23, // skip if checked within last 23 hours
   semanticScholarDaysBack: 3, // fetch papers from last 3 days
   relevanceModel: 'gemini-2.5-flash',
@@ -25,14 +25,14 @@ export function canCreateWatchQuery(
   plan: string,
   currentQueryCount: number
 ): { allowed: boolean; reason?: string } {
-  const limits = ALERT_LIMITS[plan as keyof typeof ALERT_LIMITS] 
+  const limits = ALERT_LIMITS[plan as keyof typeof ALERT_LIMITS]
     ?? ALERT_LIMITS.FREE
   if (limits.maxQueries === 0) {
     return { allowed: false, reason: 'alerts_pro_only' }
   }
   if (currentQueryCount >= limits.maxQueries) {
-    return { 
-      allowed: false, 
+    return {
+      allowed: false,
       reason: 'alert_query_limit_reached',
     }
   }

@@ -102,6 +102,9 @@ export async function processQuery(query: {
 
   // Step 3: Filter candidates by relevance using Gemini
   // Process in batches of 5 to avoid rate limits
+  const candidatesWithAbstractCount = candidates.filter((paper) => Boolean(paper.abstract)).length
+  console.log(`[alertProcessor] Sending ${candidatesWithAbstractCount} candidates with abstracts to Gemini relevance check`)
+
   const relevant: typeof candidates = []
   const batchSize = 5
 
@@ -228,6 +231,11 @@ interface CandidatePaper {
 async function fetchCandidatePapers(
   query: string
 ): Promise<CandidatePaper[]> {
+  const semanticScholarApiKey = process.env.SEMANTIC_SCHOLAR_API_KEY?.trim()
+  if (!semanticScholarApiKey) {
+    throw new Error('SEMANTIC_SCHOLAR_API_KEY is required for smart alerts')
+  }
+
   // Calculate date range for recent papers
   const daysBack = ALERT_CONFIG.semanticScholarDaysBack
   const fromDate = new Date()
@@ -252,7 +260,7 @@ async function fetchCandidatePapers(
   try {
     const response = await fetch(url.toString(), {
       headers: {
-        'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY || '',
+        'x-api-key': semanticScholarApiKey,
         'Accept': 'application/json'
       },
       signal: controller.signal
@@ -301,6 +309,7 @@ async function checkRelevance(
   if (!paper.abstract) {
     // No abstract — use title only with lower confidence
     // Default to false for papers without abstracts
+    console.log('[alertProcessor] Skipping relevance check: no abstract for paper', paper.title)
     return false
   }
 
@@ -315,18 +324,27 @@ Is this paper directly relevant to the user's research interest?
 Answer with only YES or NO. No explanation.`
 
   try {
+    console.log(`[alertProcessor] Checking Gemini relevance for: "${paper.title}"`)
+    const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || ''
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY or GOOGLE_AI_API_KEY is required for relevance filtering')
+    }
+
     // Use existing Gemini client pattern from the codebase
     const genAI = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
+      apiKey: geminiApiKey,
     })
-    const chat = new Chat((genAI as any).models.apiClient, genAI.models, 'gemini-1.5-flash')
+    const chat = new Chat((genAI as any).models.apiClient, genAI.models, ALERT_CONFIG.relevanceModel)
 
     const result = await chat.sendMessage({ message: prompt })
     const answer = result.text?.trim()?.toUpperCase()
 
-    return answer === 'YES'
+    const isRelevant = answer === 'YES'
+    console.log(`[alertProcessor] Gemini result: ${answer} -> relevant=${isRelevant}`)
+    return isRelevant
   } catch (error) {
     console.error('[alertProcessor] Gemini relevance check failed:', error)
+    console.error('[alertProcessor] Ensure GEMINI_API_KEY or GOOGLE_AI_API_KEY is set and valid')
     return false // Default to not relevant on error
   }
 }
