@@ -158,12 +158,9 @@ export const entryPatchSchema = z
       .nullable()
       .optional()),
     source: z
-      .union([z.string().max(500), z.null()])
-      .optional()
-      .transform((v) => {
-        if (v === null || v === undefined) return undefined;
-        return collapseSpaces(v);
-      }),
+      .enum(["MANUAL", "SMART_ALERT"])
+      .nullable()
+      .optional(),
     url: z.preprocess(
       (v) => (v === "" || v === undefined ? null : v),
       urlSchema.nullable().optional()
