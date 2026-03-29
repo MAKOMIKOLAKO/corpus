@@ -436,16 +436,16 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
 
                         {/* Smart Alert Notice */}
                         {formData.source === 'SMART_ALERT' && (
-                            <div className="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800">
+                            <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
                                 <div className="flex items-start gap-3">
-                                    <Brain className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                                    <Brain className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
                                     <div className="flex-1">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">
+                                        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
                                             This paper was automatically added by a Smart Alert
                                         </p>
-                                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                                        <p className="text-xs text-amber-700 dark:text-amber-300">
                                             Corpus found this paper based on your research interests and added it to your library.
-                                            <a href="/alerts" className="ml-1 underline hover:text-blue-600 dark:hover:text-blue-100">
+                                            <a href="/alerts" className="ml-1 underline hover:text-amber-600 dark:hover:text-amber-100">
                                                 Manage your Smart Alerts
                                             </a>
                                         </p>

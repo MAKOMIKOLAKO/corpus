@@ -430,7 +430,7 @@ export default function EntryCard({
                                                 {contentTypeLabel(entry.contentType)}
                                             </Badge>
                                             {entry.source && entry.source === 'SMART_ALERT' && (
-                                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 whitespace-nowrap bg-blue-100 text-blue-700 border-blue-200">
+                                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 whitespace-nowrap bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
                                                     <Brain className="h-2.5 w-2.5 mr-1" />
                                                     Smart Alert
                                                 </Badge>

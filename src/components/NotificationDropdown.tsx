@@ -34,12 +34,12 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
   // Fetch notification count
   const fetchNotificationCount = async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       const response = await fetch('/api/notifications/count', {
         headers: { 'x-api-key': apikey || '' }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setUnreadCount(data.count);
@@ -52,28 +52,28 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
   // Fetch notifications
   const fetchNotifications = async (loadMore = false) => {
     if (!session?.user?.id || loading) return;
-    
+
     setLoading(true);
-    
+
     try {
-      const cursor = loadMore && notifications.length > 0 
-        ? notifications[notifications.length - 1].id 
+      const cursor = loadMore && notifications.length > 0
+        ? notifications[notifications.length - 1].id
         : undefined;
-        
+
       const response = await fetch(
         `/api/notifications?limit=20${cursor ? `&cursor=${cursor}` : ''}`,
         { headers: { 'x-api-key': apikey || '' } }
       );
-      
+
       if (response.ok) {
         const data = await response.json();
-        
+
         if (loadMore) {
           setNotifications(prev => [...prev, ...data.notifications]);
         } else {
           setNotifications(data.notifications);
         }
-        
+
         setUnreadCount(data.unreadCount);
         setHasMore(data.hasMore);
       }
@@ -96,7 +96,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
         },
         body: JSON.stringify({ notificationIds: [notificationId] })
       });
-      
+
       setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
@@ -117,7 +117,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
         },
         body: JSON.stringify({})
       });
-      
+
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       toast.success('All notifications marked as read');
@@ -132,7 +132,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
     if (!notification.read) {
       markAsRead(notification.id);
     }
-    
+
     // Navigate to collection if it's a smart alert
     if (notification.type === 'SMART_ALERT' && notification.metadata?.collectionId) {
       setIsOpen(false);
@@ -147,7 +147,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
+
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
@@ -169,10 +169,10 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
   // Poll for notification count
   useEffect(() => {
     if (!session?.user?.id) return;
-    
+
     fetchNotificationCount();
     const interval = setInterval(fetchNotificationCount, 60000); // Every minute
-    
+
     return () => clearInterval(interval);
   }, [session?.user?.id, apikey]);
 
@@ -185,32 +185,30 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative inline-flex items-center gap-2 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+        className="h-10 w-10 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--muted)]/10 rounded-md transition-colors touch-manipulation relative"
+        aria-label="Notifications"
       >
-        <Bell className="w-4 h-4" />
-        <span className="hidden md:inline">notifications</span>
+        <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] font-bold">
+          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--destructive)] text-white text-[10px] font-bold">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-      </Button>
+      </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)] shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)] shadow-lg z-50">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-            <h3 className="font-semibold">Notifications</h3>
+          <div className="flex items-center justify-between p-3 border-b border-[var(--border)]">
+            <h3 className="font-semibold text-sm">Notifications</h3>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="text-xs"
+                className="text-xs h-7 px-2"
               >
                 Mark all read
               </Button>
@@ -232,9 +230,8 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 hover:bg-[var(--muted)]/50 cursor-pointer transition-colors ${
-                      !notification.read ? 'bg-[var(--muted)]/20' : ''
-                    }`}
+                    className={`p-3 hover:bg-[var(--accent)] cursor-pointer transition-colors ${!notification.read ? 'bg-[var(--muted)]/20' : ''
+                      }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start gap-3">
@@ -242,7 +239,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
                         <div className="w-2 h-2 rounded-full bg-[var(--primary)] mt-2 flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[var(--foreground)]">
+                        <p className="text-sm leading-relaxed">
                           {notification.message}
                         </p>
                         <div className="flex items-center justify-between mt-1">
@@ -252,10 +249,10 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
                           {notification.type === 'SMART_ALERT' && notification.metadata?.collectionId && (
                             <Link
                               href={`/collections/${notification.metadata.collectionId}`}
-                              className="inline-flex items-center gap-1 text-xs text-[var(--primary)] hover:underline"
+                              className="text-xs text-[var(--primary)] hover:underline flex items-center gap-1"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              View
+                              View collection
                               <ExternalLink className="w-3 h-3" />
                             </Link>
                           )}
@@ -268,7 +265,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
             )}
           </div>
 
-          {/* Load more */}
+          {/* Footer with Load More */}
           {hasMore && (
             <div className="p-2 border-t border-[var(--border)]">
               <Button
@@ -276,7 +273,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
                 size="sm"
                 onClick={() => fetchNotifications(true)}
                 disabled={loading}
-                className="w-full"
+                className="w-full text-xs"
               >
                 {loading ? 'Loading...' : 'Load more'}
               </Button>
