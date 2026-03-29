@@ -748,7 +748,7 @@ export default function CollectionDetailPage() {
                             </div>
                             <button
                                 onClick={() => setIsPublic(!isPublic)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPublic ? 'bg-primary' : 'bg-muted'
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPublic ? 'bg-accent' : 'bg-muted'
                                     }`}
                             >
                                 <span

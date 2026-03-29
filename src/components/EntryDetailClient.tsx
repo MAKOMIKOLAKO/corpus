@@ -336,7 +336,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
 
                         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-[var(--border)]">
                             <button onClick={() => { setIsEditing(false); setFormData(initialData); }} className="px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:bg-[var(--muted)] w-full sm:w-auto touch-manipulation">Cancel</button>
-                            <button onClick={handleSave} disabled={isSaving} className="bg-[var(--primary)] text-white px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 w-full sm:w-auto touch-manipulation">
+                            <button onClick={handleSave} disabled={isSaving} className="bg-[var(--accent)] text-[var(--accent-foreground)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 w-full sm:w-auto touch-manipulation">
                                 {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
@@ -346,10 +346,10 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                 <div className="space-y-8">
                     <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
                         <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
-                            <button onClick={openShareModal} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
+                            <button onClick={openShareModal} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
                                 <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
                             </button>
-                            <button onClick={() => setIsEditing(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-md transition-colors touch-manipulation" title="Edit Entry">
+                            <button onClick={() => setIsEditing(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Edit Entry">
                                 <Edit2 className="w-5 h-5 sm:w-4 sm:h-4" />
                             </button>
                             <button onClick={handleDelete} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors touch-manipulation" title="Delete Entry">
@@ -543,7 +543,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                             <button
                                 onClick={handleAddToCollection}
                                 disabled={!selectedCollection || isAddingToCollection}
-                                className="bg-[var(--foreground)] text-[var(--background)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
+                                className="bg-[var(--accent)] text-[var(--accent-foreground)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
                             >
                                 {isAddingToCollection ? 'Adding...' : 'Add to Collection'}
                             </button>
@@ -584,7 +584,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                 <button
                                     onClick={handleAddNote}
                                     disabled={!newNote.trim() || isAddingNote}
-                                    className="bg-[var(--foreground)] text-[var(--background)] px-6 py-3 sm:py-1.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
+                                    className="bg-[var(--accent)] text-[var(--accent-foreground)] px-6 py-3 sm:py-1.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
                                 >
                                     {isAddingNote ? 'Adding...' : 'Add Note'}
                                 </button>
@@ -655,7 +655,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                                     <button type="button" onClick={() => setShowShareModal(false)} className="px-4 py-2 rounded-md text-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors">
                                         Close
                                     </button>
-                                    <button type="submit" disabled={!shareReceiverId || isSharing} className="px-4 py-2 rounded-md text-sm font-medium bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
+                                    <button type="submit" disabled={!shareReceiverId || isSharing} className="px-4 py-2 rounded-md text-sm font-medium bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
                                         {isSharing ? 'Sharing…' : 'Share'}
                                     </button>
                                 </div>

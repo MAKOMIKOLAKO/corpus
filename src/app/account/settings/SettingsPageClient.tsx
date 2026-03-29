@@ -402,7 +402,7 @@ export default function AccountPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowSignals(!showSignals)}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showSignals ? 'bg-[var(--primary)]' : 'bg-[var(--muted)]'
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showSignals ? 'bg-[var(--accent)]' : 'bg-[var(--muted)]'
                                             }`}
                                     >
                                         <span

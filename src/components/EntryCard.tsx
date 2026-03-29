@@ -395,8 +395,8 @@ export default function EntryCard({
             >
                 {selectionMode?.enabled && (
                     <div className="absolute top-4 left-4 z-[40]">
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectionMode.isSelected ? 'bg-primary border-primary' : 'bg-background border-border group-hover:border-primary/50'}`}>
-                            {selectionMode.isSelected && <Check className="w-4 h-4 text-primary-foreground" />}
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectionMode.isSelected ? 'bg-accent border-accent' : 'bg-background border-border group-hover:border-accent/50'}`}>
+                            {selectionMode.isSelected && <Check className="w-4 h-4 text-accent-foreground" />}
                         </div>
                     </div>
                 )}
@@ -412,7 +412,7 @@ export default function EntryCard({
                     }}
                     className={selectionMode?.enabled ? 'cursor-default' : ''}
                 >
-                    <Card className={`group h-full hover:shadow-lg transition-all duration-200 border-border/50 hover:border-foreground/20 overflow-visible ${selectionMode?.isSelected ? 'ring-2 ring-primary border-primary' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`}>
+                    <Card className={`group h-full hover:shadow-lg transition-all duration-200 border-border/50 hover:border-foreground/20 overflow-visible ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`}>
                         <CardContent className="p-5 overflow-visible">
                             <div className="space-y-4">
                                 {/* Header with title and metadata */}
