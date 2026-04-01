@@ -181,25 +181,20 @@ export async function processQuery(query: {
   console.log(`[alertProcessor] ${relevant.length}/${candidates.length} papers deemed relevant after filtering`)
 
 
-  // Step 4: Stage relevant papers into alert container
+  // Step 4: Always create a container to track this run
   const db = prisma as any
+  console.log(`[alertProcessor] Creating container for query run`)
 
-  // Always create a container if we have relevant papers, even if none are staged
-  let container;
-  if (relevant.length > 0) {
-    console.log(`[alertProcessor] Creating container for ${relevant.length} relevant papers`)
-    container = await db.alertContainer.create({
-      data: {
-        userId: query.userId,
-        watchQueryId: query.id,
-        query: query.query,
-        collectionId: query.collectionId,
-      }
-    })
-  } else {
-    // Only look for existing containers if no new relevant papers
-    container = await getOrCreateAlertContainer(query)
-  }
+  const container = await db.alertContainer.create({
+    data: {
+      userId: query.userId,
+      watchQueryId: query.id,
+      query: query.query,
+      collectionId: query.collectionId,
+    }
+  })
+
+  console.log(`[alertProcessor] Created container ${container.id}`)
 
   const existingContainerEntries = await db.alertEntry.findMany({
     where: { containerId: container.id },
@@ -268,7 +263,7 @@ export async function processQuery(query: {
     }
   }
 
-  // Step 5: Create notification if papers were staged
+  // Step 5: Always create a notification to show the alert ran
   if (papersAdded > 0) {
     console.log(`[alertProcessor] Creating notification for ${papersAdded} papers`)
     await prisma.notification.create({
@@ -287,6 +282,21 @@ export async function processQuery(query: {
     })
   } else {
     console.log(`[alertProcessor] No new papers to stage for query "${query.query}"`)
+    // Still create a notification to show the system ran
+    await prisma.notification.create({
+      data: {
+        userId: query.userId,
+        type: 'SMART_ALERT',
+        message: `Alert check complete for "${query.query}". No new relevant papers found.`,
+        metadata: {
+          queryId: query.id,
+          containerId: container.id,
+          collectionId: query.collectionId,
+          paperCount: 0,
+          alertEntryIds: [],
+        }
+      }
+    })
   }
 
   // Step 6: Update lastCheckedAt
