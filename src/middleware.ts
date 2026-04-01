@@ -63,6 +63,7 @@ function isPublicApiPath(pathname: string): boolean {
   if (pathname === "/api/stripe/webhook") return true;
   if (pathname.startsWith("/api/collections/public/")) return true;
   if (pathname.startsWith("/api/profile/")) return true;
+  if (pathname === "/api/cron/smart-alerts") return true;
   return false;
 }
 
@@ -89,11 +90,17 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = (await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-    cookieName: "next-auth.session-token",
-  })) as { userId?: string; sub?: string } | any;
+  let token: { userId?: string; sub?: string } | any = null;
+  try {
+    token = (await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+      cookieName: "next-auth.session-token",
+    })) as { userId?: string; sub?: string } | any;
+  } catch (error) {
+    console.error("[middleware] Failed to parse auth token:", error);
+    token = null;
+  }
 
   if (pathname.startsWith("/api")) {
     if (isAuthRateLimitPath(pathname)) {
