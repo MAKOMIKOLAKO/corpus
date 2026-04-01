@@ -12,6 +12,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    console.log('[cron/smart-alerts] Starting alert processing...');
+    console.log('[cron/smart-alerts] Environment check:', {
+      hasSemanticScholarKey: !!process.env.SEMANTIC_SCHOLAR_API_KEY,
+      hasGoogleKey: !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
+      nodeEnv: process.env.NODE_ENV
+    });
+
     const results = await processAllAlerts();
     console.log('[cron/smart-alerts] Processing complete:', results);
 
