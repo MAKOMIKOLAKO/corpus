@@ -157,7 +157,7 @@ To test logging immediately:
 ```bash
 # Test the cron endpoint with curl
 curl -X POST http://localhost:3000/api/cron/smart-alerts \
-  -H "Authorization: Bearer F=|+OH&(?Jt#{p=]>w?Bq8Vd_!^Q%y1^" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET_HERE" \
   -v
 ```
 
