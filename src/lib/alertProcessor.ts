@@ -14,9 +14,14 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
     errors: []
   }
 
+  console.log('[alertProcessor] Starting alert processing...')
+
   // Fetch all active queries not checked in last 23 hours and for users active in last 12 days
   const cutoff = new Date(Date.now() - ALERT_CONFIG.minHoursBetweenChecks * 60 * 60 * 1000)
   const activeUserCutoff = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000) // 12 days ago
+
+  console.log(`[alertProcessor] Cutoff time: ${cutoff.toISOString()}`)
+  console.log(`[alertProcessor] Active user cutoff: ${activeUserCutoff.toISOString()}`)
 
   const queries = await prisma.watchQuery.findMany({
     where: {
@@ -39,6 +44,13 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
   })
 
   console.log(`[alertProcessor] Processing ${queries.length} active queries`)
+
+  if (queries.length > 0) {
+    console.log('[alertProcessor] Queries found:')
+    queries.forEach(q => {
+      console.log(`  - User ${q.userId} (plan: ${q.user.plan}): "${q.query}" (last checked: ${q.lastCheckedAt})`)
+    })
+  }
 
   if (queries.length === 0) {
     console.log('[alertProcessor] No queries found. Checking conditions...')
@@ -88,6 +100,16 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
 
     // Wait 2 seconds between queries to respect API rate limits
     await new Promise(resolve => setTimeout(resolve, 2000))
+  }
+
+  console.log('[alertProcessor] Alert processing complete:', {
+    queriesProcessed: results.queriesProcessed,
+    totalPapersAdded: results.totalPapersAdded,
+    errors: results.errors.length
+  })
+
+  if (results.errors.length > 0) {
+    console.log('[alertProcessor] Errors encountered:', results.errors)
   }
 
   return results
@@ -161,7 +183,23 @@ export async function processQuery(query: {
 
   // Step 4: Stage relevant papers into alert container
   const db = prisma as any
-  const container = await getOrCreateAlertContainer(query)
+
+  // Always create a container if we have relevant papers, even if none are staged
+  let container;
+  if (relevant.length > 0) {
+    console.log(`[alertProcessor] Creating container for ${relevant.length} relevant papers`)
+    container = await db.alertContainer.create({
+      data: {
+        userId: query.userId,
+        watchQueryId: query.id,
+        query: query.query,
+        collectionId: query.collectionId,
+      }
+    })
+  } else {
+    // Only look for existing containers if no new relevant papers
+    container = await getOrCreateAlertContainer(query)
+  }
 
   const existingContainerEntries = await db.alertEntry.findMany({
     where: { containerId: container.id },

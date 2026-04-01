@@ -516,10 +516,9 @@ export default function AlertsPageClient() {
 
       if (!response.ok) throw new Error('Failed to delete alert');
 
-      setWatchQueries(prev => prev.map(q =>
-        q.id === queryId ? { ...q, isActive: false } : q
-      ));
-      toast.success('Alert deactivated');
+      // Remove from UI or update to inactive based on preference
+      setWatchQueries(prev => prev.filter(q => q.id !== queryId));
+      toast.success('Alert deleted successfully');
     } catch (error) {
       console.error('Error deactivating watch query:', error);
       toast.error('Failed to deactivate alert');
