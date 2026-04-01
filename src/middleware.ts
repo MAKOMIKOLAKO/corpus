@@ -90,6 +90,12 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip token parsing for cron job route - it uses Bearer token auth
+  if (pathname === "/api/cron/smart-alerts") {
+    // Check rate limit for cron if needed
+    return NextResponse.next();
+  }
+
   let token: { userId?: string; sub?: string } | any = null;
   try {
     token = (await getToken({
@@ -98,8 +104,16 @@ export default async function middleware(req: NextRequest) {
       cookieName: "next-auth.session-token",
     })) as { userId?: string; sub?: string } | any;
   } catch (error) {
-    console.error("[middleware] Failed to parse auth token:", error);
-    token = null;
+    if (error instanceof URIError) {
+      console.error("[middleware] Failed to parse auth token - URI malformed (clearing cookie)");
+      // Clear the malformed cookie by setting it to expire
+      const response = NextResponse.next();
+      response.cookies.delete("next-auth.session-token");
+      return response;
+    } else {
+      console.error("[middleware] Failed to parse auth token:", error);
+      token = null;
+    }
   }
 
   if (pathname.startsWith("/api")) {
@@ -115,6 +129,7 @@ export default async function middleware(req: NextRequest) {
 
     if (
       pathname !== "/api/stripe/webhook" &&
+      pathname !== "/api/cron/smart-alerts" &&
       !pathname.startsWith("/api/auth/")
     ) {
       const identifier =
