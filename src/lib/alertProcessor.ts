@@ -135,10 +135,14 @@ export async function processQuery(query: {
   }
 
   // Step 2: Get existing entries for deduplication
+  // Limit to prevent stack overflow with users who have many papers
   const existingEntries = await prisma.entry.findMany({
     where: { userId: query.userId },
-    select: { doi: true, title: true }
+    select: { doi: true, title: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5000, // Limit to last 5000 entries for performance
   })
+  console.log(`[alertProcessor] Found ${existingEntries.length} existing entries for deduplication`)
   const existingDOIs = new Set(
     existingEntries.map((e: { doi: string | null }) => e.doi).filter(Boolean) as string[]
   )

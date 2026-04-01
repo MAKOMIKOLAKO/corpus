@@ -36,6 +36,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[cron/smart-alerts] Fatal error:', error);
+
+    // Special handling for stack overflow
+    if (error instanceof RangeError && error.message.includes('stack')) {
+      console.error('[cron/smart-alerts] Stack overflow detected!');
+      console.error('This usually happens when processing users with too many entries');
+      console.error('Stack trace:', error.stack);
+      return NextResponse.json({
+        error: 'Stack overflow - too much data to process',
+        details: 'Consider reducing the take limit in alertProcessor.ts'
+      }, { status: 500 });
+    }
+
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
   }
 }
