@@ -4,7 +4,7 @@ Write-Host "`n🚀 Starting Alert API Routes Verification`n" -ForegroundColor Ye
 
 # Test configuration
 $BaseUrl = $env:BASE_URL ?? "http://localhost:3000"
-$CronSecret = $env:CRON_SECRET ?? "F=|+OH&(?Jt#{p=]>w?Bq8Vd_!^Q%y1^"
+$CronSecret = $env:CRON_SECRET ?? "YOUR_CRON_SECRET_HERE"
 $SessionToken = $env:SESSION_TOKEN ?? $null
 
 # Test function
