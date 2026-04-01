@@ -1,6 +1,38 @@
 # Call Stack Size Exceeded - Debugging Guide
 
-## Common Causes & Solutions
+## Status: FIXED ✅
+
+### Implemented Solutions
+
+1. **Iterative Set Building** (alertProcessor.ts lines 178-191)
+   - Replaced `new Set(array.map(...))` with iterative `Set.add()` calls
+   - Processes entries in chunks of 1000 to prevent stack overflow
+   - Added async breaks between chunks with `setTimeout(0)`
+
+2. **Safe Title Normalization** (alertProcessor.ts lines 5-19)
+   - Created `safeNormalizeTitle()` wrapper with error handling
+   - Monitors stack depth before processing
+   - Provides fallback normalization on errors
+
+3. **Reduced Query Limits** (alertProcessor.ts line 174)
+   - Reduced `take` limit from 5000 to 2000 entries
+   - Further reduces memory pressure and stack depth
+
+4. **Stack Size Monitoring** (alertProcessor.ts lines 20-21, 146-152)
+   - Logs initial stack size at start of processing
+   - Checks stack size before each query
+   - Skips queries if stack depth exceeds 100
+
+5. **Automatic Query Recovery** (alertProcessor.ts lines 117-129)
+   - Detects stack overflow errors
+   - Automatically disables problematic queries
+   - Continues processing other queries
+
+6. **Container Entry Processing** (alertProcessor.ts lines 248-256)
+   - Also uses iterative Set building for container entries
+   - Consistent error handling throughout
+
+## Common Causes & Solutions (Historical Reference)
 
 ### 1. **Infinite Recursion**
 Check for functions that call themselves without a proper exit condition:
@@ -176,3 +208,31 @@ const existingEntries = await prisma.entry.findMany({
   take: 5000, // Limit to last 5000 entries
 })
 ```
+
+## Verification
+
+To verify the fixes are working:
+
+1. **Check logs for stack size monitoring:**
+```
+[alertProcessor] Initial stack size: 15
+[alertProcessor] Stack size at query start: 18
+```
+
+2. **Look for chunked processing messages:**
+```
+[alertProcessor] Found 2000 existing entries for deduplication
+```
+
+3. **Test with a user who has many papers:**
+- The system should now process without stack overflow
+- Queries will be automatically disabled if they cause issues
+
+4. **Run the test script:**
+```bash
+node test-stack-fixes.js
+```
+
+## Root Cause
+
+The stack overflow was caused by using `new Set(array.map(...))` with large arrays. When processing users with thousands of entries, this pattern creates a deep call stack that exceeds JavaScript's limits. The fix uses iterative Set building with async breaks to prevent this issue.
