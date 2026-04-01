@@ -1,6 +1,23 @@
 import { prisma } from './prismaWithRetry'
 import { ALERT_CONFIG, normalizeTitle } from './alerts'
 
+// Safe title normalization with error handling
+function safeNormalizeTitle(title: string): string {
+  try {
+    // Check stack depth before processing
+    const currentStack = (new Error()).stack?.split('\n').length || 0
+    if (currentStack > 50) {
+      console.warn(`[alertProcessor] Stack depth getting large: ${currentStack}`)
+    }
+
+    return normalizeTitle(title)
+  } catch (error) {
+    console.error(`[alertProcessor] Error normalizing title: ${title}`, error)
+    // Return a simple fallback normalization
+    return title.toLowerCase().replace(/[^\w\s]/g, '').trim()
+  }
+}
+
 export interface ProcessingResults {
   queriesProcessed: number
   totalPapersAdded: number
@@ -15,6 +32,10 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
   }
 
   console.log('[alertProcessor] Starting alert processing...')
+
+  // Monitor stack size at start
+  const initialStackSize = (new Error()).stack?.split('\n').length || 0
+  console.log(`[alertProcessor] Initial stack size: ${initialStackSize}`)
 
   // Fetch all active queries not checked in last 23 hours
   const cutoff = new Date(Date.now() - ALERT_CONFIG.minHoursBetweenChecks * 60 * 60 * 1000)
@@ -91,6 +112,22 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
     } catch (error) {
       const message = `Query ${query.id}: ${(error as Error).message}`
       console.error(`[alertProcessor] ${message}`)
+
+      // Special handling for stack overflow
+      if (error instanceof RangeError && error.message.includes('stack')) {
+        console.error('[alertProcessor] Stack overflow detected! Disabling this query to prevent further issues.')
+        results.errors.push(`${message} (Stack overflow - query disabled)`)
+
+        // Disable the problematic query
+        await prisma.watchQuery.update({
+          where: { id: query.id },
+          data: { isActive: false }
+        })
+
+        // Skip to next query
+        continue
+      }
+
       results.errors.push(message)
       // Continue processing other queries even if one fails
     }
@@ -121,6 +158,15 @@ export async function processQuery(query: {
 }): Promise<number> {
   console.log(`[alertProcessor] Processing query: "${query.query}" for user ${query.userId}`)
 
+  // Monitor stack size at start of query processing
+  const stackSize = (new Error()).stack?.split('\n').length || 0
+  console.log(`[alertProcessor] Stack size at query start: ${stackSize}`)
+
+  if (stackSize > 100) {
+    console.error('[alertProcessor] Stack size suspiciously large, skipping query to prevent overflow')
+    throw new Error(`Stack overflow risk: stack size ${stackSize} is too large`)
+  }
+
   // Step 1: Fetch candidate papers from Semantic Scholar
   const candidates = await fetchCandidatePapers(query.query)
   console.log(`[alertProcessor] Found ${candidates.length} candidate papers`)
@@ -136,19 +182,39 @@ export async function processQuery(query: {
 
   // Step 2: Get existing entries for deduplication
   // Limit to prevent stack overflow with users who have many papers
+  // Further reduced limit to prevent stack issues
   const existingEntries = await prisma.entry.findMany({
     where: { userId: query.userId },
     select: { doi: true, title: true },
     orderBy: { createdAt: 'desc' },
-    take: 5000, // Limit to last 5000 entries for performance
+    take: 2000, // Reduced from 5000 to prevent stack overflow
   })
   console.log(`[alertProcessor] Found ${existingEntries.length} existing entries for deduplication`)
-  const existingDOIs = new Set(
-    existingEntries.map((e: { doi: string | null }) => e.doi).filter(Boolean) as string[]
-  )
-  const existingTitles = new Set(
-    existingEntries.map((e: { title: string }) => normalizeTitle(e.title))
-  )
+
+  // Build Sets iteratively to avoid stack overflow with large arrays
+  const existingDOIs = new Set<string>()
+  const existingTitles = new Set<string>()
+
+  // Process in chunks to prevent stack overflow
+  const chunkSize = 1000
+  for (let i = 0; i < existingEntries.length; i += chunkSize) {
+    const chunk = existingEntries.slice(i, i + chunkSize)
+    for (const entry of chunk) {
+      if (entry.doi) {
+        existingDOIs.add(entry.doi)
+      }
+      try {
+        const normalizedTitle = safeNormalizeTitle(entry.title)
+        existingTitles.add(normalizedTitle)
+      } catch (error) {
+        console.error(`[alertProcessor] Error normalizing title: ${entry.title}`, error)
+      }
+    }
+    // Allow event loop to breathe between chunks
+    if (i + chunkSize < existingEntries.length) {
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
 
   // Step 3: Filter candidates by relevance using Gemini
   // Process in batches of 5 to avoid rate limits
@@ -202,12 +268,18 @@ export async function processQuery(query: {
     select: { externalId: true, title: true },
   })
 
-  const existingContainerExternalIds = new Set(
-    existingContainerEntries.map((entry: { externalId: string }) => entry.externalId)
-  )
-  const existingContainerTitles = new Set(
-    existingContainerEntries.map((entry: { title: string }) => normalizeTitle(entry.title))
-  )
+  const existingContainerExternalIds = new Set<string>()
+  const existingContainerTitles = new Set<string>()
+
+  // Build container Sets iteratively to avoid stack overflow
+  for (const entry of existingContainerEntries) {
+    existingContainerExternalIds.add(entry.externalId)
+    try {
+      existingContainerTitles.add(safeNormalizeTitle(entry.title))
+    } catch (error) {
+      console.error(`[alertProcessor] Error normalizing container title: ${entry.title}`, error)
+    }
+  }
 
   let papersAdded = 0
   const stagedAlertEntryIds: string[] = []
@@ -221,7 +293,7 @@ export async function processQuery(query: {
     if (paper.doi && existingDOIs.has(paper.doi)) {
       continue
     }
-    const normalizedTitle = normalizeTitle(paper.title)
+    const normalizedTitle = safeNormalizeTitle(paper.title)
     if (existingTitles.has(normalizedTitle)) {
       continue
     }
