@@ -1,6 +1,5 @@
-import prisma from './prisma'
+import { prisma } from './prismaWithRetry'
 import { ALERT_CONFIG, normalizeTitle } from './alerts'
-import { GoogleGenAI, Chat } from '@google/genai'
 
 export interface ProcessingResults {
   queriesProcessed: number
@@ -40,6 +39,12 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
   })
 
   console.log(`[alertProcessor] Processing ${queries.length} active queries`)
+
+  if (queries.length === 0) {
+    console.log('[alertProcessor] No queries found. Checking conditions...')
+    console.log('[alertProcessor] Cutoff time:', cutoff.toISOString())
+    console.log('[alertProcessor] Active user cutoff:', activeUserCutoff.toISOString())
+  }
 
   // Process queries sequentially to avoid overwhelming APIs
   for (const query of queries) {
@@ -95,12 +100,14 @@ export async function processQuery(query: {
   collectionId: string
   maxPapers?: number
 }): Promise<number> {
-  console.log(`[alertProcessor] Processing query: "${query.query}"`)
+  console.log(`[alertProcessor] Processing query: "${query.query}" for user ${query.userId}`)
 
   // Step 1: Fetch candidate papers from Semantic Scholar
   const candidates = await fetchCandidatePapers(query.query)
+  console.log(`[alertProcessor] Found ${candidates.length} candidate papers`)
 
   if (candidates.length === 0) {
+    console.log(`[alertProcessor] No candidates found for query "${query.query}"`)
     await prisma.watchQuery.update({
       where: { id: query.id },
       data: { lastCheckedAt: new Date() }
@@ -114,15 +121,16 @@ export async function processQuery(query: {
     select: { doi: true, title: true }
   })
   const existingDOIs = new Set(
-    existingEntries.map(e => e.doi).filter(Boolean) as string[]
+    existingEntries.map((e: { doi: string | null }) => e.doi).filter(Boolean) as string[]
   )
   const existingTitles = new Set(
-    existingEntries.map(e => normalizeTitle(e.title))
+    existingEntries.map((e: { title: string }) => normalizeTitle(e.title))
   )
 
   // Step 3: Filter candidates by relevance using Gemini
   // Process in batches of 5 to avoid rate limits
   const candidatesWithAbstractCount = candidates.filter((paper) => Boolean(paper.abstract)).length
+  console.log(`[alertProcessor] ${candidatesWithAbstractCount}/${candidates.length} candidates have abstracts`)
 
   const relevant: typeof candidates = []
   const batchSize = 5
@@ -137,6 +145,8 @@ export async function processQuery(query: {
       const result = results[j]
       if (result.status === 'fulfilled' && result.value === true) {
         relevant.push(batch[j])
+      } else if (result.status === 'rejected') {
+        console.error(`[alertProcessor] Relevance check failed for paper: ${batch[j].title}`, result.reason)
       }
     }
 
@@ -145,6 +155,8 @@ export async function processQuery(query: {
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
   }
+
+  console.log(`[alertProcessor] ${relevant.length}/${candidates.length} papers deemed relevant after filtering`)
 
 
   // Step 4: Stage relevant papers into alert container
@@ -166,6 +178,7 @@ export async function processQuery(query: {
   let papersAdded = 0
   const stagedAlertEntryIds: string[] = []
   const maxPerRun = Math.max(1, Math.min(query.maxPapers ?? 5, 10))
+  console.log(`[alertProcessor] Will stage up to ${maxPerRun} papers from ${relevant.length} relevant ones`)
 
   for (const paper of relevant.slice(0, maxPerRun)) {
     const externalId = paper.doi || paper.semanticScholarId
@@ -219,6 +232,7 @@ export async function processQuery(query: {
 
   // Step 5: Create notification if papers were staged
   if (papersAdded > 0) {
+    console.log(`[alertProcessor] Creating notification for ${papersAdded} papers`)
     await prisma.notification.create({
       data: {
         userId: query.userId,
@@ -233,6 +247,8 @@ export async function processQuery(query: {
         }
       }
     })
+  } else {
+    console.log(`[alertProcessor] No new papers to stage for query "${query.query}"`)
   }
 
   // Step 6: Update lastCheckedAt
@@ -241,6 +257,7 @@ export async function processQuery(query: {
     data: { lastCheckedAt: new Date() }
   })
 
+  console.log(`[alertProcessor] Query "${query.query}" complete. Added ${papersAdded} papers`)
   return papersAdded
 }
 
@@ -388,16 +405,27 @@ Answer with only YES or NO. No explanation.`
       throw new Error('GEMINI_API_KEY or GOOGLE_AI_API_KEY is required for relevance filtering')
     }
 
-    // Use existing Gemini client pattern from the codebase
-    const genAI = new GoogleGenAI({
-      apiKey: geminiApiKey,
+    // Use the same pattern as queueProcessor.ts
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`
+    const geminiResponse = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          response_mime_type: 'text/plain',
+        },
+      }),
     })
-    const chat = new Chat((genAI as any).models.apiClient, genAI.models, ALERT_CONFIG.relevanceModel)
 
-    const result = await chat.sendMessage({ message: prompt })
-    const answer = result.text?.trim()?.toUpperCase()
+    if (!geminiResponse.ok) {
+      console.error('[alertProcessor] Gemini API error:', geminiResponse.status)
+      return false
+    }
 
-    const isRelevant = answer === 'YES'
+    const geminiData = await geminiResponse.json()
+    const answer = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const isRelevant = answer.trim().toUpperCase() === 'YES'
     return isRelevant
   } catch (error) {
     console.error('[alertProcessor] Gemini relevance check failed:', error)

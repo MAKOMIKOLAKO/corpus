@@ -81,12 +81,12 @@ function truncateInput(s: string, max = 60) {
 }
 
 function mergeQueueState(prev: QueueItem[], server: QueueItem[]): QueueItem[] {
-    const map = new Map<string, QueueItem>();
-    prev.forEach(item => map.set(item.id, item));
-    server.forEach(item => map.set(item.id, item));
-    return Array.from(map.values()).sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+  const map = new Map<string, QueueItem>();
+  prev.forEach(item => map.set(item.id, item));
+  server.forEach(item => map.set(item.id, item));
+  return Array.from(map.values()).sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 }
 
 export default function AddEntryPage() {
@@ -262,14 +262,14 @@ export default function AddEntryPage() {
   const activeQueueCount = queue.items.filter(item => item.status === 'PENDING' || item.status === 'PROCESSING').length;
   const displayQueueItems = (() => {
     if (queueShowAll) return queue.items;
-    
+
     const count = 10;
     const first10 = queue.items.slice(0, count);
-    const terminalExtra = queue.items.filter(item => 
-      (item.status === 'COMPLETED' || item.status === 'FAILED') && 
+    const terminalExtra = queue.items.filter(item =>
+      (item.status === 'COMPLETED' || item.status === 'FAILED') &&
       !first10.some(f => f.id === item.id)
     );
-    
+
     return [...first10, ...terminalExtra];
   })();
 
@@ -338,11 +338,10 @@ export default function AddEntryPage() {
                 </form>
                 {urlStatus.message && (
                   <p
-                    className={`text-sm ${
-                      urlStatus.type === 'error'
+                    className={`text-sm ${urlStatus.type === 'error'
                         ? 'text-amber-600 dark:text-amber-400'
                         : 'text-emerald-600 dark:text-emerald-400'
-                    }`}
+                      }`}
                   >
                     {urlStatus.message}
                   </p>
@@ -461,11 +460,10 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-lg py-3.5 sm:py-2.5 text-sm font-medium transition-all touch-manipulation active:scale-[0.98] ${
-        active
+      className={`flex-1 rounded-lg py-3.5 sm:py-2.5 text-sm font-medium transition-all touch-manipulation active:scale-[0.98] ${active
           ? 'text-white shadow-md'
           : 'border border-[var(--border)] border-dashed bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]'
-      }`}
+        }`}
       style={active ? { backgroundColor: TAB_ACTIVE } : undefined}
     >
       {label}
@@ -748,7 +746,7 @@ function PreviewForm({
         authors: authorsArr,
         year: formData.year === '' || formData.year === null ? null : parseInt(String(formData.year), 10),
         contentType: formData.contentType,
-        source: formData.source || null,
+        // source: formData.source || null, // Removed to prevent validation error
         abstract: formData.abstract || null,
         doi: formData.doi || null,
         url: formData.url || null,
@@ -761,6 +759,7 @@ function PreviewForm({
           externalId: item.semanticScholarId || item.openLibraryKey,
           pages: item.pages,
           coverUrl: item.coverUrl,
+          source: formData.source || item.source || item.publisher || null, // Store in metadata instead
         },
       };
 
