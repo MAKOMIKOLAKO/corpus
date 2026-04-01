@@ -16,12 +16,10 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
 
   console.log('[alertProcessor] Starting alert processing...')
 
-  // Fetch all active queries not checked in last 23 hours and for users active in last 12 days
+  // Fetch all active queries not checked in last 23 hours
   const cutoff = new Date(Date.now() - ALERT_CONFIG.minHoursBetweenChecks * 60 * 60 * 1000)
-  const activeUserCutoff = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000) // 12 days ago
 
   console.log(`[alertProcessor] Cutoff time: ${cutoff.toISOString()}`)
-  console.log(`[alertProcessor] Active user cutoff: ${activeUserCutoff.toISOString()}`)
 
   const queries = await prisma.watchQuery.findMany({
     where: {
@@ -29,17 +27,10 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
       OR: [
         { lastCheckedAt: null },
         { lastCheckedAt: { lt: cutoff } }
-      ],
-      user: {
-        OR: [
-          { lastFeedViewedAt: { gte: activeUserCutoff } },
-          { lastFeedViewedAt: null }, // Include users who haven't viewed feed yet
-          { createdAt: { gte: activeUserCutoff } } // Include recently created users
-        ]
-      }
+      ]
     },
     include: {
-      user: { select: { id: true, plan: true, lastFeedViewedAt: true, createdAt: true } }
+      user: { select: { id: true, plan: true } }
     }
   })
 
@@ -55,7 +46,6 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
   if (queries.length === 0) {
     console.log('[alertProcessor] No queries found. Checking conditions...')
     console.log('[alertProcessor] Cutoff time:', cutoff.toISOString())
-    console.log('[alertProcessor] Active user cutoff:', activeUserCutoff.toISOString())
   }
 
   // Process queries sequentially to avoid overwhelming APIs
@@ -68,17 +58,6 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
           where: { id: query.id },
           data: { isActive: false }
         })
-        continue
-      }
-
-      // Additional activity check (double-check the filtering)
-      const isUserActive =
-        !query.user.lastFeedViewedAt || // Never viewed feed
-        query.user.lastFeedViewedAt >= activeUserCutoff || // Viewed feed recently
-        query.user.createdAt >= activeUserCutoff // Recently joined
-
-      if (!isUserActive) {
-        console.log(`[alertProcessor] Skipping inactive user ${query.user.id} - last activity: ${query.user.lastFeedViewedAt}`)
         continue
       }
 
