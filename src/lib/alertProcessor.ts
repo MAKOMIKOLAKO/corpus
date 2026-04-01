@@ -20,6 +20,24 @@ export async function processAllAlerts(): Promise<ProcessingResults> {
   const cutoff = new Date(Date.now() - ALERT_CONFIG.minHoursBetweenChecks * 60 * 60 * 1000)
 
   console.log(`[alertProcessor] Cutoff time: ${cutoff.toISOString()}`)
+  console.log(`[alertProcessor] Checking for active queries...`)
+
+  // First, let's see all queries regardless of activity
+  const allQueries = await prisma.watchQuery.findMany({
+    select: {
+      id: true,
+      userId: true,
+      query: true,
+      isActive: true,
+      lastCheckedAt: true,
+      user: { select: { plan: true } }
+    }
+  })
+
+  console.log(`[alertProcessor] Total queries in database: ${allQueries.length}`)
+  allQueries.forEach(q => {
+    console.log(`  - Query "${q.query}" (User: ${q.userId}, Plan: ${q.user.plan}, Active: ${q.isActive}, Last checked: ${q.lastCheckedAt})`)
+  })
 
   const queries = await prisma.watchQuery.findMany({
     where: {

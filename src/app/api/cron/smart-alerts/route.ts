@@ -7,7 +7,13 @@ const CRON_SECRET = process.env.CRON_SECRET;
 export async function POST(request: NextRequest) {
   // Verify this is called by Vercel cron or with correct secret
   const authHeader = request.headers.get('authorization');
+  console.log('=== CRON JOB STARTED ===');
+  console.log('Auth header:', authHeader ? 'Present' : 'Missing');
+  console.log('Expected secret:', process.env.CRON_SECRET ? 'Set' : 'Missing');
+  console.log('Timestamp:', new Date().toISOString());
+
   if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    console.error('CRON: Authorization failed');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
