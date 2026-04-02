@@ -46,15 +46,34 @@ export async function DELETE(
       return NextResponse.json({ error: 'Watch query not found' }, { status: 404 });
     }
 
-    // Soft delete by setting isActive to false
-    const updatedQuery = await prisma.watchQuery.update({
-      where: { id: watchQueryId },
-      data: { isActive: false },
+    // Hard delete the watch query and its associated data
+    await prisma.$transaction(async (tx) => {
+      // Delete associated alert containers and their entries
+      const alertContainers = await tx.alertContainer.findMany({
+        where: { watchQueryId: watchQueryId },
+        select: { id: true }
+      });
+
+      for (const container of alertContainers) {
+        // Delete alert entries first due to foreign key constraint
+        await tx.alertEntry.deleteMany({
+          where: { containerId: container.id }
+        });
+        // Delete the container
+        await tx.alertContainer.delete({
+          where: { id: container.id }
+        });
+      }
+
+      // Delete the watch query
+      await tx.watchQuery.delete({
+        where: { id: watchQueryId }
+      });
     });
 
-    return NextResponse.json({ message: 'Watch query deactivated successfully' });
+    return NextResponse.json({ message: 'Watch query deleted successfully' });
   } catch (error) {
-    console.error('Error deactivating watch query:', error);
+    console.error('Error deleting watch query:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
