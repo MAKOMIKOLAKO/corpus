@@ -52,7 +52,7 @@ interface SearchResult {
   openAccessUrl?: string | null;
 }
 
-const TAB_ACTIVE = '#6366f1';
+// Remove the TAB_ACTIVE constant as we're using CSS variables now
 
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
@@ -61,9 +61,9 @@ function StatusIcon({ status }: { status: string }) {
     case 'PROCESSING':
       return <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />;
     case 'COMPLETED':
-      return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+      return <CheckCircle2 className="h-4 w-4 text-[var(--success)]" />;
     case 'FAILED':
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return <XCircle className="h-4 w-4 text-[var(--destructive)]" />;
     default:
       return null;
   }
@@ -331,7 +331,7 @@ export default function AddEntryPage() {
                   <button
                     type="submit"
                     className="rounded-lg bg-[var(--accent)] px-6 py-4 sm:py-3 font-medium whitespace-nowrap text-[var(--accent-foreground)] shadow-sm transition-all hover:opacity-90 active:scale-[0.98] mt-2 sm:mt-0 touch-manipulation"
-                    style={{ backgroundColor: TAB_ACTIVE }}
+                    style={{ backgroundColor: 'var(--accent)' }}
                   >
                     Add to Queue
                   </button>
@@ -339,8 +339,8 @@ export default function AddEntryPage() {
                 {urlStatus.message && (
                   <p
                     className={`text-sm ${urlStatus.type === 'error'
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-[var(--destructive)]'
+                      : 'text-[var(--success)]'
                       }`}
                   >
                     {urlStatus.message}
@@ -374,7 +374,7 @@ export default function AddEntryPage() {
                     type="submit"
                     disabled={isSearching}
                     className="flex items-center justify-center gap-2 rounded-lg px-6 py-4 sm:py-3 font-medium whitespace-nowrap text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98] mt-2 sm:mt-0 touch-manipulation"
-                    style={{ backgroundColor: TAB_ACTIVE }}
+                    style={{ backgroundColor: 'var(--accent)' }}
                   >
                     {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                     Search
@@ -399,7 +399,7 @@ export default function AddEntryPage() {
                 )}
 
                 {!isSearching && searchError && (
-                  <div className="py-10 text-center text-amber-600 dark:text-amber-400">
+                  <div className="py-10 text-center text-[var(--destructive)]">
                     <p>{searchError}</p>
                   </div>
                 )}
@@ -461,10 +461,10 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`flex-1 rounded-lg py-3.5 sm:py-2.5 text-sm font-medium transition-all touch-manipulation active:scale-[0.98] ${active
-          ? 'text-white shadow-md'
-          : 'border border-[var(--border)] border-dashed bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]'
+        ? 'text-white shadow-md'
+        : 'border border-[var(--border)] border-dashed bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]'
         }`}
-      style={active ? { backgroundColor: TAB_ACTIVE } : undefined}
+      style={active ? { backgroundColor: 'var(--accent)' } : undefined}
     >
       {label}
     </button>
@@ -567,7 +567,7 @@ function QueuePanel({
           {activeCount > 0 && (
             <span
               className="min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] text-white"
-              style={{ backgroundColor: TAB_ACTIVE }}
+              style={{ backgroundColor: 'var(--accent)' }}
             >
               {activeCount}
             </span>
@@ -578,7 +578,7 @@ function QueuePanel({
             type="button"
             onClick={onToggleShowAll}
             className="text-xs text-[var(--accent)] hover:underline"
-            style={{ color: TAB_ACTIVE }}
+            style={{ color: 'var(--accent)' }}
           >
             {showAll ? 'Show less' : 'View all'}
           </button>
@@ -626,7 +626,7 @@ function QueuePanel({
                   <Link
                     href={`/entries/${item.entryId}`}
                     className="text-[var(--accent)] hover:underline"
-                    style={{ color: TAB_ACTIVE }}
+                    style={{ color: 'var(--accent)' }}
                   >
                     View Entry
                   </Link>
@@ -637,7 +637,7 @@ function QueuePanel({
                   type="button"
                   onClick={() => onRetry(item)}
                   className="rounded bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] transition-colors hover:opacity-80"
-                  style={{ color: TAB_ACTIVE }}
+                  style={{ color: 'var(--accent)' }}
                 >
                   Retry
                 </button>
@@ -990,7 +990,7 @@ function PreviewForm({
           onClick={handleSave}
           disabled={isSaving || !formData.title}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-white shadow-lg transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
-          style={{ backgroundColor: TAB_ACTIVE }}
+          style={{ backgroundColor: 'var(--accent)' }}
         >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
           Save to Library
@@ -1097,7 +1097,7 @@ function PostSavePanel({
     <div className="animate-in fade-in zoom-in-95 flex flex-col items-center py-12 duration-700">
       <div
         className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border shadow-inner"
-        style={{ borderColor: TAB_ACTIVE, color: TAB_ACTIVE }}
+        style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
       >
         <Check className="h-10 w-10" strokeWidth={2.5} />
       </div>
@@ -1151,7 +1151,7 @@ function PostSavePanel({
           type="button"
           onClick={onViewEntry}
           className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-4 sm:py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 touch-manipulation"
-          style={{ backgroundColor: TAB_ACTIVE }}
+          style={{ backgroundColor: 'var(--accent)' }}
         >
           View Entry <ExternalLink className="h-4 w-4" />
         </button>
@@ -1172,7 +1172,7 @@ function PostSavePanel({
         type="button"
         onClick={onAddAnother}
         className="text-sm font-medium hover:underline"
-        style={{ color: TAB_ACTIVE }}
+        style={{ color: 'var(--accent)' }}
       >
         Add another
       </button>
