@@ -527,7 +527,7 @@ export default function AlertsPageClient() {
 
   const formatDate = (dateString: string | null, timezone: string) => {
     if (!dateString) return 'Never';
-    return formatDate(dateString, timezone);
+    return new Date(dateString).toLocaleString(undefined, { timeZone: timezone });
   };
 
   if (status === 'loading' || loading) {
