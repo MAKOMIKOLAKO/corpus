@@ -504,7 +504,7 @@ export default function AlertsPageClient() {
   };
 
   const handleDeleteQuery = async (queryId: string) => {
-    if (!confirm('Are you sure you want to delete this alert? This will deactivate it.')) return;
+    if (!confirm('Are you sure you want to delete this alert? This will permanently remove it and all its associated data.')) return;
 
     try {
       const response = await fetch(`/api/watch-queries/${queryId}`, {
@@ -516,12 +516,12 @@ export default function AlertsPageClient() {
 
       if (!response.ok) throw new Error('Failed to delete alert');
 
-      // Remove from UI or update to inactive based on preference
+      // Remove from UI since it's actually deleted
       setWatchQueries(prev => prev.filter(q => q.id !== queryId));
       toast.success('Alert deleted successfully');
     } catch (error) {
-      console.error('Error deactivating watch query:', error);
-      toast.error('Failed to deactivate alert');
+      console.error('Error deleting watch query:', error);
+      toast.error('Failed to delete alert');
     }
   };
 
