@@ -39,6 +39,14 @@ export default function UpgradeBanner({ message, ctaText = 'Upgrade to Pro' }: U
             <Link
               href="/pricing"
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-amber-700 bg-amber-100 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors"
+              onClick={(e) => {
+                // Check if we're on the alerts page and the link is for upgrading to use alerts
+                if (window.location.pathname === '/alerts' && message.includes('Smart Alerts')) {
+                  e.preventDefault();
+                  // Redirect to pricing with a return URL
+                  window.location.href = '/pricing?return=/alerts';
+                }
+              }}
             >
               {ctaText}
             </Link>

@@ -599,7 +599,13 @@ export default function AlertsPageClient() {
               {activeQueryCount} of {MAX_QUERIES_PER_USER} active alerts used
             </div>
             <Button
-              onClick={() => setShowCreateForm(true)}
+              onClick={() => {
+                setShowCreateForm(true);
+                setTimeout(() => {
+                  const form = document.getElementById('create-alert-form');
+                  form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              }}
               disabled={activeQueryCount >= MAX_QUERIES_PER_USER}
               size="lg"
               className="h-11 gap-2 px-5"
@@ -623,7 +629,7 @@ export default function AlertsPageClient() {
       )}
 
       {showCreateForm && (
-        <Card className="border-[var(--border)] shadow-sm">
+        <Card id="create-alert-form" className="border-[var(--border)] shadow-sm">
           <CardHeader className="space-y-2 pb-4">
             <CardTitle className="text-xl font-semibold">Create a new alert</CardTitle>
             <p className="text-sm leading-6 text-[var(--muted-foreground)]">
