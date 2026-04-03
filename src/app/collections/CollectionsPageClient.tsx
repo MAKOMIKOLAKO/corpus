@@ -11,6 +11,7 @@ import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
+import { getCurrentUserId } from '@/lib/session';
 
 interface CollectionInvite {
     id: string;
@@ -135,7 +136,12 @@ export default function CollectionsPage() {
             });
             if (response.ok) {
                 const data = await response.json();
-                setCollections([...data.owned, ...data.member]);
+                const userId = await getCurrentUserId();
+                const collectionsWithOwnership = [
+                    ...data.owned.map((c: any) => ({ ...c, isOwner: true, userRole: 'OWNER' as const })),
+                    ...data.member.map((c: any) => ({ ...c, isOwner: false, userRole: c.userRole || 'VIEWER' as const }))
+                ];
+                setCollections(collectionsWithOwnership);
             }
         } catch (error) {
             console.error('Failed to fetch collections:', error);
