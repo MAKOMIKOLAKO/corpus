@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff } from 'lucide-react';
 import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
+import { useTheme } from '@/lib/theme';
 
 export default function AccountPage() {
     const { data: session, update } = useSession();
@@ -42,6 +43,7 @@ export default function AccountPage() {
     const [sendingCode, setSendingCode] = useState(false);
     const [showCodeInput, setShowCodeInput] = useState(false);
     const [verificationMsg, setVerificationMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const { theme, setTheme } = useTheme();
 
     const userPlan = getUserPlan(session?.user ? {
         ...session.user,
@@ -332,6 +334,42 @@ export default function AccountPage() {
                 <h1 className="text-2xl font-semibold tracking-tight">account settings</h1>
                 <p className="text-sm text-muted-foreground">manage your account and subscription.</p>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Appearance</CardTitle>
+                    <p className="text-sm text-muted-foreground">Choose how Corpus looks to you.</p>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setTheme('dark')}
+                            className={`rounded-xl border p-4 text-left transition-colors ${theme === 'dark' ? 'border-accent ring-2 ring-accent/40' : 'border-border hover:border-border-strong'}`}
+                        >
+                            <div className="h-[70px] w-[120px] rounded-md border border-zinc-800 bg-zinc-900 p-2">
+                                <div className="h-4 w-full rounded bg-zinc-800" />
+                                <div className="mt-2 h-7 w-3/4 rounded bg-zinc-800" />
+                            </div>
+                            <p className="mt-3 font-medium">Dark</p>
+                            <p className="text-sm text-muted-foreground">Easy on the eyes</p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setTheme('light')}
+                            className={`rounded-xl border p-4 text-left transition-colors ${theme === 'light' ? 'border-accent ring-2 ring-accent/40' : 'border-border hover:border-border-strong'}`}
+                        >
+                            <div className="h-[70px] w-[120px] rounded-md border border-zinc-200 bg-zinc-100 p-2">
+                                <div className="h-4 w-full rounded border border-zinc-200 bg-white" />
+                                <div className="mt-2 h-7 w-3/4 rounded border border-zinc-200 bg-white" />
+                            </div>
+                            <p className="mt-3 font-medium">Light</p>
+                            <p className="text-sm text-muted-foreground">Classic and clean</p>
+                        </button>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Profile */}
             <Card id="username">

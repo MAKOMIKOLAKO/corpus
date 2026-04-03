@@ -496,7 +496,7 @@ export default function EntryCard({
                                             </button>
 
                                             {isContentTypeOpen && (
-                                                <div className="absolute top-full left-0 mt-1 z-[70] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[160px]">
+                                                <div className="absolute top-full left-0 mt-1 z-[70] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[160px]">
                                                     {contentTypes.map((type) => (
                                                         <button
                                                             key={type}
@@ -505,7 +505,7 @@ export default function EntryCard({
                                                                 e.stopPropagation();
                                                                 handleContentTypeChange(type);
                                                             }}
-                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${type === currentContentType ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''}`}
+                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${type === currentContentType ? 'bg-surface-raised font-medium' : ''}`}
                                                         >
                                                             {contentTypeLabel(type)}
                                                         </button>
@@ -554,20 +554,20 @@ export default function EntryCard({
                                         </button>
 
                                         {isCollectionOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[160px] backdrop-blur-none opacity-100">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[160px] backdrop-blur-none opacity-100">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
-                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${currentCollectionId === null ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''
+                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${currentCollectionId === null ? 'bg-surface-raised font-medium' : ''
                                                         }`}
                                                 >
                                                     no collection
                                                 </button>
                                                 {collections.length === 0 ? (
-                                                    <div className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    <div className="w-full text-left px-3 py-2 text-sm text-content-tertiary">
                                                         No collections
                                                     </div>
                                                 ) : (
@@ -579,7 +579,7 @@ export default function EntryCard({
                                                                 e.stopPropagation();
                                                                 handleCollectionChange(c.id);
                                                             }}
-                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${c.id === currentCollectionId ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''
+                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${c.id === currentCollectionId ? 'bg-surface-raised font-medium' : ''
                                                                 }`}
                                                         >
                                                             {c.name}
@@ -611,7 +611,7 @@ export default function EntryCard({
                                         </button>
 
                                         {isOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl min-w-[120px]">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[120px]">
                                                 {readingStatuses.map((status) => (
                                                     <button
                                                         key={status.value}
@@ -620,13 +620,13 @@ export default function EntryCard({
                                                             e.stopPropagation();
                                                             handleStatusChange(status.value as typeof entry.readingStatus);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${status.value === currentStatus ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''
+                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${status.value === currentStatus ? 'bg-surface-raised font-medium' : ''
                                                             }`}
                                                     >
                                                         {status.label}
                                                     </button>
                                                 ))}
-                                                <div className="border-t border-gray-200 dark:border-gray-700">
+                                                <div className="border-t border-border-default">
                                                     <button
                                                         onClick={(e) => {
                                                             e.preventDefault();

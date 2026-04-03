@@ -142,7 +142,7 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
                         <Star
                           className={`w-7 h-7 sm:w-6 sm:h-6 ${star <= (hoveredRating || rating)
                             ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300 dark:text-gray-600"
+                            : "text-content-tertiary"
                             }`}
                         />
                       </button>

@@ -936,7 +936,7 @@ export default function CollectionDetailPage() {
                             key={tab.id}
                             onClick={() => handleTabChange(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
-                                ? 'bg-blue-600 text-white dark:bg-blue-600 dark:text-white'
+                                ? 'bg-blue-600 text-content-inverse dark:bg-blue-600 dark:text-content-inverse'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
                         >

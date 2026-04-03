@@ -59,13 +59,13 @@ export default function UsernameSuggestion() {
 
   if (!isOpen) {
     return (
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+      <div className="bg-surface-raised border border-border-default rounded-lg p-4 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+            <p className="text-sm text-content-secondary">
               You&apos;re using a temporary username. <button
                 onClick={() => setIsOpen(true)}
-                className="font-medium underline hover:no-underline"
+                className="font-medium text-content-primary underline hover:no-underline"
               >
                 Choose a custom username
               </button>
@@ -73,7 +73,7 @@ export default function UsernameSuggestion() {
           </div>
           <button
             onClick={() => setDismissed(true)}
-            className="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+            className="ml-2 text-content-secondary hover:text-content-primary"
           >
             <X className="w-4 h-4" />
           </button>
@@ -83,12 +83,12 @@ export default function UsernameSuggestion() {
   }
 
   return (
-    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+    <div className="bg-surface-raised border border-border-default rounded-lg p-6 mb-6">
       <div className="flex items-start justify-between mb-4">
-        <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Choose your username</h3>
+        <h3 className="text-lg font-semibold text-content-primary">Choose your username</h3>
         <button
           onClick={() => setIsOpen(false)}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+          className="text-content-secondary hover:text-content-primary"
         >
           <X className="w-5 h-5" />
         </button>
@@ -96,11 +96,11 @@ export default function UsernameSuggestion() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+          <label className="block text-sm font-medium text-content-primary mb-1">
             Username
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-content-tertiary text-sm">@</span>
             <input
               type="text"
               value={username}
@@ -111,7 +111,7 @@ export default function UsernameSuggestion() {
               }}
               placeholder="yourhandle"
               maxLength={20}
-              className="w-full pl-7 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-7 pr-3 py-2 bg-surface-sunken border border-border-default rounded-md text-sm text-content-primary focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           {availability && (
@@ -122,7 +122,7 @@ export default function UsernameSuggestion() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+          <label className="block text-sm font-medium text-content-primary mb-1">
             Bio (optional)
           </label>
           <textarea
@@ -131,7 +131,7 @@ export default function UsernameSuggestion() {
             placeholder="A short description about you…"
             maxLength={160}
             rows={3}
-            className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-surface-sunken border border-border-default rounded-md text-sm text-content-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
@@ -139,14 +139,14 @@ export default function UsernameSuggestion() {
           <button
             type="submit"
             disabled={!availability?.available || saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            className="px-4 py-2 bg-blue-600 text-content-inverse rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             {saving ? 'Saving…' : 'Update Username'}
           </button>
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm"
+            className="px-4 py-2 text-content-secondary hover:text-content-primary text-sm"
           >
             Cancel
           </button>
