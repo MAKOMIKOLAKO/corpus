@@ -1,14 +1,17 @@
-import 'server-only';
-import { Resend } from 'resend';
-
 const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-function getResendClient() {
+async function getResendClient() {
+  if (typeof window !== 'undefined') {
+    throw new Error('Email sending is server-only');
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     throw new Error('RESEND_API_KEY is not configured');
   }
+
+  const { Resend } = await import('resend');
   return new Resend(apiKey);
 }
 
@@ -18,7 +21,7 @@ export async function sendPasswordResetEmail(
   name: string
 ) {
   const resetUrl = `${APP_URL}/reset-password/${token}`;
-  const resend = getResendClient();
+  const resend = await getResendClient();
 
   await resend.emails.send({
     from: FROM,
@@ -57,7 +60,7 @@ export async function sendVerificationEmail(
   name: string
 ) {
   const verifyUrl = `${APP_URL}/verify-email/${token}`;
-  const resend = getResendClient();
+  const resend = await getResendClient();
 
   await resend.emails.send({
     from: FROM,
