@@ -156,6 +156,11 @@ export default function CollectionsPage() {
     // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest('[data-collection-menu="true"]')) {
+                return;
+            }
+
             if (showDropdown) {
                 setShowDropdown(null);
             }
@@ -493,7 +498,7 @@ export default function CollectionsPage() {
                                     </Card>
                                 </Link>
                                 {collection.isOwner && (
-                                    <div className="absolute top-2 right-2">
+                                    <div className="absolute top-2 right-2" data-collection-menu="true">
                                         <Button
                                             variant="ghost"
                                             size="sm"
