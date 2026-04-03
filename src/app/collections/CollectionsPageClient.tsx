@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2, Crown } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2, Crown, MoreHorizontal, Edit } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -90,6 +90,14 @@ export default function CollectionsPage() {
     const [creating, setCreating] = useState(false);
     const [respondingToInvite, setRespondingToInvite] = useState<string | null>(null);
     const [deletingCollection, setDeletingCollection] = useState<string | null>(null);
+    const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDropdown, setShowDropdown] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState('');
+    const [editingDescription, setEditingDescription] = useState('');
+    const [updating, setUpdating] = useState(false);
+    const [editFormError, setEditFormError] = useState<string | null>(null);
+    const [editTouched, setEditTouched] = useState<{ name: boolean; description: boolean }>({ name: false, description: false });
     const apiKey = useApiKey();
     const { data: session } = useSession();
     const router = useRouter();
@@ -103,6 +111,10 @@ export default function CollectionsPage() {
     const nameTooLong = newCollection.name.trim().length > NAME_MAX;
     const descTooLong = newCollection.description.trim().length > DESC_MAX;
     const isValid = newCollection.name.trim().length >= NAME_MIN && !nameTooLong && !descTooLong;
+    const editNameTooShort = editingName.trim().length > 0 && editingName.trim().length < NAME_MIN;
+    const editNameTooLong = editingName.trim().length > NAME_MAX;
+    const editDescTooLong = editingDescription.trim().length > DESC_MAX;
+    const isEditValid = editingName.trim().length >= NAME_MIN && !editNameTooLong && !editDescTooLong;
 
     const fetchInvites = useCallback(async () => {
         try {
@@ -136,6 +148,20 @@ export default function CollectionsPage() {
         fetchCollections();
         fetchInvites();
     }, [fetchCollections, fetchInvites]);
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showDropdown) {
+                setShowDropdown(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showDropdown]);
 
     const handleCreateCollection = async () => {
         setFormError(null);
@@ -229,6 +255,59 @@ export default function CollectionsPage() {
         } finally {
             setDeletingCollection(null);
         }
+    };
+
+    const handleUpdateCollection = async () => {
+        setEditFormError(null);
+        setEditTouched({ name: true, description: true });
+
+        if (!isEditValid) {
+            return;
+        }
+
+        setUpdating(true);
+        try {
+            const response = await fetch(`/api/collections/${editingCollection?.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                },
+                body: JSON.stringify({
+                    name: editingName.trim().slice(0, NAME_MAX),
+                    description: editingDescription.trim().slice(0, DESC_MAX),
+                }),
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data?.id) {
+                // Reset and refresh
+                setEditingName('');
+                setEditingDescription('');
+                setShowEditModal(false);
+                setEditingCollection(null);
+                fetchCollections();
+            } else {
+                const message = data?.error || 'Failed to update collection';
+                setEditFormError(message);
+            }
+        } catch (error: any) {
+            const message = error?.message || 'Failed to update collection';
+            setEditFormError(message);
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const openEditModal = (collection: Collection) => {
+        setEditingCollection(collection);
+        setEditingName(collection.name);
+        setEditingDescription(collection.description || '');
+        setEditFormError(null);
+        setEditTouched({ name: false, description: false });
+        setShowEditModal(true);
+        setShowDropdown(null);
     };
 
     const formatDate = (dateString: string) => {
@@ -410,23 +489,47 @@ export default function CollectionsPage() {
                                     </Card>
                                 </Link>
                                 {collection.isOwner && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleDeleteCollection(collection.id, collection.name);
-                                        }}
-                                        disabled={deletingCollection === collection.id}
-                                        className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background"
-                                    >
-                                        {deletingCollection === collection.id ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Trash2 className="w-4 h-4" />
+                                    <div className="absolute top-2 right-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setShowDropdown(showDropdown === collection.id ? null : collection.id);
+                                            }}
+                                            className="h-8 w-8 p-0 bg-background/80 backdrop-blur-sm hover:bg-background"
+                                        >
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </Button>
+                                        {showDropdown === collection.id && (
+                                            <div className="absolute top-full right-0 mt-1 w-40 bg-popover border border-border rounded-md shadow-lg z-50">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        openEditModal(collection);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setShowDropdown(null);
+                                                        handleDeleteCollection(collection.id, collection.name);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete
+                                                </button>
+                                            </div>
                                         )}
-                                    </Button>
+                                    </div>
                                 )}
                             </div>
                         ))}
@@ -511,6 +614,93 @@ export default function CollectionsPage() {
                                     variant="outline"
                                     onClick={() => setShowCreateModal(false)}
                                     disabled={creating}
+                                    className="flex-1 h-11 sm:h-9 touch-manipulation"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Collection Modal */}
+            {showEditModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true">
+                    <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-2xl p-6 max-w-[480px] w-full mx-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-medium">Edit Collection</h3>
+                            <Button variant="ghost" size="sm" onClick={() => setShowEditModal(false)}>
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1 uppercase tracking-tight text-[var(--muted-foreground)]">Name *</label>
+                                <input
+                                    type="text"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    onBlur={() => setEditTouched(prev => ({ ...prev, name: true }))}
+                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(editTouched.name && (editNameTooShort || editNameTooLong)) ? 'border-red-500' : 'border-[var(--border)]'
+                                        }`}
+                                    placeholder="Enter collection name"
+                                    aria-invalid={editTouched.name && (editNameTooShort || editNameTooLong)}
+                                />
+                                {editTouched.name && editNameTooShort && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        Name must be at least {NAME_MIN} characters
+                                    </p>
+                                )}
+                                {editTouched.name && editNameTooLong && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        Name must be {NAME_MAX} characters or less
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Description</label>
+                                <textarea
+                                    value={editingDescription}
+                                    onChange={(e) => setEditingDescription(e.target.value)}
+                                    onBlur={() => setEditTouched(prev => ({ ...prev, description: true }))}
+                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(editTouched.description && editDescTooLong) ? 'border-red-500' : ''
+                                        }`}
+                                    rows={3}
+                                    placeholder="Enter collection description"
+                                    aria-invalid={editTouched.description && editDescTooLong}
+                                    aria-describedby="edit-desc-help"
+                                />
+                                <div id="edit-desc-help" className="mt-1 flex items-center justify-end text-xs">
+                                    <span className={`${editDescTooLong ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                        {editingDescription.trim().length}/{DESC_MAX}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {editFormError && (
+                                <p className="text-sm text-red-600 dark:text-red-400">{editFormError}</p>
+                            )}
+
+                            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                                <Button
+                                    onClick={handleUpdateCollection}
+                                    disabled={updating || !isEditValid}
+                                    className="flex-1 h-11 sm:h-9 touch-manipulation"
+                                >
+                                    {updating ? (
+                                        <span className="flex items-center">
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                            Updating...
+                                        </span>
+                                    ) : 'Save Changes'}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowEditModal(false)}
+                                    disabled={updating}
                                     className="flex-1 h-11 sm:h-9 touch-manipulation"
                                 >
                                     Cancel
