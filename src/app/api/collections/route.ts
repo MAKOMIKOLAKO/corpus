@@ -24,8 +24,28 @@ export async function GET(request: NextRequest) {
         const ownedCollections = await prisma.collection.findMany({
             where: { userId },
             include: {
+                user: {
+                    select: {
+                        name: true,
+                        username: true,
+                    }
+                },
                 _count: {
                     select: { entries: true, members: true }
+                },
+                entries: {
+                    take: 2,
+                    orderBy: {
+                        addedAt: 'desc',
+                    },
+                    select: {
+                        entry: {
+                            select: {
+                                id: true,
+                                title: true,
+                            }
+                        }
+                    }
                 },
                 members: {
                     where: { status: 'ACCEPTED' }
@@ -42,8 +62,28 @@ export async function GET(request: NextRequest) {
             include: {
                 collection: {
                     include: {
+                        user: {
+                            select: {
+                                name: true,
+                                username: true,
+                            }
+                        },
                         _count: {
                             select: { entries: true, members: true }
+                        },
+                        entries: {
+                            take: 2,
+                            orderBy: {
+                                addedAt: 'desc',
+                            },
+                            select: {
+                                entry: {
+                                    select: {
+                                        id: true,
+                                        title: true,
+                                    }
+                                }
+                            }
                         },
                         members: {
                             where: { status: 'ACCEPTED' }
@@ -94,7 +134,7 @@ export async function POST(request: NextRequest) {
         // Check personal collection limit for non-shared collections
         if (!isShared) {
             const { allowed, reason } = canCreatePersonalCollection(
-                user.plan, 
+                user.plan,
                 user.personalCollectionsCount
             );
             if (!allowed) {

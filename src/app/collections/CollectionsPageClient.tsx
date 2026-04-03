@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2 } from 'lucide-react';
+import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2, Crown } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -45,10 +45,20 @@ interface Collection {
     } | null;
     isDiscovery?: boolean;
     metadata?: any; // Journal Club metadata
+    entries?: Array<{
+        entry: {
+            id: string;
+            title: string;
+        };
+    }>;
     _count: {
         entries: number;
         members?: number;
     };
+}
+
+function sliceTitle(title: string, max = 140) {
+    return title.length > max ? `${title.slice(0, max - 3)}...` : title;
 }
 
 // Loading skeleton component
@@ -323,7 +333,11 @@ export default function CollectionsPage() {
                                         <CardHeader className="pb-3">
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1 min-w-0">
-                                                    <CardTitle className="text-xl truncate">{collection.name}</CardTitle>
+                                                    <CardTitle className="text-xl">{sliceTitle(collection.name)}</CardTitle>
+                                                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <Crown className="h-3.5 w-3.5" />
+                                                        <span>{collection.user?.name || collection.user?.username || 'Unknown owner'}</span>
+                                                    </p>
                                                     <div className="flex flex-wrap items-center gap-2 mt-2">
                                                         {collection.isOwner && (
                                                             <Badge variant="default" className="text-xs">Owner</Badge>
@@ -348,6 +362,21 @@ export default function CollectionsPage() {
                                                     {collection.description}
                                                 </p>
                                             )}
+                                            <div className="mt-3 space-y-1 rounded-md border border-[var(--border)] bg-[var(--muted)]/20 p-2">
+                                                {collection.entries && collection.entries.length > 0 ? (
+                                                    collection.entries.slice(0, 2).map((item) => (
+                                                        <p
+                                                            key={item.entry.id}
+                                                            className="text-xs text-muted-foreground"
+                                                            title={item.entry.title}
+                                                        >
+                                                            • {sliceTitle(item.entry.title)}
+                                                        </p>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground">No entries yet</p>
+                                                )}
+                                            </div>
                                         </CardHeader>
                                         <CardContent className="pt-3">
                                             <div className="flex items-center justify-between text-sm text-muted-foreground">
