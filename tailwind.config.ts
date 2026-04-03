@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-    darkMode: ["class"],
+    darkMode: "class",
     content: [
         "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -38,12 +38,31 @@ const config: Config = {
                 accent: {
                     DEFAULT: "var(--accent)",
                     foreground: "var(--accent-foreground)",
+                    hover: "var(--accent-hover)",
+                    muted: "var(--accent-muted)",
                 },
                 destructive: {
                     DEFAULT: "var(--destructive)",
                     foreground: "var(--destructive-foreground)",
                 },
-                border: "var(--border)",
+                surface: {
+                    base: "var(--surface-base)",
+                    raised: "var(--surface-raised)",
+                    overlay: "var(--surface-overlay)",
+                    sunken: "var(--surface-sunken)",
+                },
+                content: {
+                    primary: "var(--content-primary)",
+                    secondary: "var(--content-secondary)",
+                    tertiary: "var(--content-tertiary)",
+                    inverse: "var(--content-inverse)",
+                },
+                border: {
+                    DEFAULT: "var(--border)",
+                    default: "var(--border-default)",
+                    subtle: "var(--border-subtle)",
+                    strong: "var(--border-strong)",
+                },
                 input: "var(--input)",
                 ring: "var(--ring)",
             },

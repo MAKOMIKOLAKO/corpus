@@ -9,6 +9,7 @@ import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Users, BookOpen, Folder, MessageSquare, Plus, Brain } from "lucide-react";
 
 export function AppShell({
@@ -209,6 +210,7 @@ export function AppShell({
                       <Brain className="w-4 h-4" />
                       alerts
                     </Link>
+                    <ThemeToggle />
                     <NotificationDropdown />
                     <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
                     <button
@@ -285,6 +287,10 @@ export function AppShell({
                   </Link>
                   <div onClick={() => setIsMenuOpen(false)}>
                     <NotificationDropdown />
+                  </div>
+                  <div className="px-4 py-2">
+                    <p className="text-xs text-[var(--muted-foreground)] mb-2 uppercase tracking-wider font-semibold">Appearance</p>
+                    <ThemeToggle />
                   </div>
                   <button
                     onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}

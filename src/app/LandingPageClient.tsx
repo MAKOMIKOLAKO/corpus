@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SoftwareApplicationJsonLd from "@/components/SoftwareApplicationJsonLd";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`;
 
@@ -218,6 +219,7 @@ export default function LandingPage() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
+            <ThemeToggle />
             <Link href="/login" className="text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
               Sign In
             </Link>
@@ -231,7 +233,7 @@ export default function LandingPage() {
 
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-zinc-300 md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-default text-content-secondary hover:bg-surface-raised md:hidden"
             aria-label="Open menu"
             onClick={() => setMobileOpen((o) => !o)}
           >
@@ -244,6 +246,9 @@ export default function LandingPage() {
         {mobileOpen && (
           <div className="border-t border-[var(--border)] bg-[var(--card)]/95 px-4 py-4 backdrop-blur-md md:hidden">
             <div className="flex flex-col gap-3 text-sm">
+              <div className="py-1">
+                <ThemeToggle />
+              </div>
               <a href="#features" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
                 Features
               </a>
@@ -268,7 +273,7 @@ export default function LandingPage() {
       <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-16">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(20,184,166,0.08),transparent)]" />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35] mix-blend-overlay"
+          className="pointer-events-none absolute inset-0 opacity-[0.02] dark:opacity-[0.35] mix-blend-overlay"
           style={{ backgroundImage: GRAIN_BG }}
           aria-hidden
         />
@@ -615,7 +620,7 @@ export default function LandingPage() {
           <p className="mt-4 text-sm sm:text-base text-[var(--muted-foreground)]">Free forever. No credit card required. Join researchers from leading universities.</p>
           <Link
             href="/login"
-            className={`mt-10 inline-flex w-full sm:min-w-[200px] sm:w-auto justify-center rounded-lg px-8 py-4 text-base font-semibold text-white ${accentBg} shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 touch-manipulation`}
+            className={`mt-10 inline-flex w-full sm:min-w-[200px] sm:w-auto justify-center rounded-lg px-8 py-4 text-base font-semibold text-content-inverse ${accentBg} shadow-xl shadow-accent/30 transition hover:bg-accent-hover touch-manipulation`}
           >
             Get Started Free
           </Link>

@@ -424,7 +424,7 @@ export default function AddEntryPage() {
                   <button
                     type="submit"
                     disabled={isSearching}
-                    className="flex items-center justify-center gap-2 rounded-lg px-6 py-4 sm:py-3 font-medium whitespace-nowrap text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98] mt-2 sm:mt-0 touch-manipulation"
+                    className="flex items-center justify-center gap-2 rounded-lg px-6 py-4 sm:py-3 font-medium whitespace-nowrap text-content-inverse shadow-sm transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98] mt-2 sm:mt-0 touch-manipulation"
                     style={{ backgroundColor: 'var(--accent)' }}
                   >
                     {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -514,7 +514,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`flex-1 rounded-lg py-3.5 sm:py-2.5 text-sm font-medium transition-all touch-manipulation active:scale-[0.98] ${active
-        ? 'text-white shadow-md'
+        ? 'text-content-inverse shadow-md'
         : 'border border-[var(--border)] border-dashed bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]'
         }`}
       style={active ? { backgroundColor: 'var(--accent)' } : undefined}
@@ -623,7 +623,7 @@ function QueuePanel({
           {heading}
           {activeCount > 0 && (
             <span
-              className="min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] text-white"
+              className="min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] text-content-inverse"
               style={{ backgroundColor: 'var(--accent)' }}
             >
               {activeCount}
@@ -1058,7 +1058,7 @@ function PreviewForm({
           type="button"
           onClick={handleSave}
           disabled={isSaving || !formData.title}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-white shadow-lg transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-content-inverse shadow-lg transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
           style={{ backgroundColor: 'var(--accent)' }}
         >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
@@ -1219,7 +1219,7 @@ function PostSavePanel({
         <button
           type="button"
           onClick={onViewEntry}
-          className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-4 sm:py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 touch-manipulation"
+          className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-4 sm:py-2.5 text-sm font-medium text-content-inverse shadow-sm transition-all hover:opacity-90 touch-manipulation"
           style={{ backgroundColor: 'var(--accent)' }}
         >
           View Entry <ExternalLink className="h-4 w-4" />

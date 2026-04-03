@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/authOptions";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { AppShell } from "@/components/AppShell";
 import { TimezoneSync } from "@/components/TimezoneSync";
+import { ThemeProvider } from "@/lib/theme";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
@@ -95,6 +96,29 @@ export const metadata: Metadata = {
   },
 }
 
+function ThemeBootstrapScript() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            try {
+              var theme = localStorage.getItem('corpus-theme');
+              if (theme === 'light') {
+                document.documentElement.classList.add('light');
+              } else {
+                document.documentElement.classList.add('dark');
+              }
+            } catch (e) {
+              document.documentElement.classList.add('dark');
+            }
+          })();
+        `,
+      }}
+    />
+  );
+}
+
 // Extension detection component
 function ExtensionDetection() {
   return (
@@ -131,15 +155,18 @@ export default async function RootLayout({
   return (
     <html lang="en" className={cn("font-sans scroll-smooth", inter.variable, playfair.variable)}>
       <head>
+        <ThemeBootstrapScript />
         <ExtensionDetection />
       </head>
       <body className="antialiased min-h-screen bg-[var(--background)] text-[var(--foreground)] theme-transition">
-        <NextAuthProvider>
-          <AppShell session={session}>
-            <SkipToMainLink />
-            {children}
-          </AppShell>
-        </NextAuthProvider>
+        <ThemeProvider>
+          <NextAuthProvider>
+            <AppShell session={session}>
+              <SkipToMainLink />
+              {children}
+            </AppShell>
+          </NextAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

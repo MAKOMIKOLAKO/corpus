@@ -3,72 +3,43 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Academic Noir Color Palette */
-    --background: #F8FFA;
-    /* Parchment White */
-    --foreground: #0F172A;
-    /* Deep Ink */
-    --card: #FFFFFF;
-    --card-foreground: #0F172A;
-    --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #0F172A;
-    /* Deep Ink as primary */
-    --primary-foreground: #F8FFA;
-    --secondary: #F1F5F9;
-    --secondary-foreground: #0F172A;
-    --muted: #E2E8F0;
-    --muted-foreground: #64748B;
-    --accent: #14B8A6;
-    /* Synapse Teal */
-    --accent-foreground: #FFFFFF;
-    --destructive: #DC2626;
-    --border: #E2E8F0;
-    --input: #E2E8F0;
-    --ring: #14B8A6;
-    /* Synapse Teal for focus rings */
-    --chart-1: #14B8A6;
-    --chart-2: #0F172A;
-    --chart-3: #475569;
-    --chart-4: #64748B;
-    --chart-5: #94A3B8;
-    --radius: 0.625rem;
-    --sidebar: #F8FFA;
-    --sidebar-foreground: #0F172A;
-    --sidebar-primary: #0F172A;
-    --sidebar-primary-foreground: #F8FFA;
-    --sidebar-accent: #E2E8F0;
-    --sidebar-accent-foreground: #0F172A;
-    --sidebar-border: #CBD5E1;
-    --sidebar-ring: #14B8A6;
-  }
-
+  :root,
   .dark {
-    /* Dark mode Academic Noir */
+    /* Dark mode Academic Noir (default) */
     --background: #0F172A;
-    /* Deep Ink */
     --foreground: #F8FFA;
-    /* Parchment White */
     --card: #1E293B;
     --card-foreground: #F8FFA;
     --popover: #1E293B;
     --popover-foreground: #F8FFA;
     --primary: #F8FFA;
-    /* Parchment White as primary in dark */
     --primary-foreground: #0F172A;
     --secondary: #334155;
     --secondary-foreground: #F8FFA;
     --muted: #475569;
     --muted-foreground: #94A3B8;
     --accent: #14B8A6;
-    /* Synapse Teal remains consistent */
+    --accent-hover: #0F9A8C;
+    --accent-muted: rgba(20, 184, 166, 0.18);
     --accent-foreground: #0F172A;
     --destructive: #EF4444;
     --border: #334155;
+    --border-default: #334155;
+    --border-subtle: #1E293B;
+    --border-strong: #475569;
     --input: #334155;
     --ring: #14B8A6;
-    /* Synapse Teal for focus rings */
+
+    --surface-base: #0F172A;
+    --surface-raised: #1E293B;
+    --surface-overlay: #334155;
+    --surface-sunken: #0B1426;
+
+    --content-primary: #F8FFA;
+    --content-secondary: #94A3B8;
+    --content-tertiary: #64748B;
+    --content-inverse: #FFFFFF;
+
     --chart-1: #14B8A6;
     --chart-2: #F8FFA;
     --chart-3: #CBD5E1;
@@ -81,6 +52,56 @@
     --sidebar-accent: #334155;
     --sidebar-accent-foreground: #F8FFA;
     --sidebar-border: #475569;
+    --sidebar-ring: #14B8A6;
+  }
+
+  .light {
+    --background: #F8FAFC;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --popover: #FFFFFF;
+    --popover-foreground: #0F172A;
+    --primary: #0F172A;
+    --primary-foreground: #F8FAFC;
+    --secondary: #F1F5F9;
+    --secondary-foreground: #0F172A;
+    --muted: #E2E8F0;
+    --muted-foreground: #64748B;
+    --accent: #14B8A6;
+    --accent-hover: #0F9A8C;
+    --accent-muted: rgba(20, 184, 166, 0.12);
+    --accent-foreground: #FFFFFF;
+    --destructive: #DC2626;
+    --border: #E2E8F0;
+    --border-default: #E2E8F0;
+    --border-subtle: #F1F5F9;
+    --border-strong: #CBD5E1;
+    --input: #E2E8F0;
+    --ring: #14B8A6;
+
+    --surface-base: #F8FAFC;
+    --surface-raised: #FFFFFF;
+    --surface-overlay: #F1F5F9;
+    --surface-sunken: #E2E8F0;
+
+    --content-primary: #0F172A;
+    --content-secondary: #475569;
+    --content-tertiary: #64748B;
+    --content-inverse: #FFFFFF;
+
+    --chart-1: #14B8A6;
+    --chart-2: #0F172A;
+    --chart-3: #475569;
+    --chart-4: #64748B;
+    --chart-5: #94A3B8;
+    --sidebar: #F8FAFC;
+    --sidebar-foreground: #0F172A;
+    --sidebar-primary: #0F172A;
+    --sidebar-primary-foreground: #F8FAFC;
+    --sidebar-accent: #E2E8F0;
+    --sidebar-accent-foreground: #0F172A;
+    --sidebar-border: #CBD5E1;
     --sidebar-ring: #14B8A6;
   }
 
@@ -97,6 +118,19 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition: background-color 200ms ease, border-color 200ms ease, color 150ms ease;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    transition: background-color 200ms ease, border-color 200ms ease, color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
   }
 
   html {

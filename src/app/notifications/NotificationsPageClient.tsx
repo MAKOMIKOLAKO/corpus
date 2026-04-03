@@ -26,7 +26,7 @@ interface NotificationsResponse {
 export default function NotificationsPageClient() {
   const { data: session, status } = useSession();
   const apikey = useApiKey();
-  
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -34,16 +34,16 @@ export default function NotificationsPageClient() {
 
   const fetchNotifications = useCallback(async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       const response = await fetch('/api/notifications', {
         headers: {
           'x-api-key': apikey || '',
         },
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch notifications');
-      
+
       const data: NotificationsResponse = await response.json();
       setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
@@ -72,7 +72,7 @@ export default function NotificationsPageClient() {
 
       if (!response.ok) throw new Error('Failed to mark notification as read');
 
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         n.id === notificationId ? { ...n, read: true } : n
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -84,7 +84,7 @@ export default function NotificationsPageClient() {
 
   const handleMarkAllAsRead = async () => {
     setMarkingAllAsRead(true);
-    
+
     try {
       const response = await fetch('/api/notifications', {
         method: 'POST',
@@ -112,7 +112,7 @@ export default function NotificationsPageClient() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -164,7 +164,7 @@ export default function NotificationsPageClient() {
             Stay updated with your research discoveries and platform updates
           </p>
         </div>
-        
+
         {unreadCount > 0 && (
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="flex items-center gap-1">
@@ -212,17 +212,17 @@ export default function NotificationsPageClient() {
           </Card>
         ) : (
           notifications.map((notification) => (
-            <Card 
-              key={notification.id} 
+            <Card
+              key={notification.id}
               className={`transition-colors ${!notification.read ? 'bg-muted/50 border-l-4 border-l-blue-500' : ''}`}
             >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">
-                    <div className={`p-2 rounded-full ${getNotificationColor(notification.type)} text-white`}>
+                    <div className={`p-2 rounded-full ${getNotificationColor(notification.type)} text-content-inverse`}>
                       {getNotificationIcon(notification.type)}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium">
@@ -234,9 +234,9 @@ export default function NotificationsPageClient() {
                           </Badge>
                         )}
                       </div>
-                      
+
                       <p className="text-sm mb-2">{notification.message}</p>
-                      
+
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
