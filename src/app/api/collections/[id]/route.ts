@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { validateApiKey } from '@/app/api/api-key-middleware';
 import { getCurrentUserId } from '@/lib/session';
 import {
   canManageCollection,
@@ -104,11 +103,6 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const validation = await validateApiKey(request);
-    if (!validation.valid) {
-      return validation.response;
-    }
-
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -163,11 +157,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const validation = await validateApiKey(request);
-    if (!validation.valid) {
-      return validation.response;
-    }
-
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
