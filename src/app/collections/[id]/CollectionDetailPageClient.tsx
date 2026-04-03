@@ -401,8 +401,8 @@ export default function CollectionDetailPage() {
             case 'OWNER': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 border-purple-200 dark:border-purple-700';
             case 'ADMIN': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 border-red-200 dark:border-red-700';
             case 'CONTRIBUTOR': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-700';
-            case 'VIEWER': return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700';
-            default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+            case 'VIEWER': return 'bg-gray-100 text-content-primary dark:bg-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700';
+            default: return 'bg-gray-100 text-content-primary dark:bg-gray-800 dark:text-gray-100';
         }
     };
 
