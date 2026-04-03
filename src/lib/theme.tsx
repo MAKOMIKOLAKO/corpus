@@ -11,9 +11,9 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'dark',
-  toggleTheme: () => {},
-  setTheme: () => {},
+  theme: 'light',
+  toggleTheme: () => { },
+  setTheme: () => { },
 })
 
 function applyTheme(theme: Theme) {
@@ -23,7 +23,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark')
+  const [theme, setThemeState] = useState<Theme>('light')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    setThemeState('dark')
-    applyTheme('dark')
+    setThemeState('light')
+    applyTheme('light')
   }, [])
 
   function setTheme(nextTheme: Theme) {

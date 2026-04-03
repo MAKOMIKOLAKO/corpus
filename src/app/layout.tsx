@@ -104,13 +104,13 @@ function ThemeBootstrapScript() {
           (function() {
             try {
               var theme = localStorage.getItem('corpus-theme');
-              if (theme === 'light') {
-                document.documentElement.classList.add('light');
-              } else {
+              if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.add('light');
               }
             } catch (e) {
-              document.documentElement.classList.add('dark');
+              document.documentElement.classList.add('light');
             }
           })();
         `,
