@@ -111,7 +111,7 @@ export default function TemporaryUsernameBanner() {
               <Button
                 size="sm"
                 variant="default"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-content-inverse"
               >
                 <Settings className="h-4 w-4 mr-1" />
                 {hasNoUsername ? 'Set Username' : 'Change Username'}

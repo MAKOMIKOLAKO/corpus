@@ -105,7 +105,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
           <div className="mt-4 flex items-center gap-3">
             <Link
               href={content.href}
-              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-amber-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:bg-amber-700 dark:hover:bg-amber-600"
+              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-content-inverse transition-all hover:bg-amber-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {content.cta}
             </Link>

@@ -33,9 +33,8 @@ export function UsernameBanner({ onDismiss }: UsernameBannerProps) {
 
   return (
     <div
-      className={`bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 dark:border-blue-800 transition-all duration-300 ${
-        isDismissing ? "opacity-0 transform -translate-y-full" : "opacity-100"
-      }`}
+      className={`bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 dark:border-blue-800 transition-all duration-300 ${isDismissing ? "opacity-0 transform -translate-y-full" : "opacity-100"
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -54,7 +53,7 @@ export function UsernameBanner({ onDismiss }: UsernameBannerProps) {
               size="sm"
               variant="default"
               onClick={handleSetUsername}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-10 sm:h-8 touch-manipulation flex-1 sm:flex-none"
+              className="bg-blue-600 hover:bg-blue-700 text-content-inverse h-10 sm:h-8 touch-manipulation flex-1 sm:flex-none"
             >
               <Settings className="h-4 w-4 mr-1" />
               Set Username
