@@ -1,8 +1,16 @@
+import 'server-only';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+  return new Resend(apiKey);
+}
 
 export async function sendPasswordResetEmail(
   email: string,
@@ -10,6 +18,7 @@ export async function sendPasswordResetEmail(
   name: string
 ) {
   const resetUrl = `${APP_URL}/reset-password/${token}`;
+  const resend = getResendClient();
 
   await resend.emails.send({
     from: FROM,
@@ -48,6 +57,7 @@ export async function sendVerificationEmail(
   name: string
 ) {
   const verifyUrl = `${APP_URL}/verify-email/${token}`;
+  const resend = getResendClient();
 
   await resend.emails.send({
     from: FROM,
