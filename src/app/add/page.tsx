@@ -136,9 +136,60 @@ export default function AddEntryPage() {
     }
   }, []);
 
+  const clearTerminalQueueItems = useCallback(async (itemsToClear?: QueueItem[]) => {
+    const targets = (itemsToClear ?? queue.items).filter(
+      (item) => item.status === 'COMPLETED' || item.status === 'FAILED'
+    );
+
+    if (targets.length === 0) return;
+
+    try {
+      await Promise.allSettled(
+        targets.map((item) =>
+          fetch(`/api/queue/${item.id}`, { method: 'DELETE' })
+        )
+      );
+
+      setQueue((prev) => ({
+        ...prev,
+        items: prev.items.filter(
+          (item) => item.status !== 'COMPLETED' && item.status !== 'FAILED'
+        ),
+      }));
+
+      refreshQueue();
+    } catch (e) {
+      console.error('Failed to clear terminal queue items', e);
+    }
+  }, [queue.items, refreshQueue]);
+
   useEffect(() => {
     refreshQueue();
   }, [refreshQueue]);
+
+  useEffect(() => {
+    const navEntries = window.performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    const navType = navEntries[0]?.type;
+    if (navType !== 'reload') return;
+
+    const run = async () => {
+      try {
+        const res = await fetch('/api/queue');
+        if (!res.ok) return;
+        const data = await res.json();
+        const terminalItems = (data.items ?? []).filter(
+          (item: QueueItem) => item.status === 'COMPLETED' || item.status === 'FAILED'
+        );
+        if (terminalItems.length > 0) {
+          await clearTerminalQueueItems(terminalItems);
+        }
+      } catch (e) {
+        console.error('Failed to clear terminal queue items on refresh', e);
+      }
+    };
+
+    run();
+  }, [clearTerminalQueueItems]);
 
   useEffect(() => {
     const active = queue.items.some(item => item.status === 'PENDING' || item.status === 'PROCESSING');
@@ -437,10 +488,12 @@ export default function AddEntryPage() {
           items={displayQueueItems}
           totalItems={queue.items.length}
           activeCount={activeQueueCount}
+          terminalCount={queue.items.filter(item => item.status === 'COMPLETED' || item.status === 'FAILED').length}
           showAll={queueShowAll}
           onToggleShowAll={() => setQueueShowAll((v) => !v)}
           onRemove={handleRemoveFromQueue}
           onRetry={handleRetryQueueItem}
+          onClearTerminal={() => clearTerminalQueueItems()}
         />
       </footer>
     </div>
@@ -543,18 +596,22 @@ function QueuePanel({
   items,
   totalItems,
   activeCount,
+  terminalCount,
   showAll,
   onToggleShowAll,
   onRemove,
   onRetry,
+  onClearTerminal,
 }: {
   items: QueueItem[];
   totalItems: number;
   activeCount: number;
+  terminalCount: number;
   showAll: boolean;
   onToggleShowAll: () => void;
   onRemove: (id: string) => void;
   onRetry: (item: QueueItem) => void;
+  onClearTerminal: () => void;
 }) {
   const heading =
     activeCount === 0 ? 'Your Queue (empty)' : 'Your Queue';
@@ -573,16 +630,28 @@ function QueuePanel({
             </span>
           )}
         </h2>
-        {totalItems > 10 && (
-          <button
-            type="button"
-            onClick={onToggleShowAll}
-            className="text-xs text-[var(--accent)] hover:underline"
-            style={{ color: 'var(--accent)' }}
-          >
-            {showAll ? 'Show less' : 'View all'}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {terminalCount > 0 && (
+            <button
+              type="button"
+              onClick={onClearTerminal}
+              className="text-xs text-[var(--accent)] hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              Clear completed/failed
+            </button>
+          )}
+          {totalItems > 10 && (
+            <button
+              type="button"
+              onClick={onToggleShowAll}
+              className="text-xs text-[var(--accent)] hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              {showAll ? 'Show less' : 'View all'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-px overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--border)] shadow-sm">
