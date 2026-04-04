@@ -194,6 +194,8 @@ export default function EntryCard({
     }, []);
 
     const handleStatusChange = async (newStatus: typeof entry.readingStatus) => {
+        console.log('Status change requested:', { from: currentStatus, to: newStatus, entryId: entry.id });
+
         if (newStatus === currentStatus) {
             setIsOpen(false);
             return;
@@ -214,13 +216,21 @@ export default function EntryCard({
                 body: JSON.stringify({ readingStatus: newStatus }),
             });
 
+            console.log('Status update response:', { status: response.status, ok: response.ok });
+
             if (!response.ok) {
-                throw new Error('Failed to update reading status');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Status update failed:', errorData);
+                throw new Error(errorData.error || 'Failed to update reading status');
             }
+
+            const updatedEntry = await response.json();
+            console.log('Entry updated successfully:', updatedEntry);
+            toast.success('Status updated successfully');
         } catch (error) {
             console.error('Error updating reading status:', error);
             setCurrentStatus(previousStatus);
-            toast.error('Failed to update status');
+            toast.error(error instanceof Error ? error.message : 'Failed to update status');
         } finally {
             setIsUpdating(false);
         }
@@ -477,8 +487,6 @@ export default function EntryCard({
                                         <div
                                             className="relative"
                                             ref={contentTypeDropdownRef}
-                                            onMouseEnter={() => setIsContentTypeOpen(true)}
-                                            onMouseLeave={() => setIsContentTypeOpen(false)}
                                         >
                                             <button
                                                 onClick={(e) => {
@@ -523,15 +531,17 @@ export default function EntryCard({
                                     </div>
 
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground h-5">
-                                        <span className="truncate">
-                                            {entry.authors?.slice(0, 3).join(', ')}
-                                            {entry.authors?.length > 3 && ` +${entry.authors.length - 3}`}
-                                        </span>
+                                        {entry.authors && entry.authors.length > 0 && (
+                                            <span className="truncate">
+                                                {entry.authors.slice(0, 3).join(', ')}
+                                                {entry.authors.length > 3 && ` +${entry.authors.length - 3}`}
+                                            </span>
+                                        )}
+                                        {entry.authors && entry.authors.length > 0 && entry.year && (
+                                            <span className="text-border">•</span>
+                                        )}
                                         {entry.year && (
-                                            <>
-                                                <span className="text-border">•</span>
-                                                <span>{entry.year}</span>
-                                            </>
+                                            <span>{entry.year}</span>
                                         )}
                                     </div>
                                 </div>
