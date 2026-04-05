@@ -187,9 +187,9 @@ export default function EntryCard({
             }
         };
 
-        document.addEventListener('click', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
         return () => {
-            document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
 
@@ -553,7 +553,6 @@ export default function EntryCard({
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                e.stopPropagation();
                                                 setIsCollectionOpen(!isCollectionOpen);
                                             }}
                                             className="h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-muted touch-manipulation"
@@ -568,7 +567,6 @@ export default function EntryCard({
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
-                                                        e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
                                                     className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${currentCollectionId === null ? 'bg-surface-raised font-medium' : ''
@@ -586,7 +584,6 @@ export default function EntryCard({
                                                             key={c.id}
                                                             onClick={(e) => {
                                                                 e.preventDefault();
-                                                                e.stopPropagation();
                                                                 handleCollectionChange(c.id);
                                                             }}
                                                             className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${c.id === currentCollectionId ? 'bg-surface-raised font-medium' : ''
@@ -605,7 +602,6 @@ export default function EntryCard({
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                e.stopPropagation();
                                                 setIsOpen(!isOpen);
                                             }}
                                             className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
@@ -627,7 +623,6 @@ export default function EntryCard({
                                                         key={status.value}
                                                         onClick={(e) => {
                                                             e.preventDefault();
-                                                            e.stopPropagation();
                                                             handleStatusChange(status.value as typeof entry.readingStatus);
                                                         }}
                                                         className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${status.value === currentStatus ? 'bg-surface-raised font-medium' : ''
@@ -640,7 +635,6 @@ export default function EntryCard({
                                                     <button
                                                         onClick={(e) => {
                                                             e.preventDefault();
-                                                            e.stopPropagation();
                                                             handleDelete();
                                                         }}
                                                         className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-400 transition-colors flex items-center gap-2"
