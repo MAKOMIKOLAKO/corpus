@@ -107,6 +107,7 @@ export default function EntryCard({
     const collectionDropdownRef = useRef<HTMLDivElement>(null);
     const statusDropdownRef = useRef<HTMLDivElement>(null);
     const contentTypeDropdownRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
     const [currentStatus, setCurrentStatus] = useState(entry.readingStatus);
     const [currentContentType, setCurrentContentType] = useState(entry.contentType);
     const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
@@ -173,16 +174,12 @@ export default function EntryCard({
         };
     }, [apiKey]);
 
-    // Close dropdowns when clicking outside
+    // Close dropdowns when clicking outside the card
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (collectionDropdownRef.current && !collectionDropdownRef.current.contains(event.target as Node)) {
+            if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
                 setIsCollectionOpen(false);
-            }
-            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
-            }
-            if (contentTypeDropdownRef.current && !contentTypeDropdownRef.current.contains(event.target as Node)) {
                 setIsContentTypeOpen(false);
             }
         };
@@ -194,8 +191,6 @@ export default function EntryCard({
     }, []);
 
     const handleStatusChange = async (newStatus: typeof entry.readingStatus) => {
-        console.log('Status change requested:', { from: currentStatus, to: newStatus, entryId: entry.id });
-
         if (newStatus === currentStatus) {
             setIsOpen(false);
             return;
@@ -216,16 +211,11 @@ export default function EntryCard({
                 body: JSON.stringify({ readingStatus: newStatus }),
             });
 
-            console.log('Status update response:', { status: response.status, ok: response.ok });
-
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error('Status update failed:', errorData);
                 throw new Error(errorData.error || 'Failed to update reading status');
             }
 
-            const updatedEntry = await response.json();
-            console.log('Entry updated successfully:', updatedEntry);
             toast.success('Status updated successfully');
         } catch (error) {
             console.error('Error updating reading status:', error);
@@ -429,6 +419,7 @@ export default function EntryCard({
         <>
             <div
                 className="relative h-full"
+                ref={cardRef}
                 onClick={(e) => {
                     if (selectionMode?.enabled) {
                         e.preventDefault();
