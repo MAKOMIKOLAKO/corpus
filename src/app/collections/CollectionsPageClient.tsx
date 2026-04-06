@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2, Crown, MoreHorizontal, Edit } from 'lucide-react';
+import { Plus, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2, Crown, MoreHorizontal, Edit } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
@@ -331,13 +331,6 @@ export default function CollectionsPage() {
         setShowDropdown(null);
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
 
     if (loading) {
         return <div className="text-center py-12">Loading collections...</div>;
@@ -429,11 +422,11 @@ export default function CollectionsPage() {
                         {myCollections.map((collection) => (
                             <div key={collection.id} className="relative">
                                 <Link href={`/collections/${collection.id}`}>
-                                    <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                                    <Card className="h-full cursor-pointer rounded-[12px] border border-slate-300/80 bg-gradient-to-b from-[var(--card)] to-[var(--muted)]/25 ring-0 transition-all duration-200 hover:border-slate-400/90 hover:shadow-[0_0_0_3px_rgba(148,163,184,0.18)] dark:border-slate-700 dark:hover:border-slate-500 dark:hover:shadow-[0_0_0_3px_rgba(100,116,139,0.28)]">
                                         <CardHeader className="pb-3">
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1 min-w-0">
-                                                    <CardTitle className="text-xl">{sliceTitle(collection.name)}</CardTitle>
+                                                    <CardTitle className="text-xl text-balance break-words">{collection.name}</CardTitle>
                                                     <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                                                         <Crown className="h-3.5 w-3.5" />
                                                         <span>{collection.user?.name || collection.user?.username || 'Unknown owner'}</span>
@@ -474,13 +467,27 @@ export default function CollectionsPage() {
                                                         </p>
                                                     ))
                                                 ) : (
-                                                    <p className="text-xs text-muted-foreground">No entries yet</p>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="text-xs text-muted-foreground">No entries yet</p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                router.push('/add');
+                                                            }}
+                                                            className="pointer-events-none inline-flex items-center gap-1 rounded-md border border-slate-300/80 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 opacity-0 transition-all duration-200 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                                        >
+                                                            <Plus className="h-3 w-3" />
+                                                            <span>Add</span>
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </CardHeader>
                                         <CardContent className="pt-3">
-                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                                <div className="flex items-center gap-4">
+                                            <div className="flex items-center text-sm text-muted-foreground">
+                                                <div className="flex flex-wrap items-center gap-4">
                                                     <div className="flex items-center gap-1">
                                                         <FileText className="w-4 h-4" />
                                                         <span className="font-medium">{collection._count.entries}</span>
@@ -500,10 +507,6 @@ export default function CollectionsPage() {
                                                             <span>{collection._count.members + 1 === 1 ? 'member' : 'members'}</span>
                                                         </div>
                                                     )}
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar className="w-4 h-4" />
-                                                    {formatDate(collection.createdAt)}
                                                 </div>
                                             </div>
                                         </CardContent>
