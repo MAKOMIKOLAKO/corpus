@@ -82,7 +82,7 @@ export default function LibraryBatchClient({ user, allEntryIds = [], children }:
       const res = await fetch('/api/entries/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryIds: selectedIds, action, value }),
+        body: JSON.stringify({ userEntryIds: selectedIds, action, payload: { value } }),
       });
 
       if (res.ok) {
