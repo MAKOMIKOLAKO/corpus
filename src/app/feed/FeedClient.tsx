@@ -12,10 +12,14 @@ import {
   Rss,
   Bookmark,
   Eye,
+  Plus,
+  Settings,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { AddFeedDialog } from './AddFeedDialog';
 
 interface FeedSignal {
   id: string;
@@ -50,15 +54,28 @@ interface RSSEntry {
   addedAt: string;
 }
 
+interface UserFeed {
+  id: string;
+  feedUrl: string;
+  title: string | null;
+  domain: string;
+  lastFetchedAt: Date | null;
+  addedAt: Date;
+}
+
 interface FeedClientProps {
   signals: FeedSignal[];
   userPlan: Plan;
   rssEntries?: RSSEntry[];
+  userFeeds?: UserFeed[];
 }
 
-export default function FeedClient({ signals, userPlan, rssEntries = [] }: FeedClientProps) {
+export default function FeedClient({ signals, userPlan, rssEntries = [], userFeeds = [] }: FeedClientProps) {
   const isFree = userPlan === 'FREE';
   const [upgradePromptShown, setUpgradePromptShown] = React.useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+  const [feedList, setFeedList] = React.useState(userFeeds);
+  const [showManageFeeds, setShowManageFeeds] = React.useState(false);
 
   // Combine and sort all items by date
   const allItems = [
@@ -73,6 +90,30 @@ export default function FeedClient({ signals, userPlan, rssEntries = [] }: FeedC
       data: signal
     }))
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const handleAddFeed = (newFeed: any) => {
+    setFeedList(prev => [newFeed, ...prev]);
+    setIsAddDialogOpen(false);
+    toast.success('Feed added successfully');
+  };
+
+  const handleRemoveFeed = async (feedId: string) => {
+    try {
+      const response = await fetch(`/api/feeds/${feedId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove feed');
+      }
+
+      setFeedList(prev => prev.filter(f => f.id !== feedId));
+      toast.success('Feed removed successfully');
+    } catch (error) {
+      console.error('Error removing feed:', error);
+      toast.error('Failed to remove feed');
+    }
+  };
 
   const renderSignalIcon = (type: string) => {
     switch (type) {
@@ -269,9 +310,54 @@ export default function FeedClient({ signals, userPlan, rssEntries = [] }: FeedC
   return (
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">feed</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">feed</h1>
+          <button
+            onClick={() => setShowManageFeeds(!showManageFeeds)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Settings size={16} />
+            {showManageFeeds ? 'Hide' : 'Manage'} Feeds
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground">updates from the research network and your RSS feeds</p>
       </div>
+
+      {showManageFeeds && (
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Your RSS Feeds</h2>
+            <button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={16} />
+              Add Feed
+            </button>
+          </div>
+
+          {feedList.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No RSS feeds added yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {feedList.map(feed => (
+                <div key={feed.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <p className="font-medium text-sm truncate">{feed.title || feed.domain}</p>
+                    <p className="text-xs text-muted-foreground">{feed.domain}</p>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFeed(feed.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-6">
         {allItems.length === 0 ? (
@@ -318,6 +404,11 @@ export default function FeedClient({ signals, userPlan, rssEntries = [] }: FeedC
           onClose={() => setUpgradePromptShown(false)}
         />
       )}
+      <AddFeedDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onFeedAdded={handleAddFeed}
+      />
     </div>
   );
 }
