@@ -6,7 +6,7 @@ import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
 
 const ENTRY_SELECT = {
   id: true, title: true, authors: true, year: true,
-  abstract: true, url: true, source: true, cover: true,
+  abstract: true, url: true, source: true,
 } as const;
 
 const USER_SELECT = { id: true, username: true, name: true } as const;
