@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { validateApiKey } from '@/app/api/api-key-middleware';
 import { getCurrentUserId } from '@/lib/session';
 import { canManageCollection } from '@/lib/collectionPermissions';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
@@ -18,11 +17,6 @@ export async function POST(
   { params }: { params: { id: string; entryId: string } }
 ) {
   try {
-    const validation = await validateApiKey(request);
-    if (!validation.valid) {
-      return validation.response;
-    }
-
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
@@ -129,11 +123,6 @@ export async function DELETE(
   { params }: { params: { id: string; entryId: string } }
 ) {
   try {
-    const validation = await validateApiKey(request);
-    if (!validation.valid) {
-      return validation.response;
-    }
-
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
