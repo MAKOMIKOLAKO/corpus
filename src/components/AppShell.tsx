@@ -145,17 +145,17 @@ export function AppShell({
             </div>
           )}
           <header
-            className={`sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)/60]`}
+            className={`sticky top-0 z-40 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60`}
             style={{ minHeight: '73px' }}
           >
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center" style={{ minHeight: '41px' }}>
               <Link
                 href={session ? "/library" : "/"}
-                className="text-xl font-medium tracking-tight text-[var(--foreground)] flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                className="text-xl font-serif font-medium tracking-tight text-content-primary flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
                 aria-label="Corpus - Go to homepage"
               >
                 corpus
-                <span className="text-xs font-normal text-[var(--muted-foreground)] bg-[var(--muted)] px-1.5 py-0.5 rounded-sm">
+                <span className="text-xs font-sans font-normal text-content-tertiary bg-surface-raised px-1.5 py-0.5 rounded-sm border border-border/50">
                   beta
                 </span>
               </Link>
@@ -167,7 +167,7 @@ export function AppShell({
                   <>
                     <Link
                       href="/add"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/add" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/add" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
                       aria-current={pathname === "/add" ? "page" : undefined}
                     >
                       <Plus className="w-4 h-4" />
@@ -175,7 +175,7 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/library"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/library" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/library" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
                       aria-current={pathname === "/library" ? "page" : undefined}
                     >
                       <BookOpen className="w-4 h-4" />
@@ -183,7 +183,7 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/feed"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/feed" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/feed" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
                       aria-current={pathname === "/feed" ? "page" : undefined}
                     >
                       <Rss className="w-4 h-4" />
@@ -191,7 +191,7 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/collections"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/collections" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/collections" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
                       aria-current={pathname === "/collections" ? "page" : undefined}
                     >
                       <Folder className="w-4 h-4" />

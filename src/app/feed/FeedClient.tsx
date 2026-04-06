@@ -127,6 +127,43 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
   };
 
   const renderRSSEntry = (entry: RSSEntry) => {
+    const [isAdding, setIsAdding] = React.useState(false);
+    const [isAdded, setIsAdded] = React.useState(false);
+
+    const handleAddToLibrary = async () => {
+      if (isAdded || isAdding) return;
+
+      setIsAdding(true);
+      try {
+        const response = await fetch('/api/entries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: entry.title,
+            authors: entry.authors,
+            year: entry.publicationYear,
+            abstract: entry.summary,
+            source: entry.source,
+            url: entry.url,
+            readingStatus: 'UNREAD'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.isDuplicate) {
+          toast.error('This entry is already in your library');
+        } else {
+          toast.success('Added to library');
+          setIsAdded(true);
+        }
+      } catch (error) {
+        toast.error('Failed to add to library');
+      } finally {
+        setIsAdding(false);
+      }
+    };
+
     return (
       <div className="group flex items-start gap-3 p-4 rounded-lg border border-border bg-card hover:shadow-sm transition-all">
         <div className="mt-1">
@@ -167,20 +204,34 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
               {entry.source && (
                 <span>{entry.source}</span>
               )}
-              <span>Added {formatDistanceToNow(new Date(entry.addedAt), { addSuffix: true })}</span>
+              <span>{formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}</span>
             </div>
-
-            <div className="flex items-center gap-1">
-              <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors">
-                <Bookmark size={14} />
-              </button>
-              <Link
-                href={`/entries/${entry.id}`}
-                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-              >
-                <Eye size={14} />
-              </Link>
-            </div>
+            <button
+              onClick={handleAddToLibrary}
+              disabled={isAdding || isAdded}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border transition-all touch-manipulation ${
+                isAdded 
+                  ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' 
+                  : 'bg-background border-border hover:bg-muted hover:text-foreground'
+              }"
+            >
+              {isAdding ? (
+                <>
+                  <div className="w-3 h-3 animate-spin rounded-full border border-current border-t-transparent" />
+                  Adding...
+                </>
+              ) : isAdded ? (
+                <>
+                  <Bookmark size={12} className="fill-current" />
+                  Added
+                </>
+              ) : (
+                <>
+                  <Plus size={12} />
+                  Add to library
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

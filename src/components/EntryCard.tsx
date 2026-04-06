@@ -14,30 +14,8 @@ import { useApiKey } from '@/hooks/useApiKey';
 import ShareEntryModal from '@/components/ShareEntryModal';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useTimezone } from '@/hooks/useTimezone';
+import { FlatEntry } from '@/types/entry';
 
-interface Entry {
-    id: string;
-    title: string;
-    authors: string[];
-    year: number | null;
-    contentType: string;
-    url?: string | null;
-    doi?: string | null;
-    source?: 'MANUAL' | 'SMART_ALERT';
-    metadata?: {
-        openAccessUrl?: string | null;
-    } | null;
-    readingStatus: 'UNREAD' | 'BACKLOG' | 'IN_PROGRESS' | 'READING' | 'COMPLETED' | 'READ' | 'DROPPED';
-    createdAt: string | Date;
-    saveCount?: number; // New field for save count
-    collections?: {
-        id: string;
-        collection: {
-            id: string;
-            name: string;
-        };
-    }[];
-}
 
 const readingStatuses = [
     { value: 'UNREAD', label: 'Unread' },
@@ -66,7 +44,7 @@ export default function EntryCard({
     fromPath,
     selectionMode,
 }: {
-    entry: Entry;
+    entry: FlatEntry;
     /** Session key for scroll restore (must match useScrollPosition on that page, e.g. `collection-${id}`). */
     scrollPositionKey?: string;
     /** Optional path to include in the from query parameter for back navigation */
@@ -94,13 +72,13 @@ export default function EntryCard({
     const apiKey = useApiKey();
 
     const [assignedCollectionIds, setAssignedCollectionIds] = useState<string[]>(
-        (entry.collections ?? []).map((ec) => ec.collection.id)
+        (entry.collections ?? []).map((c) => c.collectionId)
     );
     const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(
-        entry.collections?.[0]?.collection?.id ?? null
+        entry.collections?.[0]?.collectionId ?? null
     );
     const [currentCollectionName, setCurrentCollectionName] = useState<string>(
-        entry.collections?.[0]?.collection?.name ?? 'no collection'
+        entry.collections?.[0]?.name ?? 'no collection'
     );
 
     useEffect(() => {
@@ -166,7 +144,7 @@ export default function EntryCard({
         };
     }, []);
 
-    const handleStatusChange = async (newStatus: typeof entry.readingStatus) => {
+    const handleStatusChange = async (newStatus: FlatEntry['readingStatus']) => {
         if (newStatus === currentStatus) {
             setIsOpen(false);
             return;
@@ -297,7 +275,7 @@ export default function EntryCard({
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ entryId: entry.id }),
+            body: JSON.stringify({ userEntryId: entry.id }),
         });
     };
 
@@ -388,14 +366,14 @@ export default function EntryCard({
                     }}
                     className={selectionMode?.enabled ? 'cursor-default' : ''}
                 >
-                    <Card className={`group h-full hover:shadow-lg transition-all duration-200 border-border/50 hover:border-foreground/20 overflow-visible ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`}>
-                        <CardContent className="p-5 overflow-visible">
+                    <Card className={`group h-full transition-all duration-200 overflow-visible interactive-card ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`} variant="ivory">
+                        <CardContent className="p-6 overflow-visible">
                             <div className="space-y-4">
                                 {/* Header with title, tags, and metadata */}
                                 <div className="space-y-3">
                                     <div className="relative">
                                         <CardTitle
-                                            className="font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2 cursor-help"
+                                            className="font-serif text-lg font-medium leading-tight text-content-primary group-hover:text-content-primary transition-colors line-clamp-2 cursor-pointer"
                                             onMouseEnter={() => setIsTitleHovered(true)}
                                             onMouseLeave={() => setIsTitleHovered(false)}
                                         >
@@ -404,12 +382,12 @@ export default function EntryCard({
 
                                         {/* Custom tooltip for full title */}
                                         {isTitleHovered && entry.title.length > 50 && (
-                                            <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-background border border-border rounded-lg shadow-lg z-[70] max-w-sm">
-                                                <div className="text-sm font-medium text-foreground leading-relaxed">
+                                            <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-surface-raised border border-border rounded-lg shadow-lg z-[70] max-w-sm">
+                                                <div className="text-sm font-medium text-content-primary leading-relaxed font-serif">
                                                     {entry.title}
                                                 </div>
                                                 <div className="absolute bottom-0 left-4 transform translate-y-full">
-                                                    <div className="w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-background"></div>
+                                                    <div className="w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-surface-raised"></div>
                                                 </div>
                                             </div>
                                         )}
@@ -417,14 +395,14 @@ export default function EntryCard({
 
                                     <div className="flex flex-wrap items-center gap-2">
                                         {entry.source && entry.source === 'SMART_ALERT' && (
-                                            <Badge variant="secondary" className="text-[10px] py-0 px-2 h-6 whitespace-nowrap bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
+                                            <Badge variant="success" className="text-[10px] py-0 px-2 h-6 whitespace-nowrap">
                                                 <Brain className="h-2.5 w-2.5 mr-1" />
                                                 Smart Alert
                                             </Badge>
                                         )}
                                     </div>
 
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground h-5">
+                                    <div className="flex items-center gap-2 text-sm text-content-secondary h-5">
                                         {entry.authors && entry.authors.length > 0 && (
                                             <span className="truncate">
                                                 {entry.authors.slice(0, 3).join(', ')}
@@ -432,15 +410,15 @@ export default function EntryCard({
                                             </span>
                                         )}
                                         {entry.authors && entry.authors.length > 0 && entry.year && (
-                                            <span className="text-border">•</span>
+                                            <span className="text-border/50">•</span>
                                         )}
                                         {entry.year && (
                                             <span>{entry.year}</span>
                                         )}
                                         {entry.saveCount && entry.saveCount > 1 && (
                                             <>
-                                                <span className="text-border">•</span>
-                                                <span className="text-xs text-muted-foreground">
+                                                <span className="text-border/50">•</span>
+                                                <span className="text-xs text-content-tertiary">
                                                     {entry.saveCount} users
                                                 </span>
                                             </>
@@ -466,14 +444,14 @@ export default function EntryCard({
                                         </button>
 
                                         {isCollectionOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[160px] backdrop-blur-none opacity-100">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-raised border border-border rounded-lg shadow-xl min-w-[160px]">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
-                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${currentCollectionId === null ? 'bg-surface-raised font-medium' : ''
+                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-warm-sand transition-colors rounded-lg ${currentCollectionId === null ? 'bg-warm-sand font-medium' : ''
                                                         }`}
                                                 >
                                                     no collection
@@ -491,7 +469,7 @@ export default function EntryCard({
                                                                 e.stopPropagation();
                                                                 handleCollectionChange(c.id);
                                                             }}
-                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${c.id === currentCollectionId ? 'bg-surface-raised font-medium' : ''
+                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-warm-sand transition-colors rounded-lg ${c.id === currentCollectionId ? 'bg-warm-sand font-medium' : ''
                                                                 }`}
                                                         >
                                                             {c.name}
@@ -510,11 +488,11 @@ export default function EntryCard({
                                                 e.stopPropagation();
                                                 setIsOpen(!isOpen);
                                             }}
-                                            className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
-                                                ? 'border-blue-600 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-400 dark:hover:bg-blue-900'
+                                            className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-lg font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
+                                                ? 'border-green-600 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-400 dark:bg-green-950 dark:text-green-400 dark:hover:bg-green-900'
                                                 : statusVariant(currentStatus) === 'default'
-                                                    ? 'border-border bg-card text-foreground hover:bg-muted'
-                                                    : 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                                    ? 'border-border bg-surface-raised text-content-primary hover:bg-warm-sand'
+                                                    : 'border-border bg-secondary text-content-secondary hover:bg-secondary/80'
                                                 }`}
                                             disabled={isUpdating}
                                         >
@@ -523,16 +501,16 @@ export default function EntryCard({
                                         </button>
 
                                         {isOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[120px]">
+                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-raised border border-border rounded-lg shadow-xl min-w-[120px]">
                                                 {readingStatuses.map((status) => (
                                                     <button
                                                         key={status.value}
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
-                                                            handleStatusChange(status.value as typeof entry.readingStatus);
+                                                            handleStatusChange(status.value as FlatEntry['readingStatus']);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${status.value === currentStatus ? 'bg-surface-raised font-medium' : ''
+                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-warm-sand transition-colors rounded-lg ${status.value === currentStatus ? 'bg-warm-sand font-medium' : ''
                                                             }`}
                                                     >
                                                         {status.label}
@@ -545,7 +523,7 @@ export default function EntryCard({
                                                             e.stopPropagation();
                                                             handleDelete();
                                                         }}
-                                                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-400 transition-colors flex items-center gap-2"
+                                                        className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 dark:text-destructive/80 transition-colors flex items-center gap-2 rounded-lg"
                                                     >
                                                         <Trash2 className="w-3 h-3" />
                                                         delete
@@ -557,7 +535,7 @@ export default function EntryCard({
                                 </div>
 
                                 {/* Footer with date info and paper links */}
-                                <div className="pt-3 border-t border-border/50">
+                                <div className="pt-4 border-t border-border/50">
                                     <div className="flex flex-col gap-2">
                                         {/* Paper links section */}
                                         {(entry.url || entry.metadata?.openAccessUrl || entry.doi) && (
@@ -567,7 +545,7 @@ export default function EntryCard({
                                                         type="button"
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950 dark:text-green-400 touch-manipulation"
+                                                        className="h-6 px-2 text-green-700 hover:text-green-800 hover:bg-green-50 dark:hover:bg-green-950 dark:text-green-400 touch-manipulation"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
@@ -585,7 +563,7 @@ export default function EntryCard({
                                                         type="button"
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 px-2 text-muted-foreground hover:text-foreground touch-manipulation"
+                                                        className="h-6 px-2 text-content-secondary hover:text-content-primary touch-manipulation"
                                                         onClick={handleOpenUrl}
                                                     >
                                                         View Source
@@ -593,13 +571,13 @@ export default function EntryCard({
                                                     </Button>
                                                 )}
                                                 {entry.doi && (
-                                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                                    <div className="flex items-center gap-1 text-content-secondary">
                                                         <span className="text-xs">DOI: {entry.doi}</span>
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground touch-manipulation"
+                                                            className="h-5 w-5 p-0 text-content-secondary hover:text-content-primary touch-manipulation"
                                                             onClick={handleCopyDoi}
                                                         >
                                                             {didCopyDoi ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -610,7 +588,7 @@ export default function EntryCard({
                                         )}
 
                                         {/* Date and action buttons */}
-                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                        <div className="flex items-center justify-between text-[10px] text-content-tertiary">
                                             <span>added {formatDate(entry.createdAt)}</span>
                                             <div className="flex items-center gap-1 sm:gap-2">
                                                 <Button
@@ -627,7 +605,7 @@ export default function EntryCard({
                                                         type="button"
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
+                                                        className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-content-tertiary hover:text-content-secondary touch-manipulation"
                                                         onClick={handleCopyUrl}
                                                     >
                                                         {didCopyUrl ? <Check className="w-5 h-5 sm:w-3 sm:h-3" /> : <Copy className="w-5 h-5 sm:w-3 sm:h-3" />}

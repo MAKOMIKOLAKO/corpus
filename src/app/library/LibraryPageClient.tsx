@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plan } from '@prisma/client';
@@ -9,23 +9,27 @@ import LibraryBatchClient from '@/components/LibraryBatchClient';
 import HomePageClient from '@/components/HomePageClient';
 import EntryCard from '@/components/EntryCard';
 import { Suspense } from 'react';
+import { useLibrary } from '@/hooks/useLibrary';
+import { FlatEntry } from '@/types/entry';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 // Loading component for entries
 function EntriesLoading() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="glass-card rounded-xl p-6 animate-pulse">
-          <div className="h-4 bg-[var(--muted)] rounded mb-3 w-3/4"></div>
-          <div className="h-3 bg-[var(--muted)] rounded mb-2 w-full"></div>
-          <div className="h-3 bg-[var(--muted)] rounded mb-4 w-2/3"></div>
+        <div key={i} className="bg-ivory border border-border-cream rounded-xl p-6 animate-pulse">
+          <div className="h-4 bg-warm-sand rounded mb-3 w-3/4"></div>
+          <div className="h-3 bg-warm-sand rounded mb-2 w-full"></div>
+          <div className="h-3 bg-warm-sand rounded mb-4 w-2/3"></div>
           <div className="flex gap-2 mb-4">
-            <div className="h-6 bg-[var(--muted)] rounded-full w-16"></div>
-            <div className="h-6 bg-[var(--muted)] rounded-full w-20"></div>
+            <div className="h-6 bg-warm-sand rounded-full w-16"></div>
+            <div className="h-6 bg-warm-sand rounded-full w-20"></div>
           </div>
           <div className="flex gap-2">
-            <div className="h-5 bg-[var(--muted)] rounded w-12"></div>
-            <div className="h-5 bg-[var(--muted)] rounded w-16"></div>
+            <div className="h-5 bg-warm-sand rounded w-12"></div>
+            <div className="h-5 bg-warm-sand rounded w-16"></div>
           </div>
         </div>
       ))}
@@ -44,7 +48,6 @@ interface LibraryPageClientProps {
   year?: string;
   topic?: string;
   sortBy?: string;
-  entries: any[];
 }
 
 export default function LibraryPageClient({
@@ -53,9 +56,37 @@ export default function LibraryPageClient({
   readingStatus,
   year,
   topic,
-  sortBy,
-  entries
+  sortBy
 }: LibraryPageClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const filters = {
+    q: search || searchParams?.get('q') || undefined,
+    readingStatus: readingStatus || searchParams?.get('readingStatus') || undefined,
+    year: year ? parseInt(year) : searchParams?.get('year') ? parseInt(searchParams.get('year')!) : undefined,
+    collectionId: searchParams?.get('collectionId') || undefined,
+    sortBy: sortBy === 'newest' ? 'createdAt' :
+      sortBy === 'oldest' ? 'createdAt' :
+        sortBy === 'title' ? 'title' :
+          sortBy === 'title-desc' ? 'title' :
+            sortBy === 'most-saved' ? 'saveCount' :
+              'createdAt',
+    sortOrder: sortBy === 'oldest' || sortBy === 'title-desc' ? 'asc' : 'desc'
+  };
+
+  const { entries, total, loading, error, hasMore, loadMore, removeEntry, updateEntry, highlightDuplicate } = useLibrary(filters);
+
+  const handleAddEntry = async (newEntry: FlatEntry) => {
+    // Handle duplicate response
+    if (newEntry.isDuplicate) {
+      toast.error('This entry is already in your library');
+      highlightDuplicate(newEntry.globalEntryId);
+    } else {
+      toast.success('Entry added to library');
+      router.refresh();
+    }
+  };
   return (
     <LibraryBatchClient user={user}>
       {({ isSelectionMode, selectedIds, toggleSelection }) => (
@@ -73,16 +104,17 @@ export default function LibraryPageClient({
           <div className="space-y-4">
             {/* Results Header */}
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {entries.length === 0
-                  ? 'no entries found'
-                  : `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
-                }
+              <div className="body-small text-content-secondary">
+                {loading ? 'loading...' : (
+                  total === 0
+                    ? 'no entries found'
+                    : `${total} ${total === 1 ? 'entry' : 'entries'}`
+                )}
               </div>
               {(search || readingStatus || year || sortBy !== 'newest') && (
                 <Link
                   href="/library"
-                  className="text-xs text-primary hover:underline underline-offset-2"
+                  className="text-xs text-terracotta hover:text-terracotta-hover underline-offset-2 hover:underline"
                 >
                   clear all filters
                 </Link>
@@ -91,19 +123,19 @@ export default function LibraryPageClient({
 
             {/* Entry Grid */}
             <Suspense fallback={<EntriesLoading />}>
-              {entries.length === 0 ? (
-                <div className="text-center py-24 rounded-xl bg-muted/30 border border-border/50">
+              {!loading && entries.length === 0 ? (
+                <div className="text-center py-24 rounded-xl bg-surface-raised border border-border/50">
                   <div className="space-y-4">
-                    <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-warm-sand flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-content-tertiary">
                         <path d="M12 2L2 7l10 5 10-5-10-5z" />
                         <path d="M2 17l10 5 10-5" />
                         <path d="M2 12l10 5 10-5" />
                       </svg>
                     </div>
                     <div className="space-y-2">
-                      <h3 className="font-medium text-foreground">no entries found</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-serif text-xl font-medium text-content-primary">no entries found</h3>
+                      <p className="body-standard text-content-secondary">
                         {search || readingStatus || year
                           ? 'try adjusting your search or filters'
                           : 'add your first entry to get started'
@@ -113,19 +145,30 @@ export default function LibraryPageClient({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-visible">
-                  {entries.map(entry => (
-                    <EntryCard
-                      key={entry.id}
-                      entry={entry}
-                      selectionMode={{
-                        enabled: isSelectionMode,
-                        isSelected: selectedIds.includes(entry.id),
-                        onToggle: toggleSelection
-                      }}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {entries.map((entry) => (
+                      <EntryCard
+                        key={entry.id}
+                        entry={entry}
+                        scrollPositionKey="library"
+                        fromPath="/library"
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <div className="flex justify-center mt-8">
+                      <Button
+                        variant="warm-sand"
+                        onClick={loadMore}
+                        disabled={loading}
+                        className="px-6"
+                      >
+                        {loading ? 'Loading...' : 'Load More'}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </Suspense>
           </div>
