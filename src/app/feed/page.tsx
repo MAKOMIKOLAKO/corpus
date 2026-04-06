@@ -11,29 +11,10 @@ export default async function FeedPage() {
     redirect('/login');
   }
 
-  const [user, userEntries, userFeeds, signals] = await Promise.all([
+  const [user, userFeeds, signals] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true }
-    }),
-    prisma.userEntry.findMany({
-      where: { userId },
-      include: {
-        globalEntry: {
-          select: {
-            id: true,
-            title: true,
-            authors: true,
-            summary: true,
-            source: true,
-            url: true,
-            createdAt: true,
-            publicationYear: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 20
     }),
     prisma.userSource.findMany({
       where: { userId },
@@ -86,6 +67,34 @@ export default async function FeedPage() {
     })
   ]);
 
+  const rssSourceNames = Array.from(new Set(userFeeds.flatMap((f: any) => [
+    f.source.title,
+    f.source.domain,
+  ]).filter((name): name is string => Boolean(name && name.trim()))));
+
+  const rssEntries = rssSourceNames.length > 0
+    ? await prisma.globalEntry.findMany({
+      where: {
+        addedVia: 'rss_ingestion',
+        source: {
+          in: rssSourceNames
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        authors: true,
+        summary: true,
+        source: true,
+        url: true,
+        createdAt: true,
+        publicationYear: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    })
+    : [];
+
   if (!user) {
     redirect('/login');
   }
@@ -99,16 +108,16 @@ export default async function FeedPage() {
           createdAt: s.createdAt.toISOString()
         }))}
         userPlan={user.plan}
-        rssEntries={userEntries.map((ue: any) => ({
-          id: ue.globalEntry.id,
-          title: ue.globalEntry.title,
-          authors: ue.globalEntry.authors,
-          summary: ue.globalEntry.summary,
-          source: ue.globalEntry.source,
-          url: ue.globalEntry.url,
-          createdAt: ue.globalEntry.createdAt.toISOString(),
-          publicationYear: ue.globalEntry.publicationYear,
-          addedAt: ue.createdAt.toISOString()
+        rssEntries={rssEntries.map((entry: any) => ({
+          id: entry.id,
+          title: entry.title,
+          authors: entry.authors,
+          summary: entry.summary,
+          source: entry.source,
+          url: entry.url,
+          createdAt: entry.createdAt.toISOString(),
+          publicationYear: entry.publicationYear,
+          addedAt: entry.createdAt.toISOString()
         }))}
         userFeeds={userFeeds.map((f: any) => ({
           id: f.source.id,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Trash2,
@@ -22,6 +22,7 @@ interface LibraryBatchClientProps {
     entriesCount: number;
     personalCollectionsCount: number;
   };
+  allEntryIds?: string[];
   children: (props: {
     isSelectionMode: boolean;
     selectedIds: string[];
@@ -29,7 +30,7 @@ interface LibraryBatchClientProps {
   }) => React.ReactNode;
 }
 
-export default function LibraryBatchClient({ user, children }: LibraryBatchClientProps) {
+export default function LibraryBatchClient({ user, allEntryIds = [], children }: LibraryBatchClientProps) {
   const router = useRouter();
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -54,6 +55,24 @@ export default function LibraryBatchClient({ user, children }: LibraryBatchClien
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
+
+  const selectAllVisible = () => {
+    if (allEntryIds.length === 0) return;
+    setSelectedIds(allEntryIds);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  useEffect(() => {
+    setSelectedIds(prev => {
+      const next = prev.filter(id => allEntryIds.includes(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [allEntryIds]);
+
+  const allVisibleSelected = allEntryIds.length > 0 && allEntryIds.every(id => selectedIds.includes(id));
 
   const handleBatchAction = async (action: string, value?: any) => {
     if (selectedIds.length === 0) return;
@@ -116,6 +135,22 @@ export default function LibraryBatchClient({ user, children }: LibraryBatchClien
               <span className="text-xs font-medium mr-2">
                 {selectedIds.length} selected
               </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectAllVisible}
+                disabled={allEntryIds.length === 0 || allVisibleSelected || isProcessing}
+              >
+                Select all
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                disabled={selectedIds.length === 0 || isProcessing}
+              >
+                Clear all
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
