@@ -10,7 +10,7 @@ import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, Brain } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Rss } from "lucide-react";
 
 export function AppShell({
   children,
@@ -182,6 +182,14 @@ export function AppShell({
                       library
                     </Link>
                     <Link
+                      href="/feed"
+                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/feed" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      aria-current={pathname === "/feed" ? "page" : undefined}
+                    >
+                      <Rss className="w-4 h-4" />
+                      feed
+                    </Link>
+                    <Link
                       href="/collections"
                       className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/collections" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
                       aria-current={pathname === "/collections" ? "page" : undefined}
@@ -258,6 +266,13 @@ export function AppShell({
                   >
                     <BookOpen className="w-5 h-5" />
                     library
+                  </Link>
+                  <Link
+                    href="/feed"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/feed" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                  >
+                    <Rss className="w-5 h-5" />
+                    feed
                   </Link>
                   <Link
                     href="/collections"

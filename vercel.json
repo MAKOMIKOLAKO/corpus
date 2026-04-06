@@ -7,10 +7,6 @@
   "crons": [
     {
       "path": "/api/cron/smart-alerts",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/rss-ingestion",
       "schedule": "30 8 * * *"
     }
   ]
