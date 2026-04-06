@@ -548,6 +548,7 @@ export default function EntryCard({
                                     <div className="relative min-w-0" ref={collectionDropdownRef}>
                                         <button
                                             onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation();
                                                 setIsCollectionOpen(!isCollectionOpen);
                                             }}
@@ -562,6 +563,7 @@ export default function EntryCard({
                                             <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[160px] backdrop-blur-none opacity-100">
                                                 <button
                                                     onClick={(e) => {
+                                                        e.preventDefault();
                                                         e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
@@ -579,6 +581,7 @@ export default function EntryCard({
                                                         <button
                                                             key={c.id}
                                                             onClick={(e) => {
+                                                                e.preventDefault();
                                                                 e.stopPropagation();
                                                                 handleCollectionChange(c.id);
                                                             }}
@@ -597,6 +600,7 @@ export default function EntryCard({
                                     <div className="relative min-w-0" ref={statusDropdownRef}>
                                         <button
                                             onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation();
                                                 setIsOpen(!isOpen);
                                             }}
@@ -618,6 +622,7 @@ export default function EntryCard({
                                                     <button
                                                         key={status.value}
                                                         onClick={(e) => {
+                                                            e.preventDefault();
                                                             e.stopPropagation();
                                                             handleStatusChange(status.value as typeof entry.readingStatus);
                                                         }}
@@ -630,6 +635,7 @@ export default function EntryCard({
                                                 <div className="border-t border-border-default">
                                                     <button
                                                         onClick={(e) => {
+                                                            e.preventDefault();
                                                             e.stopPropagation();
                                                             handleDelete();
                                                         }}
