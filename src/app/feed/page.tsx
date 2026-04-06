@@ -72,7 +72,9 @@ export default async function FeedPage() {
     f.source.domain,
   ]).filter((name): name is string => Boolean(name && name.trim()))));
 
-  const rssEntries = rssSourceNames.length > 0
+  const RSS_PAGE_SIZE = 20;
+
+  const rssRows = rssSourceNames.length > 0
     ? await prisma.globalEntry.findMany({
       where: {
         addedVia: 'rss_ingestion',
@@ -91,9 +93,12 @@ export default async function FeedPage() {
         publicationYear: true
       },
       orderBy: { createdAt: 'desc' },
-      take: 20
+      take: RSS_PAGE_SIZE + 1
     })
     : [];
+
+  const rssHasMore = rssRows.length > RSS_PAGE_SIZE;
+  const rssEntries = rssRows.slice(0, RSS_PAGE_SIZE);
 
   if (!user) {
     redirect('/login');
@@ -108,6 +113,8 @@ export default async function FeedPage() {
           createdAt: s.createdAt.toISOString()
         }))}
         userPlan={user.plan}
+        initialRssPageSize={RSS_PAGE_SIZE}
+        initialRssHasMore={rssHasMore}
         rssEntries={rssEntries.map((entry: any) => ({
           id: entry.id,
           title: entry.title,
