@@ -296,30 +296,33 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto grid max-w-6xl gap-16 px-4 pb-24 pt-12 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
           <div data-reveal className={reveal}>
             <h1 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Stay current with research, automatically.
+              Stay ahead in your research field with curated, continuously updated insights.
             </h1>
             <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-[var(--muted-foreground)]">
-              Add the journals and sources you already read. Corpus tracks new papers automatically and delivers a daily feed with summaries, so you never miss important research in your field.
+              Research volume is overwhelming. Corpus solves this by automatically tracking new publications from your trusted journals and preprint servers. Each day, receive a concise feed of relevant papers with AI-generated summaries, enabling you to skim critical insights in minutes rather than hours and save or organize important findings instantly.
             </p>
             <div className="mt-10">
               <Link
                 href="/login"
                 className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90 touch-manipulation`}
               >
-                Start your feed
+                Get Started Free
               </Link>
             </div>
           </div>
 
           <div data-reveal className={`${reveal} delay-100 hidden sm:block`}>
             <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--card)]/50 p-5 shadow-2xl backdrop-blur-sm">
-              <div className="mb-4 flex items-center gap-2 border-b border-[var(--border)] pb-4">
-                <div className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
+              <div className="mb-4 flex items-center justify-between border-b border-[var(--border)] pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
+                  </div>
+                  <span className="ml-2 text-xs text-[var(--muted-foreground)]">feed</span>
                 </div>
-                <span className="ml-2 text-xs text-[var(--muted-foreground)]">feed</span>
+                <span className="text-xs text-[var(--muted-foreground)]">Updated 2 minutes ago</span>
               </div>
               <div className="space-y-3">
                 <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/80 hover:shadow-sm transition-all">
@@ -329,14 +332,18 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      Deep Learning for Protein Structure Prediction: Recent Advances and Applications
-                    </h3>
+                    <div className="flex items-start gap-2">
+                      <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                        Chen et al. - Deep Learning for Protein Structure Prediction: Recent Advances and Applications
+                      </h3>
+                      <span className="mt-0.5 rounded-full bg-green-500/10 text-green-600 text-xs px-1.5 py-0.5 font-medium">New</span>
+                    </div>
                     <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      We present a comprehensive review of deep learning approaches for protein structure prediction, covering AlphaFold2 and its derivatives...
+                      We present a comprehensive review of deep learning approaches for protein structure prediction, covering AlphaFold2 and its derivatives. Our analysis of 237 recent publications reveals significant improvements in prediction accuracy for membrane proteins and protein complexes.
                     </p>
                     <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
                       <span>arXiv</span>
+                      <span>•</span>
                       <span>2 hours ago</span>
                     </div>
                   </div>
@@ -349,14 +356,18 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      Climate Change Impacts on Global Food Security: A Meta-Analysis
-                    </h3>
+                    <div className="flex items-start gap-2">
+                      <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                        Rodriguez & Martinez - Climate Change Impacts on Global Food Security: A Meta-Analysis
+                      </h3>
+                      <span className="mt-0.5 rounded-full bg-green-500/10 text-green-600 text-xs px-1.5 py-0.5 font-medium">New</span>
+                    </div>
                     <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      Our meta-analysis of 1,247 studies reveals significant impacts of climate change on crop yields across all major agricultural regions...
+                      Our meta-analysis of 1,247 studies reveals significant impacts of climate change on crop yields across all major agricultural regions. Findings indicate a 7.2% average yield reduction per degree Celsius increase, with substantial variation between crops and geographic regions.
                     </p>
                     <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
                       <span>Nature</span>
+                      <span>•</span>
                       <span>5 hours ago</span>
                     </div>
                   </div>
@@ -370,13 +381,14 @@ export default function LandingPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      Quantum Computing Applications in Cryptography: A Survey
+                      Johnson et al. - Quantum Computing Applications in Cryptography: A Survey
                     </h3>
                     <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      This survey explores the implications of quantum computing for modern cryptographic systems, including post-quantum cryptography approaches...
+                      This survey explores the implications of quantum computing for modern cryptographic systems, including post-quantum cryptography approaches. We analyze 89 recent papers and identify emerging standards for quantum-resistant encryption protocols.
                     </p>
                     <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
                       <span>PNAS</span>
+                      <span>•</span>
                       <span>Yesterday</span>
                     </div>
                   </div>
@@ -390,13 +402,14 @@ export default function LandingPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      Neural Mechanisms of Memory Consolidation During Sleep
+                      Wang et al. - Neural Mechanisms of Memory Consolidation During Sleep
                     </h3>
                     <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      Using intracranial recordings, we identified specific neural oscillations that correlate with memory consolidation during different sleep stages...
+                      Using intracranial recordings from 47 participants, we identified specific neural oscillations that correlate with memory consolidation during different sleep stages. Our findings demonstrate the critical role of spindle-ripple coupling in long-term memory formation.
                     </p>
                     <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
                       <span>Science</span>
+                      <span>•</span>
                       <span>2 days ago</span>
                     </div>
                   </div>
