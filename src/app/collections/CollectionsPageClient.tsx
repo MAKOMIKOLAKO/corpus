@@ -116,19 +116,21 @@ export default function CollectionsPage() {
     const editDescTooLong = editingDescription.trim().length > DESC_MAX;
     const isEditValid = editingName.trim().length >= NAME_MIN && !editNameTooLong && !editDescTooLong;
 
-    const fetchInvites = useCallback(async () => {
+    const fetchInvites = useCallback(async (isCancelled?: () => boolean) => {
         try {
             const response = await fetch('/api/collections/invites');
             if (response.ok) {
                 const data = await response.json();
+                if (isCancelled?.()) return;
                 setInvites(data);
             }
         } catch (error) {
+            if (isCancelled?.()) return;
             console.error('Failed to fetch invites:', error);
         }
     }, []);
 
-    const fetchCollections = useCallback(async () => {
+    const fetchCollections = useCallback(async (isCancelled?: () => boolean) => {
         try {
             const response = await fetch('/api/collections', {
                 headers: { 'x-api-key': apiKey },
@@ -139,18 +141,28 @@ export default function CollectionsPage() {
                     ...data.owned.map((c: any) => ({ ...c, isOwner: true, userRole: 'OWNER' as const })),
                     ...data.member.map((c: any) => ({ ...c, isOwner: false, userRole: c.userRole || 'VIEWER' as const }))
                 ];
+                if (isCancelled?.()) return;
                 setCollections(collectionsWithOwnership);
             }
         } catch (error) {
+            if (isCancelled?.()) return;
             console.error('Failed to fetch collections:', error);
         } finally {
+            if (isCancelled?.()) return;
             setLoading(false);
         }
     }, [apiKey]);
 
     useEffect(() => {
-        fetchCollections();
-        fetchInvites();
+        let cancelled = false;
+        Promise.all([
+            fetchCollections(() => cancelled),
+            fetchInvites(() => cancelled)
+        ]);
+
+        return () => {
+            cancelled = true;
+        };
     }, [fetchCollections, fetchInvites]);
 
     // Close dropdowns when clicking outside

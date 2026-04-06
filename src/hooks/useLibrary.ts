@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { FlatEntry } from '@/types/entry'
 
 interface LibraryState {
@@ -31,22 +31,41 @@ export function useLibrary(filters: LibraryFilters = {}) {
     page: 1
   })
 
+  const requestIdRef = useRef(0)
+
+  const queryBase = useMemo(() => {
+    const params = new URLSearchParams()
+    if (filters.q) params.set('q', filters.q)
+    if (filters.readingStatus) params.set('readingStatus', filters.readingStatus)
+    if (filters.year) params.set('year', String(filters.year))
+    if (filters.collectionId) params.set('collectionId', filters.collectionId)
+    if (filters.sortBy) params.set('sortBy', filters.sortBy)
+    if (filters.sortOrder) params.set('sortOrder', filters.sortOrder)
+    return params
+  }, [
+    filters.q,
+    filters.readingStatus,
+    filters.year,
+    filters.collectionId,
+    filters.sortBy,
+    filters.sortOrder,
+  ])
+
   const fetchEntries = useCallback(async (page = 1, append = false) => {
+    const requestId = ++requestIdRef.current
     setState(s => ({ ...s, loading: true, error: null }))
-    
+
     try {
-      const params = new URLSearchParams()
-      if (filters.q) params.set('q', filters.q)
-      if (filters.readingStatus) params.set('readingStatus', filters.readingStatus)
-      if (filters.year) params.set('year', String(filters.year))
-      if (filters.collectionId) params.set('collectionId', filters.collectionId)
-      if (filters.sortBy) params.set('sortBy', filters.sortBy)
-      if (filters.sortOrder) params.set('sortOrder', filters.sortOrder)
+      const params = new URLSearchParams(queryBase)
       params.set('page', String(page))
       params.set('limit', '20')
 
       const response = await fetch(`/api/entries?${params}`)
       const data = await response.json()
+
+      if (requestId !== requestIdRef.current) {
+        return
+      }
 
       setState(s => ({
         entries: append ? [...s.entries, ...data.entries] : data.entries,
@@ -57,9 +76,12 @@ export function useLibrary(filters: LibraryFilters = {}) {
         page
       }))
     } catch (e: any) {
+      if (requestId !== requestIdRef.current) {
+        return
+      }
       setState(s => ({ ...s, loading: false, error: e.message }))
     }
-  }, [JSON.stringify(filters)])
+  }, [queryBase])
 
   useEffect(() => {
     fetchEntries(1, false)
@@ -78,7 +100,7 @@ export function useLibrary(filters: LibraryFilters = {}) {
   const updateEntry = (userEntryId: string, updates: Partial<FlatEntry>) => {
     setState(s => ({
       ...s,
-      entries: s.entries.map(e => 
+      entries: s.entries.map(e =>
         e.id === userEntryId ? { ...e, ...updates } : e
       )
     }))
@@ -88,8 +110,8 @@ export function useLibrary(filters: LibraryFilters = {}) {
     setState(s => ({
       ...s,
       entries: s.entries.map(e =>
-        e.globalEntryId === globalEntryId 
-          ? { ...e, _highlighted: true } 
+        e.globalEntryId === globalEntryId
+          ? { ...e, _highlighted: true }
           : e
       )
     }))
@@ -102,8 +124,8 @@ export function useLibrary(filters: LibraryFilters = {}) {
     }, 2000)
   }
 
-  return { 
-    ...state, 
+  return {
+    ...state,
     refresh: () => fetchEntries(1, false),
     loadMore,
     removeEntry,

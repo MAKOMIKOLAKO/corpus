@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { toISOString } from '@/lib/dateUtils';
+import { timedJson } from '@/lib/serverTiming';
 
 const MAX_WATCH_QUERIES_PER_USER = parseInt(process.env.MAX_WATCH_QUERIES_PER_USER || '5');
 
@@ -14,10 +15,11 @@ const createWatchQuerySchema = z.object({
 });
 
 export async function GET() {
+  const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'watch-queries.get');
     }
 
     // Check if user is Pro
@@ -27,7 +29,7 @@ export async function GET() {
     });
 
     if (!user || user.plan === 'FREE') {
-      return NextResponse.json({ error: 'Pro plan required' }, { status: 403 });
+      return timedJson({ error: 'Pro plan required' }, startedAt, { status: 403 }, 'watch-queries.get');
     }
 
     const watchQueries = await prisma.watchQuery.findMany({
@@ -51,18 +53,19 @@ export async function GET() {
       createdAt: toISOString(query.createdAt), // Format createdAt as ISO string
     }));
 
-    return NextResponse.json(formattedQueries);
+    return timedJson(formattedQueries, startedAt, undefined, 'watch-queries.get');
   } catch (error) {
     console.error('Error fetching watch queries:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'watch-queries.get');
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'watch-queries.post');
     }
 
     // Check if user is Pro
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user || user.plan === 'FREE') {
-      return NextResponse.json({ error: 'Pro plan required' }, { status: 403 });
+      return timedJson({ error: 'Pro plan required' }, startedAt, { status: 403 }, 'watch-queries.post');
     }
 
     const body = await request.json();
@@ -87,9 +90,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (activeQueryCount >= MAX_WATCH_QUERIES_PER_USER) {
-      return NextResponse.json(
+      return timedJson(
         { error: `Maximum of ${MAX_WATCH_QUERIES_PER_USER} active queries allowed` },
-        { status: 400 }
+        startedAt,
+        { status: 400 },
+        'watch-queries.post'
       );
     }
 
@@ -116,7 +121,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!collection) {
-        return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+        return timedJson({ error: 'Collection not found' }, startedAt, { status: 404 }, 'watch-queries.post');
       }
     }
 
@@ -142,12 +147,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(watchQuery, { status: 201 });
+    return timedJson(watchQuery, startedAt, { status: 201 }, 'watch-queries.post');
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
+      return timedJson({ error: 'Invalid input', details: error.issues }, startedAt, { status: 400 }, 'watch-queries.post');
     }
     console.error('Error creating watch query:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'watch-queries.post');
   }
 }
