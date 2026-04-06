@@ -38,6 +38,69 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (filter === "rss") {
+      const userFeeds = await prisma.userSource.findMany({
+        where: { userId: user.id },
+        select: {
+          source: {
+            select: {
+              title: true,
+              domain: true,
+            },
+          },
+        },
+      });
+
+      const rssSourceNames = Array.from(
+        new Set(
+          userFeeds
+            .flatMap((feed) => [feed.source.title, feed.source.domain])
+            .filter((name): name is string => Boolean(name && name.trim()))
+        )
+      );
+
+      if (rssSourceNames.length === 0) {
+        return NextResponse.json({ entries: [], hasMore: false, page });
+      }
+
+      const rssRows = await prisma.globalEntry.findMany({
+        where: {
+          addedVia: "rss_ingestion",
+          source: {
+            in: rssSourceNames,
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          authors: true,
+          summary: true,
+          source: true,
+          url: true,
+          createdAt: true,
+          publicationYear: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: limit + 1,
+      });
+
+      const hasMore = rssRows.length > limit;
+      const entries = rssRows.slice(0, limit).map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        authors: entry.authors,
+        summary: entry.summary,
+        source: entry.source,
+        url: entry.url,
+        createdAt: entry.createdAt.toISOString(),
+        publicationYear: entry.publicationYear,
+        addedAt: entry.createdAt.toISOString(),
+      }));
+
+      return NextResponse.json({ entries, hasMore, page });
+    }
+
     // Get connected user IDs
     const receivedConnections = user.receivedConnections || [];
     const sentConnections = user.sentConnections || [];

@@ -67,6 +67,8 @@ interface FeedClientProps {
   userPlan: Plan;
   rssEntries?: RSSEntry[];
   userFeeds?: UserFeed[];
+  initialRssPageSize?: number;
+  initialRssHasMore?: boolean;
 }
 
 type FeedView = 'actions' | 'rss';
@@ -188,13 +190,27 @@ const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEnt
   );
 });
 
-export default function FeedClient({ signals, userPlan, rssEntries = [], userFeeds = [] }: FeedClientProps) {
+export default function FeedClient({
+  signals,
+  userPlan,
+  rssEntries = [],
+  userFeeds = [],
+  initialRssPageSize = 20,
+  initialRssHasMore = false,
+}: FeedClientProps) {
   const isFree = userPlan === 'FREE';
+  const rssPageSize = initialRssPageSize > 0 ? initialRssPageSize : 20;
   const [upgradePromptShown, setUpgradePromptShown] = React.useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [feedList, setFeedList] = React.useState(userFeeds);
   const [showManageFeeds, setShowManageFeeds] = React.useState(false);
   const [activeView, setActiveView] = React.useState<FeedView>('actions');
+  const [rssFeedEntries, setRssFeedEntries] = React.useState<RSSEntry[]>(rssEntries);
+  const [rssPage, setRssPage] = React.useState(1);
+  const [rssHasMore, setRssHasMore] = React.useState(initialRssHasMore);
+  const [isLoadingMoreRss, setIsLoadingMoreRss] = React.useState(false);
+  const [rssLoadError, setRssLoadError] = React.useState<string | null>(null);
+  const loadMoreTriggerRef = React.useRef<HTMLDivElement | null>(null);
 
   const sortedSignals = React.useMemo(
     () => [...signals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -202,9 +218,78 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
   );
 
   const sortedRssEntries = React.useMemo(
-    () => [...rssEntries].sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()),
-    [rssEntries]
+    () => [...rssFeedEntries].sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()),
+    [rssFeedEntries]
   );
+
+  React.useEffect(() => {
+    setRssFeedEntries(rssEntries);
+    setRssPage(1);
+    setRssHasMore(initialRssHasMore);
+    setRssLoadError(null);
+  }, [rssEntries, initialRssHasMore]);
+
+  const loadMoreRssEntries = React.useCallback(async () => {
+    if (isLoadingMoreRss || !rssHasMore) {
+      return;
+    }
+
+    const nextPage = rssPage + 1;
+    setIsLoadingMoreRss(true);
+
+    try {
+      const response = await fetch(`/api/feed?filter=rss&page=${nextPage}&limit=${rssPageSize}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error((data as { error?: string })?.error || 'Failed to load more RSS entries');
+      }
+
+      const entries = Array.isArray((data as { entries?: RSSEntry[] }).entries)
+        ? (data as { entries: RSSEntry[] }).entries
+        : [];
+
+      setRssFeedEntries((prev) => {
+        const seenIds = new Set(prev.map((entry) => entry.id));
+        const dedupedNewEntries = entries.filter((entry) => !seenIds.has(entry.id));
+        return [...prev, ...dedupedNewEntries];
+      });
+
+      setRssPage(nextPage);
+      setRssHasMore(Boolean((data as { hasMore?: boolean }).hasMore));
+      setRssLoadError(null);
+    } catch (error) {
+      setRssLoadError(error instanceof Error ? error.message : 'Failed to load more RSS entries');
+    } finally {
+      setIsLoadingMoreRss(false);
+    }
+  }, [isLoadingMoreRss, rssHasMore, rssPage, rssPageSize]);
+
+  React.useEffect(() => {
+    if (activeView !== 'rss' || !rssHasMore) {
+      return;
+    }
+
+    const triggerElement = loadMoreTriggerRef.current;
+    if (!triggerElement) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMoreRssEntries();
+        }
+      },
+      { root: null, rootMargin: '300px 0px', threshold: 0 }
+    );
+
+    observer.observe(triggerElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeView, rssHasMore, loadMoreRssEntries]);
 
   const handleAddFeed = React.useCallback((newFeed: {
     id: string;
@@ -491,9 +576,18 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
             <p className="text-muted-foreground">No RSS entries yet. Add feeds to populate this tab.</p>
           </div>
         ) : (
-          sortedRssEntries.map((entry) => (
-            <RSSEntryCard key={`rss-${entry.id}`} entry={entry} />
-          ))
+          <>
+            {sortedRssEntries.map((entry) => (
+              <RSSEntryCard key={`rss-${entry.id}`} entry={entry} />
+            ))}
+            {rssHasMore && <div ref={loadMoreTriggerRef} className="h-1" aria-hidden="true" />}
+            {isLoadingMoreRss && (
+              <p className="text-sm text-muted-foreground text-center">Loading more RSS entries...</p>
+            )}
+            {rssLoadError && (
+              <p className="text-sm text-destructive text-center">{rssLoadError}</p>
+            )}
+          </>
         )}
       </div>
 
