@@ -182,7 +182,7 @@ async function runRSSIngestion() {
                   title: item.title,
                   authors: item.author ? [item.author] : [],
                   year: normalized.publicationYear,
-                  abstract: item.description || item.contentSnippet,
+                  abstract: item.description || item.content,
                   url: item.url,
                   source: source.title || source.domain,
                   normalizedTitle: normalized.normalizedTitle,
@@ -197,13 +197,13 @@ async function runRSSIngestion() {
               console.log(`[cron/smart-alerts] Created entry: ${item.title}`);
 
               // Trigger AI summary generation asynchronously
-              if (item.description || item.contentSnippet) {
+              if (item.description || item.content) {
                 try {
                   fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/summarize`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      text: item.description || item.contentSnippet,
+                      text: item.description || item.content,
                       maxSentences: 3
                     })
                   }).then(async (res) => {
