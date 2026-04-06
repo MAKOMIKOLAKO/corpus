@@ -132,7 +132,7 @@ export default async function LibraryPage({
                     saveCount: true,
                 }
             },
-            userEntryCollections: {
+            collections: {
                 include: {
                     collection: true
                 }
@@ -154,7 +154,7 @@ export default async function LibraryPage({
         readingStatus: ue.readingStatus,
         createdAt: ue.createdAt,
         saveCount: ue.globalEntry.saveCount,
-        collections: ue.userEntryCollections.map((uec: any) => ({
+        collections: ue.collections.map((uec: any) => ({
             id: uec.id,
             collection: {
                 id: uec.collection.id,
