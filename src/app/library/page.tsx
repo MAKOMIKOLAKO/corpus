@@ -141,7 +141,7 @@ export default async function LibraryPage({
     });
 
     // Transform to match expected Entry interface
-    const transformedEntries = entries.map(ue => ({
+    const transformedEntries = entries.map((ue: any) => ({
         id: ue.id,
         title: ue.globalEntry.title,
         authors: ue.globalEntry.authors,
@@ -154,7 +154,7 @@ export default async function LibraryPage({
         readingStatus: ue.readingStatus,
         createdAt: ue.createdAt,
         saveCount: ue.globalEntry.saveCount,
-        collections: ue.userEntryCollections.map(uec => ({
+        collections: ue.userEntryCollections.map((uec: any) => ({
             id: uec.id,
             collection: {
                 id: uec.collection.id,
