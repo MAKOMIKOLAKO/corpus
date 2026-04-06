@@ -42,7 +42,6 @@ export default async function FeedPage() {
         select: {
           id: true,
           title: true,
-          contentType: true,
         }
       },
       collection: {

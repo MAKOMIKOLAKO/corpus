@@ -70,8 +70,7 @@ export async function PATCH(
             id: true,
             title: true,
             authors: true,
-            year: true,
-            contentType: true
+            year: true
           }
         }
       }

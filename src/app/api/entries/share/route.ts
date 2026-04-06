@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const shared = await prisma.sharedEntry.create({
       data: { entryId, senderId: userId, receiverId, message: message || null },
       include: {
-        entry: { select: { id: true, title: true, contentType: true } },
+        entry: { select: { id: true, title: true } },
         receiver: { select: { id: true, username: true, name: true } },
       },
     });

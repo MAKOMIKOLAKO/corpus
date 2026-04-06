@@ -5,7 +5,7 @@ import HomePageClient from '@/components/HomePageClient';
 import EntryCard from '@/components/EntryCard';
 import LibraryPageWrapper from '@/components/LibraryPageWrapper';
 import LibraryPageClient from './LibraryPageClient';
-import { ContentType, ReadingStatus } from '@prisma/client';
+import { ReadingStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getCurrentUserId } from '@/lib/session';
@@ -58,7 +58,6 @@ export default async function LibraryPage({
 
     const params = searchParams || {};
     const search = typeof params.search === 'string' ? params.search : undefined;
-    const contentType = typeof params.contentType === 'string' ? params.contentType : undefined;
     const readingStatus = typeof params.readingStatus === 'string' ? params.readingStatus : undefined;
     const year = typeof params.year === 'string' ? params.year : undefined;
     const topic = typeof params.topic === 'string' ? params.topic : undefined;
@@ -76,7 +75,6 @@ export default async function LibraryPage({
             { topics: { hasSome: [search] } },
         ];
     }
-    if (contentType) where.contentType = contentType as ContentType;
     if (readingStatus) where.readingStatus = readingStatus as ReadingStatus;
     if (year) where.year = parseInt(year, 10);
     if (topic) where.topics = { hasSome: [topic] };
@@ -127,7 +125,7 @@ export default async function LibraryPage({
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M12 5v14M5 12h14" />
                                     </svg>
-                                    add paper
+                                    add entry
                                 </Button>
                             </Link>
                         </div>
@@ -140,7 +138,6 @@ export default async function LibraryPage({
                             personalCollectionsCount: user.personalCollectionsCount || 0
                         }}
                         search={search}
-                        contentType={contentType}
                         readingStatus={readingStatus}
                         year={year}
                         topic={topic}

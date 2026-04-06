@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 
 const ENTRY_SELECT = {
-  id: true, title: true, contentType: true, authors: true, year: true,
+  id: true, title: true, authors: true, year: true,
   abstract: true, url: true, source: true, cover: true,
 } as const;
 

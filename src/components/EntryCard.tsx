@@ -15,20 +15,6 @@ import ShareEntryModal from '@/components/ShareEntryModal';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useTimezone } from '@/hooks/useTimezone';
 
-const CONTENT_TYPE_LABELS: Record<string, string> = {
-    PAPER: 'Paper',
-    BOOK: 'Book',
-    ARTICLE: 'Article',
-    BLOG: 'Blog',
-    ESSAY: 'Essay',
-    POLICY_REPORT: 'Policy Report',
-    OTHER: 'Other',
-};
-
-function contentTypeLabel(contentType: string): string {
-    return CONTENT_TYPE_LABELS[contentType] ?? contentType;
-}
-
 interface Entry {
     id: string;
     title: string;
@@ -57,16 +43,6 @@ const readingStatuses = [
     { value: 'READING', label: 'Reading' },
     { value: 'COMPLETED', label: 'Completed' },
 ];
-
-const contentTypes = [
-    'PAPER',
-    'BOOK',
-    'ARTICLE',
-    'BLOG',
-    'ESSAY',
-    'POLICY_REPORT',
-    'OTHER',
-] as const;
 
 const statusVariant = (status: string) => {
     switch (status) {
@@ -106,15 +82,11 @@ export default function EntryCard({
     const [isTitleHovered, setIsTitleHovered] = useState(false);
     const collectionDropdownRef = useRef<HTMLDivElement>(null);
     const statusDropdownRef = useRef<HTMLDivElement>(null);
-    const contentTypeDropdownRef = useRef<HTMLDivElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
     const [currentStatus, setCurrentStatus] = useState(entry.readingStatus);
-    const [currentContentType, setCurrentContentType] = useState(entry.contentType);
     const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
     const [isUpdating, setIsUpdating] = useState(false);
-    const [isUpdatingContentType, setIsUpdatingContentType] = useState(false);
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
-    const [isContentTypeOpen, setIsContentTypeOpen] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
     const [didCopyDoi, setDidCopyDoi] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -182,11 +154,9 @@ export default function EntryCard({
             // Check if click is outside all dropdown containers
             const outsideCollection = !collectionDropdownRef.current?.contains(target);
             const outsideStatus = !statusDropdownRef.current?.contains(target);
-            const outsideContentType = !contentTypeDropdownRef.current?.contains(target);
 
             if (outsideCollection) setIsCollectionOpen(false);
             if (outsideStatus) setIsOpen(false);
-            if (outsideContentType) setIsContentTypeOpen(false);
         };
 
         document.addEventListener('click', handleClickOutside);
@@ -227,38 +197,6 @@ export default function EntryCard({
             toast.error(error instanceof Error ? error.message : 'Failed to update status');
         } finally {
             setIsUpdating(false);
-        }
-    };
-
-    const handleContentTypeChange = async (newType: typeof contentTypes[number]) => {
-        if (newType === currentContentType) {
-            setIsContentTypeOpen(false);
-            return;
-        }
-
-        const previousType = currentContentType;
-        setCurrentContentType(newType);
-        setIsContentTypeOpen(false);
-        setIsUpdatingContentType(true);
-
-        try {
-            const response = await fetch(`/api/entries/${entry.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ contentType: newType }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update content type');
-            }
-        } catch (error) {
-            console.error('Error updating content type:', error);
-            setCurrentContentType(previousType);
-            toast.error('Failed to update content type');
-        } finally {
-            setIsUpdatingContentType(false);
         }
     };
 
@@ -477,44 +415,6 @@ export default function EntryCard({
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <div
-                                            className="relative"
-                                            ref={contentTypeDropdownRef}
-                                        >
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    setIsContentTypeOpen((prev) => !prev);
-                                                }}
-                                                className="group/content-type"
-                                                disabled={isUpdatingContentType}
-                                            >
-                                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider py-0 px-2 h-6 whitespace-nowrap border-border/50 text-muted-foreground font-bold gap-1">
-                                                    {isUpdatingContentType ? 'UPDATING...' : contentTypeLabel(currentContentType)}
-                                                    <ChevronDown className={`h-3 w-3 transition-opacity ${isContentTypeOpen ? 'opacity-100' : 'opacity-0 group-hover/content-type:opacity-100'}`} />
-                                                </Badge>
-                                            </button>
-
-                                            {isContentTypeOpen && (
-                                                <div className="absolute top-full left-0 mt-1 z-[70] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[160px]">
-                                                    {contentTypes.map((type) => (
-                                                        <button
-                                                            key={type}
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                handleContentTypeChange(type);
-                                                            }}
-                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${type === currentContentType ? 'bg-surface-raised font-medium' : ''}`}
-                                                        >
-                                                            {contentTypeLabel(type)}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
                                         {entry.source && entry.source === 'SMART_ALERT' && (
                                             <Badge variant="secondary" className="text-[10px] py-0 px-2 h-6 whitespace-nowrap bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
                                                 <Brain className="h-2.5 w-2.5 mr-1" />
@@ -679,7 +579,7 @@ export default function EntryCard({
                                                         className="h-6 px-2 text-muted-foreground hover:text-foreground touch-manipulation"
                                                         onClick={handleOpenUrl}
                                                     >
-                                                        View Paper
+                                                        View Source
                                                         <ExternalLink className="w-3 h-3 ml-1" />
                                                     </Button>
                                                 )}

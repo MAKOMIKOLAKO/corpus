@@ -187,6 +187,9 @@ model Entry {
   metaDescription String?     @db.Text
   authors       String[]
   year          Int?
+  // contentType is retained for data integrity and potential future use.
+  // It is no longer displayed in the UI or used for filtering.
+  // Do not delete this column or its data.
   contentType   ContentType   @default(PAPER)
   url           String?       @unique
   doi           String?       @unique

@@ -5,14 +5,13 @@ import { useState, useEffect, useTransition } from 'react';
 import { Search, Filter } from 'lucide-react';
 
 export default function HomePageClient({
-    initialSearch, initialContentType, initialReadingStatus, initialYear, initialTopic, initialSortBy
+    initialSearch, initialReadingStatus, initialYear, initialTopic, initialSortBy
 }: {
-    initialSearch: string; initialContentType: string; initialReadingStatus: string; initialYear: string; initialTopic: string; initialSortBy: string;
+    initialSearch: string; initialReadingStatus: string; initialYear: string; initialTopic: string; initialSortBy: string;
 }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [search, setSearch] = useState(initialSearch);
-    const [contentType, setContentType] = useState(initialContentType);
     const [readingStatus, setReadingStatus] = useState(initialReadingStatus);
     const [year, setYear] = useState(initialYear);
     const [topic, setTopic] = useState(initialTopic);
@@ -25,12 +24,11 @@ export default function HomePageClient({
         }, 400);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, contentType, readingStatus, year, topic, sortBy]);
+    }, [search, readingStatus, year, topic, sortBy]);
 
     const updateUrl = () => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
-        if (contentType) params.set('contentType', contentType);
         if (readingStatus) params.set('readingStatus', readingStatus);
         if (year) params.set('year', year);
         if (topic) params.set('topic', topic);
@@ -63,25 +61,7 @@ export default function HomePageClient({
                         <span>filters:</span>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {/* Content Type Filter */}
-                        <div className="relative">
-                            <select
-                                value={contentType}
-                                onChange={e => setContentType(e.target.value)}
-                                className="w-full h-10 appearance-none pl-3 pr-8 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                            >
-                                <option value="">all types</option>
-                                <option value="PAPER">paper</option>
-                                <option value="BLOG">blog</option>
-                                <option value="ESSAY">essay</option>
-                                <option value="ARTICLE">article</option>
-                                <option value="POLICY_REPORT">policy report</option>
-                                <option value="BOOK">book</option>
-                                <option value="OTHER">other</option>
-                            </select>
-                            <Filter className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
                         {/* Reading Status Filter */}
                         <div className="relative">
@@ -128,7 +108,7 @@ export default function HomePageClient({
                 </div>
 
                 {/* Active Filters Display */}
-                {(search || contentType || readingStatus || year || sortBy !== 'newest') && (
+                {(search || readingStatus || year || sortBy !== 'newest') && (
                     <div className="flex flex-wrap gap-2 pt-3 border-t border-border/50">
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                             <span>active:</span>
@@ -136,11 +116,6 @@ export default function HomePageClient({
                         {search && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md border border-primary/20">
                                 search: &quot;{search}&quot;
-                            </span>
-                        )}
-                        {contentType && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-xs rounded-md border border-border">
-                                type: {contentType.toLowerCase()}
                             </span>
                         )}
                         {readingStatus && (

@@ -49,16 +49,6 @@ export const textFieldSchema = (max: number) =>
     .optional()
     .nullable();
 
-const contentTypeEnum = z.enum([
-  "PAPER",
-  "BOOK",
-  "ARTICLE",
-  "BLOG",
-  "ESSAY",
-  "POLICY_REPORT",
-  "OTHER",
-]);
-
 const readingStatusEnum = z.enum(["UNREAD", "READING", "READ", "DROPPED"]);
 
 export const entryCreateSchema = z.object({
@@ -88,7 +78,7 @@ export const entryCreateSchema = z.object({
     .max(new Date().getFullYear() + 5)
     .nullable()
     .optional()),
-  contentType: contentTypeEnum.default("PAPER"),
+  contentType: z.string().trim().min(1).default("OTHER"),
   url: z.preprocess(
     (v) => (v === "" || v === undefined ? null : v),
     urlSchema.nullable().optional()
@@ -171,7 +161,7 @@ export const entryPatchSchema = z
       .transform((v) =>
         v === null || v === undefined ? undefined : collapseSpaces(v)
       ),
-    contentType: contentTypeEnum.optional(),
+    contentType: z.string().trim().min(1).optional(),
     readingStatus: readingStatusEnum.optional(),
   })
   .strict();
