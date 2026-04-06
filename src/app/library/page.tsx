@@ -101,8 +101,8 @@ export default async function LibraryPage({
                 AND: [
                     search ? {
                         OR: [
-                            { title: { contains: search, mode: 'insensitive' } },
-                            { abstract: { contains: search, mode: 'insensitive' } },
+                            { title: { contains: search, mode: 'insensitive' as const } },
+                            { abstract: { contains: search, mode: 'insensitive' as const } },
                             { authors: { hasSome: [search] } },
                         ]
                     } : {},
