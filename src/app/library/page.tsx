@@ -127,7 +127,7 @@ export default async function LibraryPage({
                     url: true,
                     doi: true,
                     source: true,
-                    contentType: true,
+                    rawContentType: true,
                     metadata: true,
                     saveCount: true,
                 }
@@ -146,7 +146,7 @@ export default async function LibraryPage({
         title: ue.globalEntry.title,
         authors: ue.globalEntry.authors,
         year: ue.globalEntry.year,
-        contentType: ue.globalEntry.contentType || 'OTHER',
+        contentType: ue.globalEntry.rawContentType || 'OTHER',
         url: ue.globalEntry.url,
         doi: ue.globalEntry.doi,
         source: ue.globalEntry.source as 'MANUAL' | 'SMART_ALERT',
