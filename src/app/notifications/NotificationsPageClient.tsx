@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ export default function NotificationsPageClient() {
   const [loading, setLoading] = useState(true);
   const [markingAllAsRead, setMarkingAllAsRead] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (isCancelled?: () => boolean) => {
     if (!session?.user?.id) return;
 
     try {
@@ -45,23 +45,33 @@ export default function NotificationsPageClient() {
       if (!response.ok) throw new Error('Failed to fetch notifications');
 
       const data: NotificationsResponse = await response.json();
+      if (isCancelled?.()) return;
       setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
     } catch (error) {
+      if (isCancelled?.()) return;
       console.error('Error fetching notifications:', error);
       toast.error('Failed to load notifications');
     } finally {
+      if (isCancelled?.()) return;
       setLoading(false);
     }
   }, [session?.user?.id, apikey]);
 
   useEffect(() => {
     if (status === 'authenticated' && apikey) {
-      fetchNotifications();
+      let cancelled = false;
+      fetchNotifications(() => cancelled);
+      return () => {
+        cancelled = true;
+      };
     }
   }, [status, apikey, fetchNotifications]);
 
   const handleMarkAsRead = async (notificationId: string) => {
+    const target = notifications.find((n) => n.id === notificationId);
+    if (!target || target.read) return;
+
     try {
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
@@ -83,6 +93,8 @@ export default function NotificationsPageClient() {
   };
 
   const handleMarkAllAsRead = async () => {
+    if (markingAllAsRead || unreadCount === 0) return;
+
     setMarkingAllAsRead(true);
 
     try {
@@ -108,7 +120,7 @@ export default function NotificationsPageClient() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
@@ -125,25 +137,27 @@ export default function NotificationsPageClient() {
         return date.toLocaleDateString();
       }
     }
-  };
+  }, []);
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = useCallback((type: string) => {
     switch (type) {
       case 'SMART_ALERT':
         return <Brain className="h-4 w-4" />;
       default:
         return <Bell className="h-4 w-4" />;
     }
-  };
+  }, []);
 
-  const getNotificationColor = (type: string) => {
+  const getNotificationColor = useCallback((type: string) => {
     switch (type) {
       case 'SMART_ALERT':
         return 'bg-blue-500';
       default:
         return 'bg-gray-500';
     }
-  };
+  }, []);
+
+  const hasNotifications = useMemo(() => notifications.length > 0, [notifications.length]);
 
   if (status === 'loading' || loading) {
     return (
@@ -264,7 +278,7 @@ export default function NotificationsPageClient() {
         )}
       </div>
 
-      {notifications.length > 0 && (
+      {hasNotifications && (
         <div className="mt-8 text-center">
           <Link href="/alerts">
             <Button variant="outline">

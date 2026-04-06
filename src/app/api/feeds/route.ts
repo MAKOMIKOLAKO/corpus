@@ -1,38 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prismaWithRetry';
 import { discoverFeed } from '@/lib/feedDetector';
 import { normalizeUrl } from '@/lib/entryDedup';
-import type { User, Source, UserSource } from '@prisma/client';
+import { timedJson } from '@/lib/serverTiming';
 
 // GET /api/feeds - List user's feeds
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'feeds.get');
     }
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: {
-        userSources: {
-          include: {
-            source: true
-          },
-          orderBy: {
-            createdAt: 'desc'
+      select: { id: true }
+    });
+
+    if (!user) {
+      return timedJson({ error: 'User not found' }, startedAt, { status: 404 }, 'feeds.get');
+    }
+
+    const userSources = await prisma.userSource.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        createdAt: true,
+        source: {
+          select: {
+            id: true,
+            feedUrl: true,
+            title: true,
+            domain: true,
+            lastFetchedAt: true,
           }
         }
       }
     });
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const feeds = user.userSources.map((us: UserSource & { source: Source }) => ({
+    const feeds = userSources.map((us) => ({
       id: us.source.id,
       feedUrl: us.source.feedUrl,
       title: us.source.title,
@@ -41,39 +50,40 @@ export async function GET(request: NextRequest) {
       addedAt: us.createdAt
     }));
 
-    return NextResponse.json({ feeds });
+    return timedJson({ feeds }, startedAt, undefined, 'feeds.get');
   } catch (error) {
     console.error('[api/feeds] GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'feeds.get');
   }
 }
 
 // POST /api/feeds - Add a new feed
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'feeds.post');
     }
 
     const { url } = await request.json();
     if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+      return timedJson({ error: 'URL is required' }, startedAt, { status: 400 }, 'feeds.post');
     }
 
     // Normalize the URL
     const normalizedUrl = normalizeUrl(url);
     if (!normalizedUrl) {
-      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+      return timedJson({ error: 'Invalid URL' }, startedAt, { status: 400 }, 'feeds.post');
     }
 
     // Discover the feed
     const discovery = await discoverFeed(normalizedUrl);
     if (!discovery) {
-      return NextResponse.json({
+      return timedJson({
         error: 'No RSS feed found at this URL',
         details: 'Please check if the website has an RSS feed'
-      }, { status: 404 });
+      }, startedAt, { status: 404 }, 'feeds.post');
     }
 
     const user = await prisma.user.findUnique({
@@ -81,7 +91,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return timedJson({ error: 'User not found' }, startedAt, { status: 404 }, 'feeds.post');
     }
 
     // Create or find the source
@@ -109,7 +119,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUserSource) {
-      return NextResponse.json({
+      return timedJson({
         error: 'You have already added this feed',
         feed: {
           id: source.id,
@@ -117,7 +127,7 @@ export async function POST(request: NextRequest) {
           title: source.title,
           domain: source.domain
         }
-      }, { status: 409 });
+      }, startedAt, { status: 409 }, 'feeds.post');
     }
 
     // Create user-source relation
@@ -128,7 +138,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return timedJson({
       success: true,
       feed: {
         id: source.id,
@@ -137,9 +147,9 @@ export async function POST(request: NextRequest) {
         domain: source.domain,
         preview: discovery.items
       }
-    });
+    }, startedAt, undefined, 'feeds.post');
   } catch (error) {
     console.error('[api/feeds] POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'feeds.post');
   }
 }

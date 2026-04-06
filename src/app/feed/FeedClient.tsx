@@ -11,7 +11,6 @@ import {
   ExternalLink,
   Rss,
   Bookmark,
-  Eye,
   Plus,
   Settings,
 } from 'lucide-react';
@@ -70,6 +69,121 @@ interface FeedClientProps {
   userFeeds?: UserFeed[];
 }
 
+type FeedItem =
+  | { type: 'RSS_ENTRY'; createdAt: Date; data: RSSEntry }
+  | { type: 'SIGNAL'; createdAt: Date; data: FeedSignal };
+
+const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEntry }) {
+  const [isAdding, setIsAdding] = React.useState(false);
+  const [isAdded, setIsAdded] = React.useState(false);
+
+  const handleAddToLibrary = React.useCallback(async () => {
+    if (isAdded || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      const response = await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: entry.title,
+          authors: entry.authors,
+          year: entry.publicationYear,
+          abstract: entry.summary,
+          source: entry.source,
+          url: entry.url,
+          readingStatus: 'UNREAD'
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.isDuplicate) {
+        toast.error('This entry is already in your library');
+      } else {
+        toast.success('Added to library');
+        setIsAdded(true);
+      }
+    } catch {
+      toast.error('Failed to add to library');
+    } finally {
+      setIsAdding(false);
+    }
+  }, [entry, isAdded, isAdding]);
+
+  return (
+    <div className="group flex items-start gap-3 p-4 rounded-lg border border-border bg-card hover:shadow-sm transition-all">
+      <div className="mt-1">
+        <Rss size={18} className="text-orange-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+            {entry.title}
+          </h3>
+          {entry.url && (
+            <a
+              href={entry.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <ExternalLink size={16} />
+            </a>
+          )}
+        </div>
+
+        {entry.authors.length > 0 && (
+          <p className="text-sm text-muted-foreground mb-2">
+            {entry.authors.slice(0, 3).join(', ')}
+            {entry.authors.length > 3 && ' et al.'}
+          </p>
+        )}
+
+        {entry.summary && (
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+            {entry.summary}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {entry.source && (
+              <span>{entry.source}</span>
+            )}
+            <span>{formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}</span>
+          </div>
+          <button
+            onClick={handleAddToLibrary}
+            disabled={isAdding || isAdded}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border transition-all touch-manipulation ${isAdded
+              ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'
+              : 'bg-background border-border hover:bg-muted hover:text-foreground'
+              }`}
+          >
+            {isAdding ? (
+              <>
+                <div className="w-3 h-3 animate-spin rounded-full border border-current border-t-transparent" />
+                Adding...
+              </>
+            ) : isAdded ? (
+              <>
+                <Bookmark size={12} className="fill-current" />
+                Added
+              </>
+            ) : (
+              <>
+                <Plus size={12} />
+                Add to library
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export default function FeedClient({ signals, userPlan, rssEntries = [], userFeeds = [] }: FeedClientProps) {
   const isFree = userPlan === 'FREE';
   const [upgradePromptShown, setUpgradePromptShown] = React.useState(false);
@@ -78,26 +192,31 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
   const [showManageFeeds, setShowManageFeeds] = React.useState(false);
 
   // Combine and sort all items by date
-  const allItems = [
-    ...rssEntries.map(entry => ({
-      type: 'RSS_ENTRY' as const,
+  const allItems = React.useMemo<FeedItem[]>(() => [
+    ...rssEntries.map((entry): FeedItem => ({
+      type: 'RSS_ENTRY',
       createdAt: new Date(entry.addedAt),
       data: entry
     })),
-    ...signals.map(signal => ({
-      type: 'SIGNAL' as const,
+    ...signals.map((signal): FeedItem => ({
+      type: 'SIGNAL',
       createdAt: new Date(signal.createdAt),
       data: signal
     }))
-  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()), [rssEntries, signals]);
 
-  const handleAddFeed = (newFeed: any) => {
-    setFeedList(prev => [newFeed, ...prev]);
+  const handleAddFeed = React.useCallback((newFeed: {
+    id: string;
+    feedUrl: string;
+    title: string | null;
+    domain: string;
+  }) => {
+    setFeedList(prev => [{ ...newFeed, lastFetchedAt: null, addedAt: new Date() }, ...prev]);
     setIsAddDialogOpen(false);
     toast.success('Feed added successfully');
-  };
+  }, []);
 
-  const handleRemoveFeed = async (feedId: string) => {
+  const handleRemoveFeed = React.useCallback(async (feedId: string) => {
     try {
       const response = await fetch(`/api/feeds/${feedId}`, {
         method: 'DELETE'
@@ -113,9 +232,9 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
       console.error('Error removing feed:', error);
       toast.error('Failed to remove feed');
     }
-  };
+  }, []);
 
-  const renderSignalIcon = (type: string) => {
+  const renderSignalIcon = React.useCallback((type: string) => {
     switch (type) {
       case 'ENTRY_CREATED': return <BookOpen size={18} className="text-blue-500" />;
       case 'ENTRY_ADDED_TO_COLLECTION': return <Folder size={18} className="text-green-500" />;
@@ -124,123 +243,10 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
       case 'ENTRY_SHARED': return <Share2 size={18} className="text-orange-500" />;
       default: return <Sparkles size={18} className="text-gray-400" />;
     }
-  };
+  }, []);
 
-  const renderRSSEntry = (entry: RSSEntry) => {
-    const [isAdding, setIsAdding] = React.useState(false);
-    const [isAdded, setIsAdded] = React.useState(false);
-
-    const handleAddToLibrary = async () => {
-      if (isAdded || isAdding) return;
-
-      setIsAdding(true);
-      try {
-        const response = await fetch('/api/entries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: entry.title,
-            authors: entry.authors,
-            year: entry.publicationYear,
-            abstract: entry.summary,
-            source: entry.source,
-            url: entry.url,
-            readingStatus: 'UNREAD'
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.isDuplicate) {
-          toast.error('This entry is already in your library');
-        } else {
-          toast.success('Added to library');
-          setIsAdded(true);
-        }
-      } catch (error) {
-        toast.error('Failed to add to library');
-      } finally {
-        setIsAdding(false);
-      }
-    };
-
-    return (
-      <div className="group flex items-start gap-3 p-4 rounded-lg border border-border bg-card hover:shadow-sm transition-all">
-        <div className="mt-1">
-          <Rss size={18} className="text-orange-500" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-              {entry.title}
-            </h3>
-            {entry.url && (
-              <a
-                href={entry.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              >
-                <ExternalLink size={16} />
-              </a>
-            )}
-          </div>
-
-          {entry.authors.length > 0 && (
-            <p className="text-sm text-muted-foreground mb-2">
-              {entry.authors.slice(0, 3).join(', ')}
-              {entry.authors.length > 3 && ' et al.'}
-            </p>
-          )}
-
-          {entry.summary && (
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-              {entry.summary}
-            </p>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {entry.source && (
-                <span>{entry.source}</span>
-              )}
-              <span>{formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}</span>
-            </div>
-            <button
-              onClick={handleAddToLibrary}
-              disabled={isAdding || isAdded}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border transition-all touch-manipulation ${
-                isAdded 
-                  ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' 
-                  : 'bg-background border-border hover:bg-muted hover:text-foreground'
-              }"
-            >
-              {isAdding ? (
-                <>
-                  <div className="w-3 h-3 animate-spin rounded-full border border-current border-t-transparent" />
-                  Adding...
-                </>
-              ) : isAdded ? (
-                <>
-                  <Bookmark size={12} className="fill-current" />
-                  Added
-                </>
-              ) : (
-                <>
-                  <Plus size={12} />
-                  Add to library
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSignalContent = (signal: FeedSignal) => {
+  const renderSignalContent = React.useCallback((signal: FeedSignal) => {
     const userName = signal.user.name || signal.user.username || 'Someone';
-    const timeAgo = formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true });
 
     switch (signal.type) {
       case 'ENTRY_CREATED':
@@ -356,7 +362,7 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
           </p>
         );
     }
-  };
+  }, [isFree, upgradePromptShown]);
 
   return (
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8">
@@ -419,7 +425,7 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
           allItems.map((item, idx) => (
             <React.Fragment key={item.type === 'RSS_ENTRY' ? `rss-${item.data.id}` : item.data.id}>
               {/* RSS Entry */}
-              {item.type === 'RSS_ENTRY' && renderRSSEntry(item.data)}
+              {item.type === 'RSS_ENTRY' && <RSSEntryCard entry={item.data} />}
 
               {/* Signal */}
               {item.type === 'SIGNAL' && (

@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
 import { getCurrentUserId } from '@/lib/session';
 import prisma from '@/lib/prisma';
+import { timedJson } from '@/lib/serverTiming';
 
 export async function GET() {
+  const startedAt = Date.now();
   try {
     const userId = await getCurrentUserId();
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'alert-containers.get');
     }
 
     const db = prisma as any;
@@ -33,12 +34,12 @@ export async function GET() {
     const containerIds = containers.map((container: any) => container.id);
     const statusRows = containerIds.length > 0
       ? await db.alertEntry.groupBy({
-          by: ['containerId', 'status'],
-          where: {
-            containerId: { in: containerIds },
-          },
-          _count: { _all: true },
-        })
+        by: ['containerId', 'status'],
+        where: {
+          containerId: { in: containerIds },
+        },
+        _count: { _all: true },
+      })
       : [];
 
     const countsByContainer = new Map<string, { pending: number; approved: number; rejected: number }>();
@@ -64,9 +65,9 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(payload);
+    return timedJson(payload, startedAt, undefined, 'alert-containers.get');
   } catch (error) {
     console.error('[api/alert-containers GET]', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'alert-containers.get');
   }
 }

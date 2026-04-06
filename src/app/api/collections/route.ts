@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiKey } from '@/app/api/api-key-middleware';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
 import { corsOptionsHeaders } from '@/lib/corsHeaders';
 import { canCreateSharedCollection, canCreatePersonalCollection } from '@/lib/plans';
+import { timedJson } from '@/lib/serverTiming';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,101 +14,104 @@ export async function OPTIONS() {
     });
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+    const startedAt = Date.now();
     try {
         const userId = await getCurrentUserId();
         if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'collections.get');
         }
 
-        const ownedCollections = await prisma.collection.findMany({
-            where: { userId },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        username: true,
-                    }
-                },
-                _count: {
-                    select: { entries: true, members: true }
-                },
-                entries: {
-                    take: 2,
-                    orderBy: {
-                        addedAt: 'desc',
-                    },
-                    select: {
-                        entry: {
-                            select: {
-                                id: true,
-                                title: true,
-                            }
+        const [ownedCollections, memberCollections] = await Promise.all([
+            prisma.collection.findMany({
+                where: { userId },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            username: true,
                         }
-                    }
-                },
-                members: {
-                    where: { status: 'ACCEPTED' }
-                }
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-
-        const memberCollections = await prisma.collectionMember.findMany({
-            where: {
-                userId,
-                status: 'ACCEPTED',
-            },
-            include: {
-                collection: {
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                username: true,
-                            }
+                    },
+                    _count: {
+                        select: { entries: true, members: true }
+                    },
+                    entries: {
+                        take: 2,
+                        orderBy: {
+                            addedAt: 'desc',
                         },
-                        _count: {
-                            select: { entries: true, members: true }
-                        },
-                        entries: {
-                            take: 2,
-                            orderBy: {
-                                addedAt: 'desc',
-                            },
-                            select: {
-                                entry: {
-                                    select: {
-                                        id: true,
-                                        title: true,
-                                    }
+                        select: {
+                            entry: {
+                                select: {
+                                    id: true,
+                                    title: true,
                                 }
                             }
-                        },
-                        members: {
-                            where: { status: 'ACCEPTED' }
+                        }
+                    },
+                    members: {
+                        where: { status: 'ACCEPTED' }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.collectionMember.findMany({
+                where: {
+                    userId,
+                    status: 'ACCEPTED',
+                },
+                include: {
+                    collection: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    username: true,
+                                }
+                            },
+                            _count: {
+                                select: { entries: true, members: true }
+                            },
+                            entries: {
+                                take: 2,
+                                orderBy: {
+                                    addedAt: 'desc',
+                                },
+                                select: {
+                                    entry: {
+                                        select: {
+                                            id: true,
+                                            title: true,
+                                        }
+                                    }
+                                }
+                            },
+                            members: {
+                                where: { status: 'ACCEPTED' }
+                            }
                         }
                     }
                 }
-            }
-        });
+            })
+        ]);
 
-        return NextResponse.json({
+        return timedJson({
             owned: ownedCollections,
             member: memberCollections.map(cm => cm.collection)
-        });
+        }, startedAt, undefined, 'collections.get');
 
     } catch (error) {
         console.error('Error fetching collections:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'collections.get');
     }
 }
 
 export async function POST(request: NextRequest) {
+    const startedAt = Date.now();
     try {
         const userId = await getCurrentUserId();
         if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return timedJson({ error: 'Unauthorized' }, startedAt, { status: 401 }, 'collections.post');
         }
 
         const body = await request.json();
@@ -120,14 +123,14 @@ export async function POST(request: NextRequest) {
         });
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return timedJson({ error: 'User not found' }, startedAt, { status: 404 }, 'collections.post');
         }
 
         // Check if creating a shared collection
         if (isShared === true) {
             const { allowed, reason } = canCreateSharedCollection(user.plan);
             if (!allowed) {
-                return NextResponse.json({ error: reason }, { status: 403 });
+                return timedJson({ error: reason }, startedAt, { status: 403 }, 'collections.post');
             }
         }
 
@@ -138,15 +141,17 @@ export async function POST(request: NextRequest) {
                 user.personalCollectionsCount
             );
             if (!allowed) {
-                return NextResponse.json(
+                return timedJson(
                     { error: reason, limit: 1, current: user.personalCollectionsCount },
-                    { status: 403 }
+                    startedAt,
+                    { status: 403 },
+                    'collections.post'
                 );
             }
         }
 
         if (!name?.trim()) {
-            return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+            return timedJson({ error: 'Name is required' }, startedAt, { status: 400 }, 'collections.post');
         }
 
         const collection = await withRetry(() =>
@@ -175,9 +180,9 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        return NextResponse.json(collection);
+        return timedJson(collection, startedAt, undefined, 'collections.post');
     } catch (error) {
         console.error('Error creating collection:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return timedJson({ error: 'Internal server error' }, startedAt, { status: 500 }, 'collections.post');
     }
 }
