@@ -69,9 +69,7 @@ interface FeedClientProps {
   userFeeds?: UserFeed[];
 }
 
-type FeedItem =
-  | { type: 'RSS_ENTRY'; createdAt: Date; data: RSSEntry }
-  | { type: 'SIGNAL'; createdAt: Date; data: FeedSignal };
+type FeedView = 'actions' | 'rss';
 
 const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEntry }) {
   const [isAdding, setIsAdding] = React.useState(false);
@@ -196,20 +194,17 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [feedList, setFeedList] = React.useState(userFeeds);
   const [showManageFeeds, setShowManageFeeds] = React.useState(false);
+  const [activeView, setActiveView] = React.useState<FeedView>('actions');
 
-  // Combine and sort all items by date
-  const allItems = React.useMemo<FeedItem[]>(() => [
-    ...rssEntries.map((entry): FeedItem => ({
-      type: 'RSS_ENTRY',
-      createdAt: new Date(entry.addedAt),
-      data: entry
-    })),
-    ...signals.map((signal): FeedItem => ({
-      type: 'SIGNAL',
-      createdAt: new Date(signal.createdAt),
-      data: signal
-    }))
-  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()), [rssEntries, signals]);
+  const sortedSignals = React.useMemo(
+    () => [...signals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [signals]
+  );
+
+  const sortedRssEntries = React.useMemo(
+    () => [...rssEntries].sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()),
+    [rssEntries]
+  );
 
   const handleAddFeed = React.useCallback((newFeed: {
     id: string;
@@ -386,6 +381,44 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
         <p className="text-sm text-muted-foreground">updates from the research network and your RSS feeds</p>
       </div>
 
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 p-2 w-fit">
+        <button
+          type="button"
+          onClick={() => setActiveView('actions')}
+          className={`text-sm transition-colors ${activeView === 'actions'
+            ? 'text-foreground font-medium'
+            : 'text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          User actions ({sortedSignals.length})
+        </button>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={activeView === 'rss'}
+          aria-label="Toggle between user actions and RSS entries"
+          onClick={() => setActiveView(prev => (prev === 'actions' ? 'rss' : 'actions'))}
+          className="relative h-7 w-14 rounded-full border border-border bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <span
+            className={`absolute top-0.5 h-5.5 w-5.5 rounded-full bg-card shadow-sm transition-transform ${activeView === 'rss' ? 'translate-x-7' : 'translate-x-0.5'
+              }`}
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveView('rss')}
+          className={`text-sm transition-colors ${activeView === 'rss'
+            ? 'text-foreground font-medium'
+            : 'text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          RSS entries ({sortedRssEntries.length})
+        </button>
+      </div>
+
       {showManageFeeds && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -423,40 +456,43 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
       )}
 
       <div className="space-y-6">
-        {allItems.length === 0 ? (
-          <div className="text-center py-20 bg-muted/20 border border-dashed rounded-2xl">
-            <p className="text-muted-foreground">No updates yet. Connect with others or add RSS feeds to see activity!</p>
-          </div>
-        ) : (
-          allItems.map((item, idx) => (
-            <React.Fragment key={item.type === 'RSS_ENTRY' ? `rss-${item.data.id}` : item.data.id}>
-              {/* RSS Entry */}
-              {item.type === 'RSS_ENTRY' && <RSSEntryCard entry={item.data} />}
-
-              {/* Signal */}
-              {item.type === 'SIGNAL' && (
+        {activeView === 'actions' ? (
+          sortedSignals.length === 0 ? (
+            <div className="text-center py-20 bg-muted/20 border border-dashed rounded-2xl">
+              <p className="text-muted-foreground">No user actions yet. Connect with others to see activity.</p>
+            </div>
+          ) : (
+            sortedSignals.map((signal, idx) => (
+              <React.Fragment key={signal.id}>
                 <div className="flex gap-3">
                   <div className="mt-1">
-                    {renderSignalIcon(item.data.type)}
+                    {renderSignalIcon(signal.type)}
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatDistanceToNow(item.data.createdAt, { addSuffix: true })}</span>
+                      <span>{formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })}</span>
                     </div>
-                    {renderSignalContent(item.data)}
+                    {renderSignalContent(signal)}
                   </div>
                 </div>
-              )}
 
-              {/* Contextual Pro Upsells for Free Users */}
-              {isFree && idx === 3 && (
-                <div className="my-8">
-                  <UpgradePrompt
-                    reason="shared_collections_pro_only"
-                  />
-                </div>
-              )}
-            </React.Fragment>
+                {isFree && idx === 3 && (
+                  <div className="my-8">
+                    <UpgradePrompt
+                      reason="shared_collections_pro_only"
+                    />
+                  </div>
+                )}
+              </React.Fragment>
+            ))
+          )
+        ) : sortedRssEntries.length === 0 ? (
+          <div className="text-center py-20 bg-muted/20 border border-dashed rounded-2xl">
+            <p className="text-muted-foreground">No RSS entries yet. Add feeds to populate this tab.</p>
+          </div>
+        ) : (
+          sortedRssEntries.map((entry) => (
+            <RSSEntryCard key={`rss-${entry.id}`} entry={entry} />
           ))
         )}
       </div>
