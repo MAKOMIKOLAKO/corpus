@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Edit2, ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, X, Brain } from 'lucide-react';
+import { ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, Brain } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
+import { useEntry } from '@/hooks/useEntry';
+import { FlatEntry } from '@/types/entry';
+import ShareEntryModal from '@/components/ShareEntryModal';
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -28,15 +31,10 @@ const formatDate = (dateString: string) => {
     }
 };
 
-export default function EntryDetailClient({ initialData }: { initialData: any }) {
+export default function EntryDetailClient({ userEntryId }: { userEntryId: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [formData, setFormData] = useState(initialData);
-
-    const [newNote, setNewNote] = useState('');
-    const [isAddingNote, setIsAddingNote] = useState(false);
+    const { entry, loading, error, updateReadingStatus, deleteEntry } = useEntry(userEntryId);
 
     // Collections state
     const [entryCollections, setEntryCollections] = useState([]);
@@ -46,11 +44,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
 
     // Share state
     const [showShareModal, setShowShareModal] = useState(false);
-    const [connections, setConnections] = useState<any[]>([]);
-    const [shareReceiverId, setShareReceiverId] = useState('');
-    const [shareMessage, setShareMessage] = useState('');
-    const [isSharing, setIsSharing] = useState(false);
-    const [shareResult, setShareResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const apiKey = useApiKey();
 
@@ -75,86 +68,14 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
     };
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this entry?')) return;
+        if (!confirm('Remove from your library? This only removes it from your library — the entry remains in Corpus for other users who have saved it.')) return;
 
         try {
-            const response = await fetch(`/api/entries/${initialData.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'x-api-key': apiKey,
-                },
-            });
-
-            if (response.ok) {
-                router.push('/library');
-            } else {
-                const errorData = await response.json();
-                console.error('Delete failed:', errorData);
-                alert(`Failed to delete entry: ${errorData.error || 'Unknown error'}`);
-            }
+            await deleteEntry();
+            router.push('/library');
         } catch (e) {
             console.error(e);
-            alert('Failed to delete entry');
-        }
-    };
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        try {
-            const res = await fetch(`/api/entries/${initialData.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
-                },
-                body: JSON.stringify({
-                    title: formData.title,
-                    authors: Array.isArray(formData.authors) ? formData.authors : formData.authors.split(',').map((a: string) => a.trim()),
-                    year: parseInt(formData.year, 10) || null,
-                    source: formData.source,
-                    url: formData.url,
-                    doi: formData.doi,
-                    abstract: formData.abstract,
-                    readingStatus: formData.readingStatus,
-                }),
-            });
-            if (res.ok) {
-                setIsEditing(false);
-                router.refresh();
-            } else {
-                throw new Error('Failed to update');
-            }
-        } catch (e) {
-            alert('Error saving changes');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleAddNote = async () => {
-        if (!newNote.trim()) return;
-        setIsAddingNote(true);
-        try {
-            const res = await fetch(`/api/entries/${initialData.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
-                },
-                body: JSON.stringify({
-                    notes: { text: newNote }
-                }),
-            });
-            if (res.ok) {
-                const updated = await res.json();
-                setFormData(updated);
-                setNewNote('');
-                router.refresh();
-            }
-        } catch (e) {
-            alert('Error adding note');
-        } finally {
-            setIsAddingNote(false);
+            alert('Failed to remove entry');
         }
     };
 
@@ -170,7 +91,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                     'Content-Type': 'application/json',
                     'x-api-key': apiKey,
                 },
-                body: JSON.stringify({ entryId: initialData.id }),
+                body: JSON.stringify({ userEntryId: entry?.id }),
             });
 
             if (response.ok) {
@@ -192,7 +113,7 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
         if (!confirm('Remove this entry from the collection?')) return;
 
         try {
-            const response = await fetch(`/api/collections/${collectionId}/entries/${initialData.id}`, {
+            const response = await fetch(`/api/collections/${collectionId}/entries/${entry?.id}`, {
                 method: 'DELETE',
                 headers: {
                     'x-api-key': apiKey,
@@ -232,45 +153,38 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
         fetchCollections();
     }, []);
 
-    const openShareModal = async () => {
-        setShareResult(null);
-        setShareReceiverId('');
-        setShareMessage('');
-        setShowShareModal(true);
-        try {
-            const res = await fetch('/api/connections');
-            if (res.ok) {
-                const data = await res.json();
-                setConnections(data.accepted || []);
-            }
-        } catch { }
-    };
+    // Notes functionality removed - using collections instead
 
-    const handleShare = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!shareReceiverId) return;
-        setIsSharing(true);
-        setShareResult(null);
-        try {
-            const res = await fetch('/api/entries/share', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entryId: initialData.id, receiverId: shareReceiverId, message: shareMessage }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setShareResult({ type: 'success', text: 'Entry shared successfully!' });
-                setShareReceiverId('');
-                setShareMessage('');
-            } else {
-                setShareResult({ type: 'error', text: data.error || 'Failed to share entry' });
-            }
-        } finally {
-            setIsSharing(false);
-        }
-    };
+    if (loading) {
+        return (
+            <div className="max-w-4xl mx-auto p-8">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-12 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-64 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        );
+    }
 
-    const notesList = Array.isArray(formData.notes) ? formData.notes : [];
+    if (error || !entry) {
+        return (
+            <div className="max-w-4xl mx-auto p-8">
+                <div className="text-center">
+                    <h1 className="text-2xl font-semibold mb-4">Entry not found</h1>
+                    <p className="text-muted-foreground mb-4">This entry is no longer in your library.</p>
+                    <button onClick={() => router.push('/library')} className="text-primary hover:underline">
+                        Back to Library
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const handleStatusChange = (newStatus: string) => {
+        updateReadingStatus(newStatus);
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -278,349 +192,207 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                 <ChevronLeft className="w-4 h-4" /> Back
             </button>
 
-            {isEditing ? (
-                <div className="glass-card p-6 rounded-xl space-y-4 border border-[var(--primary)]/30 shadow-lg shadow-blue-500/5">
-                    <h2 className="text-lg font-semibold border-b border-[var(--border)] pb-2">Edit Entry</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium">Title</label>
-                            <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
-                        </div>
-                        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Authors (comma-separated)</label>
-                                <input type="text" value={Array.isArray(formData.authors) ? formData.authors.join(', ') : formData.authors} onChange={e => setFormData({ ...formData, authors: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Year</label>
-                                <input type="number" value={formData.year || ''} onChange={e => setFormData({ ...formData, year: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
-                            </div>
-                        </div>
-                        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Reading Status</label>
-                                <select value={formData.readingStatus} onChange={e => setFormData({ ...formData, readingStatus: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation">
-                                    <option value="UNREAD">Unread</option>
-                                    <option value="READING">Reading</option>
-                                    <option value="READ">Read</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium">Source</label>
-                            <input type="text" value={formData.source || ''} onChange={e => setFormData({ ...formData, source: e.target.value })} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium">Abstract</label>
-                            <textarea value={formData.abstract || ''} onChange={e => setFormData({ ...formData, abstract: e.target.value })} rows={5} className="w-full mt-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md" />
-                        </div>
-                        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">URL</label>
-                                <input type="text" value={formData.url || ''} onChange={e => setFormData({ ...formData, url: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">DOI</label>
-                                <input type="text" value={formData.doi || ''} onChange={e => setFormData({ ...formData, doi: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation" />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-[var(--border)]">
-                            <button onClick={() => { setIsEditing(false); setFormData(initialData); }} className="px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:bg-[var(--muted)] w-full sm:w-auto touch-manipulation">Cancel</button>
-                            <button onClick={handleSave} disabled={isSaving} className="bg-[var(--accent)] text-[var(--accent-foreground)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 w-full sm:w-auto touch-manipulation">
-                                {isSaving ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </div>
+            <div className="space-y-8">
+                <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
+                    <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
+                        <button onClick={() => setShowShareModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
+                            <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                        </button>
+                        <button onClick={handleDelete} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors touch-manipulation" title="Remove Entry">
+                            <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                        </button>
                     </div>
-                </div>
-            ) : (
-                <div className="space-y-8">
-                    <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
-                        <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
-                            <button onClick={openShareModal} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
-                                <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
-                            </button>
-                            <button onClick={() => setIsEditing(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Edit Entry">
-                                <Edit2 className="w-5 h-5 sm:w-4 sm:h-4" />
-                            </button>
-                            <button onClick={handleDelete} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors touch-manipulation" title="Delete Entry">
-                                <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
-                            </button>
-                        </div>
 
-                        <div className="flex gap-2 items-center mb-4 text-xs font-semibold tracking-wider">
-                            <span className={`px-2.5 py-1 rounded ${formData.readingStatus === 'READ' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
-                                formData.readingStatus === 'READING' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                    <div className="flex gap-2 items-center mb-4 text-xs font-semibold tracking-wider">
+                        <select
+                            value={entry.readingStatus}
+                            onChange={(e) => handleStatusChange(e.target.value)}
+                            className={`px-2.5 py-1 rounded border-0 cursor-pointer ${entry.readingStatus === 'COMPLETED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                                entry.readingStatus === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
                                     'bg-gray-500/10 text-gray-600 dark:text-gray-400'
-                                }`}>
-                                {formData.readingStatus}
-                            </span>
+                                }`}
+                        >
+                            <option value="UNREAD">Unread</option>
+                            <option value="BACKLOG">Backlog</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="DROPPED">Dropped</option>
+                        </select>
+                    </div>
+
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)] mb-2 pr-32 sm:pr-16">{entry.title}</h1>
+
+                    {/* Global Entry Context */}
+                    <div className="flex items-center gap-2 text-sm text-content-tertiary mb-4">
+                        <span>{entry.saveCount} {entry.saveCount === 1 ? 'person has' : 'people have'} saved this</span>
+                        {entry.doi && (
+                            <span>· DOI: {entry.doi}</span>
+                        )}
+                    </div>
+
+                    <p className="text-base sm:text-lg text-[var(--muted-foreground)] mb-6 font-medium">
+                        {entry.authors.join(', ')}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
+                                <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs text-[var(--muted-foreground)] uppercase">added</span>
+                                <span className="font-medium text-sm">{formatDate(entry.createdAt)}</span>
+                            </div>
                         </div>
-
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)] mb-2 pr-32 sm:pr-16">{formData.title}</h1>
-                        <p className="text-base sm:text-lg text-[var(--muted-foreground)] mb-6 font-medium">
-                            {Array.isArray(formData.authors) ? formData.authors.join(', ') : formData.authors}
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
+                        {entry.year && (
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
                                     <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">added</span>
-                                    <span className="font-medium text-sm">{formatDate(formData.createdAt)}</span>
-                                </div>
-                            </div>
-                            {formData.year && (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                        <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-[var(--muted-foreground)] uppercase">year</span>
-                                        <span className="font-medium text-sm">{formData.year}</span>
-                                    </div>
-                                </div>
-                            )}
-                            {formData.source && (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                        <BookOpen className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-[var(--muted-foreground)] uppercase">Source</span>
-                                        <span className="font-medium text-sm line-clamp-1">{formData.source}</span>
-                                    </div>
-                                </div>
-                            )}
-                            {formData.doi && (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                        <FileText className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-[var(--muted-foreground)] uppercase">DOI</span>
-                                        <a href={`https://doi.org/${formData.doi}`} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-[var(--primary)] hover:underline flex items-center gap-1 line-clamp-1">
-                                            {formData.doi}
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
-                            {formData.url && (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                        <Globe className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-[var(--muted-foreground)] uppercase">Link</span>
-                                        <a href={formData.url} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-[var(--primary)] hover:underline flex items-center gap-1 line-clamp-1">
-                                            Open URL <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Smart Alert Notice */}
-                        {formData.source === 'SMART_ALERT' && (
-                            <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
-                                <div className="flex items-start gap-3">
-                                    <Brain className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-                                    <div className="flex-1">
-                                        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
-                                            This paper was automatically added by a Smart Alert
-                                        </p>
-                                        <p className="text-xs text-amber-700 dark:text-amber-300">
-                                            Corpus found this paper based on your research interests and added it to your library.
-                                            <a href="/alerts" className="ml-1 underline hover:text-amber-600 dark:hover:text-amber-100">
-                                                Manage your Smart Alerts
-                                            </a>
-                                        </p>
-                                    </div>
+                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">year</span>
+                                    <span className="font-medium text-sm">{entry.year}</span>
                                 </div>
                             </div>
                         )}
-
-                        {formData.abstract && (
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-2">Abstract</h3>
-                                <p className="text-[var(--foreground)] leading-relaxed text-sm md:text-base opacity-90">{formData.abstract}</p>
+                        {entry.source && (
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
+                                    <BookOpen className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">Source</span>
+                                    <span className="font-medium text-sm line-clamp-1">{entry.source}</span>
+                                </div>
                             </div>
                         )}
-
-                    </div>
-
-                    <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">
-                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                            Collections
-                            <span className="bg-[var(--muted)] text-[var(--muted-foreground)] text-xs px-2 py-0.5 rounded-full font-medium">{entryCollections?.length || 0}</span>
-                        </h3>
-
-                        <div className="space-y-4 mb-6">
-                            {Array.isArray(entryCollections) && entryCollections.length > 0 ? (
-                                entryCollections.map((collection: any) => {
-                                    return (
-                                        <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
-                                            <div className="flex-1">
-                                                <h4 className="font-medium text-sm mb-1">{collection.name}</h4>
-                                                {collection.description && (
-                                                    <p className="text-xs text-[var(--muted-foreground)] mb-2">{collection.description}</p>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => handleRemoveFromCollection(collection.id)}
-                                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm ml-2"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <div className="text-center py-8 text-[var(--muted-foreground)] text-sm italic">
-                                    Not in any collections yet.
+                        {entry.doi && (
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
+                                    <FileText className="w-4 h-4 text-[var(--muted-foreground)]" />
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                            <select
-                                value={selectedCollection}
-                                onChange={(e) => setSelectedCollection(e.target.value)}
-                                className="flex-1 px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)] touch-manipulation"
-                            >
-                                <option value="">Select a collection...</option>
-                                {Array.isArray(availableCollections) && availableCollections.map((collection: any) => (
-                                    <option key={collection.id} value={collection.id}>
-                                        {collection.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                onClick={handleAddToCollection}
-                                disabled={!selectedCollection || isAddingToCollection}
-                                className="bg-[var(--accent)] text-[var(--accent-foreground)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
-                            >
-                                {isAddingToCollection ? 'Adding...' : 'Add to Collection'}
-                            </button>
-                        </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">DOI</span>
+                                    <a href={`https://doi.org/${entry.doi}`} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-[var(--primary)] hover:underline flex items-center gap-1 line-clamp-1">
+                                        {entry.doi}
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+                        {entry.url && (
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
+                                    <Globe className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">Link</span>
+                                    <a href={entry.url} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-[var(--primary)] hover:underline flex items-center gap-1 line-clamp-1">
+                                        Open URL <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">
-                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                            Notes
-                            <span className="bg-[var(--muted)] text-[var(--muted-foreground)] text-xs px-2 py-0.5 rounded-full font-medium">{notesList.length}</span>
-                        </h3>
-
-                        <div className="space-y-4 mb-8">
-                            {notesList.map((note: any, idx: number) => (
-                                <div key={idx} className="p-4 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{note.text}</p>
-                                    <p className="text-xs text-[var(--muted-foreground)] mt-3">
-                                        {new Date(note.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                    {/* Smart Alert Notice */}
+                    {entry.addedVia === 'SMART_ALERT' && (
+                        <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
+                            <div className="flex items-start gap-3">
+                                <Brain className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
+                                        This paper was automatically added by a Smart Alert
+                                    </p>
+                                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                                        Corpus found this paper based on your research interests and added it to your library.
+                                        <a href="/alerts" className="ml-1 underline hover:text-amber-600 dark:hover:text-amber-100">
+                                            Manage your Smart Alerts
+                                        </a>
                                     </p>
                                 </div>
-                            ))}
-                            {notesList.length === 0 && (
-                                <div className="text-center py-8 text-[var(--muted-foreground)] text-sm italic">
-                                    No notes yet. Add your thoughts below.
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="bg-[var(--background)] border border-[var(--border)] p-4 rounded-xl focus-within:ring-1 focus-within:ring-[var(--primary)] focus-within:border-[var(--primary)] transition-shadow">
-                            <textarea
-                                value={newNote}
-                                onChange={e => setNewNote(e.target.value)}
-                                placeholder="Write a new note..."
-                                rows={3}
-                                className="w-full bg-transparent border-none focus:ring-0 outline-none text-base resize-none"
-                            />
-                            <div className="flex justify-end mt-2 pt-2 border-t border-[var(--border)]">
-                                <button
-                                    onClick={handleAddNote}
-                                    disabled={!newNote.trim() || isAddingNote}
-                                    className="bg-[var(--accent)] text-[var(--accent-foreground)] px-6 py-3 sm:py-1.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
-                                >
-                                    {isAddingNote ? 'Adding...' : 'Add Note'}
-                                </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* Share Modal */}
-            {showShareModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Share Entry</h2>
-                            <button onClick={() => setShowShareModal(false)} className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors">
-                                <X className="w-4 h-4" />
-                            </button>
+                    {entry.abstract && (
+                        <div className="mb-6">
+                            <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-2">Abstract</h3>
+                            <p className="text-[var(--foreground)] leading-relaxed text-sm md:text-base opacity-90">{entry.abstract}</p>
                         </div>
-                        <p className="text-sm text-[var(--muted-foreground)] truncate">
-                            Sharing: <span className="font-medium text-[var(--foreground)]">{initialData.title}</span>
-                        </p>
+                    )}
 
-                        {connections.length === 0 ? (
-                            <p className="text-sm text-[var(--muted-foreground)] py-4 text-center">
-                                You have no accepted connections yet. Connect with people first from the{' '}
-                                <a href="/connections" className="text-[var(--primary)] hover:underline">Connections</a> page.
-                            </p>
-                        ) : (
-                            <form onSubmit={handleShare} className="space-y-4">
-                                <div className="space-y-1">
-                                    <label className="text-sm font-medium">Share with</label>
-                                    <select
-                                        value={shareReceiverId}
-                                        onChange={e => setShareReceiverId(e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    >
-                                        <option value="">Select a connection…</option>
-                                        {connections.map((c: any) => (
-                                            <option key={c.id} value={c.otherUser.id}>
-                                                {c.otherUser.name || c.otherUser.username}
-                                                {c.otherUser.username ? ` (@${c.otherUser.username})` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-sm font-medium">
-                                        Message <span className="font-normal text-[var(--muted-foreground)]">(optional)</span>
-                                    </label>
-                                    <textarea
-                                        value={shareMessage}
-                                        onChange={e => setShareMessage(e.target.value)}
-                                        maxLength={280}
-                                        rows={3}
-                                        placeholder="Add a note for the recipient…"
-                                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    />
-                                    <p className="text-xs text-[var(--muted-foreground)] text-right">{shareMessage.length}/280</p>
-                                </div>
-                                {shareResult && (
-                                    <div className={`p-3 rounded-lg text-sm ${shareResult.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                                        {shareResult.text}
+                </div>
+
+                <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">
+                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                        Collections
+                        <span className="bg-[var(--muted)] text-[var(--muted-foreground)] text-xs px-2 py-0.5 rounded-full font-medium">{entryCollections?.length || 0}</span>
+                    </h3>
+
+                    <div className="space-y-4 mb-6">
+                        {Array.isArray(entryCollections) && entryCollections.length > 0 ? (
+                            entryCollections.map((collection: any) => {
+                                return (
+                                    <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                                        <div className="flex-1">
+                                            <h4 className="font-medium text-sm mb-1">{collection.name}</h4>
+                                            {collection.description && (
+                                                <p className="text-xs text-[var(--muted-foreground)] mb-2">{collection.description}</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveFromCollection(collection.id)}
+                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm ml-2"
+                                        >
+                                            Remove
+                                        </button>
                                     </div>
-                                )}
-                                <div className="flex gap-2 justify-end pt-2">
-                                    <button type="button" onClick={() => setShowShareModal(false)} className="px-4 py-2 rounded-md text-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors">
-                                        Close
-                                    </button>
-                                    <button type="submit" disabled={!shareReceiverId || isSharing} className="px-4 py-2 rounded-md text-sm font-medium bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
-                                        {isSharing ? 'Sharing…' : 'Share'}
-                                    </button>
-                                </div>
-                            </form>
+                                );
+                            })
+                        ) : (
+                            <div className="text-center py-8 text-[var(--muted-foreground)] text-sm italic">
+                                Not in any collections yet.
+                            </div>
                         )}
                     </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <select
+                            value={selectedCollection}
+                            onChange={(e) => setSelectedCollection(e.target.value)}
+                            className="flex-1 px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)] touch-manipulation"
+                        >
+                            <option value="">Select a collection...</option>
+                            {Array.isArray(availableCollections) && availableCollections.map((collection: any) => (
+                                <option key={collection.id} value={collection.id}>
+                                    {collection.name}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleAddToCollection}
+                            disabled={!selectedCollection || isAddingToCollection}
+                            className="bg-[var(--accent)] text-[var(--accent-foreground)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
+                        >
+                            {isAddingToCollection ? 'Adding...' : 'Add to Collection'}
+                        </button>
+                    </div>
                 </div>
-            )}
+
+                {/* Share Modal */}
+                {showShareModal && entry && (
+                    <ShareEntryModal
+                        isOpen={showShareModal}
+                        onClose={() => setShowShareModal(false)}
+                        entry={{
+                            id: entry.id,
+                            title: entry.title,
+                            authors: entry.authors,
+                            url: entry.url
+                        }}
+                    />
+                )}
+            </div>
         </div>
     );
 }

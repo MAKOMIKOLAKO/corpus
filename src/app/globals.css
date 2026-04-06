@@ -6,105 +6,193 @@
 
   :root,
   .light {
-    /* Light mode (default) */
-    --background: #F8FAFC;
-    --foreground: #0F172A;
-    --card: #FFFFFF;
-    --card-foreground: #0F172A;
-    --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #0F172A;
-    --primary-foreground: #F8FAFC;
-    --secondary: #F1F5F9;
-    --secondary-foreground: #0F172A;
-    --muted: #E2E8F0;
-    --muted-foreground: #64748B;
-    --accent: #14B8A6;
-    --accent-hover: #0F9A8C;
-    --accent-muted: rgba(20, 184, 166, 0.12);
-    --accent-foreground: #FFFFFF;
-    --destructive: #DC2626;
-    --border: #E2E8F0;
-    --border-default: #E2E8F0;
-    --border-subtle: #F1F5F9;
-    --border-strong: #CBD5E1;
-    --input: #E2E8F0;
-    --ring: #14B8A6;
+    /* Claude Light Mode - Warm Parchment Theme */
+    --background: #f5f4ed;
+    /* Parchment */
+    --foreground: #141413;
+    /* Anthropic Near Black */
+    --card: #faf9f5;
+    /* Ivory */
+    --card-foreground: #141413;
+    /* Anthropic Near Black */
+    --popover: #ffffff;
+    /* Pure White */
+    --popover-foreground: #141413;
+    /* Anthropic Near Black */
+    --primary: #141413;
+    /* Anthropic Near Black */
+    --primary-foreground: #faf9f5;
+    /* Ivory */
+    --secondary: #e8e6dc;
+    /* Warm Sand */
+    --secondary-foreground: #4d4c48;
+    /* Charcoal Warm */
+    --muted: #f0eee6;
+    /* Border Cream */
+    --muted-foreground: #87867f;
+    /* Stone Gray */
+    --accent: #c96442;
+    /* Terracotta Brand */
+    --accent-hover: #b55537;
+    /* Darker Terracotta */
+    --accent-muted: rgba(201, 100, 66, 0.12);
+    /* Terracotta muted */
+    --accent-foreground: #faf9f5;
+    /* Ivory */
+    --destructive: #b53333;
+    /* Error Crimson */
+    --border: #f0eee6;
+    /* Border Cream */
+    --border-default: #f0eee6;
+    /* Border Cream */
+    --border-subtle: #f5f4ed;
+    /* Parchment */
+    --border-strong: #e8e6dc;
+    /* Border Warm */
+    --input: #e8e6dc;
+    /* Warm Sand */
+    --ring: #3898ec;
+    /* Focus Blue - only cool color */
 
-    --surface-base: #F8FAFC;
-    --surface-raised: #FFFFFF;
-    --surface-overlay: #F1F5F9;
-    --surface-sunken: #E2E8F0;
+    --surface-base: #f5f4ed;
+    /* Parchment */
+    --surface-raised: #faf9f5;
+    /* Ivory */
+    --surface-overlay: #f0eee6;
+    /* Border Cream */
+    --surface-sunken: #e8e6dc;
+    /* Warm Sand */
 
-    --content-primary: #0F172A;
-    --content-secondary: #475569;
-    --content-tertiary: #64748B;
-    --content-inverse: #FFFFFF;
+    --content-primary: #141413;
+    /* Anthropic Near Black */
+    --content-secondary: #5e5d59;
+    /* Olive Gray */
+    --content-tertiary: #87867f;
+    /* Stone Gray */
+    --content-inverse: #faf9f5;
+    /* Ivory */
 
-    --chart-1: #14B8A6;
-    --chart-2: #0F172A;
-    --chart-3: #475569;
-    --chart-4: #64748B;
-    --chart-5: #94A3B8;
-    --sidebar: #F8FAFC;
-    --sidebar-foreground: #0F172A;
-    --sidebar-primary: #0F172A;
-    --sidebar-primary-foreground: #F8FAFC;
-    --sidebar-accent: #E2E8F0;
-    --sidebar-accent-foreground: #0F172A;
-    --sidebar-border: #CBD5E1;
-    --sidebar-ring: #14B8A6;
+    --chart-1: #c96442;
+    /* Terracotta Brand */
+    --chart-2: #141413;
+    /* Anthropic Near Black */
+    --chart-3: #5e5d59;
+    /* Olive Gray */
+    --chart-4: #87867f;
+    /* Stone Gray */
+    --chart-5: #b0aea5;
+    /* Warm Silver */
+    --sidebar: #f5f4ed;
+    /* Parchment */
+    --sidebar-foreground: #141413;
+    /* Anthropic Near Black */
+    --sidebar-primary: #141413;
+    /* Anthropic Near Black */
+    --sidebar-primary-foreground: #faf9f5;
+    /* Ivory */
+    --sidebar-accent: #e8e6dc;
+    /* Warm Sand */
+    --sidebar-accent-foreground: #141413;
+    /* Anthropic Near Black */
+    --sidebar-border: #e8e6dc;
+    /* Border Warm */
+    --sidebar-ring: #c96442;
+    /* Terracotta Brand */
   }
 
   .dark {
-    /* Dark mode Academic Noir */
-    --background: #0F172A;
-    --foreground: #F8FFA;
-    --card: #1E293B;
-    --card-foreground: #F8FFA;
-    --popover: #1E293B;
-    --popover-foreground: #F8FFA;
-    --primary: #F8FFA;
-    --primary-foreground: #0F172A;
-    --secondary: #334155;
-    --secondary-foreground: #F8FFA;
-    --muted: #475569;
-    --muted-foreground: #94A3B8;
-    --accent: #14B8A6;
-    --accent-hover: #0F9A8C;
-    --accent-muted: rgba(20, 184, 166, 0.18);
-    --accent-foreground: #0F172A;
-    --destructive: #EF4444;
-    --border: #334155;
-    --border-default: #334155;
-    --border-subtle: #1E293B;
-    --border-strong: #475569;
-    --input: #334155;
-    --ring: #14B8A6;
+    /* Claude Dark Mode - Warm Dark Theme */
+    --background: #141413;
+    /* Deep Dark */
+    --foreground: #faf9f5;
+    /* Ivory */
+    --card: #30302e;
+    /* Dark Surface */
+    --card-foreground: #faf9f5;
+    /* Ivory */
+    --popover: #30302e;
+    /* Dark Surface */
+    --popover-foreground: #faf9f5;
+    /* Ivory */
+    --primary: #faf9f5;
+    /* Ivory */
+    --primary-foreground: #141413;
+    /* Deep Dark */
+    --secondary: #4d4c48;
+    /* Charcoal Warm */
+    --secondary-foreground: #faf9f5;
+    /* Ivory */
+    --muted: #3d3d3a;
+    /* Dark Warm */
+    --muted-foreground: #b0aea5;
+    /* Warm Silver */
+    --accent: #c96442;
+    /* Terracotta Brand */
+    --accent-hover: #d97757;
+    /* Coral Accent */
+    --accent-muted: rgba(201, 100, 66, 0.18);
+    /* Terracotta muted dark */
+    --accent-foreground: #faf9f5;
+    /* Ivory */
+    --destructive: #b53333;
+    /* Error Crimson */
+    --border: #30302e;
+    /* Border Dark */
+    --border-default: #30302e;
+    /* Border Dark */
+    --border-subtle: #4d4c48;
+    /* Charcoal Warm */
+    --border-strong: #3d3d3a;
+    /* Dark Warm */
+    --input: #30302e;
+    /* Dark Surface */
+    --ring: #3898ec;
+    /* Focus Blue - only cool color */
 
-    --surface-base: #0F172A;
-    --surface-raised: #1E293B;
-    --surface-overlay: #334155;
-    --surface-sunken: #0B1426;
+    --surface-base: #141413;
+    /* Deep Dark */
+    --surface-raised: #30302e;
+    /* Dark Surface */
+    --surface-overlay: #4d4c48;
+    /* Charcoal Warm */
+    --surface-sunken: #1a1a19;
+    /* Very Dark */
 
-    --content-primary: #F8FFA;
-    --content-secondary: #94A3B8;
-    --content-tertiary: #64748B;
-    --content-inverse: #FFFFFF;
+    --content-primary: #faf9f5;
+    /* Ivory */
+    --content-secondary: #b0aea5;
+    /* Warm Silver */
+    --content-tertiary: #87867f;
+    /* Stone Gray */
+    --content-inverse: #141413;
+    /* Deep Dark */
 
-    --chart-1: #14B8A6;
-    --chart-2: #F8FFA;
-    --chart-3: #CBD5E1;
-    --chart-4: #94A3B8;
-    --chart-5: #64748B;
-    --sidebar: #1E293B;
-    --sidebar-foreground: #F8FFA;
-    --sidebar-primary: #F8FFA;
-    --sidebar-primary-foreground: #0F172A;
-    --sidebar-accent: #334155;
-    --sidebar-accent-foreground: #F8FFA;
-    --sidebar-border: #475569;
-    --sidebar-ring: #14B8A6;
+    --chart-1: #c96442;
+    /* Terracotta Brand */
+    --chart-2: #faf9f5;
+    /* Ivory */
+    --chart-3: #b0aea5;
+    /* Warm Silver */
+    --chart-4: #87867f;
+    /* Stone Gray */
+    --chart-5: #5e5d59;
+    /* Olive Gray */
+    --sidebar: #30302e;
+    /* Dark Surface */
+    --sidebar-foreground: #faf9f5;
+    /* Ivory */
+    --sidebar-primary: #faf9f5;
+    /* Ivory */
+    --sidebar-primary-foreground: #141413;
+    /* Deep Dark */
+    --sidebar-accent: #4d4c48;
+    /* Charcoal Warm */
+    --sidebar-accent-foreground: #faf9f5;
+    /* Ivory */
+    --sidebar-border: #4d4c48;
+    /* Charcoal Warm */
+    --sidebar-ring: #c96442;
+    /* Terracotta Brand */
   }
 
   .theme {
@@ -139,7 +227,7 @@
     font-family: var(--font-sans), system-ui, sans-serif;
   }
 
-  /* Typography System */
+  /* Typography System - Claude Inspired */
   h1,
   h2,
   h3,
@@ -147,8 +235,105 @@
   h5,
   h6 {
     font-family: var(--font-serif), Georgia, serif;
-    font-weight: 600;
-    line-height: 1.2;
+    font-weight: 500;
+    /* Single weight for all serifs */
+    line-height: 1.20;
+    /* Tight but comfortable */
+    color: var(--content-primary);
+  }
+
+  /* Specific heading sizes */
+  h1 {
+    font-size: 64px;
+    line-height: 1.10;
+  }
+
+  /* Display */
+  h2 {
+    font-size: 52px;
+    line-height: 1.20;
+  }
+
+  /* Section Heading */
+  h3 {
+    font-size: 36px;
+    line-height: 1.30;
+  }
+
+  /* Sub-heading Large */
+  h4 {
+    font-size: 32px;
+    line-height: 1.10;
+  }
+
+  /* Sub-heading */
+  h5 {
+    font-size: 25px;
+    line-height: 1.20;
+  }
+
+  /* Sub-heading Small */
+  h6 {
+    font-size: 20.8px;
+    line-height: 1.20;
+  }
+
+  /* Feature Title */
+
+  /* Body typography */
+  body {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.60;
+    /* Relaxed reading line-height */
+    color: var(--content-primary);
+  }
+
+  p {
+    line-height: 1.60;
+    margin-bottom: 1em;
+  }
+
+  /* Claude-specific utilities */
+  .serif-body {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 17px;
+    line-height: 1.60;
+  }
+
+  .body-large {
+    font-size: 20px;
+    line-height: 1.60;
+  }
+
+  .body-standard {
+    font-size: 16px;
+    line-height: 1.60;
+  }
+
+  .body-small {
+    font-size: 15px;
+    line-height: 1.60;
+  }
+
+  .caption {
+    font-size: 14px;
+    line-height: 1.43;
+    color: var(--content-tertiary);
+  }
+
+  .label {
+    font-size: 12px;
+    letter-spacing: 0.12px;
+    text-transform: uppercase;
+    color: var(--content-tertiary);
+  }
+
+  .overline {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--content-tertiary);
   }
 
   .font-serif {
@@ -159,24 +344,51 @@
     font-family: var(--font-sans), system-ui, sans-serif;
   }
 
-  /* Corpus Glow Effect for AI Insights */
-  .corpus-glow {
-    position: relative;
-    animation: corpusGlow 2s ease-in-out infinite alternate;
+  /* Ring Shadow System - Claude Design */
+  .ring-shadow {
+    box-shadow: 0px 0px 0px 1px var(--border);
   }
 
-  @keyframes corpusGlow {
-    0% {
-      box-shadow: 0 0 5px rgba(20, 184, 166, 0.3);
-    }
+  .ring-shadow-warm {
+    box-shadow: 0px 0px 0px 1px #d1cfc5;
+  }
 
-    50% {
-      box-shadow: 0 0 20px rgba(20, 184, 166, 0.6), 0 0 30px rgba(20, 184, 166, 0.4);
-    }
+  .ring-shadow-subtle {
+    box-shadow: 0px 0px 0px 1px #dedc01;
+  }
 
-    100% {
-      box-shadow: 0 0 5px rgba(20, 184, 166, 0.3);
-    }
+  .ring-shadow-deep {
+    box-shadow: 0px 0px 0px 1px #c2c0b6;
+  }
+
+  .whisper-shadow {
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 24px;
+  }
+
+  .interactive-card:hover {
+    box-shadow: 0px 0px 0px 1px var(--border-strong), rgba(0, 0, 0, 0.05) 0px 4px 24px;
+  }
+
+  /* Button shadow styles */
+  .button-warm-sand {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    box-shadow: var(--secondary) 0px 0px 0px 0px, #d1cfc5 0px 0px 0px 1px;
+  }
+
+  .button-warm-sand:hover {
+    box-shadow: var(--secondary) 0px 0px 0px 0px, #c2c0b6 0px 0px 0px 1px;
+  }
+
+  .button-terracotta {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+    box-shadow: var(--accent) 0px 0px 0px 0px, var(--accent) 0px 0px 0px 1px;
+  }
+
+  .button-terracotta:hover {
+    opacity: 0.95;
+    box-shadow: var(--accent) 0px 0px 0px 0px, var(--accent) 0px 0px 0px 2px;
   }
 
   /* Neural Network Background Pattern */

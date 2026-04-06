@@ -14,6 +14,11 @@ import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
+import { FlatEntry } from '@/types/entry';
+
+interface CollectionEntry extends FlatEntry {
+    addedAt: string;
+}
 
 interface CollectionMember {
     id: string;
@@ -40,28 +45,7 @@ interface Collection {
     userId?: string | null;
     metadata?: any;
     activeAlertCount?: number;
-    entries?: Array<{
-        id: string;
-        addedAt: string;
-        entry: {
-            id: string;
-            createdAt: string;
-            title: string;
-            authors: string[];
-            year: number | null;
-            contentType: string;
-            readingStatus: 'UNREAD' | 'READING' | 'READ';
-            autoKeywords: string[];
-            topics: string[];
-            collections?: Array<{
-                id: string;
-                collection: {
-                    id: string;
-                    name: string;
-                };
-            }>;
-        };
-    }>;
+    entries?: CollectionEntry[];
     members?: CollectionMember[];
     _count: {
         entries: number;
@@ -235,7 +219,7 @@ export default function CollectionDetailPage() {
                 // Update local state to maintain scroll position
                 setCollection(prev => prev ? {
                     ...prev,
-                    entries: prev.entries?.filter(item => item.entry.id !== entryId) || [],
+                    entries: prev.entries?.filter(item => item.id !== entryId) || [],
                     _count: {
                         entries: prev._count.entries - 1
                     }
@@ -458,9 +442,8 @@ export default function CollectionDetailPage() {
 
     const filteredEntries = collection?.entries?.filter(item =>
         item &&
-        item.entry &&
-        (item.entry.title.toLowerCase().includes(search.toLowerCase()) ||
-            item.entry.authors.some(author => author.toLowerCase().includes(search.toLowerCase())))
+        (item.title.toLowerCase().includes(search.toLowerCase()) ||
+            item.authors.some(author => author.toLowerCase().includes(search.toLowerCase())))
     ) || [];
 
     // Tab configuration
@@ -973,13 +956,13 @@ export default function CollectionDetailPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredEntries.map(item => (
                                 <div key={item?.id} className="relative group">
-                                    <EntryCard entry={item?.entry} scrollPositionKey={`collection-${params?.id}`} />
+                                    <EntryCard entry={item} scrollPositionKey={`collection-${params?.id}`} />
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            onClick={() => handleRemoveEntry(item?.entry?.id)}
-                                            disabled={removing === item?.entry?.id}
+                                            onClick={() => handleRemoveEntry(item?.id)}
+                                            disabled={removing === item?.id}
                                         >
                                             <Trash2 className="w-3 h-3" />
                                         </Button>

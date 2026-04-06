@@ -101,6 +101,7 @@ export default function HomePageClient({
                                 <option value="oldest">oldest first</option>
                                 <option value="title">title a-z</option>
                                 <option value="title-desc">title z-a</option>
+                                <option value="most-saved">most saved globally</option>
                             </select>
                             <Filter className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                         </div>

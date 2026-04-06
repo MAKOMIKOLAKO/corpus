@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { GET, POST, PATCH, DELETE } from '@/app/api/entries/route'
+import { GET, POST } from '@/app/api/entries/route'
 import { GET as GetEntry, PATCH as PatchEntry, DELETE as DeleteEntry } from '@/app/api/entries/[id]/route'
 import { POST as BatchPost } from '@/app/api/entries/batch/route'
 import { getCurrentUserId } from '@/lib/session'
@@ -29,7 +29,7 @@ describe('/api/entries', () => {
         createTestUserEntry({ id: 'entry-1' }),
         createTestUserEntry({ id: 'entry-2' }),
       ]
-      
+
       prisma.userEntry.findMany.mockResolvedValue(mockEntries)
       prisma.userEntry.count.mockResolvedValue(2)
 
@@ -248,7 +248,7 @@ describe('/api/entries/[id]', () => {
       // Arrange
       const mockUserEntry = createTestUserEntry({ id: 'entry-1', readingStatus: 'UNREAD' })
       const updatedEntry = { ...mockUserEntry, readingStatus: 'COMPLETED' }
-      
+
       prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
       prisma.userEntry.update.mockResolvedValue(updatedEntry)
 
@@ -276,7 +276,7 @@ describe('/api/entries/[id]', () => {
       const mockGlobalEntry = createTestGlobalEntry({
         metadata: { notes: [{ text: 'Existing note', createdAt: '2024-01-01' }] },
       })
-      
+
       prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
       prisma.globalEntry.findUnique.mockResolvedValue(mockGlobalEntry)
       prisma.globalEntry.update.mockResolvedValue(mockGlobalEntry)
@@ -315,7 +315,7 @@ describe('/api/entries/[id]', () => {
     it('should delete an entry', async () => {
       // Arrange
       const mockUserEntry = createTestUserEntry({ id: 'entry-1' })
-      
+
       prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
       prisma.userEntry.delete.mockResolvedValue({} as any)
       prisma.globalEntry.update.mockResolvedValue({} as any)
@@ -353,7 +353,7 @@ describe('/api/entries/batch', () => {
         createTestUserEntry({ id: 'entry-1' }),
         createTestUserEntry({ id: 'entry-2' }),
       ]
-      
+
       prisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
       prisma.userEntry.delete.mockResolvedValue({} as any)
       prisma.globalEntry.update.mockResolvedValue({} as any)
@@ -384,7 +384,7 @@ describe('/api/entries/batch', () => {
         createTestUserEntry({ id: 'entry-1', readingStatus: 'UNREAD' }),
         createTestUserEntry({ id: 'entry-2', readingStatus: 'UNREAD' }),
       ]
-      
+
       prisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
       prisma.userEntry.updateMany.mockResolvedValue({ count: 2 })
 
@@ -415,7 +415,7 @@ describe('/api/entries/batch', () => {
         createTestUserEntry({ id: 'entry-1' }),
         createTestUserEntry({ id: 'entry-2' }),
       ]
-      
+
       prisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
       prisma.collection.findUnique.mockResolvedValue({ userId: 'user-1' } as any)
       prisma.userEntryCollection.createMany.mockResolvedValue({ count: 2 })

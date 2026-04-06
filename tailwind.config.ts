@@ -10,9 +10,11 @@ const config: Config = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+                sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+                serif: ["Georgia", "serif"],
             },
             colors: {
+                // Claude Design System Colors
                 background: "var(--background)",
                 foreground: "var(--foreground)",
                 card: {
@@ -65,20 +67,43 @@ const config: Config = {
                 },
                 input: "var(--input)",
                 ring: "var(--ring)",
+                // Claude-specific colors
+                terracotta: "#c96442",
+                "terracotta-hover": "#b55537",
+                parchment: "#f5f4ed",
+                ivory: "#faf9f5",
+                "warm-sand": "#e8e6dc",
+                "border-cream": "#f0eee6",
+                "anthropic-black": "#141413",
+                "olive-gray": "#5e5d59",
+                "stone-gray": "#87867f",
+                "warm-silver": "#b0aea5",
+                "charcoal-warm": "#4d4c48",
             },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
+                none: "0",
+                sm: "4px",
+                DEFAULT: "8px", /* Comfortably rounded */
+                md: "8px",
+                lg: "12px", /* Generously rounded */
+                xl: "16px", /* Very rounded */
+                "2xl": "24px", /* Highly rounded */
+                "3xl": "32px", /* Maximum rounded */
+                full: "9999px",
             },
             keyframes: {
                 corpusFloat: {
                     "0%, 100%": { transform: "translate(0, 0)", opacity: "0.35" },
                     "50%": { transform: "translate(12px, -18px)", opacity: "0.85" },
                 },
+                "ring-glow": {
+                    "0%, 100%": { boxShadow: "0px 0px 0px 1px var(--border)" },
+                    "50%": { boxShadow: "0px 0px 0px 2px var(--border-strong)" },
+                },
             },
             animation: {
                 corpusFloat: "corpusFloat 24s ease-in-out infinite",
+                "ring-glow": "ring-glow 2s ease-in-out infinite",
             },
         },
     },

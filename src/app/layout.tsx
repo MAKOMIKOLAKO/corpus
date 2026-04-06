@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -11,7 +11,6 @@ import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://usecorpus.app'),
@@ -154,7 +153,7 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
 
   return (
-    <html lang="en" className={cn("font-sans scroll-smooth", inter.variable, playfair.variable)}>
+    <html lang="en" className={cn("font-sans scroll-smooth", inter.variable)}>
       <head>
         <ThemeBootstrapScript />
         <ExtensionDetection />
