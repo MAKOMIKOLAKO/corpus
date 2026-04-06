@@ -88,7 +88,7 @@ export default function LibraryPageClient({
     }
   };
   return (
-    <LibraryBatchClient user={user}>
+    <LibraryBatchClient user={user} allEntryIds={entries.map((entry) => entry.id)}>
       {({ isSelectionMode, selectedIds, toggleSelection }) => (
         <>
           {/* Search and Filters */}
@@ -153,6 +153,11 @@ export default function LibraryPageClient({
                         entry={entry}
                         scrollPositionKey="library"
                         fromPath="/library"
+                        selectionMode={{
+                          enabled: isSelectionMode,
+                          isSelected: selectedIds.includes(entry.id),
+                          onToggle: toggleSelection,
+                        }}
                       />
                     ))}
                   </div>
