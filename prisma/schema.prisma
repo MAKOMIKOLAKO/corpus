@@ -8,6 +8,353 @@ datasource db {
   directUrl = env("DATABASE_URL")
 }
 
+model Topic {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  explanation String?
+  keyConcepts String[] @default([])
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id                        String                   @id @default(cuid())
+  email                     String                   @unique
+  name                      String?
+  createdAt                 DateTime                 @default(now())
+  passwordHash              String?
+  plan                      Plan                     @default(FREE)
+  stripeCustomerId          String?                  @unique
+  stripePriceId             String?
+  stripeSubscriptionId      String?                  @unique
+  subscriptionEndsAt        DateTime?
+  subscriptionStatus        String?
+  bio                       String?
+  emailVerified             DateTime?
+  username                  String?                  @unique
+  lastFeedViewedAt          DateTime?
+  showSignals               Boolean                  @default(true)
+  usernameBannerShown       Boolean                  @default(false)
+  entriesCount              Int                      @default(0)
+  personalCollectionsCount  Int                      @default(0)
+  timezone                  String                   @default("UTC")
+  alertTime                 String?                  @default("09:00")
+  alertContainers           AlertContainer[]
+  analyticsEvents           AnalyticsEvent[]
+  collections               Collection[]
+  sentInvites               CollectionMember[]       @relation("InvitedBy")
+  collectionMemberships     CollectionMember[]
+  receivedConnections       Connection[]             @relation("ConnectionReceiver")
+  sentConnections           Connection[]             @relation("ConnectionRequester")
+  emailVerificationTokens   EmailVerificationToken[]
+  entries                   Entry[]
+  feedback                  Feedback[]
+  notifications             Notification[]
+  passwordResetTokens       PasswordResetToken[]
+  promoCodes                PromoCode[]
+  queueItems                QueueItem[]
+  receivedReferenceRequests ReferenceRequest[]       @relation("ReferenceRequestOwner")
+  sentReferenceRequests     ReferenceRequest[]       @relation("ReferenceRequester")
+  receivedSharedEntries     SharedEntry[]            @relation("SharedEntryReceiver")
+  sentSharedEntries         SharedEntry[]            @relation("SharedEntrySender")
+  signals                   Signal[]
+  userEntries               UserEntry[]
+  watchQueries              WatchQuery[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Entry {
+  id                String             @id @default(cuid())
+  title             String
+  authors           String[]
+  year              Int?
+  contentType       ContentType        @default(PAPER)
+  url               String?            @unique
+  doi               String?            @unique
+  abstract          String?
+  summary           String?
+  notes             Json               @default("[]")
+  readingStatus     ReadingStatus      @default(UNREAD)
+  createdAt         DateTime           @default(now())
+  cover             String?
+  description       String?
+  isbn13            String[]           @default([])
+  numberOfPages     Int?
+  publishDate       String?
+  publishers        String[]           @default([])
+  userId            String?
+  metaDescription   String?
+  slug              String?            @unique
+  autoKeywords      String[]           @default([])
+  userKeywords      String[]           @default([])
+  metadata          Json?
+  addedByQueryId    String?
+  source            EntrySource        @default(MANUAL)
+  watchQuery        WatchQuery?        @relation("WatchQueryEntries", fields: [addedByQueryId], references: [id])
+  user              User?              @relation(fields: [userId], references: [id])
+  collections       EntryCollection[]
+  referenceRequests ReferenceRequest[]
+  sharedEntries     SharedEntry[]
+  signals           Signal[]
+}
+
+model Collection {
+  id                String             @id @default(cuid())
+  name              String
+  description       String?
+  createdAt         DateTime           @default(now())
+  userId            String?
+  isShared          Boolean            @default(false)
+  isPublic          Boolean            @default(false)
+  publicDescription String?
+  publicSlug        String?            @unique
+  publicViewCount   Int                @default(0)
+  metadata          Json?
+  alertContainers   AlertContainer[]
+  user              User?              @relation(fields: [userId], references: [id])
+  members           CollectionMember[]
+  entries           EntryCollection[]
+  userEntryCollections UserEntryCollection[]
+  signals           Signal[]
+  watchQueries      WatchQuery[]
+}
+
+model WatchQuery {
+  id              String           @id @default(cuid())
+  userId          String
+  query           String
+  collectionId    String
+  isActive        Boolean          @default(true)
+  lastCheckedAt   DateTime?
+  createdAt       DateTime         @default(now())
+  maxPapers       Int              @default(5)
+  alertContainers AlertContainer[]
+  entries         Entry[]          @relation("WatchQueryEntries")
+  globalEntries   GlobalEntry[]    @relation("AlertGlobalEntries")
+  userEntries     UserEntry[]      @relation("UserAlertEntries")
+  collection      Collection       @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([lastCheckedAt])
+  @@index([isActive, lastCheckedAt])
+}
+
+model AlertContainer {
+  id           String       @id @default(cuid())
+  userId       String
+  watchQueryId String
+  query        String
+  collectionId String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  collection   Collection?  @relation(fields: [collectionId], references: [id])
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watchQuery   WatchQuery   @relation(fields: [watchQueryId], references: [id], onDelete: Cascade)
+  entries      AlertEntry[]
+}
+
+model AlertEntry {
+  id          String           @id @default(cuid())
+  containerId String
+  externalId  String
+  title       String
+  authors     String[]
+  year        Int?
+  abstract    String?
+  url         String?
+  metadata    Json?
+  status      AlertEntryStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  container   AlertContainer   @relation(fields: [containerId], references: [id], onDelete: Cascade)
+
+  @@unique([containerId, externalId])
+  @@index([containerId, status])
+  @@index([externalId])
+}
+
+model EntryCollection {
+  id           String     @id @default(cuid())
+  entryId      String
+  collectionId String
+  addedAt      DateTime   @default(now())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  entry        Entry      @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, collectionId])
+}
+
+model CollectionMember {
+  id           String         @id @default(cuid())
+  collectionId String
+  userId       String
+  role         CollectionRole @default(VIEWER)
+  invitedBy    String
+  invitedAt    DateTime       @default(now())
+  acceptedAt   DateTime?
+  status       InviteStatus   @default(PENDING)
+  collection   Collection     @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  inviter      User           @relation("InvitedBy", fields: [invitedBy], references: [id])
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, userId])
+}
+
+model PromoCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  usedBy    String?
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [usedBy], references: [id])
+}
+
+model Connection {
+  id          String           @id @default(cuid())
+  requesterId String
+  receiverId  String
+  status      ConnectionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  receiver    User             @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  requester   User             @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+}
+
+model SharedEntry {
+  id            String            @id @default(cuid())
+  entryId       String
+  globalEntryId String?
+  senderId      String
+  receiverId    String
+  message       String?
+  status        SharedEntryStatus @default(PENDING)
+  sharedAt      DateTime          @default(now())
+  respondedAt   DateTime?
+  entry         Entry             @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  globalEntry   GlobalEntry?      @relation("GlobalEntryShared", fields: [globalEntryId], references: [id], onDelete: SetNull)
+  sender        User              @relation("SharedEntrySender", fields: [senderId], references: [id])
+  receiver      User              @relation("SharedEntryReceiver", fields: [receiverId], references: [id])
+
+  @@unique([entryId, senderId, receiverId])
+}
+
+model Signal {
+  id           String      @id @default(cuid())
+  userId       String
+  type         SignalType
+  entryId      String?
+  globalEntryId String?
+  collectionId String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+  isPublic     Boolean     @default(true)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry        Entry?      @relation(fields: [entryId], references: [id], onDelete: SetNull)
+  globalEntry  GlobalEntry? @relation("GlobalEntrySignals", fields: [globalEntryId], references: [id], onDelete: SetNull)
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+}
+
+model ReferenceRequest {
+  id           String               @id @default(cuid())
+  requesterId  String
+  ownerId      String
+  entryId      String
+  globalEntryId String?
+  message      String?
+  status       ReferenceRequestStatus @default(PENDING)
+  createdAt    DateTime             @default(now())
+  respondedAt  DateTime?
+  requester    User                 @relation("ReferenceRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  owner        User                 @relation("ReferenceRequestOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  entry        Entry                @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  globalEntry  GlobalEntry?         @relation("GlobalEntryReferenceRequests", fields: [globalEntryId], references: [id], onDelete: SetNull)
+
+  @@unique([requesterId, ownerId, entryId])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  event     String
+  userId    String?
+  metadata  Json?
+  timestamp DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([event, timestamp])
+  @@index([userId, event])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?
+  message   String
+  rating    Int?
+  email     String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+}
+
+model QueueItem {
+  id           String          @id @default(cuid())
+  userId       String
+  status       QueueItemStatus @default(PENDING)
+  inputType    QueueInputType
+  input        String
+  payload      Json?
+  result       Json?
+  entryId      String?
+  globalEntryId String?
+  errorMessage String?
+  position     Int
+  createdAt    DateTime        @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  priority     Int             @default(0)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  globalEntry  GlobalEntry?    @relation("GlobalEntryQueueItems", fields: [globalEntryId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
 enum ContentType {
   PAPER
   BOOK
@@ -33,11 +380,11 @@ enum QueueInputType {
 
 enum ReadingStatus {
   UNREAD
+  READING
+  READ
   BACKLOG
   IN_PROGRESS
-  READING
   COMPLETED
-  READ
   DROPPED
 }
 
@@ -106,347 +453,114 @@ enum AlertEntryStatus {
   REJECTED
 }
 
-model Topic {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  description String?  @db.Text
-  explanation String?  @db.Text
-  keyConcepts String[] @default([])
-  createdAt   DateTime @default(now())
-}
-
-model User {
-  id                    String      @id @default(cuid())
-  email                 String      @unique
-  name                  String?
-  username              String?     @unique
-  bio                   String?
-  passwordHash          String?
-  plan                  Plan        @default(FREE)
-  stripeCustomerId      String?     @unique
-  stripeSubscriptionId  String?     @unique
-  stripePriceId         String?
-  subscriptionStatus    String?
-  subscriptionEndsAt    DateTime?
-  emailVerified         DateTime?
-  createdAt             DateTime    @default(now())
-  showSignals           Boolean     @default(true)
-  lastFeedViewedAt      DateTime?
-  usernameBannerShown   Boolean     @default(false)
-  entriesCount          Int         @default(0)
-  personalCollectionsCount Int       @default(0)
-  timezone              String      @default("UTC")
-
-  entries               Entry[]
-  collections           Collection[]
-  promoCodes            PromoCode[]
-  collectionMemberships CollectionMember[]
-  sentInvites           CollectionMember[]  @relation("InvitedBy")
-  sentConnections       Connection[]        @relation("ConnectionRequester")
-  receivedConnections   Connection[]        @relation("ConnectionReceiver")
-  sentSharedEntries     SharedEntry[]       @relation("SharedEntrySender")
-  receivedSharedEntries SharedEntry[]       @relation("SharedEntryReceiver")
-  passwordResetTokens   PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  signals               Signal[]
-  sentReferenceRequests ReferenceRequest[] @relation("ReferenceRequester")
-  receivedReferenceRequests ReferenceRequest[] @relation("ReferenceOwner")
-  analyticsEvents       AnalyticsEvent[]
-  feedback              Feedback[]
-  queueItems            QueueItem[]
-  watchQueries          WatchQuery[]
-  notifications         Notification[]
-  alertContainers       AlertContainer[]
-}
-
-model PasswordResetToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
-  userId    String
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model EmailVerificationToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
-  userId    String
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Entry {
-  id            String        @id @default(cuid())
-  title         String
-  slug          String?       @unique
-  metaDescription String?     @db.Text
-  authors       String[]
-  year          Int?
-  // contentType is retained for data integrity and potential future use.
-  // It is no longer displayed in the UI or used for filtering.
-  // Do not delete this column or its data.
-  contentType   ContentType   @default(PAPER)
-  url           String?       @unique
-  doi           String?       @unique
-  source        EntrySource    @default(MANUAL)
-  addedByQueryId String?
-  abstract      String?
-  publishers    String[]      @default([])
-  publishDate   String?
-  numberOfPages Int?
-  description   String?
-  isbn13        String[]      @default([])
-  cover         String?
-  summary       String?
-  userKeywords  String[]      @default([])
-  autoKeywords  String[]      @default([])
-  notes         Json          @default("[]")
-  metadata      Json?
-  readingStatus ReadingStatus @default(UNREAD)
-  createdAt     DateTime      @default(now())
-  userId        String?
-  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  collections   EntryCollection[]
-  sharedEntries SharedEntry[]
-  signals       Signal[]
-  referenceRequests ReferenceRequest[]
-  watchQuery    WatchQuery?       @relation("WatchQueryEntries", fields: [addedByQueryId], references: [id])
-}
-
-model Collection {
-  id               String             @id @default(cuid())
-  name             String
-  description      String?
-  isShared         Boolean            @default(false)
-  isPublic         Boolean            @default(false)
-  publicSlug       String?            @unique
-  publicDescription String?           @db.Text
-  publicViewCount  Int                @default(0)
+model GlobalEntry {
+  id              String    @id @default(cuid())
+  
+  // Primary deduplication keys
+  doi             String?   @unique
+  isbn            String?   @unique
+  
+  // Secondary deduplication key (title + first author + year)
+  // Stored normalized for comparison
+  normalizedTitle     String?
+  normalizedFirstAuthor String?
+  publicationYear     Int?
+  
+  // Tertiary deduplication key
+  canonicalUrl    String?   @unique
+  
+  // Content hash for additional safety
+  // SHA-256 of: normalized(title + firstAuthor + year) or canonical URL
+  contentHash     String?   @unique
+  
+  // Core metadata (shared across all users)
+  title           String
+  authors         String[]
+  year            Int?
+  abstract        String?
+  source          String?   // journal, website, publisher
+  url             String?   // original URL (not normalized)
+  
+  // Type information retained in DB but not shown in UI
+  rawContentType  String?   // stores original contentType value silently
+  
+  // AI-generated data (shared, generated once)
+  // Note: embedding field omitted until pgvector is properly installed
+  
+  // Stored metadata (book pages, openAccessUrl, semanticScholarId etc.)
   metadata        Json?
-  createdAt        DateTime           @default(now())
-  userId           String?
-  user             User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  entries          EntryCollection[]
-  members          CollectionMember[]
-  signals          Signal[]
-  watchQueries     WatchQuery[]
-  alertContainers  AlertContainer[]
+  
+  // Source tracking
+  addedVia        String?   // "manual", "semantic_scholar", "open_library", 
+                            // "crossref", "url_fetch", "smart_alert"
+  
+  // Global stats
+  saveCount       Int       @default(0)  // incremented when any user saves this
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  userEntries     UserEntry[]
+  sharedEntries   SharedEntry[]   @relation("GlobalEntryShared")
+  alertEntries    WatchQuery[]    @relation("AlertGlobalEntries")
+  signals         Signal[]        @relation("GlobalEntrySignals")
+  referenceRequests ReferenceRequest[] @relation("GlobalEntryReferenceRequests")
+  queueItems      QueueItem[]     @relation("GlobalEntryQueueItems")
+  
+  // Indexes for deduplication lookups
+  @@index([doi])
+  @@index([isbn])
+  @@index([canonicalUrl])
+  @@index([contentHash])
+  @@index([normalizedTitle, normalizedFirstAuthor, publicationYear])
+  @@index([saveCount])
 }
 
-model WatchQuery {
+model UserEntry {
+  id              String    @id @default(cuid())
+  
+  // Core relations
+  userId          String
+  globalEntryId   String
+  
+  // Per-user state
+  readingStatus   ReadingStatus @default(UNREAD)
+  
+  // Source tracking per user
+  addedVia        String?   // "manual", "smart_alert", "shared", "collection"
+  addedByQueryId  String?   // WatchQuery.id if added via smart alert
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastViewedAt    DateTime?
+  
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  globalEntry     GlobalEntry @relation(fields: [globalEntryId], references: [id], onDelete: Cascade)
+  collections     UserEntryCollection[]
+  addedByQuery    WatchQuery? @relation("UserAlertEntries", fields: [addedByQueryId], references: [id], onDelete: SetNull)
+  
+  // One UserEntry per user per GlobalEntry
+  @@unique([userId, globalEntryId])
+  @@index([userId])
+  @@index([globalEntryId])
+  @@index([userId, readingStatus])
+  @@index([userId, createdAt])
+}
+
+model UserEntryCollection {
   id            String    @id @default(cuid())
-  userId        String
-  query         String
+  userEntryId   String
   collectionId  String
-  maxPapers     Int       @default(5)
-  isActive      Boolean   @default(true)
-  lastCheckedAt DateTime?
-  createdAt     DateTime  @default(now())
+  addedAt       DateTime  @default(now())
   
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  entries       Entry[]   @relation("WatchQueryEntries")
-  alertContainers AlertContainer[]
+  userEntry     UserEntry   @relation(fields: [userEntryId], references: [id], onDelete: Cascade)
+  collection    Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   
-  @@index([userId])
-  @@index([lastCheckedAt])
-  @@index([isActive, lastCheckedAt])
-}
-
-model AlertContainer {
-  id           String     @id @default(cuid())
-  userId       String
-  watchQueryId String
-  query        String
-  collectionId String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  watchQuery   WatchQuery @relation(fields: [watchQueryId], references: [id], onDelete: Cascade)
-  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-  entries      AlertEntry[]
-
-  @@index([userId, watchQueryId])
-  @@index([userId, createdAt])
-}
-
-model AlertEntry {
-  id          String           @id @default(cuid())
-  containerId String
-  externalId  String
-  title       String
-  authors     String[]
-  year        Int?
-  abstract    String?
-  url         String?
-  metadata    Json?
-  status      AlertEntryStatus @default(PENDING)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-
-  container   AlertContainer   @relation(fields: [containerId], references: [id], onDelete: Cascade)
-
-  @@index([containerId, status])
-  @@index([externalId])
-  @@unique([containerId, externalId])
-}
-
-model EntryCollection {
-  id           String   @id @default(cuid())
-  entryId      String
-  collectionId String
-  addedAt      DateTime @default(now())
-  entry        Entry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-
-  @@unique([entryId, collectionId])
-}
-
-model CollectionMember {
-  id           String         @id @default(cuid())
-  collectionId String
-  userId       String
-  role         CollectionRole @default(VIEWER)
-  invitedBy    String
-  invitedAt    DateTime       @default(now())
-  acceptedAt   DateTime?
-  status       InviteStatus   @default(PENDING)
-  collection   Collection     @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inviter      User           @relation("InvitedBy", fields: [invitedBy], references: [id])
-
-  @@unique([collectionId, userId])
-}
-
-model PromoCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  usedBy    String?
-  usedAt    DateTime?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [usedBy], references: [id], onDelete: SetNull)
-}
-
-model Connection {
-  id          String           @id @default(cuid())
-  requesterId String
-  receiverId  String
-  status      ConnectionStatus @default(PENDING)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  requester   User             @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  receiver    User             @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  @@unique([requesterId, receiverId])
-}
-
-model SharedEntry {
-  id          String            @id @default(cuid())
-  entryId     String
-  senderId    String
-  receiverId  String
-  message     String?
-  status      SharedEntryStatus @default(PENDING)
-  sharedAt    DateTime          @default(now())
-  respondedAt DateTime?
-  entry       Entry             @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  sender      User              @relation("SharedEntrySender", fields: [senderId], references: [id])
-  receiver    User              @relation("SharedEntryReceiver", fields: [receiverId], references: [id])
-
-  @@unique([entryId, senderId, receiverId])
-}
-
-model Signal {
-  id           String      @id @default(cuid())
-  userId       String
-  type         SignalType
-  entryId      String?
-  collectionId String?
-  metadata     Json?
-  createdAt    DateTime    @default(now())
-  isPublic     Boolean     @default(true)
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entry        Entry?      @relation(fields: [entryId], references: [id], onDelete: SetNull)
-  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-}
-
-model ReferenceRequest {
-  id           String               @id @default(cuid())
-  requesterId  String
-  ownerId      String
-  entryId      String
-  message      String?
-  status       ReferenceRequestStatus @default(PENDING)
-  createdAt    DateTime             @default(now())
-  respondedAt  DateTime?
-  requester    User                 @relation("ReferenceRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  owner        User                 @relation("ReferenceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  entry        Entry                @relation(fields: [entryId], references: [id], onDelete: Cascade)
-
-  @@unique([requesterId, ownerId, entryId])
-}
-
-model AnalyticsEvent {
-  id        String   @id @default(cuid())
-  event     String
-  userId    String?
-  metadata  Json?
-  timestamp DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([event, timestamp])
-  @@index([userId, event])
-}
-
-model Feedback {
-  id        String   @id @default(cuid())
-  userId    String?
-  message   String   @db.Text
-  rating    Int?
-  email     String?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([createdAt])
-}
-
-model QueueItem {
-  id           String          @id @default(cuid())
-  userId       String
-  status       QueueItemStatus @default(PENDING)
-  inputType    QueueInputType
-  input        String
-  payload      Json?
-  result       Json?
-  entryId      String?
-  errorMessage String?
-  position     Int
-  priority     Int             @default(0)
-  createdAt    DateTime        @default(now())
-  startedAt    DateTime?
-  completedAt  DateTime?
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  message   String           @db.Text
-  read      Boolean          @default(false)
-  metadata  Json?
-  createdAt DateTime         @default(now())
-  
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([userId, read])
-  @@index([userId, createdAt])
-  @@index([createdAt])
+  @@unique([userEntryId, collectionId])
+  @@index([collectionId])
+  @@index([userEntryId])
 }

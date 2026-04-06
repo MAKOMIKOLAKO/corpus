@@ -7,6 +7,7 @@ import {
   canViewCollection,
 } from '@/lib/collectionPermissions';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
+import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -25,16 +26,10 @@ export async function GET(
     const collection = await prisma.collection.findUnique({
       where: { id: params.id },
       include: {
-        entries: {
+        userEntries: {
           include: {
-            entry: {
-              include: {
-                collections: {
-                  include: {
-                    collection: true,
-                  },
-                },
-              },
+            userEntry: {
+              select: userEntryWithGlobal
             },
           },
           orderBy: { addedAt: 'desc' },
@@ -55,7 +50,7 @@ export async function GET(
           select: { entries: true, members: true },
         },
       },
-    });
+    } as any);
 
     if (!collection) {
       return NextResponse.json(
@@ -85,8 +80,18 @@ export async function GET(
       },
     });
 
+    // Transform userEntries to match expected format
+    const transformedCollection = {
+      ...collection,
+      entries: (collection as any).userEntries?.map((ue: any) => ({
+        ...flattenUserEntry(ue.userEntry),
+        addedAt: ue.addedAt
+      })) ?? [],
+      userEntries: undefined // Remove the old field
+    };
+
     return NextResponse.json(
-      { ...collection, activeAlertCount },
+      { ...transformedCollection, activeAlertCount },
       { headers: corsJsonHeaders() }
     );
   } catch (error) {

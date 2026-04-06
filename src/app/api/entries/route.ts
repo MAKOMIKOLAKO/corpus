@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prismaWithRetry';
 import { entryCreateSchema } from '@/lib/validation';
 import { canAddEntry } from '@/lib/plans';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
+import { userEntryWithGlobal, flattenUserEntry, buildSearchWhere } from '@/lib/entryQueries';
+import { saveEntryForUser } from '@/lib/globalEntryService';
 type ReadingStatus = 'UNREAD' | 'READING' | 'READ' | 'DROPPED';
 const CONTENT_TYPE_VALUES = [
   'PAPER',
@@ -38,34 +40,53 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
+    const q = searchParams.get('search') || searchParams.get('q');
     // Kept for backward compatibility: silently ignored.
     searchParams.get('contentType');
     const readingStatus = searchParams.get('readingStatus');
     const year = searchParams.get('year');
+    const collectionId = searchParams.get('collectionId');
+    const page = parseInt(searchParams.get('page') ?? '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 100);
+    const skip = (page - 1) * limit;
+    const sortBy = searchParams.get('sortBy') ?? 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') ?? 'desc';
 
-    const where: Record<string, unknown> = { userId };
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { abstract: { contains: search, mode: 'insensitive' } },
-        { authors: { hasSome: [search] } },
-      ];
-    }
-    if (readingStatus) {
-      where.readingStatus = readingStatus as ReadingStatus;
-    }
-    if (year) {
-      where.year = parseInt(year, 10);
-    }
-
-    const entries = await prisma.entry.findMany({
-      where: where as Prisma.EntryWhereInput,
-      orderBy: { createdAt: 'desc' },
+    const where = buildSearchWhere(userId, {
+      q: q || undefined,
+      readingStatus: readingStatus || undefined,
+      year: year ? parseInt(year, 10) : undefined,
+      collectionId: collectionId || undefined
     });
 
-    return NextResponse.json(entries, {
+    // Build orderBy — sort on UserEntry fields or GlobalEntry fields
+    let orderBy: any = { createdAt: sortOrder };
+    if (sortBy === 'title') {
+      orderBy = { globalEntry: { title: sortOrder } };
+    } else if (sortBy === 'year') {
+      orderBy = { globalEntry: { year: sortOrder } };
+    } else if (sortBy === 'saveCount') {
+      orderBy = { globalEntry: { saveCount: sortOrder } };
+    }
+
+    const [userEntries, total] = await Promise.all([
+      prisma.userEntry.findMany({
+        where,
+        select: userEntryWithGlobal,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.userEntry.count({ where })
+    ]);
+
+    return NextResponse.json({
+      entries: userEntries.map(flattenUserEntry),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + limit < total
+    }, {
       headers: corsJsonHeaders(),
     });
   } catch (error) {
@@ -110,44 +131,67 @@ export async function POST(request: NextRequest) {
     }
 
     const d = parsed.data;
-    const notesValue = (Array.isArray(d.notes) ? d.notes : []) as Prisma.InputJsonValue;
 
-    const entry = await prisma.entry.create({
-      data: {
+    const result = await saveEntryForUser(
+      userId,
+      {
         title: d.title,
-        authors: d.authors,
+        authors: d.authors || [],
         year: d.year ?? null,
-        contentType: normalizeContentType(d.contentType),
+        abstract: d.abstract ?? null,
+        source: d.source || null,
         url: d.url ?? null,
         doi: d.doi ?? null,
-        isbn13: d.isbn ? [d.isbn] : [],
-        source: d.source || undefined,
-        abstract: d.abstract ?? null,
-        summary: d.summary ?? null,
-        notes: notesValue,
-        metadata:
-          d.metadata !== null && d.metadata !== undefined
-            ? (d.metadata as Prisma.InputJsonValue)
-            : undefined,
-        readingStatus: d.readingStatus,
-        userId,
+        isbn: d.isbn ? [d.isbn] : [],
+        metadata: d.metadata !== null && d.metadata !== undefined
+          ? (d.metadata as Record<string, any>)
+          : null,
+        rawContentType: normalizeContentType(d.contentType),
+        addedVia: 'manual',
       },
-    });
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: { entriesCount: { increment: 1 } }
-    });
-
-    return NextResponse.json(
       {
-        id: entry.id,
-        title: entry.title,
-        contentType: entry.contentType,
-        createdAt: entry.createdAt,
-      },
-      { status: 201 }
+        readingStatus: d.readingStatus ?? 'UNREAD',
+        addedVia: 'manual',
+      }
     );
+
+    if (result.isDuplicate) {
+      // Entry already exists in user's library — return existing
+      const existing = await prisma.userEntry.findUnique({
+        where: { id: result.userEntryId },
+        select: userEntryWithGlobal
+      });
+      return NextResponse.json(
+        {
+          ...flattenUserEntry(existing),
+          isDuplicate: true,
+          message: 'This entry is already in your library'
+        },
+        { status: 200 }
+      );
+    }
+
+    // Fetch the created UserEntry for response
+    const created = await prisma.userEntry.findUnique({
+      where: { id: result.userEntryId },
+      select: userEntryWithGlobal
+    });
+
+    // Emit activity event (fire and forget)
+    prisma.signal.create({
+      data: {
+        userId,
+        type: 'ENTRY_SAVED',
+        globalEntryId: result.globalEntryId,
+        metadata: {
+          title: d.title,
+          globalEntryId: result.globalEntryId
+        },
+        isPublic: false
+      }
+    }).catch(console.error);
+
+    return NextResponse.json(flattenUserEntry(created), { status: 201 });
   } catch (error) {
     console.error('[api/entries POST]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

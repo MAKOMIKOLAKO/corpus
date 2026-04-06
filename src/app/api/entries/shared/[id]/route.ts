@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
+import { saveEntryForUser } from '@/lib/globalEntryService';
+import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
 
 export async function PATCH(
   request: NextRequest,
@@ -18,7 +20,7 @@ export async function PATCH(
 
   const sharedEntry = await prisma.sharedEntry.findUnique({
     where: { id: params.id },
-    include: { entry: true },
+    include: { globalEntry: true },
   });
 
   if (!sharedEntry) return NextResponse.json({ error: 'Shared entry not found' }, { status: 404 });
@@ -37,36 +39,68 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   }
 
-  // ACCEPTED: copy the entry into receiver's library
-  const src = sharedEntry.entry;
-  const newEntry = await prisma.entry.create({
-    data: {
-      title: src.title,
-      authors: src.authors,
-      year: src.year ?? null,
-      contentType: src.contentType,
-      // Don't copy url/doi to avoid unique constraint violations
-      source: src.source ?? null,
-      abstract: src.abstract ?? null,
-      publishers: src.publishers,
-      publishDate: src.publishDate ?? null,
-      numberOfPages: src.numberOfPages ?? null,
-      description: src.description ?? null,
-      isbn13: src.isbn13,
-      cover: src.cover ?? null,
-      autoKeywords: src.autoKeywords,
-      userKeywords: src.userKeywords,
-      summary: src.summary ?? null,
-      notes: src.notes ?? [],
-      readingStatus: 'UNREAD',
+  // ACCEPTED: create a UserEntry for the receiver pointing to the same GlobalEntry
+  try {
+    const result = await saveEntryForUser(
       userId,
-    },
-  });
+      {
+        title: sharedEntry.globalEntry!.title,
+        authors: sharedEntry.globalEntry!.authors,
+        year: sharedEntry.globalEntry!.year,
+        abstract: sharedEntry.globalEntry!.abstract,
+        source: sharedEntry.globalEntry!.source,
+        url: sharedEntry.globalEntry!.url,
+        doi: sharedEntry.globalEntry!.doi,
+        isbn: sharedEntry.globalEntry!.isbn ? [sharedEntry.globalEntry!.isbn] : [],
+        metadata: sharedEntry.globalEntry!.metadata as any,
+        rawContentType: sharedEntry.globalEntry!.rawContentType,
+      },
+      {
+        addedVia: 'shared',
+        readingStatus: 'UNREAD',
+      }
+    );
 
-  await prisma.sharedEntry.update({
-    where: { id: params.id },
-    data: { status: 'ACCEPTED', respondedAt: new Date() },
-  });
+    await prisma.sharedEntry.update({
+      where: { id: params.id },
+      data: { status: 'ACCEPTED', respondedAt: new Date() },
+    });
 
-  return NextResponse.json({ success: true, entryId: newEntry.id });
+    // Fetch the created UserEntry for response
+    const created = await prisma.userEntry.findUnique({
+      where: { id: result.userEntryId },
+      select: userEntryWithGlobal
+    });
+
+    return NextResponse.json({
+      success: true,
+      entryId: result.userEntryId,
+      entry: flattenUserEntry(created)
+    });
+  } catch (error: any) {
+    if (error.message?.includes('already has this entry')) {
+      // User already has this entry, just mark as accepted
+      await prisma.sharedEntry.update({
+        where: { id: params.id },
+        data: { status: 'ACCEPTED', respondedAt: new Date() },
+      });
+
+      // Find existing UserEntry
+      const existing = await prisma.userEntry.findFirst({
+        where: {
+          userId,
+          globalEntryId: sharedEntry.globalEntryId!
+        },
+        select: userEntryWithGlobal
+      });
+
+      return NextResponse.json({
+        success: true,
+        entryId: existing!.id,
+        entry: flattenUserEntry(existing!),
+        isDuplicate: true
+      });
+    }
+    throw error;
+  }
 }

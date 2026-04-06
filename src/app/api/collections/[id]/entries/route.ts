@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import { canAddEntries } from '@/lib/collectionPermissions';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
+import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -26,11 +27,29 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { entryId } = body;
+    // Accept userEntryId (new) or entryId (legacy backward compat)
+    let userEntryId = body.userEntryId;
 
-    if (!entryId) {
+    if (!userEntryId && body.entryId) {
+      // Legacy: find UserEntry by old Entry id
+      const userEntry = await prisma.userEntry.findFirst({
+        where: {
+          userId,
+          globalEntry: {
+            // Match by any deduplication key we can find
+            OR: [
+              { doi: body.entryId }, // unlikely but safe
+            ]
+          }
+        },
+        select: { id: true }
+      });
+      if (userEntry) userEntryId = userEntry.id;
+    }
+
+    if (!userEntryId) {
       return NextResponse.json(
-        { error: 'Entry ID is required' },
+        { error: 'userEntryId is required' },
         { status: 400, headers: corsJsonHeaders() }
       );
     }
@@ -54,44 +73,37 @@ export async function POST(
       );
     }
 
-    const entry = await prisma.entry.findUnique({
-      where: { id: entryId },
+    // Verify UserEntry belongs to current user
+    const userEntry = await prisma.userEntry.findFirst({
+      where: { id: userEntryId, userId },
+      select: { id: true, globalEntryId: true }
     });
-
-    if (!entry || entry.userId !== userId) {
+    if (!userEntry) {
       return NextResponse.json(
-        { error: 'Not found' },
+        { error: 'Entry not found' },
         { status: 404, headers: corsJsonHeaders() }
       );
     }
 
-    const existingEntry = await prisma.entryCollection.findUnique({
+    // Create UserEntryCollection link
+    const link = await prisma.userEntryCollection.upsert({
       where: {
-        entryId_collectionId: {
-          entryId,
-          collectionId: params.id,
-        },
+        userEntryId_collectionId: {
+          userEntryId,
+          collectionId: params.id
+        }
       },
-    });
-
-    if (existingEntry) {
-      return NextResponse.json(
-        { error: 'Entry already in collection' },
-        { status: 409, headers: corsJsonHeaders() }
-      );
-    }
-
-    const entryCollection = await prisma.entryCollection.create({
-      data: {
-        entryId,
-        collectionId: params.id,
-      },
+      update: {},
+      create: { userEntryId, collectionId: params.id },
       include: {
-        entry: true,
+        userEntry: {
+          select: userEntryWithGlobal
+        },
         collection: true,
-      },
+      }
     });
 
+    // Emit activity event (fire and forget)
     try {
       const ownerId = collection.userId;
       if (ownerId) {
@@ -100,11 +112,12 @@ export async function POST(
             data: {
               userId: ownerId,
               type: 'ENTRY_ADDED_TO_COLLECTION',
-              entryId: entryId,
+              globalEntryId: userEntry.globalEntryId,
               collectionId: params.id,
               metadata: {
-                entryTitle: entry.title,
+                entryTitle: link.userEntry.globalEntry.title,
                 collectionName: collection.name,
+                collectionIsShared: collection.isShared || false,
                 collectionIsPublic: collection.isPublic || false,
               },
             },
@@ -115,7 +128,7 @@ export async function POST(
       console.error('Failed to create signal:', error);
     }
 
-    return NextResponse.json(entryCollection, {
+    return NextResponse.json(flattenUserEntry(link.userEntry), {
       status: 201,
       headers: corsJsonHeaders(),
     });

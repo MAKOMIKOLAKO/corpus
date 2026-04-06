@@ -10,16 +10,20 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "backfill-owner": "node scripts/backfill-owner.js",
-    "add-keywords": "node scripts/add-keywords-to-entries.js"
+    "add-keywords": "node scripts/add-keywords-to-entries.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
     "@google/genai": "^1.44.0",
     "@prisma/client": "^5.22.0",
-    "@react-email/render": "^1.0.4",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@react-email/render": "^1.0.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/d3": "^7.4.3",
     "@upstash/ratelimit": "^2.0.8",
@@ -46,6 +50,9 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
@@ -53,6 +60,8 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.1",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
     "prisma": "^5.10.2",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
