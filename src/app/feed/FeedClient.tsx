@@ -118,7 +118,7 @@ const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEnt
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="text-sm font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {entry.title}
           </h3>
           {entry.url && (
@@ -261,7 +261,7 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
                 className="group flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/50 transition-colors mt-2"
               >
                 <div className="flex-1 min-w-0 mr-4">
-                  <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                  <h4 className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
                     {signal.entry.title}
                   </h4>
                 </div>
@@ -287,7 +287,7 @@ export default function FeedClient({ signals, userPlan, rssEntries = [], userFee
             {signal.entry && (
               <div className="group flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/50 transition-colors mt-2">
                 <div className="flex-1 min-w-0 mr-4">
-                  <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                  <h4 className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
                     {signal.entry.title}
                   </h4>
                 </div>

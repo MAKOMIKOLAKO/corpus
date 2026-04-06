@@ -4,7 +4,16 @@ import { processAllAlerts } from '@/lib/alertProcessor';
 export async function POST(request: NextRequest) {
   try {
     console.log('[test-cron] Starting manual test...');
-    
+
+    // Simple test response first
+    return NextResponse.json({
+      success: true,
+      message: 'Test endpoint is working',
+      timestamp: new Date().toISOString()
+    });
+
+    // Uncomment below to actually run alerts
+    /*
     const results = await processAllAlerts();
     console.log('[test-cron] Manual test complete:', results);
 
@@ -14,6 +23,7 @@ export async function POST(request: NextRequest) {
       papersAdded: results.totalPapersAdded,
       errors: results.errors
     });
+    */
   } catch (error) {
     console.error('[test-cron] Manual test error:', error);
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
