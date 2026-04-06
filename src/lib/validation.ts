@@ -49,7 +49,25 @@ export const textFieldSchema = (max: number) =>
     .optional()
     .nullable();
 
-const readingStatusEnum = z.enum(["UNREAD", "READING", "READ", "DROPPED"]);
+const CANONICAL_READING_STATUSES = [
+  "UNREAD",
+  "BACKLOG",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "DROPPED",
+] as const;
+
+const LEGACY_READING_STATUS_MAP: Record<string, (typeof CANONICAL_READING_STATUSES)[number]> = {
+  READING: "IN_PROGRESS",
+  READ: "COMPLETED",
+};
+
+const readingStatusEnum = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+  return LEGACY_READING_STATUS_MAP[value] ?? value;
+}, z.enum(CANONICAL_READING_STATUSES));
 
 export const entryCreateSchema = z.object({
   title: z

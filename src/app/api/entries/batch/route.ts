@@ -4,6 +4,12 @@ import { getCurrentUserId } from '@/lib/session';
 import { canUseBatchActions } from '@/lib/plans';
 import { removeEntryForUser } from '@/lib/globalEntryService';
 
+function normalizeReadingStatus(value: string) {
+  if (value === 'READING') return 'IN_PROGRESS';
+  if (value === 'READ') return 'COMPLETED';
+  return value;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await getCurrentUserId();
@@ -64,7 +70,8 @@ export async function POST(request: NextRequest) {
 
     else if (action === 'UPDATE_STATUS' || action === 'update_status') {
       const validStatuses = ['UNREAD', 'BACKLOG', 'IN_PROGRESS', 'COMPLETED', 'DROPPED'];
-      const status = payload?.readingStatus || payload?.value;
+      const rawStatus = payload?.readingStatus || payload?.value;
+      const status = typeof rawStatus === 'string' ? normalizeReadingStatus(rawStatus) : rawStatus;
       if (!validStatuses.includes(status)) {
         return NextResponse.json({ error: 'Invalid reading status' }, { status: 400 });
       }

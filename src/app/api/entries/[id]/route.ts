@@ -26,6 +26,12 @@ function normalizeContentType(value: string) {
     : 'OTHER';
 }
 
+function normalizeReadingStatus(value: string) {
+  if (value === 'READING') return 'IN_PROGRESS';
+  if (value === 'READ') return 'COMPLETED';
+  return value;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -145,13 +151,14 @@ export async function PATCH(
     const allowedUpdates: Record<string, any> = {};
     if (d.readingStatus !== undefined) {
       const validStatuses = ['UNREAD', 'BACKLOG', 'IN_PROGRESS', 'COMPLETED', 'DROPPED'];
-      if (!validStatuses.includes(d.readingStatus)) {
+      const normalizedStatus = normalizeReadingStatus(d.readingStatus);
+      if (!validStatuses.includes(normalizedStatus)) {
         return NextResponse.json(
           { error: 'Invalid reading status' },
           { status: 400 }
         );
       }
-      allowedUpdates.readingStatus = d.readingStatus;
+      allowedUpdates.readingStatus = normalizedStatus;
     }
 
     if (Object.keys(allowedUpdates).length === 0) {

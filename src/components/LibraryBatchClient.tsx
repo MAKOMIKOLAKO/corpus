@@ -174,7 +174,7 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleBatchAction('UPDATE_STATUS', 'READ')}
+                onClick={() => handleBatchAction('UPDATE_STATUS', 'COMPLETED')}
                 disabled={selectedIds.length === 0 || isProcessing}
               >
                 Mark Read

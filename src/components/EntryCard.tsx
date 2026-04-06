@@ -19,7 +19,7 @@ import { FlatEntry } from '@/types/entry';
 
 const readingStatuses = [
     { value: 'UNREAD', label: 'Unread' },
-    { value: 'READING', label: 'Reading' },
+    { value: 'IN_PROGRESS', label: 'In Progress' },
     { value: 'COMPLETED', label: 'Completed' },
 ];
 
@@ -27,7 +27,7 @@ const statusVariant = (status: string) => {
     switch (status) {
         case 'COMPLETED':
             return 'success';
-        case 'READING':
+        case 'IN_PROGRESS':
             return 'default';
         default: return 'secondary';
     }
