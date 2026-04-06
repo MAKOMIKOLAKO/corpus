@@ -9,6 +9,9 @@ import {
   Share2,
   Sparkles,
   ExternalLink,
+  Rss,
+  Bookmark,
+  Eye,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
@@ -35,14 +38,41 @@ interface FeedSignal {
   metadata?: any;
 }
 
+interface RSSEntry {
+  id: string;
+  title: string;
+  authors: string[];
+  summary: string | null;
+  source: string | null;
+  url: string | null;
+  createdAt: string;
+  publicationYear: number | null;
+  addedAt: string;
+}
+
 interface FeedClientProps {
   signals: FeedSignal[];
   userPlan: Plan;
+  rssEntries?: RSSEntry[];
 }
 
-export default function FeedClient({ signals, userPlan }: FeedClientProps) {
+export default function FeedClient({ signals, userPlan, rssEntries = [] }: FeedClientProps) {
   const isFree = userPlan === 'FREE';
   const [upgradePromptShown, setUpgradePromptShown] = React.useState(false);
+
+  // Combine and sort all items by date
+  const allItems = [
+    ...rssEntries.map(entry => ({
+      type: 'RSS_ENTRY' as const,
+      createdAt: new Date(entry.addedAt),
+      data: entry
+    })),
+    ...signals.map(signal => ({
+      type: 'SIGNAL' as const,
+      createdAt: new Date(signal.createdAt),
+      data: signal
+    }))
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   const renderSignalIcon = (type: string) => {
     switch (type) {
@@ -53,6 +83,67 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
       case 'ENTRY_SHARED': return <Share2 size={18} className="text-orange-500" />;
       default: return <Sparkles size={18} className="text-gray-400" />;
     }
+  };
+
+  const renderRSSEntry = (entry: RSSEntry) => {
+    return (
+      <div className="group flex items-start gap-3 p-4 rounded-lg border border-border bg-card hover:shadow-sm transition-all">
+        <div className="mt-1">
+          <Rss size={18} className="text-orange-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+              {entry.title}
+            </h3>
+            {entry.url && (
+              <a
+                href={entry.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              >
+                <ExternalLink size={16} />
+              </a>
+            )}
+          </div>
+
+          {entry.authors.length > 0 && (
+            <p className="text-sm text-muted-foreground mb-2">
+              {entry.authors.slice(0, 3).join(', ')}
+              {entry.authors.length > 3 && ' et al.'}
+            </p>
+          )}
+
+          {entry.summary && (
+            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+              {entry.summary}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {entry.source && (
+                <span>{entry.source}</span>
+              )}
+              <span>Added {formatDistanceToNow(new Date(entry.addedAt), { addSuffix: true })}</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors">
+                <Bookmark size={14} />
+              </button>
+              <Link
+                href={`/entries/${entry.id}`}
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+              >
+                <Eye size={14} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderSignalContent = (signal: FeedSignal) => {
@@ -179,60 +270,40 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">feed</h1>
-        <p className="text-sm text-muted-foreground">updates from the research network</p>
+        <p className="text-sm text-muted-foreground">updates from the research network and your RSS feeds</p>
       </div>
 
       <div className="space-y-6">
-        {signals.length === 0 ? (
+        {allItems.length === 0 ? (
           <div className="text-center py-20 bg-muted/20 border border-dashed rounded-2xl">
-            <p className="text-muted-foreground">No updates yet. Connect with others to see their activity!</p>
+            <p className="text-muted-foreground">No updates yet. Connect with others or add RSS feeds to see activity!</p>
           </div>
         ) : (
-          signals.map((signal, idx) => (
-            <React.Fragment key={signal.id}>
-              {/* Contextual Pro Upsells for Free Users */}
-              {isFree && idx === 1 && (
-                <div className="my-8">
-                  <UpgradePrompt
-                    reason="shared_collections_pro_only"
-                  />
+          allItems.map((item, idx) => (
+            <React.Fragment key={item.type === 'RSS_ENTRY' ? `rss-${item.data.id}` : item.data.id}>
+              {/* RSS Entry */}
+              {item.type === 'RSS_ENTRY' && renderRSSEntry(item.data)}
+
+              {/* Signal */}
+              {item.type === 'SIGNAL' && (
+                <div className="flex gap-3">
+                  <div className="mt-1">
+                    {renderSignalIcon(item.data.type)}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{formatDistanceToNow(item.data.createdAt, { addSuffix: true })}</span>
+                    </div>
+                    {renderSignalContent(item.data)}
+                  </div>
                 </div>
               )}
 
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
-                    {signal.user.image ? (
-                      <img src={signal.user.image} alt={signal.user.name || ''} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-bold text-muted-foreground">
-                        {(signal.user.name || signal.user.username || '?').charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-0.5 grow bg-border/40 last:hidden" />
-                </div>
-
-                <div className="flex-1 pb-8 group">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1.5 rounded-md bg-muted/50 group-hover:bg-muted transition-colors">
-                      {renderSignalIcon(signal.type)}
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                      {formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })}
-                    </span>
-                  </div>
-
-                  <div className="bg-card glass-card border-none p-0">
-                    {renderSignalContent(signal)}
-                  </div>
-                </div>
-              </div>
-
-              {isFree && idx === 4 && (
+              {/* Contextual Pro Upsells for Free Users */}
+              {isFree && idx === 3 && (
                 <div className="my-8">
                   <UpgradePrompt
-                    reason="advanced_search_pro_only"
+                    reason="shared_collections_pro_only"
                   />
                 </div>
               )}
@@ -240,6 +311,13 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
           ))
         )}
       </div>
+
+      {upgradePromptShown && (
+        <UpgradePrompt
+          reason="entry_limit_reached"
+          onClose={() => setUpgradePromptShown(false)}
+        />
+      )}
     </div>
   );
 }
