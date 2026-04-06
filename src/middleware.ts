@@ -64,6 +64,7 @@ function isPublicApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/collections/public/")) return true;
   if (pathname.startsWith("/api/profile/")) return true;
   if (pathname === "/api/cron/smart-alerts") return true;
+  if (pathname === "/api/test-cron") return true;
   return false;
 }
 
@@ -130,6 +131,7 @@ export default async function middleware(req: NextRequest) {
     if (
       pathname !== "/api/stripe/webhook" &&
       pathname !== "/api/cron/smart-alerts" &&
+      pathname !== "/api/test-cron" &&
       !pathname.startsWith("/api/auth/")
     ) {
       const identifier =
