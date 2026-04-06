@@ -423,7 +423,7 @@ export default function CollectionsPage() {
                             <div key={collection.id} className="relative">
                                 <Link href={`/collections/${collection.id}`}>
                                     <Card className="h-full cursor-pointer rounded-[12px] border border-slate-300/80 bg-gradient-to-b from-[var(--card)] to-[var(--muted)]/25 ring-0 transition-all duration-200 hover:border-slate-400/90 hover:shadow-[0_0_0_3px_rgba(148,163,184,0.18)] dark:border-slate-700 dark:hover:border-slate-500 dark:hover:shadow-[0_0_0_3px_rgba(100,116,139,0.28)]">
-                                        <CardHeader className="pb-3">
+                                        <CardHeader className="pb-4 pt-5">
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1 min-w-0">
                                                     <CardTitle className="text-xl text-balance break-words">{collection.name}</CardTitle>
@@ -485,7 +485,7 @@ export default function CollectionsPage() {
                                                 )}
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="pt-3">
+                                        <CardContent className="pt-4 pb-5">
                                             <div className="flex items-center text-sm text-muted-foreground">
                                                 <div className="flex flex-wrap items-center gap-4">
                                                     <div className="flex items-center gap-1">
