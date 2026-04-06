@@ -296,24 +296,18 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto grid max-w-6xl gap-16 px-4 pb-24 pt-12 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
           <div data-reveal className={reveal}>
             <h1 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Where research gets done together.
+              Stay current with research, automatically.
             </h1>
             <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-[var(--muted-foreground)]">
-              Corpus is the collaborative research platform for academics, researchers, and students. Save papers, discover connections, and build knowledge with your network — all in one place.
+              Add the journals and sources you already read. Corpus tracks new papers automatically and delivers a daily feed with summaries, so you never miss important research in your field.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row flex-wrap gap-4">
+            <div className="mt-10">
               <Link
                 href="/login"
-                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90 w-full sm:w-auto touch-manipulation`}
+                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90 touch-manipulation`}
               >
-                Get Started Free
+                Start your feed
               </Link>
-              <a
-                href="#features"
-                className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 w-full sm:w-auto touch-manipulation"
-              >
-                See how it works
-              </a>
             </div>
           </div>
 
@@ -325,33 +319,86 @@ export default function LandingPage() {
                   <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
                 </div>
-                <span className="ml-2 text-xs text-[var(--muted-foreground)]">library</span>
+                <span className="ml-2 text-xs text-[var(--muted-foreground)]">feed</span>
               </div>
-              <div className="space-y-4">
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/80 p-4 discovery-reveal">
-                  <p className="text-sm font-medium text-[var(--foreground)]">Attention Mechanisms in Neural Language Models</p>
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Chen et al. · 2023 · Paper</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {["transformer architecture", "neural plasticity", "self-attention"].map((k) => (
-                      <span key={k} className="rounded-md border border-[var(--accent)]/25 bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--accent)] corpus-glow">
-                        {k}
-                      </span>
-                    ))}
+              <div className="space-y-3">
+                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/80 hover:shadow-sm transition-all">
+                  <div className="mt-1">
+                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">Machine Learning</span>
-                    <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">Neuroscience</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                      Deep Learning for Protein Structure Prediction: Recent Advances and Applications
+                    </h3>
+                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
+                      We present a comprehensive review of deep learning approaches for protein structure prediction, covering AlphaFold2 and its derivatives...
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                      <span>arXiv</span>
+                      <span>2 hours ago</span>
+                    </div>
                   </div>
                 </div>
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/60 p-4 opacity-80">
-                  <p className="text-sm font-medium text-[var(--foreground)]">Regional Climate Sensitivity and Feedback Loops</p>
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">Smith et al. · 2022 · Paper</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {["climate modeling", "feedback mechanisms"].map((k) => (
-                      <span key={k} className="rounded-md border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]/90">
-                        {k}
-                      </span>
-                    ))}
+
+                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/70 hover:shadow-sm transition-all">
+                  <div className="mt-1">
+                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                      Climate Change Impacts on Global Food Security: A Meta-Analysis
+                    </h3>
+                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
+                      Our meta-analysis of 1,247 studies reveals significant impacts of climate change on crop yields across all major agricultural regions...
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                      <span>Nature</span>
+                      <span>5 hours ago</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/60 hover:shadow-sm transition-all">
+                  <div className="mt-1">
+                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                      Quantum Computing Applications in Cryptography: A Survey
+                    </h3>
+                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
+                      This survey explores the implications of quantum computing for modern cryptographic systems, including post-quantum cryptography approaches...
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                      <span>PNAS</span>
+                      <span>Yesterday</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/50 hover:shadow-sm transition-all">
+                  <div className="mt-1">
+                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                      Neural Mechanisms of Memory Consolidation During Sleep
+                    </h3>
+                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
+                      Using intracranial recordings, we identified specific neural oscillations that correlate with memory consolidation during different sleep stages...
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                      <span>Science</span>
+                      <span>2 days ago</span>
+                    </div>
                   </div>
                 </div>
               </div>
