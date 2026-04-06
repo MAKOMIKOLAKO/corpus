@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processAllAlerts } from '@/lib/alertProcessor';
+import { prisma } from '@/lib/prismaWithRetry';
+import { parseFeed, normalizeFeedItem } from '@/lib/rssParser';
+import { getDeduplicationKeys, findExistingGlobalEntry, generateContentHash } from '@/lib/entryDedup';
+import { normalizeUrl } from '@/lib/entryDedup';
+import type { GlobalEntry } from '@prisma/client';
 
 // Verify cron job authorization
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -18,21 +23,31 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    console.log('[cron/smart-alerts] Starting alert processing...');
+    console.log('[cron/smart-alerts] Starting daily tasks...');
     console.log('[cron/smart-alerts] Environment check:', {
       hasSemanticScholarKey: !!process.env.SEMANTIC_SCHOLAR_API_KEY,
       hasGoogleKey: !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
       nodeEnv: process.env.NODE_ENV
     });
 
-    const results = await processAllAlerts();
-    console.log('[cron/smart-alerts] Processing complete:', results);
+    // Run RSS ingestion first
+    console.log('[cron/smart-alerts] Starting RSS ingestion...');
+    const rssResults = await runRSSIngestion();
+    console.log('[cron/smart-alerts] RSS ingestion complete:', rssResults);
+
+    // Then run smart alerts
+    console.log('[cron/smart-alerts] Starting alert processing...');
+    const alertResults = await processAllAlerts();
+    console.log('[cron/smart-alerts] Alert processing complete:', alertResults);
 
     return NextResponse.json({
       success: true,
-      processed: results.queriesProcessed,
-      papersAdded: results.totalPapersAdded,
-      errors: results.errors.length
+      rss: rssResults,
+      alerts: {
+        processed: alertResults.queriesProcessed,
+        papersAdded: alertResults.totalPapersAdded,
+        errors: alertResults.errors.length
+      }
     });
   } catch (error) {
     console.error('[cron/smart-alerts] Fatal error:', error);
@@ -83,5 +98,183 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[cron/smart-alerts] Manual trigger error:', error);
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+  }
+}
+
+// RSS ingestion function
+async function runRSSIngestion() {
+  const results = {
+    sourcesProcessed: 0,
+    entriesFound: 0,
+    entriesCreated: 0,
+    userEntriesCreated: 0,
+    errors: [] as string[]
+  };
+
+  try {
+    // Get all unique RSS feeds
+    const sources = await prisma.source.findMany({
+      include: {
+        userSources: {
+          include: {
+            user: {
+              select: { id: true }
+            }
+          }
+        }
+      }
+    });
+
+    console.log(`[cron/smart-alerts] Processing ${sources.length} RSS sources`);
+
+    for (const source of sources) {
+      try {
+        results.sourcesProcessed++;
+
+        // Skip if no users are subscribed
+        if (source.userSources.length === 0) {
+          console.log(`[cron/smart-alerts] Skipping ${source.feedUrl} - no subscribers`);
+          continue;
+        }
+
+        // Parse the feed
+        const feed = await parseFeed(source.feedUrl);
+        results.entriesFound += feed.items.length;
+
+        // Process each item
+        for (const item of feed.items) {
+          try {
+            // Normalize the item for deduplication
+            const normalized = normalizeFeedItem(item);
+
+            // Get deduplication keys
+            const dedupKeys = getDeduplicationKeys({
+              doi: null,
+              isbn: null,
+              title: item.title,
+              authors: item.author ? [item.author] : [],
+              url: item.url
+            });
+
+            // Check if entry already exists
+            const existingEntryId = await findExistingGlobalEntry(prisma, dedupKeys);
+
+            let globalEntry: GlobalEntry | null = null;
+
+            if (existingEntryId) {
+              globalEntry = await prisma.globalEntry.findUnique({
+                where: { id: existingEntryId }
+              });
+              console.log(`[cron/smart-alerts] Entry already exists: ${item.title}`);
+            } else {
+              // Create new global entry
+              const contentHash = generateContentHash({
+                doi: null,
+                isbn: null,
+                normalizedTitle: normalized.normalizedTitle,
+                normalizedFirstAuthor: normalized.normalizedFirstAuthor,
+                publicationYear: normalized.publicationYear,
+                canonicalUrl: normalized.canonicalUrl
+              });
+
+              globalEntry = await prisma.globalEntry.create({
+                data: {
+                  title: item.title,
+                  authors: item.author ? [item.author] : [],
+                  year: normalized.publicationYear,
+                  abstract: item.description || item.contentSnippet,
+                  url: item.url,
+                  source: source.title || source.domain,
+                  normalizedTitle: normalized.normalizedTitle,
+                  normalizedFirstAuthor: normalized.normalizedFirstAuthor,
+                  publicationYear: normalized.publicationYear,
+                  canonicalUrl: normalized.canonicalUrl,
+                  contentHash,
+                  addedVia: 'rss_ingestion'
+                }
+              });
+              results.entriesCreated++;
+              console.log(`[cron/smart-alerts] Created entry: ${item.title}`);
+
+              // Trigger AI summary generation asynchronously
+              if (item.description || item.contentSnippet) {
+                try {
+                  fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/summarize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      text: item.description || item.contentSnippet,
+                      maxSentences: 3
+                    })
+                  }).then(async (res) => {
+                    if (res.ok) {
+                      const { summary } = await res.json();
+                      if (globalEntry) {
+                        await prisma.globalEntry.update({
+                          where: { id: globalEntry.id },
+                          data: { summary }
+                        });
+                      }
+                    }
+                  }).catch(err => {
+                    console.error(`[cron/smart-alerts] Failed to generate summary:`, err);
+                  });
+                } catch (error) {
+                  console.error(`[cron/smart-alerts] Error triggering summary:`, error);
+                }
+              }
+            }
+
+            // Create UserEntry for each subscribed user
+            if (globalEntry) {
+              for (const userSource of source.userSources) {
+                try {
+                  await prisma.userEntry.upsert({
+                    where: {
+                      userId_globalEntryId: {
+                        userId: userSource.user.id,
+                        globalEntryId: globalEntry.id
+                      }
+                    },
+                    update: {}, // Don't update existing
+                    create: {
+                      userId: userSource.user.id,
+                      globalEntryId: globalEntry.id,
+                      addedVia: 'rss_ingestion'
+                    }
+                  });
+                  results.userEntriesCreated++;
+                } catch (error) {
+                  // Likely duplicate, which is fine
+                  const errorMessage = error instanceof Error ? error.message : String(error);
+                  if (!errorMessage.includes('Unique constraint')) {
+                    console.error(`[cron/smart-alerts] Error creating user entry:`, error);
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`[cron/smart-alerts] Error processing item:`, error);
+            results.errors.push(`Error processing item from ${source.feedUrl}: ${error}`);
+          }
+        }
+
+        // Update source last fetched timestamp
+        await prisma.source.update({
+          where: { id: source.id },
+          data: { lastFetchedAt: new Date() }
+        });
+      } catch (error) {
+        console.error(`[cron/smart-alerts] Error processing source ${source.feedUrl}:`, error);
+        results.errors.push(`Error processing source ${source.feedUrl}: ${error}`);
+      }
+    }
+
+    console.log(`[cron/smart-alerts] RSS ingestion complete:`, results);
+    return results;
+  } catch (error) {
+    console.error('[cron/smart-alerts] RSS ingestion failed:', error);
+    results.errors.push(`RSS ingestion failed: ${error}`);
+    return results;
   }
 }
