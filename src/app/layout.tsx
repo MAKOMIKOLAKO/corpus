@@ -8,6 +8,7 @@ import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { AppShell } from "@/components/AppShell";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { ThemeProvider } from "@/lib/theme";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
@@ -167,6 +168,7 @@ export default async function RootLayout({
             </AppShell>
           </NextAuthProvider>
         </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   );
