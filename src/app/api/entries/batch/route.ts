@@ -48,11 +48,17 @@ export async function POST(request: NextRequest) {
     }
 
     let affected = 0;
+    let deletedIds: string[] = [];
 
     if (action === 'DELETE' || action === 'delete') {
       for (const id of entryIds) {
-        await removeEntryForUser(userId, id).catch(console.error);
-        affected++;
+        try {
+          await removeEntryForUser(userId, id);
+          deletedIds.push(id);
+          affected++;
+        } catch (error) {
+          console.error(`[api/entries/batch DELETE] Failed to delete userEntry ${id}:`, error);
+        }
       }
     }
 
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, affected });
+    return NextResponse.json({ success: true, affected, deletedIds });
   } catch (error) {
     console.error('[api/entries/batch POST]', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

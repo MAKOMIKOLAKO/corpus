@@ -93,8 +93,26 @@ export function useLibrary(filters: LibraryFilters = {}) {
     setState(s => ({
       ...s,
       entries: s.entries.filter(e => e.id !== userEntryId),
-      total: s.total - 1
+      total: s.entries.some(e => e.id === userEntryId)
+        ? Math.max(s.total - 1, 0)
+        : s.total
     }))
+  }
+
+  const removeEntries = (userEntryIds: string[]) => {
+    if (userEntryIds.length === 0) return
+
+    const ids = new Set(userEntryIds)
+    setState(s => {
+      const nextEntries = s.entries.filter(e => !ids.has(e.id))
+      const removedCount = s.entries.length - nextEntries.length
+
+      return {
+        ...s,
+        entries: nextEntries,
+        total: Math.max(s.total - removedCount, 0)
+      }
+    })
   }
 
   const updateEntry = (userEntryId: string, updates: Partial<FlatEntry>) => {
@@ -129,6 +147,7 @@ export function useLibrary(filters: LibraryFilters = {}) {
     refresh: () => fetchEntries(1, false),
     loadMore,
     removeEntry,
+    removeEntries,
     updateEntry,
     highlightDuplicate
   }

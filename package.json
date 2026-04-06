@@ -10,6 +10,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "backfill-owner": "node scripts/backfill-owner.js",
+    "migrate-legacy-entries": "node scripts/migrate-legacy-entries-to-user-entries.js",
+    "migrate-legacy-entries:dry": "node scripts/migrate-legacy-entries-to-user-entries.js --dry-run",
     "add-keywords": "node scripts/add-keywords-to-entries.js",
     "test": "jest",
     "test:watch": "jest --watch",

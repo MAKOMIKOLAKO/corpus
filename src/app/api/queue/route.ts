@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { ContentType, ReadingStatus } from '@prisma/client';
-import type { Prisma } from '@prisma/client';
+import type { ReadingStatus } from '@prisma/client';
 import { prisma } from '@/lib/prismaWithRetry';
 import { getCurrentUserId } from '@/lib/session';
 import { triggerQueueProcessing } from '@/lib/queueProcessor';
 import { queueItemSchema } from '@/lib/validation';
 import { canAddEntry, getUserLimits } from '@/lib/plans';
+import { saveEntryForUser } from '@/lib/globalEntryService';
 
 const READING_STATUSES: ReadingStatus[] = ['UNREAD', 'READING', 'READ', 'DROPPED'];
+const CONTENT_TYPE_VALUES = [
+  'PAPER',
+  'BOOK',
+  'ARTICLE',
+  'BLOG',
+  'ESSAY',
+  'POLICY_REPORT',
+  'OTHER',
+] as const;
+
+function normalizeContentType(value: string | undefined) {
+  if (!value) return 'OTHER';
+  return CONTENT_TYPE_VALUES.includes(value as (typeof CONTENT_TYPE_VALUES)[number])
+    ? (value as (typeof CONTENT_TYPE_VALUES)[number])
+    : 'OTHER';
+}
 
 function normalizeNotes(raw: unknown): unknown[] {
   if (!Array.isArray(raw)) return [];
@@ -84,74 +100,67 @@ export async function POST(request: NextRequest) {
           ? parseInt(String(pagesRaw), 10)
           : null;
 
-      try {
-        const entry = await prisma.entry.create({
-          data: {
-            title: String(p.title || ''),
-            authors: Array.isArray(p.authors) ? (p.authors as string[]) : [],
-            year: year !== null && !Number.isNaN(year) ? year : null,
-            contentType: (p.contentType as ContentType) || (inputType === 'PAPER' ? 'PAPER' : 'BOOK'),
-            source: undefined, // Always set to undefined for papers/books from external sources
-            abstract: (p.abstract as string) || null,
-            description: (p.description as string) || null,
-            summary: (p.summary as string) || null,
-            doi: (p.doi as string) || null,
-            url: (p.url as string) || null,
-            isbn13: p.isbn ? [String(p.isbn)] : [],
-            numberOfPages: numberOfPages !== null && !Number.isNaN(numberOfPages) ? numberOfPages : null,
-            cover: (meta.coverUrl as string) || null,
-            readingStatus,
-            notes: normalizeNotes(p.notes) as Prisma.InputJsonValue,
-            metadata:
-              p.metadata && typeof p.metadata === 'object'
-                ? (p.metadata as Prisma.InputJsonValue)
-                : undefined,
-            userId,
+      const result = await saveEntryForUser(
+        userId,
+        {
+          title: String(p.title || ''),
+          authors: Array.isArray(p.authors) ? (p.authors as string[]) : [],
+          year: year !== null && !Number.isNaN(year) ? year : null,
+          abstract: (p.abstract as string) || null,
+          source: null,
+          url: (p.url as string) || null,
+          doi: (p.doi as string) || null,
+          isbn: p.isbn ? [String(p.isbn)] : [],
+          rawContentType: normalizeContentType((p.contentType as string | undefined) || inputType),
+          metadata: {
+            ...(p.metadata && typeof p.metadata === 'object' ? (p.metadata as Record<string, unknown>) : {}),
+            pages: numberOfPages !== null && !Number.isNaN(numberOfPages) ? numberOfPages : null,
+            coverUrl: (meta.coverUrl as string) || null,
+            source: (p.source as string) || null,
+            notes: normalizeNotes(p.notes),
           },
-        });
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: { entriesCount: { increment: 1 } }
-        });
-
-        const queueItem = await prisma.queueItem.create({
-          data: {
-            userId,
-            status: 'COMPLETED',
-            inputType: inputType as 'PAPER' | 'BOOK',
-            input,
-            payload: payload as object,
-            result: payload as object,
-            entryId: entry.id,
-            completedAt: new Date(),
-            position,
-          },
-        });
-
-        return NextResponse.json({
-          queueItem: {
-            id: queueItem.id,
-            status: queueItem.status,
-            position: queueItem.position,
-            inputType: queueItem.inputType,
-            input: queueItem.input,
-            entryId: entry.id,
-          },
-        });
-      } catch (err: unknown) {
-        const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : '';
-        if (code === 'P2002') {
-          return NextResponse.json(
-            {
-              error: 'ALREADY_EXISTS',
-              message: 'This entry is already in your library.',
-            },
-            { status: 409 }
-          );
+        },
+        {
+          readingStatus,
+          addedVia: 'manual',
         }
-        throw err;
+      );
+
+      if (result.isDuplicate) {
+        return NextResponse.json(
+          {
+            error: 'ALREADY_EXISTS',
+            message: 'This entry is already in your library.',
+          },
+          { status: 409 }
+        );
       }
+
+      const queueItem = await prisma.queueItem.create({
+        data: {
+          userId,
+          status: 'COMPLETED',
+          inputType: inputType as 'PAPER' | 'BOOK',
+          input,
+          payload: payload as object,
+          result: payload as object,
+          entryId: result.userEntryId,
+          globalEntryId: result.globalEntryId,
+          completedAt: new Date(),
+          position,
+        },
+      });
+
+      return NextResponse.json({
+        queueItem: {
+          id: queueItem.id,
+          status: queueItem.status,
+          position: queueItem.position,
+          inputType: queueItem.inputType,
+          input: queueItem.input,
+          entryId: result.userEntryId,
+        },
+      });
     }
 
     if (inputType !== 'URL') {

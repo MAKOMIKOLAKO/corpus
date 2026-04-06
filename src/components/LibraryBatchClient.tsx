@@ -23,6 +23,7 @@ interface LibraryBatchClientProps {
     personalCollectionsCount: number;
   };
   allEntryIds?: string[];
+  onBatchDelete?: (deletedIds: string[]) => void;
   children: (props: {
     isSelectionMode: boolean;
     selectedIds: string[];
@@ -30,16 +31,23 @@ interface LibraryBatchClientProps {
   }) => React.ReactNode;
 }
 
-export default function LibraryBatchClient({ user, allEntryIds = [], children }: LibraryBatchClientProps) {
+export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDelete, children }: LibraryBatchClientProps) {
   const router = useRouter();
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [visibleEntriesCount, setVisibleEntriesCount] = useState(Math.max(user.entriesCount, 0));
 
   const maxEntries = user.plan === 'FREE' ? 50 : Infinity;
-  const usagePercentage = Math.min((user.entriesCount / maxEntries) * 100, 100);
-  const isNearLimit = user.plan === 'FREE' && user.entriesCount >= 40;
+  const usagePercentage = user.plan === 'FREE'
+    ? Math.min(Math.max((visibleEntriesCount / maxEntries) * 100, 0), 100)
+    : 0;
+  const isNearLimit = user.plan === 'FREE' && visibleEntriesCount >= 40;
+
+  useEffect(() => {
+    setVisibleEntriesCount(Math.max(user.entriesCount, 0));
+  }, [user.entriesCount]);
 
   const toggleSelectionMode = () => {
     if (!isPro(user.plan)) {
@@ -77,6 +85,7 @@ export default function LibraryBatchClient({ user, allEntryIds = [], children }:
   const handleBatchAction = async (action: string, value?: any) => {
     if (selectedIds.length === 0) return;
 
+    const idsToProcess = [...selectedIds];
     setIsProcessing(true);
     try {
       const res = await fetch('/api/entries/batch', {
@@ -86,6 +95,17 @@ export default function LibraryBatchClient({ user, allEntryIds = [], children }:
       });
 
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+
+        if (action === 'DELETE' || action === 'delete') {
+          const deletedIds = Array.isArray(data.deletedIds) && data.deletedIds.length > 0
+            ? data.deletedIds
+            : idsToProcess;
+          const affected = deletedIds.length;
+          setVisibleEntriesCount(prev => Math.max(prev - affected, 0));
+          onBatchDelete?.(deletedIds);
+        }
+
         setIsSelectionMode(false);
         setSelectedIds([]);
         router.refresh();
@@ -112,7 +132,7 @@ export default function LibraryBatchClient({ user, allEntryIds = [], children }:
               Library Usage
             </span>
             <span className={isNearLimit ? "text-orange-600 font-bold" : "text-muted-foreground"}>
-              {user.entriesCount} / {user.plan === 'FREE' ? '50' : '∞'} entries
+              {visibleEntriesCount} / {user.plan === 'FREE' ? '50' : '∞'} entries
             </span>
           </div>
           <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
