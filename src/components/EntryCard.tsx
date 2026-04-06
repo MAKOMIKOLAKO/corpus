@@ -174,19 +174,24 @@ export default function EntryCard({
         };
     }, [apiKey]);
 
-    // Close dropdowns when clicking outside the card
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
-                setIsCollectionOpen(false);
-                setIsOpen(false);
-                setIsContentTypeOpen(false);
-            }
+            const target = event.target as Node;
+
+            // Check if click is outside all dropdown containers
+            const outsideCollection = !collectionDropdownRef.current?.contains(target);
+            const outsideStatus = !statusDropdownRef.current?.contains(target);
+            const outsideContentType = !contentTypeDropdownRef.current?.contains(target);
+
+            if (outsideCollection) setIsCollectionOpen(false);
+            if (outsideStatus) setIsOpen(false);
+            if (outsideContentType) setIsContentTypeOpen(false);
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('click', handleClickOutside);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('click', handleClickOutside);
         };
     }, []);
 
@@ -543,7 +548,7 @@ export default function EntryCard({
                                     <div className="relative min-w-0" ref={collectionDropdownRef}>
                                         <button
                                             onClick={(e) => {
-                                                e.preventDefault();
+                                                e.stopPropagation();
                                                 setIsCollectionOpen(!isCollectionOpen);
                                             }}
                                             className="h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-muted touch-manipulation"
@@ -557,7 +562,7 @@ export default function EntryCard({
                                             <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-overlay border border-border-default rounded-md shadow-xl min-w-[160px] backdrop-blur-none opacity-100">
                                                 <button
                                                     onClick={(e) => {
-                                                        e.preventDefault();
+                                                        e.stopPropagation();
                                                         handleCollectionChange(null);
                                                     }}
                                                     className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${currentCollectionId === null ? 'bg-surface-raised font-medium' : ''
@@ -574,7 +579,7 @@ export default function EntryCard({
                                                         <button
                                                             key={c.id}
                                                             onClick={(e) => {
-                                                                e.preventDefault();
+                                                                e.stopPropagation();
                                                                 handleCollectionChange(c.id);
                                                             }}
                                                             className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${c.id === currentCollectionId ? 'bg-surface-raised font-medium' : ''
@@ -592,7 +597,7 @@ export default function EntryCard({
                                     <div className="relative min-w-0" ref={statusDropdownRef}>
                                         <button
                                             onClick={(e) => {
-                                                e.preventDefault();
+                                                e.stopPropagation();
                                                 setIsOpen(!isOpen);
                                             }}
                                             className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
@@ -613,7 +618,7 @@ export default function EntryCard({
                                                     <button
                                                         key={status.value}
                                                         onClick={(e) => {
-                                                            e.preventDefault();
+                                                            e.stopPropagation();
                                                             handleStatusChange(status.value as typeof entry.readingStatus);
                                                         }}
                                                         className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors ${status.value === currentStatus ? 'bg-surface-raised font-medium' : ''
@@ -625,7 +630,7 @@ export default function EntryCard({
                                                 <div className="border-t border-border-default">
                                                     <button
                                                         onClick={(e) => {
-                                                            e.preventDefault();
+                                                            e.stopPropagation();
                                                             handleDelete();
                                                         }}
                                                         className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-400 transition-colors flex items-center gap-2"
