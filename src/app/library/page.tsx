@@ -97,15 +97,19 @@ export default async function LibraryPage({
     const entries = await prisma.userEntry.findMany({
         where: {
             userId,
-            globalEntry: search ? {
-                OR: [
-                    { title: { contains: search, mode: 'insensitive' } },
-                    { abstract: { contains: search, mode: 'insensitive' } },
-                    { authors: { hasSome: [search] } },
-                ]
+            globalEntry: search || year ? {
+                AND: [
+                    search ? {
+                        OR: [
+                            { title: { contains: search, mode: 'insensitive' } },
+                            { abstract: { contains: search, mode: 'insensitive' } },
+                            { authors: { hasSome: [search] } },
+                        ]
+                    } : {},
+                    year ? { year: parseInt(year, 10) } : {},
+                ].filter(condition => Object.keys(condition).length > 0)
             } : undefined,
             readingStatus: readingStatus ? readingStatus as ReadingStatus : undefined,
-            globalEntry: year ? { year: parseInt(year, 10) } : undefined,
         },
         orderBy: sortBy === 'title' ? { globalEntry: { title: 'asc' } }
             : sortBy === 'title-desc' ? { globalEntry: { title: 'desc' } }
