@@ -75,7 +75,7 @@ export default function LibraryPageClient({
     sortOrder: sortBy === 'oldest' || sortBy === 'title-desc' ? 'asc' : 'desc'
   };
 
-  const { entries, total, loading, error, hasMore, loadMore, removeEntry, updateEntry, highlightDuplicate } = useLibrary(filters);
+  const { entries, total, loading, error, hasMore, loadMore, removeEntries, updateEntry, highlightDuplicate } = useLibrary(filters);
 
   const handleAddEntry = async (newEntry: FlatEntry) => {
     // Handle duplicate response
@@ -88,7 +88,11 @@ export default function LibraryPageClient({
     }
   };
   return (
-    <LibraryBatchClient user={user} allEntryIds={entries.map((entry) => entry.id)}>
+    <LibraryBatchClient
+      user={user}
+      allEntryIds={entries.map((entry) => entry.id)}
+      onBatchDelete={removeEntries}
+    >
       {({ isSelectionMode, selectedIds, toggleSelection }) => (
         <>
           {/* Search and Filters */}
