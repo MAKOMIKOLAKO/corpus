@@ -115,7 +115,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                     url: formData.url,
                     doi: formData.doi,
                     abstract: formData.abstract,
-                    contentType: formData.contentType,
                     readingStatus: formData.readingStatus,
                 }),
             });
@@ -299,18 +298,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                         </div>
                         <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Content Type</label>
-                                <select value={formData.contentType} onChange={e => setFormData({ ...formData, contentType: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation">
-                                    <option value="PAPER">Paper</option>
-                                    <option value="BLOG">Blog</option>
-                                    <option value="ESSAY">Essay</option>
-                                    <option value="ARTICLE">Article</option>
-                                    <option value="POLICY_REPORT">Policy Report</option>
-                                    <option value="BOOK">Book</option>
-                                    <option value="OTHER">Other</option>
-                                </select>
-                            </div>
-                            <div>
                                 <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block uppercase tracking-tight">Reading Status</label>
                                 <select value={formData.readingStatus} onChange={e => setFormData({ ...formData, readingStatus: e.target.value })} className="w-full px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md touch-manipulation">
                                     <option value="UNREAD">Unread</option>
@@ -362,9 +349,6 @@ export default function EntryDetailClient({ initialData }: { initialData: any })
                         </div>
 
                         <div className="flex gap-2 items-center mb-4 text-xs font-semibold tracking-wider">
-                            <span className={`px-2.5 py-1 rounded bg-[var(--muted)] text-[var(--foreground)]`}>
-                                {formData.contentType}
-                            </span>
                             <span className={`px-2.5 py-1 rounded ${formData.readingStatus === 'READ' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
                                 formData.readingStatus === 'READING' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
                                     'bg-gray-500/10 text-gray-600 dark:text-gray-400'

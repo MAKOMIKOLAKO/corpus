@@ -40,7 +40,6 @@ interface LibraryPageClientProps {
     personalCollectionsCount: number;
   };
   search?: string;
-  contentType?: string;
   readingStatus?: string;
   year?: string;
   topic?: string;
@@ -51,7 +50,6 @@ interface LibraryPageClientProps {
 export default function LibraryPageClient({
   user,
   search,
-  contentType,
   readingStatus,
   year,
   topic,
@@ -65,7 +63,6 @@ export default function LibraryPageClient({
           {/* Search and Filters */}
           <HomePageClient
             initialSearch={search || ''}
-            initialContentType={contentType || ''}
             initialReadingStatus={readingStatus || ''}
             initialYear={year || ''}
             initialTopic={topic || ''}
@@ -82,7 +79,7 @@ export default function LibraryPageClient({
                   : `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
                 }
               </div>
-              {(search || contentType || readingStatus || year || sortBy !== 'newest') && (
+              {(search || readingStatus || year || sortBy !== 'newest') && (
                 <Link
                   href="/library"
                   className="text-xs text-primary hover:underline underline-offset-2"
@@ -107,9 +104,9 @@ export default function LibraryPageClient({
                     <div className="space-y-2">
                       <h3 className="font-medium text-foreground">no entries found</h3>
                       <p className="text-sm text-muted-foreground">
-                        {search || contentType || readingStatus || year
+                        {search || readingStatus || year
                           ? 'try adjusting your search or filters'
-                          : 'add your first paper to get started'
+                          : 'add your first entry to get started'
                         }
                       </p>
                     </div>

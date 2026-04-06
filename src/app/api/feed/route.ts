@@ -87,7 +87,6 @@ export async function GET(request: Request) {
           select: {
             id: true,
             title: true,
-            contentType: true,
             authors: true,
             year: true
           }

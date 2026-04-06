@@ -69,12 +69,6 @@ function StatusIcon({ status }: { status: string }) {
   }
 }
 
-function inputTypeLabel(t: string) {
-  if (t === 'PAPER') return 'Paper';
-  if (t === 'BOOK') return 'Book';
-  return 'URL';
-}
-
 function truncateInput(s: string, max = 60) {
   if (s.length <= max) return s;
   return `${s.slice(0, max)}…`;
@@ -664,9 +658,6 @@ function QueuePanel({
               <StatusIcon status={item.status} />
               <div className="min-w-0">
                 <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-[var(--muted)] px-1 text-[10px] font-bold tracking-wider text-[var(--muted-foreground)] uppercase">
-                    {inputTypeLabel(item.inputType)}
-                  </span>
                   <span
                     className="max-w-[240px] truncate text-sm text-[var(--foreground)] sm:max-w-[360px]"
                     title={item.input}
@@ -786,7 +777,6 @@ function PreviewForm({
     title: item.title,
     authors: item.authors.join(', '),
     year: item.year ?? ('' as string | number),
-    contentType: type === 'PAPER' ? 'PAPER' : 'BOOK',
     abstract: item.abstract || '',
     source: item.source || item.publisher || '',
     doi: item.doi || '',
@@ -814,7 +804,7 @@ function PreviewForm({
         title: formData.title,
         authors: authorsArr,
         year: formData.year === '' || formData.year === null ? null : parseInt(String(formData.year), 10),
-        contentType: formData.contentType,
+        contentType: type === 'PAPER' ? 'PAPER' : 'BOOK',
         // source: formData.source || null, // Removed to prevent validation error
         abstract: formData.abstract || null,
         doi: formData.doi || null,
@@ -898,7 +888,7 @@ function PreviewForm({
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           <div className="flex-1">
             <p className="font-semibold">Already in your library</p>
-            <p className="opacity-80">This paper or book has already been saved.</p>
+            <p className="opacity-80">This entry has already been saved.</p>
           </div>
           <Link href="/library" className="text-xs font-bold whitespace-nowrap underline">
             Open Library
@@ -937,21 +927,6 @@ function PreviewForm({
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
               className="w-full max-w-[120px] rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
             />
-          </Field>
-          <Field label="Content Type">
-            <select
-              value={formData.contentType}
-              onChange={(e) => setFormData({ ...formData, contentType: e.target.value })}
-              className="w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-3 sm:py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none touch-manipulation"
-            >
-              <option value="PAPER">Research Paper</option>
-              <option value="BOOK">Book</option>
-              <option value="ARTICLE">Article</option>
-              <option value="BLOG">Blog</option>
-              <option value="ESSAY">Essay</option>
-              <option value="POLICY_REPORT">Policy Report</option>
-              <option value="OTHER">Other</option>
-            </select>
           </Field>
         </div>
 

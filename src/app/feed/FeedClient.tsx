@@ -27,7 +27,6 @@ interface FeedSignal {
   entry?: {
     id: string;
     title: string;
-    contentType: string;
   } | null;
   collection?: {
     id: string;
@@ -76,9 +75,6 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
                   <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                     {signal.entry.title}
                   </h4>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mt-0.5">
-                    {signal.entry.contentType.toLowerCase()}
-                  </p>
                 </div>
                 <ExternalLink size={14} className="text-muted-foreground shrink-0" />
               </Link>
@@ -91,7 +87,7 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
         return (
           <div className="flex flex-col gap-1">
             <p className="text-sm">
-              <span className="font-semibold text-foreground">{userName}</span> added a paper to shared collection{' '}
+              <span className="font-semibold text-foreground">{userName}</span> added an entry to{' '}
               <Link
                 href={signal.metadata?.collectionIsPublic && signal.metadata?.collectionSlug ? `/c/${signal.metadata.collectionSlug}` : `/collections/${signal.collection?.id}`}
                 className="font-semibold text-primary hover:underline underline-offset-2"
@@ -105,9 +101,6 @@ export default function FeedClient({ signals, userPlan }: FeedClientProps) {
                   <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                     {signal.entry.title}
                   </h4>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mt-0.5">
-                    {signal.entry.contentType.toLowerCase()}
-                  </p>
                 </div>
                 <ExternalLink size={14} className="text-muted-foreground shrink-0" />
               </div>

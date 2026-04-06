@@ -49,8 +49,7 @@ export async function GET(request: Request) {
             id: true,
             title: true,
             authors: true,
-            year: true,
-            contentType: true
+            year: true
           }
         }
       },
@@ -164,8 +163,7 @@ export async function POST(request: Request) {
             id: true,
             title: true,
             authors: true,
-            year: true,
-            contentType: true
+            year: true
           }
         }
       }

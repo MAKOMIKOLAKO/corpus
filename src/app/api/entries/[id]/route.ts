@@ -8,6 +8,22 @@ import {
   entryPatchSchema,
 } from '@/lib/validation';
 
+const CONTENT_TYPE_VALUES = [
+  'PAPER',
+  'BOOK',
+  'ARTICLE',
+  'BLOG',
+  'ESSAY',
+  'POLICY_REPORT',
+  'OTHER',
+] as const;
+
+function normalizeContentType(value: string) {
+  return CONTENT_TYPE_VALUES.includes(value as (typeof CONTENT_TYPE_VALUES)[number])
+    ? (value as (typeof CONTENT_TYPE_VALUES)[number])
+    : 'OTHER';
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -104,7 +120,9 @@ export async function PATCH(
     if (d.url !== undefined) data.url = d.url ?? null;
     if (d.doi !== undefined) data.doi = d.doi ?? null;
     if (d.abstract !== undefined) data.abstract = d.abstract ?? null;
-    if (d.contentType !== undefined) data.contentType = d.contentType;
+    if (d.contentType !== undefined) {
+      data.contentType = normalizeContentType(d.contentType);
+    }
     if (d.readingStatus !== undefined) data.readingStatus = d.readingStatus;
 
     const updated = await prisma.entry.update({
@@ -138,11 +156,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const validation = await validateApiKey(request);
-    if (!validation.valid) {
-      return validation.response;
-    }
-
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

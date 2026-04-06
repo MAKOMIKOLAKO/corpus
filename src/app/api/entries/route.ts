@@ -5,16 +5,23 @@ import { prisma } from '@/lib/prismaWithRetry';
 import { entryCreateSchema } from '@/lib/validation';
 import { canAddEntry } from '@/lib/plans';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
-
-type ContentType =
-  | 'PAPER'
-  | 'BLOG'
-  | 'ESSAY'
-  | 'ARTICLE'
-  | 'POLICY_REPORT'
-  | 'BOOK'
-  | 'OTHER';
 type ReadingStatus = 'UNREAD' | 'READING' | 'READ' | 'DROPPED';
+const CONTENT_TYPE_VALUES = [
+  'PAPER',
+  'BOOK',
+  'ARTICLE',
+  'BLOG',
+  'ESSAY',
+  'POLICY_REPORT',
+  'OTHER',
+] as const;
+
+function normalizeContentType(value: string | undefined) {
+  if (!value) return 'OTHER';
+  return CONTENT_TYPE_VALUES.includes(value as (typeof CONTENT_TYPE_VALUES)[number])
+    ? (value as (typeof CONTENT_TYPE_VALUES)[number])
+    : 'OTHER';
+}
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -32,7 +39,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
-    const contentType = searchParams.get('contentType');
+    // Kept for backward compatibility: silently ignored.
+    searchParams.get('contentType');
     const readingStatus = searchParams.get('readingStatus');
     const year = searchParams.get('year');
 
@@ -44,9 +52,6 @@ export async function GET(request: NextRequest) {
         { abstract: { contains: search, mode: 'insensitive' } },
         { authors: { hasSome: [search] } },
       ];
-    }
-    if (contentType) {
-      where.contentType = contentType as ContentType;
     }
     if (readingStatus) {
       where.readingStatus = readingStatus as ReadingStatus;
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
         title: d.title,
         authors: d.authors,
         year: d.year ?? null,
-        contentType: d.contentType,
+        contentType: normalizeContentType(d.contentType),
         url: d.url ?? null,
         doi: d.doi ?? null,
         isbn13: d.isbn ? [d.isbn] : [],

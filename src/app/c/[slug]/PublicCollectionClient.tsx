@@ -12,8 +12,7 @@ import {
   Copy,
   Check,
   User,
-  Calendar,
-  Tag
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,18 +53,6 @@ interface Collection {
 interface PublicCollectionClientProps {
   initialCollection: Collection;
 }
-
-const contentTypeLabels: Record<string, string> = {
-  PAPER: "Paper",
-  BLOG: "Blog",
-  ESSAY: "Essay",
-  ARTICLE: "Article",
-  POLICY_REPORT: "Report",
-  BOOK: "Book",
-  VIDEO: "Video",
-  SOCIAL_POST: "Post",
-  OTHER: "Other"
-};
 
 export default function PublicCollectionClient({ initialCollection }: PublicCollectionClientProps) {
   const { data: session } = useSession();
@@ -200,9 +187,6 @@ export default function PublicCollectionClient({ initialCollection }: PublicColl
                       {entry.year && ` (${entry.year})`}
                     </p>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="text-xs">
-                        {contentTypeLabels[entry.contentType] || entry.contentType}
-                      </Badge>
                       {entry.topics.slice(0, 3).map((topic) => (
                         <Badge key={topic} variant="outline" className="text-xs">
                           {topic}
@@ -249,9 +233,6 @@ export default function PublicCollectionClient({ initialCollection }: PublicColl
                   </p>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary">
-                      {contentTypeLabels[selectedEntry.contentType] || selectedEntry.contentType}
-                    </Badge>
                     {selectedEntry.topics.map((topic) => (
                       <Badge key={topic} variant="outline">
                         {topic}

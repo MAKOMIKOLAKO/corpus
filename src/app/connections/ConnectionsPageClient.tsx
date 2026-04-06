@@ -11,7 +11,7 @@ type User = { id: string; username: string | null; name: string | null; bio: str
 type Connection = { id: string; status: string; otherUser: User; requesterId?: string; receiverId?: string };
 type SharedEntry = {
   id: string; status: string; message: string | null; sharedAt: string;
-  entry: { id: string; title: string; contentType: string };
+  entry: { id: string; title: string };
   sender?: User; receiver?: User;
 };
 
