@@ -137,7 +137,7 @@ export default function EntryCard({
             try {
                 const response = await fetch('/api/collections', {
                     headers: {
-                        'x-api-key': apiKey,
+                        'Content-Type': 'application/json',
                     },
                 });
 
@@ -211,7 +211,6 @@ export default function EntryCard({
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
                 },
                 body: JSON.stringify({ readingStatus: newStatus }),
             });
@@ -247,7 +246,6 @@ export default function EntryCard({
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
                 },
                 body: JSON.stringify({ contentType: newType }),
             });
@@ -347,7 +345,7 @@ export default function EntryCard({
                 fetch(`/api/collections/${id}/entries/${entry.id}`, {
                     method: 'DELETE',
                     headers: {
-                        'x-api-key': apiKey,
+                        'Content-Type': 'application/json',
                     },
                 })
             )
@@ -359,7 +357,6 @@ export default function EntryCard({
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': apiKey,
             },
             body: JSON.stringify({ entryId: entry.id }),
         });
@@ -403,7 +400,7 @@ export default function EntryCard({
             const response = await fetch(`/api/entries/${entry.id}`, {
                 method: 'DELETE',
                 headers: {
-                    'x-api-key': apiKey,
+                    'Content-Type': 'application/json',
                 },
             });
 
