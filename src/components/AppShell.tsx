@@ -10,7 +10,7 @@ import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Rss } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, Brain } from "lucide-react";
 
 export function AppShell({
   children,
@@ -210,14 +210,6 @@ export function AppShell({
                       <Brain className="w-4 h-4" />
                       alerts
                     </Link>
-                    <Link
-                      href="/feeds"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/feeds" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
-                      aria-current={pathname === "/feeds" ? "page" : undefined}
-                    >
-                      <Rss className="w-4 h-4" />
-                      feeds
-                    </Link>
                     <ThemeToggle />
                     <NotificationDropdown />
                     <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
@@ -292,13 +284,6 @@ export function AppShell({
                   >
                     <Brain className="w-5 h-5" />
                     alerts
-                  </Link>
-                  <Link
-                    href="/feeds"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/feeds" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
-                  >
-                    <Rss className="w-5 h-5" />
-                    feeds
                   </Link>
                   <div onClick={() => setIsMenuOpen(false)}>
                     <NotificationDropdown />

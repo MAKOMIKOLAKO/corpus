@@ -2,6 +2,7 @@ import { getCurrentUserId } from '@/lib/session';
 import { prisma } from '@/lib/prismaWithRetry';
 import FeedClient from './FeedClient';
 import { redirect } from 'next/navigation';
+import type { UserEntry, UserSource } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,17 @@ export default async function FeedPage() {
     },
     orderBy: { createdAt: 'desc' },
     take: 20
+  });
+
+  // Fetch user's feeds for management
+  const userFeeds = await prisma.userSource.findMany({
+    where: { userId },
+    include: {
+      source: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
   });
 
   // Fetch signals for the feed — showing public signals for now
@@ -83,7 +95,7 @@ export default async function FeedPage() {
           createdAt: s.createdAt.toISOString()
         }))}
         userPlan={user.plan}
-        rssEntries={userEntries.map(ue => ({
+        rssEntries={userEntries.map((ue: any) => ({
           id: ue.globalEntry.id,
           title: ue.globalEntry.title,
           authors: ue.globalEntry.authors,
@@ -93,6 +105,14 @@ export default async function FeedPage() {
           createdAt: ue.globalEntry.createdAt.toISOString(),
           publicationYear: ue.globalEntry.publicationYear,
           addedAt: ue.createdAt.toISOString()
+        }))}
+        userFeeds={userFeeds.map((f: any) => ({
+          id: f.source.id,
+          feedUrl: f.source.feedUrl,
+          title: f.source.title,
+          domain: f.source.domain,
+          lastFetchedAt: f.source.lastFetchedAt,
+          addedAt: f.createdAt
         }))}
       />
     </div>
