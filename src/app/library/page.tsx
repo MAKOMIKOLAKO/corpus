@@ -94,18 +94,70 @@ export default async function LibraryPage({
         select: { plan: true, entriesCount: true, personalCollectionsCount: true }
     });
 
-    const entries = await prisma.entry.findMany({
-        where,
-        orderBy,
-        take: 50, // Increased limit
+    const entries = await prisma.userEntry.findMany({
+        where: {
+            userId,
+            globalEntry: search ? {
+                OR: [
+                    { title: { contains: search, mode: 'insensitive' } },
+                    { abstract: { contains: search, mode: 'insensitive' } },
+                    { authors: { hasSome: [search] } },
+                ]
+            } : undefined,
+            readingStatus: readingStatus ? readingStatus as ReadingStatus : undefined,
+            globalEntry: year ? { year: parseInt(year, 10) } : undefined,
+        },
+        orderBy: sortBy === 'title' ? { globalEntry: { title: 'asc' } }
+            : sortBy === 'title-desc' ? { globalEntry: { title: 'desc' } }
+                : sortBy === 'oldest' ? { createdAt: 'asc' }
+                    : { createdAt: 'desc' },
+        take: 50,
         include: {
-            collections: {
+            globalEntry: {
+                select: {
+                    id: true,
+                    title: true,
+                    authors: true,
+                    year: true,
+                    abstract: true,
+                    url: true,
+                    doi: true,
+                    source: true,
+                    contentType: true,
+                    metadata: true,
+                    saveCount: true,
+                }
+            },
+            userEntryCollections: {
                 include: {
                     collection: true
                 }
             }
         }
     });
+
+    // Transform to match expected Entry interface
+    const transformedEntries = entries.map(ue => ({
+        id: ue.id,
+        title: ue.globalEntry.title,
+        authors: ue.globalEntry.authors,
+        year: ue.globalEntry.year,
+        contentType: ue.globalEntry.contentType || 'OTHER',
+        url: ue.globalEntry.url,
+        doi: ue.globalEntry.doi,
+        source: ue.globalEntry.source as 'MANUAL' | 'SMART_ALERT',
+        metadata: ue.globalEntry.metadata,
+        readingStatus: ue.readingStatus,
+        createdAt: ue.createdAt,
+        saveCount: ue.globalEntry.saveCount,
+        collections: ue.userEntryCollections.map(uec => ({
+            id: uec.id,
+            collection: {
+                id: uec.collection.id,
+                name: uec.collection.name
+            }
+        }))
+    }));
 
     if (!user) return null;
 
@@ -142,7 +194,7 @@ export default async function LibraryPage({
                         year={year}
                         topic={topic}
                         sortBy={sortBy}
-                        entries={entries}
+                        entries={transformedEntries}
                     />
                 </div>
             </div>

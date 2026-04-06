@@ -1,5 +1,6 @@
 import { prisma } from './prismaWithRetry'
 import { ALERT_CONFIG, normalizeTitle } from './alerts'
+import { getDeduplicationKeys, findExistingGlobalEntry } from './entryDedup'
 
 // Safe title normalization with error handling
 function safeNormalizeTitle(title: string): string {
@@ -183,13 +184,17 @@ export async function processQuery(query: {
   // Step 2: Get existing entries for deduplication
   // Limit to prevent stack overflow with users who have many papers
   // Further reduced limit to prevent stack issues
-  const existingEntries = await prisma.entry.findMany({
+  const existingUserEntries = await prisma.userEntry.findMany({
     where: { userId: query.userId },
-    select: { doi: true, title: true },
+    include: {
+      globalEntry: {
+        select: { doi: true, title: true }
+      }
+    },
     orderBy: { createdAt: 'desc' },
     take: 2000, // Reduced from 5000 to prevent stack overflow
   })
-  console.log(`[alertProcessor] Found ${existingEntries.length} existing entries for deduplication`)
+  console.log(`[alertProcessor] Found ${existingUserEntries.length} existing entries for deduplication`)
 
   // Build Sets iteratively to avoid stack overflow with large arrays
   const existingDOIs = new Set<string>()
@@ -197,21 +202,21 @@ export async function processQuery(query: {
 
   // Process in chunks to prevent stack overflow
   const chunkSize = 1000
-  for (let i = 0; i < existingEntries.length; i += chunkSize) {
-    const chunk = existingEntries.slice(i, i + chunkSize)
-    for (const entry of chunk) {
-      if (entry.doi) {
-        existingDOIs.add(entry.doi)
+  for (let i = 0; i < existingUserEntries.length; i += chunkSize) {
+    const chunk = existingUserEntries.slice(i, i + chunkSize)
+    for (const userEntry of chunk) {
+      if (userEntry.globalEntry.doi) {
+        existingDOIs.add(userEntry.globalEntry.doi)
       }
       try {
-        const normalizedTitle = safeNormalizeTitle(entry.title)
+        const normalizedTitle = safeNormalizeTitle(userEntry.globalEntry.title)
         existingTitles.add(normalizedTitle)
       } catch (error) {
-        console.error(`[alertProcessor] Error normalizing title: ${entry.title}`, error)
+        console.error(`[alertProcessor] Error normalizing title: ${userEntry.globalEntry.title}`, error)
       }
     }
     // Allow event loop to breathe between chunks
-    if (i + chunkSize < existingEntries.length) {
+    if (i + chunkSize < existingUserEntries.length) {
       await new Promise(resolve => setTimeout(resolve, 0))
     }
   }
@@ -305,6 +310,49 @@ export async function processQuery(query: {
     }
 
     try {
+      // Check if GlobalEntry already exists
+      const keys = getDeduplicationKeys({
+        doi: paper.doi,
+        isbn: null,
+        title: paper.title,
+        authors: paper.authors,
+        year: paper.year,
+        url: paper.url,
+      });
+
+      let globalEntryId = await findExistingGlobalEntry(prisma, keys);
+
+      if (!globalEntryId) {
+        // Create new GlobalEntry
+        const globalEntry = await prisma.globalEntry.create({
+          data: {
+            doi: keys.doi,
+            isbn: keys.isbn,
+            normalizedTitle: keys.normalizedTitle,
+            normalizedFirstAuthor: keys.normalizedFirstAuthor,
+            publicationYear: keys.publicationYear,
+            canonicalUrl: keys.canonicalUrl,
+            contentHash: keys.contentHash,
+            title: paper.title,
+            authors: paper.authors,
+            year: paper.year,
+            abstract: paper.abstract,
+            source: paper.venue,
+            url: paper.url,
+            metadata: {
+              doi: paper.doi,
+              venue: paper.venue,
+              openAccessUrl: paper.openAccessUrl,
+              semanticScholarId: paper.semanticScholarId,
+            },
+            addedVia: 'smart_alert',
+            saveCount: 0,
+          }
+        });
+        globalEntryId = globalEntry.id;
+      }
+
+      // Create AlertEntry linking to GlobalEntry
       const alertEntry = await db.alertEntry.create({
         data: {
           containerId: container.id,
@@ -319,6 +367,7 @@ export async function processQuery(query: {
             venue: paper.venue,
             openAccessUrl: paper.openAccessUrl,
             semanticScholarId: paper.semanticScholarId,
+            globalEntryId, // Store reference
           }
         }
       })

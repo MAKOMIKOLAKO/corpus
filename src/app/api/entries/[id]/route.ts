@@ -7,6 +7,8 @@ import {
   entryNoteAppendSchema,
   entryPatchSchema,
 } from '@/lib/validation';
+import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
+import { removeEntryForUser } from '@/lib/globalEntryService';
 
 const CONTENT_TYPE_VALUES = [
   'PAPER',
@@ -34,21 +36,22 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const entry = await prisma.entry.findUnique({
-      where: { id: params.id },
+    const userEntry = await prisma.userEntry.findFirst({
+      where: { id: params.id, userId },
+      select: userEntryWithGlobal
     });
-    if (!entry) {
+
+    if (!userEntry) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    if (entry.userId !== userId) {
-      const viaFeed = await prisma.signal.findFirst({
-        where: { userId, entryId: entry.id },
-      });
-      if (!viaFeed) {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      }
-    }
-    return NextResponse.json(entry);
+
+    // Update lastViewedAt
+    prisma.userEntry.update({
+      where: { id: params.id },
+      data: { lastViewedAt: new Date() }
+    }).catch(console.error);
+
+    return NextResponse.json(flattenUserEntry(userEntry));
   } catch (error) {
     console.error('[api/entries/[id] GET]', error);
     return NextResponse.json(
@@ -68,13 +71,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const entry = await prisma.entry.findUnique({ where: { id: params.id } });
-    if (!entry || entry.userId !== userId) {
+    const userEntry = await prisma.userEntry.findFirst({
+      where: { id: params.id, userId },
+      select: { id: true, globalEntryId: true }
+    });
+    if (!userEntry) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const body = await request.json();
 
+    // Handle notes append - this is now stored in metadata
     if (
       body?.notes &&
       typeof body.notes === 'object' &&
@@ -88,19 +95,40 @@ export async function PATCH(
         );
       }
 
+      // Get current metadata
+      const current = await prisma.globalEntry.findUnique({
+        where: { id: userEntry.globalEntryId },
+        select: { metadata: true }
+      });
+
+      const existingNotes = current?.metadata && Array.isArray((current.metadata as any).notes)
+        ? (current.metadata as any).notes
+        : [];
+
       const newNote = {
         text: parsed.data.notes.text,
         createdAt: new Date().toISOString(),
       };
 
-      const existingNotes = Array.isArray(entry.notes) ? entry.notes : [];
       const updatedNotes = [...existingNotes, newNote];
 
-      const updated = await prisma.entry.update({
-        where: { id: params.id },
-        data: { notes: updatedNotes },
+      // Update metadata on GlobalEntry
+      await prisma.globalEntry.update({
+        where: { id: userEntry.globalEntryId },
+        data: {
+          metadata: {
+            ...(current?.metadata as any || {}),
+            notes: updatedNotes
+          }
+        }
       });
-      return NextResponse.json(updated);
+
+      const updated = await prisma.userEntry.findUnique({
+        where: { id: params.id },
+        select: userEntryWithGlobal
+      });
+
+      return NextResponse.json(flattenUserEntry(updated));
     }
 
     const parsed = entryPatchSchema.safeParse(body);
@@ -112,24 +140,34 @@ export async function PATCH(
     }
 
     const d = parsed.data;
-    const data: Prisma.EntryUpdateInput = {};
-    if (d.title !== undefined) data.title = d.title;
-    if (d.authors !== undefined) data.authors = d.authors;
-    if (d.year !== undefined) data.year = d.year;
-    if (d.source !== undefined && d.source !== null) data.source = d.source;
-    if (d.url !== undefined) data.url = d.url ?? null;
-    if (d.doi !== undefined) data.doi = d.doi ?? null;
-    if (d.abstract !== undefined) data.abstract = d.abstract ?? null;
-    if (d.contentType !== undefined) {
-      data.contentType = normalizeContentType(d.contentType);
-    }
-    if (d.readingStatus !== undefined) data.readingStatus = d.readingStatus;
 
-    const updated = await prisma.entry.update({
+    // Only allow updating per-user fields on UserEntry
+    const allowedUpdates: Record<string, any> = {};
+    if (d.readingStatus !== undefined) {
+      const validStatuses = ['UNREAD', 'BACKLOG', 'IN_PROGRESS', 'COMPLETED', 'DROPPED'];
+      if (!validStatuses.includes(d.readingStatus)) {
+        return NextResponse.json(
+          { error: 'Invalid reading status' },
+          { status: 400 }
+        );
+      }
+      allowedUpdates.readingStatus = d.readingStatus;
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.userEntry.update({
       where: { id: params.id },
-      data,
+      data: { ...allowedUpdates, updatedAt: new Date() },
+      select: userEntryWithGlobal
     });
-    return NextResponse.json(updated);
+
+    return NextResponse.json(flattenUserEntry(updated));
   } catch (error) {
     console.error('[api/entries/[id] PATCH]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -161,27 +199,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const existingEntry = await prisma.entry.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!existingEntry || existingEntry.userId !== userId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    try {
+      await removeEntryForUser(userId, params.id);
+      return NextResponse.json({
+        success: true,
+        message: 'Entry deleted successfully',
+      });
+    } catch (error: any) {
+      if (error.message?.includes('not found')) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      }
+      throw error;
     }
-
-    await prisma.entry.delete({
-      where: { id: params.id },
-    });
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: { entriesCount: { decrement: 1 } }
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Entry deleted successfully',
-    });
   } catch (error) {
     console.error('[api/entries/[id] DELETE]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

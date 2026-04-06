@@ -2,6 +2,7 @@ import { prisma } from './prismaWithRetry';
 import type { ContentType, Prisma, ReadingStatus } from '@prisma/client';
 import { canAddEntry } from './plans';
 import { toEntrySource } from '@/lib/utils';
+import { saveEntryForUser } from './globalEntryService';
 
 function getGeminiApiKey(): string | undefined {
   return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
@@ -300,36 +301,45 @@ Body text: ${meta.bodyText}`;
   }
 
   try {
-    let entry;
+    let userEntry;
     try {
-      entry = await prisma.entry.create({
-        data: {
+      const result = await saveEntryForUser(
+        userId,
+        {
           title: entryPayload.title,
           authors: entryPayload.authors,
           year: entryPayload.year,
           abstract: entryPayload.abstract,
           source: toEntrySource(entryPayload.source),
-          contentType: entryPayload.contentType,
-          doi: entryPayload.doi,
           url: entryPayload.url,
-          readingStatus: 'UNREAD',
-          notes: [],
-          metadata: entryPayload.metadata as Prisma.InputJsonValue,
-          userId,
+          doi: entryPayload.doi,
+          isbn: [], // No ISBN from URL fetch
+          metadata: entryPayload.metadata as Record<string, any>,
+          rawContentType: entryPayload.contentType,
+          addedVia: 'manual',
         },
-      });
+        {
+          readingStatus: 'UNREAD',
+          addedVia: 'url_fetch',
+        }
+      );
 
-      await prisma.user.update({
-        where: { id: userId },
-        data: { entriesCount: { increment: 1 } }
+      userEntry = await prisma.userEntry.findUnique({
+        where: { id: result.userEntryId }
       });
     } catch (err: unknown) {
       const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : '';
       if (code === 'P2002') {
-        entry = await prisma.entry.findFirst({
-          where: { userId, url: entryPayload.url },
+        // Entry already exists - find it
+        userEntry = await prisma.userEntry.findFirst({
+          where: {
+            userId,
+            globalEntry: {
+              url: entryPayload.url
+            }
+          }
         });
-        if (!entry) {
+        if (!userEntry) {
           throw new Error('Entry already exists but could not be retrieved');
         }
       } else {
@@ -342,7 +352,8 @@ Body text: ${meta.bodyText}`;
       data: {
         status: 'COMPLETED',
         result: entryPayload as object,
-        entryId: entry.id,
+        entryId: userEntry?.id,
+        globalEntryId: userEntry?.globalEntryId,
         completedAt: new Date(),
       },
     });

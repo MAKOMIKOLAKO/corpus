@@ -29,6 +29,7 @@ interface Entry {
     } | null;
     readingStatus: 'UNREAD' | 'BACKLOG' | 'IN_PROGRESS' | 'READING' | 'COMPLETED' | 'READ' | 'DROPPED';
     createdAt: string | Date;
+    saveCount?: number; // New field for save count
     collections?: {
         id: string;
         collection: {
@@ -435,6 +436,14 @@ export default function EntryCard({
                                         )}
                                         {entry.year && (
                                             <span>{entry.year}</span>
+                                        )}
+                                        {entry.saveCount && entry.saveCount > 1 && (
+                                            <>
+                                                <span className="text-border">•</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {entry.saveCount} users
+                                                </span>
+                                            </>
                                         )}
                                     </div>
                                 </div>

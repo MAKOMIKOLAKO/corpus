@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import { canManageCollection } from '@/lib/collectionPermissions';
 import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
+import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -25,13 +26,19 @@ export async function POST(
       );
     }
 
-    // Check if entry exists and user has access
-    const entry = await prisma.entry.findUnique({
-      where: { id: params.entryId },
-      select: { id: true, title: true, userId: true }
+    // Check if UserEntry exists and belongs to user
+    const userEntry = await prisma.userEntry.findFirst({
+      where: {
+        id: params.entryId,
+        userId
+      },
+      select: {
+        id: true,
+        globalEntry: { select: { title: true } }
+      }
     });
 
-    if (!entry) {
+    if (!userEntry) {
       return NextResponse.json(
         { error: 'Entry not found' },
         { status: 404, headers: corsJsonHeaders() }
@@ -51,8 +58,7 @@ export async function POST(
       );
     }
 
-    const canAdd = entry.userId === userId ||
-      canManageCollection(userId, collection, collection.members);
+    const canAdd = canManageCollection(userId, collection, collection.members);
 
     if (!canAdd) {
       return NextResponse.json(
@@ -61,14 +67,18 @@ export async function POST(
       );
     }
 
-    // Create the entry-collection link
-    const entryCollection = await prisma.entryCollection.create({
+    // Create the UserEntryCollection link
+    const entryCollection = await prisma.userEntryCollection.create({
       data: {
-        entryId: params.entryId,
+        userEntryId: params.entryId,
         collectionId: params.id,
       },
       include: {
-        entry: { select: { title: true } },
+        userEntry: {
+          select: {
+            globalEntry: { select: { title: true } }
+          }
+        },
         collection: { select: { name: true, isShared: true, isPublic: true, publicSlug: true } }
       }
     });
@@ -79,10 +89,10 @@ export async function POST(
         data: {
           userId,
           type: 'ENTRY_ADDED_TO_COLLECTION',
-          entryId: params.entryId,
+          globalEntryId: userEntry.globalEntry.title ? undefined : undefined, // Need globalEntryId
           collectionId: params.id,
           metadata: {
-            entryTitle: entry.title,
+            entryTitle: userEntry.globalEntry.title,
             collectionName: collection.name,
             collectionIsShared: true,
             collectionIsPublic: collection.isPublic,
@@ -131,15 +141,27 @@ export async function DELETE(
       );
     }
 
-    const link = await prisma.entryCollection.findUnique({
+    // Verify UserEntry belongs to user
+    const userEntry = await prisma.userEntry.findFirst({
+      where: { id: params.entryId, userId }
+    });
+
+    if (!userEntry) {
+      return NextResponse.json(
+        { error: 'Not found' },
+        { status: 404, headers: corsJsonHeaders() }
+      );
+    }
+
+    const link = await prisma.userEntryCollection.findUnique({
       where: {
-        entryId_collectionId: {
-          entryId: params.entryId,
+        userEntryId_collectionId: {
+          userEntryId: params.entryId,
           collectionId: params.id,
         },
       },
       include: {
-        entry: true,
+        userEntry: true,
         collection: { include: { members: true } },
       },
     });
@@ -152,7 +174,7 @@ export async function DELETE(
     }
 
     const canRemove =
-      link.entry.userId === userId ||
+      link.userEntry.userId === userId ||
       canManageCollection(userId, link.collection, link.collection.members);
 
     if (!canRemove) {
@@ -162,10 +184,10 @@ export async function DELETE(
       );
     }
 
-    await prisma.entryCollection.delete({
+    await prisma.userEntryCollection.delete({
       where: {
-        entryId_collectionId: {
-          entryId: params.entryId,
+        userEntryId_collectionId: {
+          userEntryId: params.entryId,
           collectionId: params.id,
         },
       },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prismaWithRetry';
 import { getCurrentUserId } from '@/lib/session';
 import { canUseBatchActions } from '@/lib/plans';
+import { removeEntryForUser } from '@/lib/globalEntryService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,10 +11,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { entryIds, action, value } = await request.json();
+    const { userEntryIds, action, payload } = await request.json();
+
+    // Support legacy entryIds for backward compatibility
+    const entryIds = userEntryIds;
 
     if (!Array.isArray(entryIds) || entryIds.length === 0) {
-      return NextResponse.json({ error: 'entryIds array is required' }, { status: 400 });
+      return NextResponse.json({ error: 'userEntryIds array is required' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -30,8 +34,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: reason }, { status: 403 });
     }
 
-    // Verify ownership of all entries
-    const entries = await prisma.entry.findMany({
+    // Verify ownership of all UserEntries
+    const userEntries = await prisma.userEntry.findMany({
       where: {
         id: { in: entryIds },
         userId
@@ -39,58 +43,67 @@ export async function POST(request: NextRequest) {
       select: { id: true }
     });
 
-    if (entries.length !== entryIds.length) {
+    if (userEntries.length !== entryIds.length) {
       return NextResponse.json({ error: 'Some entries were not found or do not belong to you' }, { status: 403 });
     }
 
-    switch (action) {
-      case 'DELETE':
-        await prisma.entry.deleteMany({
-          where: { id: { in: entryIds }, userId }
-        });
-        await prisma.user.update({
-          where: { id: userId },
-          data: { entriesCount: { decrement: entries.length } }
-        });
-        break;
+    let affected = 0;
 
-      case 'UPDATE_STATUS':
-        if (!['UNREAD', 'BACKLOG', 'IN_PROGRESS', 'READING', 'COMPLETED', 'READ', 'DROPPED'].includes(value)) {
-          return NextResponse.json({ error: 'Invalid reading status' }, { status: 400 });
-        }
-        await prisma.entry.updateMany({
-          where: { id: { in: entryIds }, userId },
-          data: { readingStatus: value }
-        });
-        break;
-
-      case 'ADD_TO_COLLECTION':
-        if (!value) {
-          return NextResponse.json({ error: 'collectionId is required' }, { status: 400 });
-        }
-        // Check collection ownership
-        const collection = await prisma.collection.findUnique({
-          where: { id: value, userId }
-        });
-        if (!collection) {
-          return NextResponse.json({ error: 'Collection not found or access denied' }, { status: 403 });
-        }
-
-        // Multi-create entries in collection
-        await prisma.entryCollection.createMany({
-          data: entryIds.map(entryId => ({
-            entryId,
-            collectionId: value
-          })),
-          skipDuplicates: true
-        });
-        break;
-
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    if (action === 'DELETE' || action === 'delete') {
+      for (const id of entryIds) {
+        await removeEntryForUser(userId, id).catch(console.error);
+        affected++;
+      }
     }
 
-    return NextResponse.json({ success: true, count: entries.length });
+    else if (action === 'UPDATE_STATUS' || action === 'update_status') {
+      const validStatuses = ['UNREAD', 'BACKLOG', 'IN_PROGRESS', 'COMPLETED', 'DROPPED'];
+      const status = payload?.readingStatus || payload?.value;
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({ error: 'Invalid reading status' }, { status: 400 });
+      }
+      const result = await prisma.userEntry.updateMany({
+        where: { id: { in: entryIds }, userId },
+        data: { readingStatus: status }
+      });
+      affected = result.count;
+    }
+
+    else if (action === 'ADD_TO_COLLECTION' || action === 'add_to_collection') {
+      const collectionId = payload?.collectionId || payload?.value;
+      if (!collectionId) {
+        return NextResponse.json({ error: 'collectionId is required' }, { status: 400 });
+      }
+      // Check collection ownership
+      const collection = await prisma.collection.findFirst({
+        where: {
+          id: collectionId,
+          OR: [
+            { userId },
+            { members: { some: { userId, status: 'ACCEPTED' } } }
+          ]
+        }
+      });
+      if (!collection) {
+        return NextResponse.json({ error: 'Collection not found or access denied' }, { status: 403 });
+      }
+
+      // Multi-create UserEntryCollection links
+      await prisma.userEntryCollection.createMany({
+        data: entryIds.map((id: string) => ({
+          userEntryId: id,
+          collectionId: collectionId
+        })),
+        skipDuplicates: true
+      });
+      affected = entryIds.length;
+    }
+
+    else {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, affected });
   } catch (error) {
     console.error('[api/entries/batch POST]', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

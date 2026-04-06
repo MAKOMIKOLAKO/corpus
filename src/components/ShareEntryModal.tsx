@@ -84,7 +84,7 @@ export default function ShareEntryModal({ isOpen, onClose, entry }: ShareEntryMo
                     'x-api-key': apiKey,
                 },
                 body: JSON.stringify({
-                    entryId: entry.id,
+                    userEntryId: entry.id, // Changed from entryId to userEntryId
                     userIds: selectedUsers,
                 }),
             });
