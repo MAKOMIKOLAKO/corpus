@@ -90,13 +90,18 @@ const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEnt
           authors: entry.authors,
           year: entry.publicationYear,
           abstract: entry.summary,
-          source: entry.source,
+          source: 'MANUAL',
+          contentType: 'ARTICLE',
           url: entry.url,
           readingStatus: 'UNREAD'
         })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error((data as { error?: string })?.error || 'Failed to add to library');
+      }
 
       if (data.isDuplicate) {
         toast.error('This entry is already in your library');
@@ -104,8 +109,9 @@ const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEnt
         toast.success('Added to library');
         setIsAdded(true);
       }
-    } catch {
-      toast.error('Failed to add to library');
+    } catch (error) {
+      console.error('Error adding feed entry to library:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to add to library');
     } finally {
       setIsAdding(false);
     }
