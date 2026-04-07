@@ -3,6 +3,7 @@ import { Plan } from '@prisma/client'
 export const PLAN_LIMITS = {
   FREE: {
     maxEntries: 50,
+    maxFeeds: 1,
     maxPersonalCollections: 1,
     canCreateSharedCollections: false,
     canContributeToSharedCollections: false,
@@ -13,6 +14,7 @@ export const PLAN_LIMITS = {
   },
   PRO: {
     maxEntries: Infinity,
+    maxFeeds: Infinity,
     maxPersonalCollections: Infinity,
     canCreateSharedCollections: true,
     canContributeToSharedCollections: true,
@@ -23,6 +25,7 @@ export const PLAN_LIMITS = {
   },
   LIFETIME_PRO: {
     maxEntries: Infinity,
+    maxFeeds: Infinity,
     maxPersonalCollections: Infinity,
     canCreateSharedCollections: true,
     canContributeToSharedCollections: true,
@@ -62,6 +65,20 @@ export function canCreatePersonalCollection(
     return {
       allowed: false,
       reason: 'personal_collection_limit_reached'
+    }
+  }
+  return { allowed: true }
+}
+
+export function canAddFeed(
+  plan: Plan,
+  currentFeedCount: number
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (currentFeedCount >= limits.maxFeeds) {
+    return {
+      allowed: false,
+      reason: 'feed_limit_reached'
     }
   }
   return { allowed: true }
