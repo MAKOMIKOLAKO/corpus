@@ -8,6 +8,40 @@ import { normalizeUrl } from '@/lib/entryDedup';
 // Verify cron job authorization
 const CRON_SECRET = process.env.CRON_SECRET;
 
+function isCronAuthorized(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization');
+  return authHeader === `Bearer ${CRON_SECRET}`;
+}
+
+async function runCronTasks() {
+  console.log('[cron/smart-alerts] Starting daily tasks...');
+  console.log('[cron/smart-alerts] Environment check:', {
+    hasSemanticScholarKey: !!process.env.SEMANTIC_SCHOLAR_API_KEY,
+    hasGoogleKey: !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
+    nodeEnv: process.env.NODE_ENV
+  });
+
+  // Run RSS ingestion first
+  console.log('[cron/smart-alerts] Starting RSS ingestion...');
+  const rssResults = await runRSSIngestion();
+  console.log('[cron/smart-alerts] RSS ingestion complete:', rssResults);
+
+  // Then run smart alerts
+  console.log('[cron/smart-alerts] Starting alert processing...');
+  const alertResults = await processAllAlerts();
+  console.log('[cron/smart-alerts] Alert processing complete:', alertResults);
+
+  return NextResponse.json({
+    success: true,
+    rss: rssResults,
+    alerts: {
+      processed: alertResults.queriesProcessed,
+      papersAdded: alertResults.totalPapersAdded,
+      errors: alertResults.errors.length
+    }
+  });
+}
+
 export async function POST(request: NextRequest) {
   // Verify this is called by Vercel cron or with correct secret
   const authHeader = request.headers.get('authorization');
@@ -16,38 +50,13 @@ export async function POST(request: NextRequest) {
   console.log('Expected secret:', process.env.CRON_SECRET ? 'Set' : 'Missing');
   console.log('Timestamp:', new Date().toISOString());
 
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     console.error('CRON: Authorization failed');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    console.log('[cron/smart-alerts] Starting daily tasks...');
-    console.log('[cron/smart-alerts] Environment check:', {
-      hasSemanticScholarKey: !!process.env.SEMANTIC_SCHOLAR_API_KEY,
-      hasGoogleKey: !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
-      nodeEnv: process.env.NODE_ENV
-    });
-
-    // Run RSS ingestion first
-    console.log('[cron/smart-alerts] Starting RSS ingestion...');
-    const rssResults = await runRSSIngestion();
-    console.log('[cron/smart-alerts] RSS ingestion complete:', rssResults);
-
-    // Then run smart alerts
-    console.log('[cron/smart-alerts] Starting alert processing...');
-    const alertResults = await processAllAlerts();
-    console.log('[cron/smart-alerts] Alert processing complete:', alertResults);
-
-    return NextResponse.json({
-      success: true,
-      rss: rssResults,
-      alerts: {
-        processed: alertResults.queriesProcessed,
-        papersAdded: alertResults.totalPapersAdded,
-        errors: alertResults.errors.length
-      }
-    });
+    return await runCronTasks();
   } catch (error) {
     console.error('[cron/smart-alerts] Fatal error:', error);
 
@@ -68,9 +77,28 @@ export async function POST(request: NextRequest) {
 
 // Allow GET for testing (but require auth in production)
 export async function GET(request: NextRequest) {
+  if (isCronAuthorized(request)) {
+    try {
+      return await runCronTasks();
+    } catch (error) {
+      console.error('[cron/smart-alerts] Fatal error:', error);
+
+      if (error instanceof RangeError && error.message.includes('stack')) {
+        console.error('[cron/smart-alerts] Stack overflow detected!');
+        console.error('This usually happens when processing users with too many entries');
+        console.error('Stack trace:', error.stack);
+        return NextResponse.json({
+          error: 'Stack overflow - too much data to process',
+          details: 'Consider reducing the take limit in alertProcessor.ts'
+        }, { status: 500 });
+      }
+
+      return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+    }
+  }
+
   if (process.env.NODE_ENV === 'production') {
-    // In production, only allow POST with proper authorization
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // For development/testing, allow GET with admin session
@@ -85,15 +113,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const results = await processAllAlerts();
-    console.log('[cron/smart-alerts] Manual trigger complete:', results);
-
-    return NextResponse.json({
-      success: true,
-      processed: results.queriesProcessed,
-      papersAdded: results.totalPapersAdded,
-      errors: results.errors
-    });
+    return await runCronTasks();
   } catch (error) {
     console.error('[cron/smart-alerts] Manual trigger error:', error);
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
