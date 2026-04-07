@@ -26,7 +26,7 @@ export async function GET(
     const collection = await prisma.collection.findUnique({
       where: { id: params.id },
       include: {
-        userEntries: {
+        userEntryCollections: {
           include: {
             userEntry: {
               select: userEntryWithGlobal
@@ -83,11 +83,11 @@ export async function GET(
     // Transform userEntries to match expected format
     const transformedCollection = {
       ...collection,
-      entries: (collection as any).userEntries?.map((ue: any) => ({
+      entries: (collection as any).userEntryCollections?.map((ue: any) => ({
         ...flattenUserEntry(ue.userEntry),
         addedAt: ue.addedAt
       })) ?? [],
-      userEntries: undefined // Remove the old field
+      userEntryCollections: undefined // Remove the old field
     };
 
     return NextResponse.json(
