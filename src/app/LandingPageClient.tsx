@@ -2,167 +2,58 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, Plus, Database, Sparkles, Save, Repeat, BookOpen, Layers, CheckCircle } from "lucide-react";
 import SoftwareApplicationJsonLd from "@/components/SoftwareApplicationJsonLd";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`;
 
-const accent = "text-[var(--accent)]";
-const accentBg = "bg-[var(--accent)]";
+const fadeUpParams = {
+  initial: { opacity: 0, y: 15 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-50px" },
+  transition: { duration: 0.3 }
+};
 
-function IconChrome() {
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+};
+
+function FeedEntry({ title, journal, time, isNew = false }: { title: string, journal: string, time: string, isNew?: boolean }) {
   return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Save research papers and articles with one click">
-      <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 22V12M3 7l9 5 9-5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <motion.div 
+      variants={staggerItem}
+      className="flex flex-col gap-2 p-4 rounded-xl border border-[#30302e] bg-[#30302e]/30 shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-sans text-[15px] leading-snug font-medium text-[#faf9f5]">
+          {title}
+        </h3>
+        {isNew && <span className="shrink-0 text-[10px] uppercase font-medium bg-[#c96442]/20 text-[#c96442] px-1.5 py-0.5 rounded-[4px] tracking-wide">New</span>}
+      </div>
+      <div className="flex items-center gap-3 text-[12px] text-[#b0aea5]">
+        <span>{journal}</span>
+        <span>•</span>
+        <span>{time}</span>
+      </div>
+    </motion.div>
   );
 }
-
-function IconSpark() {
-  return (
-    <svg className={`h-7 w-7 ${accent} corpus-glow`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="AI-powered automatic keyword extraction and topic tagging">
-      <path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" strokeLinecap="round" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function IconGraph() {
-  return (
-    <svg className={`h-7 w-7 ${accent} corpus-glow`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Semantic knowledge graph connecting research papers and articles">
-      <circle cx="6" cy="18" r="2.5" />
-      <circle cx="18" cy="6" r="2.5" />
-      <circle cx="18" cy="18" r="2.5" />
-      <path d="M8 16.5L16 7.5M16.5 16L18 8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconFolder() {
-  return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Research collections and reading lists">
-      <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconLayers() {
-  return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Save papers by DOI, articles by URL, books by ISBN">
-      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconShield() {
-  return (
-    <svg className={`h-7 w-7 ${accent}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden aria-label="Personal knowledge base that scales with your research">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconSave() {
-  return (
-    <svg className="h-8 w-8 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" strokeLinejoin="round" />
-      <path d="M17 21v-8H7v8M7 3v5h8" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconOrganize() {
-  return (
-    <svg className="h-8 w-8 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <path d="M4 6h16M4 12h16M4 18h10" strokeLinecap="round" />
-      <circle cx="18" cy="18" r="2" />
-    </svg>
-  );
-}
-
-function IconSearch() {
-  return (
-    <svg className="h-8 w-8 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="M20 20l-3-3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-const features = [
-  {
-    icon: <IconLayers />,
-    title: "Save Any Research Source",
-    body: "Add papers by DOI, preprints by URL, or books by ISBN. Corpus fetches full citation metadata automatically — title, authors, abstract, journal, and year — with no manual entry.",
-  },
-  {
-    icon: <IconSpark />,
-    title: "AI-Powered Organization",
-    body: "Every source you save is automatically tagged with keywords and topic labels by AI. Your library organizes itself so you can focus on the research.",
-  },
-  {
-    icon: <IconFolder />,
-    title: "Collaborative Collections",
-    body: "Build shared reading lists with your lab, study group, or research collaborators. Everyone contributes, everyone benefits.",
-  },
-  {
-    icon: <IconShield />,
-    title: "Research Connections",
-    body: "Connect with other researchers on Corpus. Share papers directly with your network and discover what your connections are reading and saving.",
-  },
-  {
-    icon: <IconGraph />,
-    title: "Semantic Knowledge Graph",
-    body: "Visualize deep connections between your sources using semantic AI. Discover relationships between papers you never knew were related.",
-  },
-  {
-    icon: <IconChrome />,
-    title: "Chrome Extension",
-    body: "Save any paper or article from the web in one click with the Corpus Web Clipper. Works on journal websites, ArXiv, PubMed, and anywhere else you find research.",
-  },
-];
-
-const faqItems = [
-  {
-    q: "How is Corpus different from Zotero or Mendeley?",
-    a: "Zotero and Mendeley are powerful reference managers built around storing and citing PDFs. Corpus takes a different approach — it indexes the metadata and ideas from what you read, adds AI-powered organization, and layers a social network on top so you can share and discover research with your academic network.",
-  },
-  {
-    q: "Can I save ArXiv preprints and PubMed papers?",
-    a: "Yes. Any paper with a DOI can be saved via CrossRef metadata fetch. ArXiv preprints and other sources without DOIs can be saved via URL. Corpus captures whatever metadata is available automatically.",
-  },
-  {
-    q: "How do research connections work?",
-    a: "Connect with other Corpus users by searching their username or email. Once connected, you can share individual papers directly with them and they appear in their inbox to accept or decline. You can also build shared collections together.",
-  },
-  {
-    q: "Does Corpus store my PDFs?",
-    a: "No. Corpus is metadata-first — it stores structured information about your sources, not the files themselves. This keeps your library fast, lightweight, and legally clean.",
-  },
-  {
-    q: "Can I use Corpus with my research lab or study group?",
-    a: "Yes — shared collections are built for exactly this. Create a collection, invite your collaborators, and everyone can add papers and browse the shared library together.",
-  },
-  {
-    q: "Is my library private?",
-    a: "Your personal library is completely private. Only content you explicitly share with connections or add to shared collections is visible to others.",
-  },
-  {
-    q: "Is there a browser extension?",
-    a: "Yes — the Corpus Web Clipper is available on the Chrome Web Store. Click the icon on any page to save it to your library instantly.",
-  },
-  {
-    q: "How much does Corpus cost?",
-    a: "Corpus is free for up to 100 saved sources with full access to core features including the Chrome extension, AI organization, and research connections. Pro is $6/month or $30/month (billed annually) for unlimited sources, collaborative collections, and the knowledge graph.",
-  },
-];
 
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 12);
@@ -171,541 +62,269 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const nodes = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add("opacity-100", "translate-y-0");
-          entry.target.classList.remove("opacity-0", "translate-y-8");
-          io.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -48px 0px" }
-    );
-    nodes.forEach((n) => io.observe(n));
-    return () => io.disconnect();
-  }, []);
-
-  const reveal = "opacity-0 translate-y-8 transition-all duration-700 ease-out";
-
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-[var(--accent)]/30 selection:text-[var(--foreground)] neural-bg">
+    <div className="min-h-screen bg-[#141413] text-[#faf9f5] font-sans antialiased selection:bg-[#c96442]/30 selection:text-[#faf9f5]">
       <SoftwareApplicationJsonLd />
-      {/* Nav */}
+      
+      {/* Dynamic Grain Background */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-[0.03] mix-blend-overlay z-0"
+        style={{ backgroundImage: GRAIN_BG }}
+        aria-hidden
+      />
+
+      {/* Header */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${navScrolled ? "border-[var(--border)] bg-[var(--background)]/75 backdrop-blur-md" : "border-transparent bg-transparent"
-          }`}
+        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+          navScrolled ? "bg-[#141413]/80 backdrop-blur-md border-b border-[#30302e]" : "bg-transparent border-transparent"
+        }`}
       >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight font-serif text-[var(--foreground)] flex items-center gap-2">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 relative z-10">
+          <Link href="/" className="text-[1.3rem] font-medium tracking-tight font-serif text-[#faf9f5] flex items-center gap-2">
             Corpus
-            <span className="text-xs font-normal text-[var(--muted-foreground)] bg-[var(--muted)] px-1.5 py-0.5 rounded-sm">
-              beta
-            </span>
           </Link>
-
-          <nav className="hidden items-center gap-10 md:flex">
-            <a href="#features" className="text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
-              Features
-            </a>
-            <a href="#pricing" className="text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
-              Pricing
-            </a>
-            <a href="#faq" className="text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
-              FAQ
-            </a>
-          </nav>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <ThemeToggle />
-            <Link href="/login" className="text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
+          <div className="hidden items-center gap-4 md:flex">
+            <Link href="/login" className="text-[15px] font-medium text-[#b0aea5] transition-colors hover:text-[#faf9f5]">
               Sign In
             </Link>
             <Link
               href="/login"
-              className={`rounded-lg px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] ${accentBg} shadow-sm corpus-glow transition hover:opacity-90`}
+              className="rounded-[8px] px-4 py-2 text-[15px] font-medium text-[#faf9f5] bg-[#30302e] shadow-[0_0_0_1px_#30302e] hover:shadow-[0_0_0_1px_#4d4c48] transition-shadow duration-200"
             >
               Get Started
             </Link>
           </div>
-
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-default text-content-secondary hover:bg-surface-raised md:hidden"
-            aria-label="Open menu"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#30302e] text-[#b0aea5] md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {mobileOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
           </button>
         </div>
-
         {mobileOpen && (
-          <div className="border-t border-[var(--border)] bg-[var(--card)]/95 px-4 py-4 backdrop-blur-md md:hidden">
-            <div className="flex flex-col gap-3 text-sm">
-              <div className="py-1">
-                <ThemeToggle />
-              </div>
-              <a href="#features" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
-                Features
-              </a>
-              <a href="#pricing" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
-                Pricing
-              </a>
-              <a href="#faq" className="py-2 text-[var(--muted-foreground)]" onClick={() => setMobileOpen(false)}>
-                FAQ
-              </a>
-              <Link href="/login" className="py-2 font-medium text-[var(--foreground)]" onClick={() => setMobileOpen(false)}>
-                Sign In
-              </Link>
-              <Link href="/login" className={`rounded-lg py-3 text-center font-medium text-[var(--accent-foreground)] ${accentBg}`} onClick={() => setMobileOpen(false)}>
-                Get Started
-              </Link>
-            </div>
+          <div className="border-t border-[#30302e] bg-[#141413]/95 px-4 py-4 backdrop-blur-md md:hidden relative z-10">
+             <div className="flex flex-col gap-3">
+               <Link href="/login" className="py-2 font-medium text-[#faf9f5] text-[15px]">Sign In</Link>
+               <Link href="/login" className="rounded-lg py-2 text-center font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442]">Get Started</Link>
+             </div>
           </div>
         )}
       </header>
 
-      {/* Hero */}
-      <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-16">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(20,184,166,0.08),transparent)]" />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.02] dark:opacity-[0.35] mix-blend-overlay"
-          style={{ backgroundImage: GRAIN_BG }}
-          aria-hidden
-        />
-        {/* Slow particles */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          {[...Array(24)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute h-1 w-1 animate-neuralFloat rounded-full bg-[var(--accent)]/20"
-              style={{
-                left: `${(i * 41) % 100}%`,
-                top: `${(i * 67) % 100}%`,
-                animationDuration: `${20 + (i % 8)}s`,
-                animationDelay: `${i * 0.35}s`,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-16 px-4 pb-24 pt-12 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
-          <div data-reveal className={reveal}>
-            <h1 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Stay ahead in your research field with curated, continuously updated insights.
-            </h1>
-            <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-[var(--muted-foreground)]">
-              Research volume is overwhelming. Corpus solves this by automatically tracking new publications from your trusted journals and preprint servers. Each day, receive a concise feed of relevant papers with AI-generated summaries, enabling you to skim critical insights in minutes rather than hours and save or organize important findings instantly.
-            </p>
-            <div className="mt-10">
-              <Link
-                href="/login"
-                className={`inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] ${accentBg} shadow-lg corpus-glow transition hover:opacity-90 touch-manipulation`}
-              >
-                Get Started Free
-              </Link>
-            </div>
-          </div>
-
-          <div data-reveal className={`${reveal} delay-100 hidden sm:block`}>
-            <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--card)]/50 p-5 shadow-2xl backdrop-blur-sm">
-              <div className="mb-4 flex items-center justify-between border-b border-[var(--border)] pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--muted-foreground)]" />
-                  </div>
-                  <span className="ml-2 text-xs text-[var(--muted-foreground)]">feed</span>
-                </div>
-                <span className="text-xs text-[var(--muted-foreground)]">Updated 2 minutes ago</span>
-              </div>
-              <div className="space-y-3">
-                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/80 hover:shadow-sm transition-all">
-                  <div className="mt-1">
-                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2">
-                      <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                        Chen et al. - Deep Learning for Protein Structure Prediction: Recent Advances and Applications
-                      </h3>
-                      <span className="mt-0.5 rounded-full bg-green-500/10 text-green-600 text-xs px-1.5 py-0.5 font-medium">New</span>
-                    </div>
-                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      We present a comprehensive review of deep learning approaches for protein structure prediction, covering AlphaFold2 and its derivatives. Our analysis of 237 recent publications reveals significant improvements in prediction accuracy for membrane proteins and protein complexes.
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
-                      <span>arXiv</span>
-                      <span>•</span>
-                      <span>2 hours ago</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/70 hover:shadow-sm transition-all">
-                  <div className="mt-1">
-                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2">
-                      <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                        Rodriguez & Martinez - Climate Change Impacts on Global Food Security: A Meta-Analysis
-                      </h3>
-                      <span className="mt-0.5 rounded-full bg-green-500/10 text-green-600 text-xs px-1.5 py-0.5 font-medium">New</span>
-                    </div>
-                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      Our meta-analysis of 1,247 studies reveals significant impacts of climate change on crop yields across all major agricultural regions. Findings indicate a 7.2% average yield reduction per degree Celsius increase, with substantial variation between crops and geographic regions.
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
-                      <span>Nature</span>
-                      <span>•</span>
-                      <span>5 hours ago</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/60 hover:shadow-sm transition-all">
-                  <div className="mt-1">
-                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      Johnson et al. - Quantum Computing Applications in Cryptography: A Survey
-                    </h3>
-                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      This survey explores the implications of quantum computing for modern cryptographic systems, including post-quantum cryptography approaches. We analyze 89 recent papers and identify emerging standards for quantum-resistant encryption protocols.
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
-                      <span>PNAS</span>
-                      <span>•</span>
-                      <span>Yesterday</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/50 hover:shadow-sm transition-all">
-                  <div className="mt-1">
-                    <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      Wang et al. - Neural Mechanisms of Memory Consolidation During Sleep
-                    </h3>
-                    <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-2 line-clamp-2">
-                      Using intracranial recordings from 47 participants, we identified specific neural oscillations that correlate with memory consolidation during different sleep stages. Our findings demonstrate the critical role of spindle-ripple coupling in long-term memory formation.
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
-                      <span>Science</span>
-                      <span>•</span>
-                      <span>2 days ago</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="scroll-mt-24 py-24 sm:py-32">
-        <div className="mx-auto max-w-6xl px-4">
-          <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-2xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Built for how researchers actually work</h2>
-          </div>
-          <div className="mt-16 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                data-reveal
-                className={`${reveal} group rounded-2xl border-[var(--border)] bg-[var(--card)]/30 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-[var(--accent)] touch-manipulation`}
-              >
-                <div className="mb-5">{f.icon}</div>
-                <h3 className="text-lg font-semibold text-[var(--foreground)]">{f.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-[var(--border)] bg-[var(--background)] py-24 sm:py-32">
-        <div className="mx-auto max-w-6xl px-4">
-          <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">From paper to organized in seconds</h2>
-          </div>
-
-          <div className="relative mt-20 grid gap-12 lg:grid-cols-3 lg:gap-8">
-            <div className="pointer-events-none absolute left-0 right-0 top-12 hidden h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent lg:block" aria-hidden />
-            <div className="pointer-events-none absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--accent)]/30 to-transparent lg:hidden" aria-hidden />
-            {[
-              {
-                n: "01",
-                icon: <IconSave />,
-                title: "Save",
-                desc: "Paste a DOI, URL, or ISBN. Or clip any page with the Chrome extension. Corpus fetches full citation metadata automatically.",
-              },
-              {
-                n: "02",
-                icon: <IconOrganize />,
-                title: "Collaborate",
-                desc: "Share papers with connections, build collections with your lab, and see what your research network is reading.",
-              },
-              {
-                n: "03",
-                icon: <IconSearch />,
-                title: "Discover",
-                desc: "Search your library, explore the knowledge graph, and surface unexpected connections between your sources.",
-              },
-            ].map((step) => (
-              <div key={step.n} data-reveal className={`${reveal} relative pl-16 lg:pl-0 text-left`}>
-                <div className="mb-6 flex justify-start">
-                  <span className="text-4xl sm:text-5xl font-bold tabular-nums text-[var(--muted-foreground)]">{step.n}</span>
-                </div>
-                <div className="mb-4 flex justify-start">{step.icon}</div>
-                <h3 className="text-xl font-semibold text-[var(--foreground)]">{step.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
-        <div className="mx-auto max-w-6xl px-4">
-          <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Simple pricing for researchers and students</h2>
-            <p className="mt-4 text-[var(--muted-foreground)]">Start free. Upgrade when your research grows.</p>
-          </div>
-
-          <div data-reveal className={`${reveal} mt-16 grid gap-8 lg:grid-cols-2 md:grid-cols-1`}>
-            {/* Free Plan */}
-            <div className="relative flex flex-col rounded-2xl border-[var(--border)] bg-[var(--card)] p-8">
-              <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-[var(--foreground)]">Free</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-5xl font-bold text-[var(--foreground)]">$0</span>
-                  <span className="text-[var(--muted-foreground)]">/month</span>
-                </div>
-                <p className="mt-2 text-sm text-[var(--muted-foreground)]">Perfect for getting started</p>
-              </div>
-
-              <ul className="mb-8 space-y-4">
-                {[
-                  { text: "Up to 100 saved sources", included: true },
-                  { text: "Papers, articles, books, and preprints", included: true },
-                  { text: "AI keyword and topic extraction", included: true },
-                  { text: "Full search and filtering", included: true },
-                  { text: "Chrome extension", included: true },
-                  { text: "Research connections", included: true },
-                  { text: "Collaborative collections", included: false },
-                  { text: "Knowledge graph", included: false },
-                  { text: "Unlimited sources", included: false },
-                ].map((feature) => (
-                  <li key={feature.text} className="flex items-center gap-3">
-                    <div className={`flex h-5 w-5 items-center justify-center rounded-full ${feature.included ? "bg-[var(--accent)]/20" : "bg-[var(--muted)]/30"}`}>
-                      {feature.included ? (
-                        <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg className="h-3 w-3 text-[var(--muted-foreground)]" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className={feature.included ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}>{feature.text}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto">
+      <main className="relative z-10">
+        {/* 1. Hero Section */}
+        <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-24 pb-16">
+          <div className="mx-auto grid max-w-6xl gap-16 px-4 lg:grid-cols-2 lg:items-center lg:gap-12">
+            
+            {/* Left: Copy */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="max-w-xl"
+            >
+              <h1 className="text-[3.25rem] sm:text-[4rem] leading-[1.10] font-serif font-medium text-[#faf9f5] tracking-tight">
+                Your research feed.<br /> Automated.
+              </h1>
+              <p className="mt-6 text-[1.06rem] sm:text-[1.25rem] leading-[1.60] text-[#b0aea5]">
+                Stop searching for papers. New research appears automatically—summarized, deduplicated, and ready to save. No noise, just the insights you need.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <Link
                   href="/login"
-                  className="block w-full rounded-lg border-[var(--border)] bg-[var(--background)] py-3 text-center font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+                  className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757]"
                 >
-                  Get Started Free
+                  Get your feed
                 </Link>
-              </div>
-            </div>
-
-            {/* Pro Plan */}
-            <div className="relative flex flex-col rounded-2xl border-2 border-[var(--accent)] bg-[var(--card)] p-8 shadow-lg">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-4 py-1 text-xs font-semibold text-[var(--accent-foreground)]">
-                Most Popular
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-[var(--foreground)]">Pro</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-5xl font-bold text-[var(--foreground)]">
-                    {billing === "monthly" ? "$7" : "$5"}
-                  </span>
-                  <span className="text-[var(--muted-foreground)]">/month</span>
-                </div>
-                <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                  {billing === "monthly" ? "Billed monthly" : "$60 billed annually"}
-                </p>
-              </div>
-
-              <ul className="mb-8 space-y-4">
-                {[
-                  "Unlimited saved sources",
-                  "Everything in Free",
-                  "Collaborative collections",
-                  "Semantic knowledge graph",
-                  "Priority support",
-                  "Early access to new features"
-                ].map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/20">
-                      <svg className="h-3 w-3 text-[var(--accent)]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <span className="text-[var(--foreground)]">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto">
                 <Link
-                  href="/pricing"
-                  className={`block w-full rounded-lg bg-[var(--accent)] py-3 text-center font-medium text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent)]/90`}
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#b0aea5] bg-[#30302e] shadow-[0_0_0_1px_#30302e] transition hover:text-[#faf9f5] hover:shadow-[0_0_0_1px_#4d4c48]"
                 >
-                  Start Pro Trial
+                  Start tracking research
                 </Link>
+              </div>
+            </motion.div>
+
+            {/* Right: Animated Feed Visual */}
+            <div className="relative mt-12 lg:mt-0">
+              <div className="absolute -inset-4 bg-gradient-to-tr from-[#30302e]/0 via-[#30302e]/30 to-[#30302e]/0 rounded-3xl blur-2xl" />
+              <div className="relative rounded-[16px] border border-[#30302e] bg-[#141413] shadow-[rgba(0,0,0,0.05)_0px_4px_24px] overflow-hidden">
+                <div className="border-b border-[#30302e] p-4 flex items-center justify-between">
+                  <div className="flex gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#30302e]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#30302e]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#30302e]" />
+                  </div>
+                  <span className="text-[12px] font-medium text-[#87867f]">Incoming Research</span>
+                </div>
+                
+                <motion.div 
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="show"
+                  className="p-4 space-y-3 bg-[#141413]"
+                >
+                  <FeedEntry 
+                    title="Attention Is All You Need: A Retrospective Analysis" 
+                    journal="Nature Communications" 
+                    time="10 mins ago" 
+                    isNew={true}
+                  />
+                  <FeedEntry 
+                    title="Emergent Abilities of Large Language Models in Scientific Reasoning" 
+                    journal="arXiv cs.AI" 
+                    time="1 hour ago" 
+                    isNew={true}
+                  />
+                  <FeedEntry 
+                    title="Optimization Dynamics in Neural Network Training" 
+                    journal="JMLR" 
+                    time="3 hours ago" 
+                  />
+                  <FeedEntry 
+                    title="Scaling Laws for Autoregressive Generative Modeling" 
+                    journal="arXiv cs.LG" 
+                    time="Yesterday" 
+                  />
+                </motion.div>
+                
+                {/* Fade out bottom */}
+                <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[#141413] to-transparent pointer-events-none" />
               </div>
             </div>
 
           </div>
+        </section>
 
-          <div data-reveal className={`${reveal} mt-8 flex justify-center gap-4 text-sm text-[var(--muted-foreground)]`}>
-            <button
-              onClick={() => setBilling("monthly")}
-              className={`rounded-full px-4 py-2 font-medium transition ${billing === "monthly" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:text-[var(--foreground)]"}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBilling("annual")}
-              className={`rounded-full px-4 py-2 font-medium transition ${billing === "annual" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:text-[var(--foreground)]"}`}
-            >
-              Annual
-              <span className="ml-2 rounded-full bg-[var(--accent)]/20 px-2 py-0.5 text-xs text-[var(--accent)]">Save $24/year</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="border-t border-[var(--border)] bg-[var(--background)] py-24 sm:py-32">
-        <div className="mx-auto max-w-6xl px-4">
-          <div data-reveal className={`${reveal} mx-auto max-w-2xl text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">What researchers are saying</h2>
-          </div>
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {[
-              {
-                quote: "Corpus replaced Zotero for me. The social layer means I actually discover papers I would have missed — my connections share things I never would have searched for.",
-                role: "PhD Candidate, Computational Neuroscience",
-              },
-              {
-                quote: "Our lab uses shared collections for every project now. It's the reading list tool we always wished existed.",
-                role: "Postdoctoral Researcher, Molecular Biology",
-              },
-              {
-                quote: "The AI tagging saves me hours every week. My papers organize themselves automatically — I just search for a topic and everything relevant appears instantly.",
-                role: "Graduate Student, Political Theory",
-              },
-            ].map((t) => (
-              <blockquote
-                key={t.role}
-                data-reveal
-                className={`${reveal} relative rounded-2xl border-[var(--border)] bg-[var(--card)]/50 p-8`}
-              >
-                <span className="absolute left-6 top-4 font-serif text-5xl leading-none text-[var(--accent)]/40">&ldquo;</span>
-                <p className="relative z-10 pt-6 text-sm leading-relaxed text-[var(--muted-foreground)]">{t.quote}</p>
-                <footer className="mt-6 text-xs text-[var(--muted-foreground)]">— {t.role}</footer>
-              </blockquote>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="scroll-mt-24 py-24 sm:py-32">
-        <div className="mx-auto max-w-3xl px-4">
-          <div data-reveal className={`${reveal} text-center`}>
-            <h2 className="text-3xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Frequently asked questions about Corpus</h2>
-          </div>
-          <div className="mt-12 space-y-2">
-            {faqItems.map((item, i) => (
-              <div key={item.q} data-reveal className={`${reveal} overflow-hidden rounded-xl border-[var(--border)] bg-[var(--card)]/30`}>
-                <button
-                  type="button"
-                  className="flex min-h-[48px] w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--muted)]/50 touch-manipulation"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  aria-expanded={openFaq === i}
+        {/* 2. "How it works" */}
+        <section className="py-24 border-y border-[#30302e] bg-[#141413]">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="grid gap-12 sm:grid-cols-3">
+              {[
+                { step: "01", title: "Add topics or sources", icon: <Plus className="w-5 h-5 text-[#c96442]" /> },
+                { step: "02", title: "We track and update your feed", icon: <Database className="w-5 h-5 text-[#c96442]" /> },
+                { step: "03", title: "Read, summarize, and save", icon: <BookOpen className="w-5 h-5 text-[#c96442]" /> },
+              ].map((item, i) => (
+                <motion.div 
+                  key={item.step}
+                  {...fadeUpParams}
+                  transition={{ duration: 0.3, delay: i * 0.1 }}
+                  className="flex flex-col"
                 >
-                  {item.q}
-                  <span className="text-[var(--muted-foreground)]">{openFaq === i ? "−" : "+"}</span>
-                </button>
-                {openFaq === i && <div className="border-t border-[var(--border)] px-5 py-4 text-sm leading-relaxed text-[var(--muted-foreground)]">{item.a}</div>}
-              </div>
-            ))}
+                  <div className="w-12 h-12 rounded-[8px] bg-[#30302e]/50 border border-[#30302e] flex items-center justify-center mb-6 shadow-[0_0_0_1px_#30302e]">
+                    {item.icon}
+                  </div>
+                  <h3 className="text-[1.3rem] font-serif font-medium text-[#faf9f5] mb-2">{item.title}</h3>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Final CTA */}
-      <section data-reveal className={`${reveal} border-t border-[var(--border)] bg-[var(--background)] py-24`}>
-        <div className="mx-auto max-w-3xl px-4 text-center">
-          <h2 className="text-2xl font-bold tracking-tight font-serif text-[var(--foreground)] sm:text-4xl">Start building your research network today.</h2>
-          <p className="mt-4 text-sm sm:text-base text-[var(--muted-foreground)]">Free forever. No credit card required. Join researchers from leading universities.</p>
-          <Link
-            href="/login"
-            className={`mt-10 inline-flex w-full sm:min-w-[200px] sm:w-auto justify-center rounded-lg px-8 py-4 text-base font-semibold text-content-inverse ${accentBg} shadow-xl shadow-accent/30 transition hover:bg-accent-hover touch-manipulation`}
-          >
-            Get Started Free
-          </Link>
-        </div>
-      </section>
+        {/* 3. Core Loop Visualization */}
+        <section className="py-32 bg-[#141413] overflow-hidden">
+          <div className="mx-auto max-w-6xl px-4">
+            <motion.div {...fadeUpParams} className="text-center mb-16">
+               <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#faf9f5]">This keeps working without you.</h2>
+            </motion.div>
 
-      {/* Hidden SEO paragraph */}
-      <p className="sr-only">
-        Corpus is a collaborative research platform and academic reference manager for researchers, academics, and students. Save research papers by DOI, ArXiv preprints by URL, and books by ISBN. Share papers with your research network, build collaborative reading lists with your lab or study group, and discover connections between sources using a semantic AI knowledge graph. A modern alternative to Zotero, Mendeley, and Readwise for collaborative academic research. Free personal research library with Pro plan for unlimited sources and advanced collaboration features. Used by graduate students, PhD candidates, postdoctoral researchers, and faculty at research universities.
-      </p>
+            <motion.div 
+              {...fadeUpParams}
+              className="relative rounded-[16px] border border-[#30302e] bg-[#30302e]/10 p-8 sm:p-16 overflow-hidden shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]"
+            >
+               {/* Animated Loop Highlight */}
+               <motion.div 
+                 animate={{ rotate: 360 }}
+                 transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] rounded-full border border-[#c96442]/10 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(201,100,66,0)_0%,rgba(201,100,66,0.1)_50%,rgba(201,100,66,0)_100%)] pointer-events-none opacity-50"
+               />
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--border)] bg-[var(--background)] py-12">
+               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4">
+                 {[
+                   { label: "INPUT", icon: <Plus className="w-5 h-5" /> },
+                   { label: "FEED", icon: <Database className="w-5 h-5" /> },
+                   { label: "SUMMARY", icon: <Sparkles className="w-5 h-5" /> },
+                   { label: "SAVE", icon: <Save className="w-5 h-5" /> },
+                   { label: "REPEAT", icon: <Repeat className="w-5 h-5" /> },
+                 ].map((stage, i, arr) => (
+                   <div key={stage.label} className="flex flex-col md:flex-row items-center gap-8 md:gap-4 flex-1 justify-center">
+                     <div className="flex flex-col items-center gap-4">
+                       <div className="w-16 h-16 rounded-full bg-[#141413] border border-[#30302e] text-[#b0aea5] flex items-center justify-center shadow-[rgba(0,0,0,0.05)_0px_4px_24px]">
+                         {stage.icon}
+                       </div>
+                       <span className="text-[12px] font-sans font-medium text-[#87867f] tracking-widest uppercase">{stage.label}</span>
+                     </div>
+                     {i < arr.length - 1 && (
+                       <div className="flex justify-center items-center text-[#30302e] h-8 md:h-auto">
+                         <ArrowRight className="w-5 h-5 rotate-90 md:rotate-0" />
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* 4. Feature Highlights */}
+        <section className="py-24 border-y border-[#30302e] bg-[#141413]">
+          <div className="mx-auto max-w-6xl px-4 grid gap-8 sm:grid-cols-2">
+             {[
+               { title: "Automated research feed", desc: "Your sources are polled continuously. Papers arrive without you searching.", icon: <Repeat className="w-5 h-5" /> },
+               { title: "AI summaries", desc: "Every paper is instantly summarized. Skim hours of research in minutes.", icon: <Sparkles className="w-5 h-5" /> },
+               { title: "Deduplication", desc: "No repeated content. We merge preprints and published versions.", icon: <CheckCircle className="w-5 h-5" /> },
+               { title: "Collections", desc: "Save papers to custom collections. Organize your thinking seamlessly.", icon: <Layers className="w-5 h-5" /> },
+             ].map((feature, i) => (
+                <motion.div 
+                  key={feature.title}
+                  {...fadeUpParams}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  className="rounded-[16px] border border-[#30302e] bg-[#141413] p-8 hover:bg-[#30302e]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
+                >
+                   <div className="w-10 h-10 rounded-[8px] bg-[#141413] border border-[#30302e] flex items-center justify-center text-[#c96442] shadow-[0_0_0_1px_#30302e] mb-6">
+                     {feature.icon}
+                   </div>
+                   <h3 className="text-[1.3rem] font-serif font-medium text-[#faf9f5] mb-3">{feature.title}</h3>
+                   <p className="text-[16px] text-[#b0aea5] leading-[1.60]">{feature.desc}</p>
+                </motion.div>
+             ))}
+          </div>
+        </section>
+
+        {/* 5. Context & Final CTA */}
+        <section className="py-32 bg-[#141413] text-center px-4">
+          <div className="mx-auto max-w-2xl">
+             <motion.div {...fadeUpParams}>
+               <p className="text-[12px] font-sans text-[#87867f] uppercase tracking-[0.12em] font-medium mb-6">
+                 Built by students. Used for tracking technical content.
+               </p>
+               <h2 className="text-[2.3rem] sm:text-[3.25rem] font-serif font-medium text-[#faf9f5] leading-[1.10] mb-10">
+                 Set it once.<br />It keeps updating.
+               </h2>
+               <Link
+                 href="/login"
+                 className="inline-flex items-center justify-center rounded-[12px] px-[24px] py-[16px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757] transition-colors"
+               >
+                 Get started free
+               </Link>
+             </motion.div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer className="border-t border-[#30302e] bg-[#141413] py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:flex-row">
-          <div className="flex flex-col items-center gap-2 sm:items-start">
-            <span className="text-lg font-semibold text-[var(--foreground)]">Corpus</span>
-            <p className="text-xs text-[var(--muted-foreground)]">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
+          <div className="flex flex-col items-center gap-2 sm:items-start text-center sm:text-left">
+            <span className="text-[1.06rem] font-serif font-medium text-[#faf9f5]">Corpus</span>
+            <p className="text-[14px] font-sans text-[#5e5d59]">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
           </div>
-          <div className="flex gap-8 text-sm text-[var(--muted-foreground)]">
-            <Link href="/privacy" className="transition hover:text-[var(--foreground)]">
-              Privacy
-            </Link>
-            <Link href="/pricing" className="transition hover:text-[var(--foreground)]">
-              Pricing
-            </Link>
+          <div className="flex gap-8 text-[15px] font-sans text-[#87867f]">
+            <Link href="/privacy" className="transition hover:text-[#faf9f5]">Privacy</Link>
+            <Link href="/pricing" className="transition hover:text-[#faf9f5]">Pricing</Link>
           </div>
         </div>
       </footer>
