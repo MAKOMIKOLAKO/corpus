@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prismaWithRetry';
 import { discoverFeed } from '@/lib/feedDetector';
 import { normalizeUrl } from '@/lib/entryDedup';
+import { canAddFeed, getUserPlan } from '@/lib/plans';
 import { timedJson } from '@/lib/serverTiming';
 
 // GET /api/feeds - List user's feeds
@@ -128,6 +129,18 @@ export async function POST(request: NextRequest) {
           domain: source.domain
         }
       }, startedAt, { status: 409 }, 'feeds.post');
+    }
+
+    const currentFeedCount = await prisma.userSource.count({
+      where: { userId: user.id }
+    });
+
+    const feedLimitCheck = canAddFeed(getUserPlan(user), currentFeedCount);
+    if (!feedLimitCheck.allowed) {
+      return timedJson({
+        error: 'Feed limit reached for your current plan',
+        reason: feedLimitCheck.reason
+      }, startedAt, { status: 403 }, 'feeds.post');
     }
 
     // Create user-source relation
