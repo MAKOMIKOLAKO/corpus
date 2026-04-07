@@ -75,7 +75,7 @@ export default function LibraryPageClient({
     sortOrder: sortBy === 'oldest' || sortBy === 'title-desc' ? 'asc' : 'desc'
   };
 
-  const { entries, total, loading, error, hasMore, loadMore, removeEntries, updateEntry, highlightDuplicate } = useLibrary(filters);
+  const { entries, total, loading, error, hasMore, loadMore, removeEntry, removeEntries, updateEntry, highlightDuplicate } = useLibrary(filters);
 
   const handleAddEntry = async (newEntry: FlatEntry) => {
     // Handle duplicate response
@@ -157,6 +157,7 @@ export default function LibraryPageClient({
                         entry={entry}
                         scrollPositionKey="library"
                         fromPath="/library"
+                        onDelete={removeEntry}
                         selectionMode={{
                           enabled: isSelectionMode,
                           isSelected: selectedIds.includes(entry.id),

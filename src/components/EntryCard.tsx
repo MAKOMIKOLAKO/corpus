@@ -42,6 +42,7 @@ export default function EntryCard({
     entry,
     scrollPositionKey = 'library',
     fromPath,
+    onDelete,
     selectionMode,
 }: {
     entry: FlatEntry;
@@ -49,6 +50,8 @@ export default function EntryCard({
     scrollPositionKey?: string;
     /** Optional path to include in the from query parameter for back navigation */
     fromPath?: string;
+    /** Optional callback for removing this entry from parent-managed state after successful delete */
+    onDelete?: (userEntryId: string) => void;
     selectionMode?: {
         enabled: boolean;
         isSelected: boolean;
@@ -322,6 +325,7 @@ export default function EntryCard({
             });
 
             if (response.ok) {
+                onDelete?.(entry.id);
                 router.refresh();
             } else {
                 const errorData = await response.json();
@@ -518,7 +522,7 @@ export default function EntryCard({
                                                 ))}
                                                 <div className="border-t border-border-default">
                                                     <button
-                                                        onClick={(e) => {
+                                                        onPointerUp={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
                                                             handleDelete();
