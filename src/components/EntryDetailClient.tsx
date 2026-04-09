@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, Brain } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useEntry } from '@/hooks/useEntry';
-import { FlatEntry } from '@/types/entry';
 import ShareEntryModal from '@/components/ShareEntryModal';
+import SingleEntryCitationModal from '@/components/SingleEntryCitationModal';
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -44,6 +44,7 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
 
     // Share state
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showCitationModal, setShowCitationModal] = useState(false);
 
     const apiKey = useApiKey();
 
@@ -195,6 +196,9 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
             <div className="space-y-8">
                 <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
                     <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
+                        <button onClick={() => setShowCitationModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Cite this entry">
+                            <FileText className="w-5 h-5 sm:w-4 sm:h-4" />
+                        </button>
                         <button onClick={() => setShowShareModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
                             <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
                         </button>
@@ -389,6 +393,25 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                             title: entry.title,
                             authors: entry.authors,
                             url: entry.url
+                        }}
+                    />
+                )}
+
+                {showCitationModal && entry && (
+                    <SingleEntryCitationModal
+                        isOpen={showCitationModal}
+                        onClose={() => setShowCitationModal(false)}
+                        entry={{
+                            id: entry.id,
+                            title: entry.title,
+                            authors: entry.authors,
+                            year: entry.year,
+                            source: entry.source,
+                            url: entry.url,
+                            doi: entry.doi,
+                            abstract: entry.abstract,
+                            isbn: entry.isbn,
+                            metadata: entry.metadata,
                         }}
                     />
                 )}

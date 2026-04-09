@@ -15,6 +15,8 @@ import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { FlatEntry } from '@/types/entry';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import BibliographyGenerateDialog from '@/components/BibliographyGenerateDialog';
 
 interface CollectionEntry extends FlatEntry {
     addedAt: string;
@@ -84,6 +86,8 @@ export default function CollectionDetailPage() {
     const [deletingCollection, setDeletingCollection] = useState(false);
     const [showMembersDropdown, setShowMembersDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState('entries');
+    const [showBibliographyDialog, setShowBibliographyDialog] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // Initialize tab from URL params
     useEffect(() => {
@@ -445,6 +449,18 @@ export default function CollectionDetailPage() {
         (item.title.toLowerCase().includes(search.toLowerCase()) ||
             item.authors.some(author => author.toLowerCase().includes(search.toLowerCase())))
     ) || [];
+    const bibliographyEntryIds = filteredEntries.slice(0, 200).map((entry) => entry.id);
+
+    const openCollectionBibliography = () => {
+        if (filteredEntries.length < 2) {
+            toast.error('Select or filter to at least 2 entries to generate a bibliography');
+            return;
+        }
+        if (filteredEntries.length > 200) {
+            toast.info('Using the first 200 filtered entries for bibliography generation');
+        }
+        setShowBibliographyDialog(true);
+    };
 
     // Tab configuration
     const tabs = [
@@ -489,6 +505,14 @@ export default function CollectionDetailPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={openCollectionBibliography}
+                            title={filteredEntries.length < 2 ? 'Need at least 2 entries' : undefined}
+                        >
+                            Bibliography
+                        </Button>
                         {/* Members Button */}
                         {(isOwner || (collection.members && collection.members.length > 0)) && (
                             <div className="relative">
@@ -658,6 +682,18 @@ export default function CollectionDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {showUpgradeModal && (
+                <UpgradePrompt reason="bibliography_pro_only" onClose={() => setShowUpgradeModal(false)} />
+            )}
+
+            <BibliographyGenerateDialog
+                isOpen={showBibliographyDialog}
+                onClose={() => setShowBibliographyDialog(false)}
+                userEntryIds={bibliographyEntryIds}
+                defaultTitle={collection.name}
+                onProRequired={() => setShowUpgradeModal(true)}
+            />
 
             {/* Share Settings Section - Only visible to owner */}
             {isOwner && (

@@ -11,6 +11,7 @@ export const PLAN_LIMITS = {
     queuePriority: 'standard',
     batchActions: false,
     advancedSearch: false,
+    bibliographyGeneration: false,
   },
   PRO: {
     maxEntries: Infinity,
@@ -22,6 +23,7 @@ export const PLAN_LIMITS = {
     queuePriority: 'priority',
     batchActions: true,
     advancedSearch: true,
+    bibliographyGeneration: true,
   },
   LIFETIME_PRO: {
     maxEntries: Infinity,
@@ -33,6 +35,7 @@ export const PLAN_LIMITS = {
     queuePriority: 'priority',
     batchActions: true,
     advancedSearch: true,
+    bibliographyGeneration: true,
   },
 } as const
 
@@ -51,6 +54,19 @@ export function canAddEntry(
     return {
       allowed: false,
       reason: 'entry_limit_reached'
+    }
+  }
+  return { allowed: true }
+}
+
+export function canUseBibliographyGeneration(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  const limits = getUserLimits(plan)
+  if (!limits.bibliographyGeneration) {
+    return {
+      allowed: false,
+      reason: 'bibliography_pro_only'
     }
   }
   return { allowed: true }

@@ -55,6 +55,11 @@ export default async function LibraryPage({
                             <p className="body-large text-content-secondary">browse and search your knowledge base</p>
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto">
+                            <a href="#library-bibliography-actions" className="flex-1 md:flex-none">
+                                <button className="button-warm-sand gap-2 w-full md:w-auto touch-manipulation inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all h-12 px-6 py-3">
+                                    bibliography
+                                </button>
+                            </a>
                             <a href="/add" className="flex-1 md:flex-none">
                                 <button className="button-terracotta gap-2 w-full md:w-auto touch-manipulation inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all h-12 px-6 py-3">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -11,7 +11,7 @@ interface UpgradePromptProps {
   reason: 'entry_limit_reached' | 'shared_collections_pro_only' |
   'personal_collection_limit_reached' | 'batch_actions_pro_only' |
   'contribution_pro_only' | 'advanced_search_pro_only' |
-  'alerts_pro_only';
+  'alerts_pro_only' | 'bibliography_pro_only';
   variant?: 'inline' | 'modal' | 'toast';
 }
 
@@ -69,6 +69,13 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         return {
           title: "Smart Alerts is a Pro feature",
           description: "Define up to 5 research interests and Corpus will automatically find and add new relevant papers to your library every day.",
+          cta: "Upgrade to Pro →",
+          href: "/settings/billing"
+        };
+      case 'bibliography_pro_only':
+        return {
+          title: "Bibliography generation is a Pro feature",
+          description: "Generate formatted citations in APA, MLA, and Chicago from entries in your library, with built-in deduplication and optional AI related-work summaries.",
           cta: "Upgrade to Pro →",
           href: "/settings/billing"
         };

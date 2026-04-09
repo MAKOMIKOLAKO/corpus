@@ -60,6 +60,7 @@ model User {
   sentSharedEntries         SharedEntry[]            @relation("SharedEntrySender")
   signals                   Signal[]
   userEntries               UserEntry[]
+  generatedBibliographies   GeneratedBibliography[]
   userSources               UserSource[]
   watchQueries              WatchQuery[]
 }
@@ -617,4 +618,21 @@ model UserSource {
   @@index([sourceId])
   @@index([feedUrl])
   @@index([defaultFeedId])
+}
+
+model GeneratedBibliography {
+  id                   String   @id @default(cuid())
+  userId               String
+  title                String?
+  entryIds             String[]
+  citationStyle        String
+  ordering             String
+  content              String
+  relatedWorkParagraph String?
+  createdAt            DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
