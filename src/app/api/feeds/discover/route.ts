@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { discoverFeed } from '@/lib/feedDetector';
-import { normalizeUrl } from '@/lib/entryDedup';
+import { normalizeFeedUrlForStorage } from '@/lib/feedUrl';
 
 // POST /api/feeds/discover - Discover and preview a feed without adding it
 export async function POST(request: NextRequest) {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Normalize the URL
-    const normalizedUrl = normalizeUrl(url);
+    const normalizedUrl = normalizeFeedUrlForStorage(url);
     if (!normalizedUrl) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Discover the feed
     const discovery = await discoverFeed(normalizedUrl);
     if (!discovery) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'No RSS feed found at this URL',
         details: 'Please check if the website has an RSS feed'
       }, { status: 404 });
