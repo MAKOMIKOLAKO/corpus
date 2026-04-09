@@ -19,17 +19,17 @@ function EntriesLoading() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="bg-ivory border border-border-cream rounded-xl p-6 animate-pulse">
-          <div className="h-4 bg-warm-sand rounded mb-3 w-3/4"></div>
-          <div className="h-3 bg-warm-sand rounded mb-2 w-full"></div>
-          <div className="h-3 bg-warm-sand rounded mb-4 w-2/3"></div>
+        <div key={i} className="bg-card border border-border rounded-xl p-6 animate-pulse">
+          <div className="h-4 bg-muted rounded mb-3 w-3/4"></div>
+          <div className="h-3 bg-muted rounded mb-2 w-full"></div>
+          <div className="h-3 bg-muted rounded mb-4 w-2/3"></div>
           <div className="flex gap-2 mb-4">
-            <div className="h-6 bg-warm-sand rounded-full w-16"></div>
-            <div className="h-6 bg-warm-sand rounded-full w-20"></div>
+            <div className="h-6 bg-muted rounded-full w-16"></div>
+            <div className="h-6 bg-muted rounded-full w-20"></div>
           </div>
           <div className="flex gap-2">
-            <div className="h-5 bg-warm-sand rounded w-12"></div>
-            <div className="h-5 bg-warm-sand rounded w-16"></div>
+            <div className="h-5 bg-muted rounded w-12"></div>
+            <div className="h-5 bg-muted rounded w-16"></div>
           </div>
         </div>
       ))}

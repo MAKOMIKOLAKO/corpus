@@ -316,7 +316,7 @@ export default function AccountPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-4xl">
+        <div className="space-y-6 max-w-4xl [&_[data-slot=card]]:ring-0 [&_[data-slot=card]]:hover:ring-0 [&_[data-slot=card]]:border [&_[data-slot=card]]:border-border [&_[data-slot=card-header]]:px-6 [&_[data-slot=card-header]]:pt-6 [&_[data-slot=card-content]]:px-6 [&_[data-slot=card-content]]:pb-6">
             {/* Upgrade Success Banner */}
             {upgraded && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
