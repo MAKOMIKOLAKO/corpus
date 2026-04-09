@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/account/settings?upgraded=true&userId=${user.id}`,
+      success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/account/settings?stripe=success`,
       cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pricing`,
       metadata: {
         userId: user.id,
