@@ -532,6 +532,18 @@ export default function CollectionsPage() {
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
+                                                        setShowDropdown(null);
+                                                        router.push(`/collections/${collection.id}?tab=entries`);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                    Bibliography
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
                                                         openEditModal(collection);
                                                     }}
                                                     className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
