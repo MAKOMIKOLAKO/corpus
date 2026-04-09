@@ -55,11 +55,17 @@ interface RSSEntry {
 
 interface UserFeed {
   id: string;
+  subscriptionId?: string;
   feedUrl: string;
   title: string | null;
   domain: string;
   lastFetchedAt: Date | null;
   addedAt: Date;
+  isDefault?: boolean;
+  defaultFeed?: {
+    category?: string;
+    description?: string | null;
+  } | null;
 }
 
 interface FeedClientProps {
@@ -210,6 +216,7 @@ export default function FeedClient({
   const [rssHasMore, setRssHasMore] = React.useState(initialRssHasMore);
   const [isLoadingMoreRss, setIsLoadingMoreRss] = React.useState(false);
   const [rssLoadError, setRssLoadError] = React.useState<string | null>(null);
+  const [highlightedFeedId, setHighlightedFeedId] = React.useState<string | null>(null);
   const loadMoreTriggerRef = React.useRef<HTMLDivElement | null>(null);
 
   const sortedSignals = React.useMemo(
@@ -293,13 +300,30 @@ export default function FeedClient({
 
   const handleAddFeed = React.useCallback((newFeed: {
     id: string;
+    subscriptionId?: string;
     feedUrl: string;
     title: string | null;
     domain: string;
+    isDefault?: boolean;
+    defaultFeed?: {
+      category?: string;
+      description?: string | null;
+    } | null;
   }) => {
     setFeedList(prev => [{ ...newFeed, lastFetchedAt: null, addedAt: new Date() }, ...prev]);
+    setHighlightedFeedId(newFeed.id);
+    setTimeout(() => setHighlightedFeedId(null), 3000);
     setIsAddDialogOpen(false);
     toast.success('Feed added successfully');
+  }, []);
+
+  const handleExistingSubscription = React.useCallback((existingFeedId?: string) => {
+    if (!existingFeedId) {
+      return;
+    }
+
+    setHighlightedFeedId(existingFeedId);
+    setTimeout(() => setHighlightedFeedId(null), 3000);
   }, []);
 
   const handleRemoveFeed = React.useCallback(async (feedId: string) => {
@@ -455,13 +479,21 @@ export default function FeedClient({
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">feed</h1>
-          <button
-            onClick={() => setShowManageFeeds(!showManageFeeds)}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Settings size={16} />
-            {showManageFeeds ? 'Hide' : 'Manage'} Feeds
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/feeds/discover"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Discover Feeds
+            </Link>
+            <button
+              onClick={() => setShowManageFeeds(!showManageFeeds)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Settings size={16} />
+              {showManageFeeds ? 'Hide' : 'Manage'} Feeds
+            </button>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">updates from the research network and your RSS feeds</p>
       </div>
@@ -522,10 +554,29 @@ export default function FeedClient({
           ) : (
             <div className="space-y-2">
               {feedList.map(feed => (
-                <div key={feed.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div
+                  key={feed.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border transition-all ${highlightedFeedId === feed.id
+                    ? 'border-primary bg-primary/10'
+                    : 'border-transparent bg-muted/30'
+                    }`}
+                >
                   <div className="flex-1 min-w-0 mr-4">
                     <p className="font-medium text-sm truncate">{feed.title || feed.domain}</p>
-                    <p className="text-xs text-muted-foreground">{feed.domain}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-muted-foreground">{feed.domain}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${feed.isDefault
+                        ? 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:bg-emerald-900/20'
+                        : 'border-border text-muted-foreground bg-background'
+                        }`}>
+                        {feed.isDefault ? 'Curated' : 'Custom'}
+                      </span>
+                      {feed.isDefault && feed.defaultFeed?.category && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-border text-muted-foreground bg-background">
+                          {feed.defaultFeed.category}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleRemoveFeed(feed.id)}
@@ -601,6 +652,7 @@ export default function FeedClient({
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onFeedAdded={handleAddFeed}
+        onExistingSubscription={handleExistingSubscription}
       />
     </div>
   );

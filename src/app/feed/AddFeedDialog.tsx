@@ -28,10 +28,15 @@ interface AddFeedDialogProps {
     feedUrl: string;
     title: string | null;
     domain: string;
+    isDefault?: boolean;
+    defaultFeed?: {
+      category?: string;
+    } | null;
   }) => void;
+  onExistingSubscription?: (feedId?: string) => void;
 }
 
-export function AddFeedDialog({ open, onOpenChange, onFeedAdded }: AddFeedDialogProps) {
+export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onExistingSubscription }: AddFeedDialogProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<FeedPreview | null>(null);
@@ -86,11 +91,19 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded }: AddFeedDialog
 
       if (!response.ok) {
         if (response.status === 409) {
-          setError('You have already added this feed');
+          setError("You're already subscribed to this feed.");
+          const existingId = data?.feed?.id || data?.feed?.sourceId;
+          if (typeof existingId === 'string') {
+            onExistingSubscription?.(existingId);
+          }
         } else {
           setError(data.error || 'Failed to add feed');
         }
         return;
+      }
+
+      if (data?.message) {
+        toast.message(data.message);
       }
 
       onFeedAdded(data.feed);

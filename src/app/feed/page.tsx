@@ -16,10 +16,20 @@ export default async function FeedPage() {
       where: { id: userId },
       select: { plan: true }
     }),
-    prisma.userSource.findMany({
+    (prisma as any).userSource.findMany({
       where: { userId },
       select: {
+        id: true,
         createdAt: true,
+        feedUrl: true,
+        isDefault: true,
+        defaultFeedId: true,
+        defaultFeed: {
+          select: {
+            category: true,
+            description: true,
+          }
+        },
         source: {
           select: {
             id: true,
@@ -67,10 +77,10 @@ export default async function FeedPage() {
     })
   ]);
 
-  const rssSourceNames = Array.from(new Set(userFeeds.flatMap((f: any) => [
+  const rssSourceNames: string[] = Array.from(new Set(userFeeds.flatMap((f: any) => [
     f.source.title,
     f.source.domain,
-  ]).filter((name): name is string => Boolean(name && name.trim()))));
+  ]).filter((name: any): name is string => Boolean(name && name.trim()))));
 
   const RSS_PAGE_SIZE = 20;
 
@@ -128,11 +138,14 @@ export default async function FeedPage() {
         }))}
         userFeeds={userFeeds.map((f: any) => ({
           id: f.source.id,
-          feedUrl: f.source.feedUrl,
+          subscriptionId: f.id,
+          feedUrl: f.feedUrl,
           title: f.source.title,
           domain: f.source.domain,
           lastFetchedAt: f.source.lastFetchedAt,
-          addedAt: f.createdAt
+          addedAt: f.createdAt,
+          isDefault: f.isDefault,
+          defaultFeed: f.defaultFeed
         }))}
       />
     </div>
