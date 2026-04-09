@@ -11,39 +11,70 @@ export default async function FeedPage() {
     redirect('/login');
   }
 
+  const userFeedsPromise = (async () => {
+    try {
+      return await (prisma as any).userSource.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          createdAt: true,
+          feedUrl: true,
+          isDefault: true,
+          defaultFeedId: true,
+          defaultFeed: {
+            select: {
+              category: true,
+              description: true,
+            }
+          },
+          source: {
+            select: {
+              id: true,
+              feedUrl: true,
+              title: true,
+              domain: true,
+              lastFetchedAt: true,
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2022') {
+        console.warn('[feed/page] Falling back to legacy UserSource query: missing migrated columns', error?.meta);
+        return await (prisma as any).userSource.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            createdAt: true,
+            source: {
+              select: {
+                id: true,
+                feedUrl: true,
+                title: true,
+                domain: true,
+                lastFetchedAt: true,
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        });
+      }
+
+      throw error;
+    }
+  })();
+
   const [user, userFeeds, signals] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true }
     }),
-    (prisma as any).userSource.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        createdAt: true,
-        feedUrl: true,
-        isDefault: true,
-        defaultFeedId: true,
-        defaultFeed: {
-          select: {
-            category: true,
-            description: true,
-          }
-        },
-        source: {
-          select: {
-            id: true,
-            feedUrl: true,
-            title: true,
-            domain: true,
-            lastFetchedAt: true,
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    }),
+    userFeedsPromise,
     prisma.signal.findMany({
       where: {
         OR: [
@@ -139,13 +170,13 @@ export default async function FeedPage() {
         userFeeds={userFeeds.map((f: any) => ({
           id: f.source.id,
           subscriptionId: f.id,
-          feedUrl: f.feedUrl,
+          feedUrl: f.feedUrl ?? f.source.feedUrl,
           title: f.source.title,
           domain: f.source.domain,
           lastFetchedAt: f.source.lastFetchedAt,
           addedAt: f.createdAt,
-          isDefault: f.isDefault,
-          defaultFeed: f.defaultFeed
+          isDefault: Boolean(f.isDefault),
+          defaultFeed: f.defaultFeed ?? null
         }))}
       />
     </div>
