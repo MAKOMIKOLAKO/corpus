@@ -11,7 +11,9 @@ type User = { id: string; username: string | null; name: string | null; bio: str
 type Connection = { id: string; status: string; otherUser: User; requesterId?: string; receiverId?: string };
 type SharedEntry = {
   id: string; status: string; message: string | null; sharedAt: string;
-  entry: { id: string; title: string };
+  entry?: { id: string; title: string };
+  globalEntry?: { id: string; title: string };
+  userEntry?: { id: string; title: string } | null;
   sender?: User; receiver?: User;
 };
 
@@ -130,6 +132,9 @@ export default function ConnectionsPageClient() {
 
   const pendingCount = pendingReceived.length;
   const pendingShared = receivedEntries.filter(e => e.status === 'PENDING').length;
+  const getSharedEntryTitle = (share: SharedEntry) => {
+    return share.entry?.title || share.userEntry?.title || share.globalEntry?.title || 'Untitled entry';
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -332,7 +337,7 @@ export default function ConnectionsPageClient() {
                     <div className="min-w-0 flex-1 space-y-2 sm:space-y-1">
                       <div className="flex items-center gap-2">
                         <BookOpen className="w-3.5 h-3.5 text-[var(--muted-foreground)] shrink-0" />
-                        <p className="text-sm font-medium truncate">{s.entry.title}</p>
+                        <p className="text-sm font-medium truncate">{getSharedEntryTitle(s)}</p>
                       </div>
                       <p className="text-xs text-[var(--muted-foreground)]">
                         From <span className="font-medium">@{s.sender?.username || s.sender?.name}</span>
@@ -383,7 +388,7 @@ export default function ConnectionsPageClient() {
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <BookOpen className="w-3.5 h-3.5 text-[var(--muted-foreground)] shrink-0" />
-                        <p className="text-sm font-medium truncate">{s.entry.title}</p>
+                        <p className="text-sm font-medium truncate">{getSharedEntryTitle(s)}</p>
                       </div>
                       <p className="text-xs text-[var(--muted-foreground)]">
                         To <span className="font-medium">@{s.receiver?.username || s.receiver?.name}</span>

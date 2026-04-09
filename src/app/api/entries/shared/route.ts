@@ -11,6 +11,34 @@ const ENTRY_SELECT = {
 
 const USER_SELECT = { id: true, username: true, name: true } as const;
 
+function toCanonicalEntry(share: any, userEntry: any) {
+  if (share.globalEntry) {
+    return {
+      id: share.globalEntry.id,
+      title: share.globalEntry.title,
+      authors: share.globalEntry.authors,
+      year: share.globalEntry.year,
+      abstract: share.globalEntry.abstract,
+      url: share.globalEntry.url,
+      source: share.globalEntry.source,
+    };
+  }
+
+  if (userEntry) {
+    return {
+      id: userEntry.id,
+      title: userEntry.title,
+      authors: userEntry.authors,
+      year: userEntry.year,
+      abstract: userEntry.abstract,
+      url: userEntry.url,
+      source: userEntry.source,
+    };
+  }
+
+  return null;
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -46,9 +74,12 @@ export async function GET() {
         select: userEntryWithGlobal
       });
 
+      const flattenedUserEntry = userEntry ? flattenUserEntry(userEntry) : null;
+
       return {
         ...share,
-        userEntry: userEntry ? flattenUserEntry(userEntry) : null
+        userEntry: flattenedUserEntry,
+        entry: toCanonicalEntry(share, flattenedUserEntry),
       };
     })
   );
@@ -64,9 +95,12 @@ export async function GET() {
         select: userEntryWithGlobal
       });
 
+      const flattenedUserEntry = userEntry ? flattenUserEntry(userEntry) : null;
+
       return {
         ...share,
-        userEntry: userEntry ? flattenUserEntry(userEntry) : null
+        userEntry: flattenedUserEntry,
+        entry: toCanonicalEntry(share, flattenedUserEntry),
       };
     })
   );

@@ -19,6 +19,41 @@ const ALLOWED_EVENTS = [
   'customer.subscription.created',
 ] as const;
 
+const PRO_STATUSES = new Set<string>([
+  'active',
+  'trialing',
+  'canceling',
+  'past_due',
+  'unpaid',
+]);
+
+function mapSubscriptionStatus(subscription: import('stripe').Stripe.Subscription): string {
+  return subscription.cancel_at_period_end ? 'canceling' : subscription.status;
+}
+
+function buildSubscriptionUpdateData(
+  subscription: import('stripe').Stripe.Subscription,
+  currentPlan: string
+) {
+  const subscriptionStatus = mapSubscriptionStatus(subscription);
+
+  return {
+    plan:
+      currentPlan === 'LIFETIME_PRO'
+        ? 'LIFETIME_PRO'
+        : PRO_STATUSES.has(subscriptionStatus)
+          ? 'PRO'
+          : 'FREE',
+    subscriptionStatus,
+    stripeSubscriptionId: subscription.id,
+    stripePriceId: subscription.items.data[0]?.price?.id ?? null,
+    subscriptionEndsAt:
+      typeof (subscription as any).current_period_end === 'number'
+        ? new Date((subscription as any).current_period_end * 1000)
+        : null,
+  };
+}
+
 export async function POST(request: NextRequest) {
   let rawBody: string;
   try {
@@ -81,13 +116,32 @@ export async function POST(request: NextRequest) {
         }
 
         if (user) {
-          const updateData: Record<string, unknown> = {
-            plan: 'PRO',
+          let updateData: Record<string, unknown> = {
+            plan: user.plan === 'LIFETIME_PRO' ? 'LIFETIME_PRO' : 'PRO',
             stripeCustomerId: session.customer as string,
             stripeSubscriptionId: session.subscription as string,
             subscriptionStatus: 'active',
-            stripePriceId: fullSession.line_items?.data[0]?.price?.id ?? null
+            stripePriceId: fullSession.line_items?.data[0]?.price?.id ?? null,
           };
+
+          if (typeof session.subscription === 'string') {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription);
+              updateData = {
+                ...buildSubscriptionUpdateData(subscription, user.plan ?? 'FREE'),
+                stripeCustomerId: session.customer as string,
+              };
+            } catch (subscriptionError) {
+              console.error('[stripe/webhook] failed to retrieve checkout subscription', {
+                subscriptionId: session.subscription,
+                error:
+                  subscriptionError instanceof Error
+                    ? subscriptionError.message
+                    : 'unknown',
+              });
+            }
+          }
+
           await (prisma as any).user.update({
             where: { id: user.id },
             data: updateData,
@@ -115,15 +169,10 @@ export async function POST(request: NextRequest) {
         });
 
         if (user) {
-          const updateData: Record<string, unknown> = {
-            subscriptionStatus: subscription.cancel_at_period_end
-              ? 'canceling'
-              : subscription.status,
-            stripePriceId: subscription.items.data[0]?.price?.id ?? null,
-            subscriptionEndsAt: new Date(
-              (subscription as any).current_period_end * 1000
-            )
-          };
+          const updateData: Record<string, unknown> = buildSubscriptionUpdateData(
+            subscription,
+            user.plan ?? 'FREE'
+          );
           await (prisma as any).user.update({
             where: { id: user.id },
             data: updateData,
@@ -153,7 +202,7 @@ export async function POST(request: NextRequest) {
           await (prisma as any).user.update({
             where: { id: user.id },
             data: {
-              plan: 'FREE',
+              plan: user.plan === 'LIFETIME_PRO' ? 'LIFETIME_PRO' : 'FREE',
               subscriptionStatus: 'canceled',
               stripeSubscriptionId: null,
               stripePriceId: null,

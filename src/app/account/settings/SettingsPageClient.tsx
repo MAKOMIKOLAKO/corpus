@@ -21,7 +21,7 @@ export default function AccountPage() {
     const [redeeming, setRedeeming] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [portalLoading, setPortalLoading] = useState(false);
-    const [upgradeProcessed, setUpgradeProcessed] = useState(false);
+    const [subscriptionSyncing, setSubscriptionSyncing] = useState(false);
     const [sharedCollectionsCount, setSharedCollectionsCount] = useState(0);
     const [loadingCollections, setLoadingCollections] = useState(true);
 
@@ -49,8 +49,8 @@ export default function AccountPage() {
         ...session.user,
         plan: session.user.plan as "FREE" | "PRO" | "LIFETIME_PRO"
     } : null);
-    const upgraded = searchParams?.get('upgraded') === 'true';
-    const userIdFromUrl = searchParams?.get('userId');
+    const stripeReturnState = searchParams?.get('stripe');
+    const isStripeReturn = stripeReturnState === 'success' || stripeReturnState === 'portal';
     const isLifetimePro = session?.user?.plan === 'LIFETIME_PRO';
 
     useEffect(() => {
@@ -58,12 +58,31 @@ export default function AccountPage() {
         fetchProfile();
     }, []);
 
-    // Handle session refresh when upgraded=true
+    // Sync subscription state when returning from Stripe checkout/portal
     useEffect(() => {
-        if (searchParams?.get('upgraded') === 'true') {
-            update(); // forces session to re-fetch from DB
+        if (!isStripeReturn || subscriptionSyncing) {
+            return;
         }
-    }, [searchParams, update]);
+
+        const syncStripeSubscription = async () => {
+            setSubscriptionSyncing(true);
+            try {
+                await fetch('/api/stripe/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                await update();
+                router.replace('/account/settings');
+                router.refresh();
+            } catch (error) {
+                console.error('Error syncing subscription state:', error);
+            } finally {
+                setSubscriptionSyncing(false);
+            }
+        };
+
+        syncStripeSubscription();
+    }, [isStripeReturn, router, subscriptionSyncing, update]);
 
     // Handle hash navigation
     useEffect(() => {
@@ -138,39 +157,6 @@ export default function AccountPage() {
             console.error('Error fetching collections:', error);
         } finally {
             setLoadingCollections(false);
-        }
-    };
-
-    // Handle immediate upgrade if coming from Stripe success
-    useEffect(() => {
-        if (upgraded && userIdFromUrl && session?.user?.id === userIdFromUrl && !upgradeProcessed) {
-            console.log("🚨 IMMEDIATE UPGRADE TRIGGERED");
-            setUpgradeProcessed(true);
-            upgradeUserToPro(userIdFromUrl);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [upgraded, userIdFromUrl, session?.user?.id, upgradeProcessed]);
-
-    const upgradeUserToPro = async (userId: string) => {
-        try {
-            console.log("🚨 UPGRADING USER TO PRO:", userId);
-            const response = await fetch('/api/stripe/upgrade-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId })
-            });
-
-            if (response.ok) {
-                console.log("🚨 UPGRADE SUCCESSFUL");
-                // Clear URL parameters and force session refresh
-                window.history.replaceState({}, '', '/account/settings');
-                // Refresh session data instead of full page reload
-                router.refresh();
-            } else {
-                console.error("🚨 UPGRADE FAILED");
-            }
-        } catch (error) {
-            console.error("🚨 UPGRADE ERROR:", error);
         }
     };
 
@@ -317,14 +303,16 @@ export default function AccountPage() {
 
     return (
         <div className="space-y-6 max-w-4xl [&_[data-slot=card]]:ring-0 [&_[data-slot=card]]:hover:ring-0 [&_[data-slot=card]]:border [&_[data-slot=card]]:border-border [&_[data-slot=card-header]]:px-6 [&_[data-slot=card-header]]:pt-6 [&_[data-slot=card-content]]:px-6 [&_[data-slot=card-content]]:pb-6">
-            {/* Upgrade Success Banner */}
-            {upgraded && (
+            {/* Stripe return sync banner */}
+            {isStripeReturn && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-center gap-3">
                         <CheckCircle className="w-5 h-5 text-green-600" />
                         <div>
-                            <h3 className="font-medium text-green-800">Welcome to Corpus Pro!</h3>
-                            <p className="text-sm text-green-700">Your account has been upgraded.</p>
+                            <h3 className="font-medium text-green-800">Syncing your subscription...</h3>
+                            <p className="text-sm text-green-700">
+                                We&apos;re refreshing your billing status from Stripe.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -516,8 +504,8 @@ export default function AccountPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {/* Success banner for upgrade */}
-                        {upgraded && session?.user?.plan === 'PRO' && (
+                        {/* Success banner after checkout return */}
+                        {stripeReturnState === 'success' && session?.user?.plan === 'PRO' && (
                             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                 <div className="flex items-center gap-2 text-green-800">
                                     <CheckCircle className="w-5 h-5" />
