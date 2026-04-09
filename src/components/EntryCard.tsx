@@ -370,7 +370,7 @@ export default function EntryCard({
                     }}
                     className={selectionMode?.enabled ? 'cursor-default' : ''}
                 >
-                    <Card className={`group h-full transition-all duration-200 overflow-visible interactive-card ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`} variant="ivory">
+                    <Card className={`group h-full border border-border bg-card transition-all duration-200 overflow-visible interactive-card ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`}>
                         <CardContent className="p-6 overflow-visible">
                             <div className="space-y-4">
                                 {/* Header with title, tags, and metadata */}
