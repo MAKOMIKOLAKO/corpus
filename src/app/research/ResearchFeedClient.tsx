@@ -8,8 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   Settings2,
-  Layers,
-  Filter,
 } from 'lucide-react'
 import { PaperCard } from './PaperCard'
 import type { DailyFeedResponse, PaperSummaryObject, ClusterObject } from '@/lib/research/feedPipeline'
@@ -115,7 +113,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
               return
             }
           }
-        } catch {/* keep polling */}
+        } catch {/* keep polling */ }
       }
     }
 
@@ -160,10 +158,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
 
   const feed = state.status === 'ready' ? state.feed : null
 
-  const filteredPapers: PaperSummaryObject[] =
-    feed && activeClusterFilter
-      ? feed.papers.filter((p) => p.clusterLabel === activeClusterFilter)
-      : feed?.papers ?? []
+  const papers: PaperSummaryObject[] = feed?.papers ?? []
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -294,93 +289,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
         )}
 
         <div className="flex gap-6">
-          {/* Cluster sidebar */}
-          {feed && feed.clusters.length > 0 && (
-            <aside className="hidden lg:block w-52 shrink-0">
-              <div className="sticky top-6">
-                <button
-                  id="cluster-sidebar-toggle"
-                  onClick={() => setShowClusters(!showClusters)}
-                  className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-content-secondary mb-3 hover:text-content-primary transition-colors"
-                >
-                  <Layers size={11} />
-                  Topics
-                  {showClusters ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                </button>
-
-                {showClusters && (
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => setActiveClusterFilter(null)}
-                      className={`w-full text-left rounded-lg px-3 py-2 text-[13px] transition-all ${
-                        activeClusterFilter === null
-                          ? 'bg-accent/15 text-accent border border-accent/20'
-                          : 'text-content-secondary hover:text-content-primary hover:bg-surface-raised'
-                      }`}
-                      aria-pressed={activeClusterFilter === null}
-                    >
-                      All topics
-                    </button>
-                    {feed.clusters.map((c: ClusterObject) => (
-                      <button
-                        key={c.clusterIndex}
-                        id={`cluster-filter-${c.clusterIndex}`}
-                        onClick={() =>
-                          setActiveClusterFilter(
-                            activeClusterFilter === c.label ? null : c.label
-                          )
-                        }
-                        className={`w-full text-left rounded-lg px-3 py-2 text-[13px] transition-all ${
-                          activeClusterFilter === c.label
-                            ? 'bg-accent/15 text-accent border border-accent/20'
-                            : 'text-content-secondary hover:text-content-primary hover:bg-surface-raised'
-                        }`}
-                        aria-pressed={activeClusterFilter === c.label}
-                      >
-                        <span className="block truncate">{c.label}</span>
-                        <span className="text-[11px] text-content-tertiary">
-                          {c.paperCount} paper{c.paperCount !== 1 ? 's' : ''}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </aside>
-          )}
-
           {/* Main content */}
           <main className="flex-1 min-w-0">
-            {/* Mobile cluster filter */}
-            {feed && feed.clusters.length > 0 && (
-              <div className="lg:hidden mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                <button
-                  onClick={() => setActiveClusterFilter(null)}
-                  className={`shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] transition-all ${
-                    activeClusterFilter === null
-                      ? 'bg-accent text-accent-foreground'
-                      : 'bg-card border border-border text-content-secondary'
-                  }`}
-                >
-                  <Filter size={10} /> All
-                </button>
-                {feed.clusters.map((c: ClusterObject) => (
-                  <button
-                    key={c.clusterIndex}
-                    onClick={() =>
-                      setActiveClusterFilter(activeClusterFilter === c.label ? null : c.label)
-                    }
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] transition-all truncate max-w-[140px] ${
-                      activeClusterFilter === c.label
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-card border border-border text-content-secondary'
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* States */}
             {(state.status === 'loading' || state.status === 'polling') && (
@@ -415,20 +325,20 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
 
             {state.status === 'ready' && (
               <AnimatePresence mode="popLayout">
-                {filteredPapers.length === 0 ? (
+                {papers.length === 0 ? (
                   <motion.div
-                    key="no-cluster-papers"
+                    key="no-papers"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="rounded-xl border border-border bg-card px-6 py-8 text-center"
                   >
                     <p className="text-content-secondary text-[14px]">
-                      No papers in this topic for today.
+                      No papers found for today.
                     </p>
                   </motion.div>
                 ) : (
                   <div className="space-y-4">
-                    {filteredPapers.map((paper) => (
+                    {papers.map((paper: PaperSummaryObject) => (
                       <PaperCard
                         key={paper.candidatePaperId}
                         paper={paper}

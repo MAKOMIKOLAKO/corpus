@@ -522,12 +522,12 @@ export default function EntryCard({
                                                 ))}
                                                 <div className="border-t border-border-default">
                                                     <button
-                                                        onPointerUp={(e) => {
+                                                        onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
                                                             handleDelete();
                                                         }}
-                                                        className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 dark:text-destructive/80 transition-colors flex items-center gap-2 rounded-lg"
+                                                        className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 dark:text-destructive/80 transition-colors flex items-center gap-2 rounded-lg touch-manipulation"
                                                     >
                                                         <Trash2 className="w-3 h-3" />
                                                         delete
