@@ -26,45 +26,69 @@ export async function GET(request: NextRequest) {
 
   try {
     // 1. Check if session already exists
-    let readingSession = await (prisma as any).paperReadingSession.findFirst({
-      where: {
-        userId: session.user.id,
-        OR: [
-          { candidatePaperId: paperId },
-          { globalEntryId: paperId }
-        ]
-      },
-      include: {
-        messages: { orderBy: { createdAt: 'asc' } }
-      }
-    })
+    let readingSession
+    try {
+      readingSession = await (prisma as any).paperReadingSession.findFirst({
+        where: {
+          userId: session.user.id,
+          OR: [
+            { candidatePaperId: paperId },
+            { globalEntryId: paperId }
+          ]
+        },
+        include: {
+          messages: { orderBy: { createdAt: 'asc' } }
+        }
+      })
+    } catch (dbErr: any) {
+      console.error('[read-api] Database query error:', dbErr)
+      return NextResponse.json({ error: 'Database query failed', details: dbErr?.message }, { status: 500 })
+    }
 
     // 2. If not, initialize it
     if (!readingSession) {
       console.log(`[read-api] Initializing new session for paper ${paperId}`)
 
-      const rawText = await fetchPaperContent(paperId)
-      const sections = await sectionPaper(rawText)
+      let rawText
+      try {
+        rawText = await fetchPaperContent(paperId)
+      } catch (fetchErr: any) {
+        console.error('[read-api] Fetch paper error:', fetchErr)
+        if (fetchErr.message?.includes('Paper not found')) {
+          return NextResponse.json({ error: fetchErr.message }, { status: 404 })
+        }
+        return NextResponse.json({ error: 'Failed to fetch paper content', details: fetchErr?.message }, { status: 500 })
+      }
 
-      readingSession = await (prisma as any).paperReadingSession.create({
-        data: {
-          userId: session.user.id,
-          candidatePaperId: paperId, // assume candidateId for now
-          paperText: rawText,
-          sections: sections as any,
-        },
-        include: { messages: true }
-      })
+      let sections
+      try {
+        sections = await sectionPaper(rawText)
+      } catch (sectionErr: any) {
+        console.error('[read-api] Section paper error:', sectionErr)
+        return NextResponse.json({ error: 'Failed to section paper', details: sectionErr?.message }, { status: 500 })
+      }
+
+      try {
+        readingSession = await (prisma as any).paperReadingSession.create({
+          data: {
+            userId: session.user.id,
+            candidatePaperId: paperId, // assume candidateId for now
+            paperText: rawText,
+            sections: sections as any,
+          },
+          include: { messages: true }
+        })
+      } catch (createErr: any) {
+        console.error('[read-api] Create session error:', createErr)
+        return NextResponse.json({ error: 'Failed to create session', details: createErr?.message }, { status: 500 })
+      }
     }
 
     return NextResponse.json(readingSession)
   } catch (err: any) {
-    console.error('[read-api] Session error:', err)
+    console.error('[read-api] Unexpected error:', err)
     console.error('[read-api] Error message:', err?.message)
     console.error('[read-api] Error stack:', err?.stack)
-    if (err.message?.includes('Paper not found')) {
-      return NextResponse.json({ error: err.message }, { status: 404 })
-    }
     return NextResponse.json({ error: 'Failed to initialize session', details: err?.message }, { status: 500 })
   }
 }
