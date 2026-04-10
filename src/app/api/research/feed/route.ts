@@ -41,14 +41,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Get selection mode parameters
-  const { searchParams } = new URL(request.url)
-  const mode = searchParams.get('mode') as 'profile' | 'collection' | 'phrase' | null
-  const collectionId = searchParams.get('collectionId')
-  const phrase = searchParams.get('phrase')
-
-  // Check for cached brief first (only for profile mode)
-  const cached = mode === null || mode === 'profile' ? await getDailyBriefCached(user.id) : null
+  // Check for cached brief first
+  const cached = await getDailyBriefCached(user.id)
   if (cached) {
     return NextResponse.json(cached)
   }
@@ -56,7 +50,7 @@ export async function GET(request: NextRequest) {
   // No existing brief — check if a job is already running
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
-  const jobId = `${user.id}-${today.toISOString().split('T')[0]}-${mode || 'profile'}`
+  const jobId = `${user.id}-${today.toISOString().split('T')[0]}`
 
   if (pendingJobs.has(jobId)) {
     // Job already in progress — return 202 so client polls
@@ -71,7 +65,7 @@ export async function GET(request: NextRequest) {
     setTimeout(() => resolve(null), 9500)
   )
 
-  const generatePromise = generateDailyBrief(user.id, mode, collectionId, phrase).catch((err) => {
+  const generatePromise = generateDailyBrief(user.id).catch((err) => {
     console.error(`[feed/route] Generation failed for ${user.id}:`, err)
     return null
   })
@@ -85,7 +79,7 @@ export async function GET(request: NextRequest) {
 
   // Generation is taking too long — run it in the background, return 202
   if (!pendingJobs.has(jobId)) {
-    const bgJob = generateDailyBrief(user.id, mode, collectionId, phrase)
+    const bgJob = generateDailyBrief(user.id)
       .catch((err) => console.error(`[feed/route] Background generation failed:`, err))
       .finally(() => pendingJobs.delete(jobId))
 

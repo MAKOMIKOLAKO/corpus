@@ -80,13 +80,6 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
       {/* Header */}
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          {/* Badges */}
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${noveltyColor}`}>
-              <Tag size={10} />
-              {paper.noveltyTag}
-            </span>
-          </div>
 
           {/* Title */}
           <h3 className="text-[15px] font-semibold leading-snug text-content-primary mb-1">
@@ -161,8 +154,8 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           onClick={handleSave}
           disabled={saved || saving}
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${saved
-              ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 cursor-default'
-              : 'bg-muted text-content-secondary border border-border-strong hover:bg-accent hover:text-accent-foreground hover:border-accent'
+            ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 cursor-default'
+            : 'bg-muted text-content-secondary border border-border-strong hover:bg-accent hover:text-accent-foreground hover:border-accent'
             }`}
           aria-label={saved ? 'Paper saved to library' : 'Save paper to library'}
         >

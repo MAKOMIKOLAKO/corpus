@@ -255,11 +255,17 @@ export async function generateDailyBrief(
   }
 
   // Fetch candidate papers from last 7 days that have been embedded
+  // Only include arXiv and bioRxiv/medRxiv papers, exclude user RSS feeds
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   const candidates = await prisma.candidatePaper.findMany({
     where: {
       embeddedAt: { not: null },
       publishedDate: { gte: sevenDaysAgo },
+      OR: [
+        { source: { startsWith: 'arXiv:' } },
+        { source: { equals: 'bioRxiv' } },
+        { source: { equals: 'medRxiv' } },
+      ],
     },
     orderBy: { publishedDate: 'desc' },
     take: 5000,
