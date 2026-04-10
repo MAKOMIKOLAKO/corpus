@@ -64,13 +64,13 @@ export function ResearchPageClient({
   return (
     <div className="min-h-screen bg-background">
       {/* Tab Switcher */}
-      <div className="border-b border-border bg-surface-sunken">
+      <div className="border-b border-border bg-surface-sunken ring-shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex gap-8">
             <button
               onClick={() => handleTabChange('discover')}
               className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'discover'
-                ? 'border-accent text-content-primary'
+                ? 'border-accent text-content-primary font-serif'
                 : 'border-transparent text-content-secondary hover:text-content-primary'
                 }`}
             >
@@ -79,7 +79,7 @@ export function ResearchPageClient({
             <button
               onClick={() => handleTabChange('workspace')}
               className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'workspace'
-                ? 'border-accent text-content-primary'
+                ? 'border-accent text-content-primary font-serif'
                 : 'border-transparent text-content-secondary hover:text-content-primary'
                 }`}
             >

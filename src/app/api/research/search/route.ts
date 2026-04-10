@@ -131,12 +131,13 @@ export async function POST(request: NextRequest) {
       select: { id: true, query: true },
     })
 
-    // Step 2: Get user's saved entries for history scoring
+    // Step 2: Get user's saved entries for history scoring (by DOI for cross-model matching)
     const userEntries = await prisma.userEntry.findMany({
       where: { userId: user.id },
-      select: { globalEntryId: true },
+      include: { globalEntry: { select: { id: true, doi: true } } },
     })
-    const savedEntryIds = new Set(userEntries.map((ue) => ue.globalEntryId))
+    const savedGlobalEntryIds = new Set(userEntries.map((ue) => ue.globalEntry.id))
+    const savedDois = new Set(userEntries.map((ue) => ue.globalEntry.doi).filter(Boolean) as string[])
 
     // Step 3: Get user's RSS subscriptions for feed scoring
     const userSources = await prisma.userSource.findMany({
@@ -220,8 +221,8 @@ export async function POST(request: NextRequest) {
     // History scoring
     const historyScores = new Map<string, number>()
     candidatePapers.forEach((paper) => {
-      // Check if paper is in user's saved library (negative boost)
-      const isSaved = savedEntryIds.has(paper.id)
+      // Check if paper is in user's saved library (negative boost for already-saved)
+      const isSaved = savedDois.has(paper.doi ?? '') || savedGlobalEntryIds.has(paper.id)
       if (isSaved) {
         historyScores.set(paper.id, -0.1)
       } else {
@@ -290,7 +291,7 @@ export async function POST(request: NextRequest) {
 
       // Determine source label
       let sourceLabel = 'Search result'
-      const isSaved = savedEntryIds.has(paper.id)
+      const isSaved = savedDois.has(paper.doi ?? '') || savedGlobalEntryIds.has(paper.id)
       if (isSaved) {
         sourceLabel = 'In your library'
       } else if (scoreBreakdown.alertScore > 0.3) {
@@ -311,9 +312,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Map to actual GlobalEntry if one exists
+      const matchingGlobalEntry = userEntries.find(ue => ue.globalEntry.doi === paper.doi && paper.doi)
+
       return {
         candidatePaperId: paper.id,
-        globalEntryId: paper.id, // Will need to map to actual GlobalEntry if different
+        globalEntryId: matchingGlobalEntry?.globalEntry.id ?? null,
         title: paper.title,
         authors: paper.authors,
         year: paper.publishedDate ? new Date(paper.publishedDate).getFullYear() : null,

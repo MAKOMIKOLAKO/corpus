@@ -175,11 +175,11 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
       {viewMode === 'discovery' && (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
           {/* Selection Mode Settings */}
-          <div className="mb-6 p-4 rounded-xl border border-border bg-card">
-            <h3 className="text-sm font-medium text-content-secondary mb-3">
+          <div className="mb-6 p-4 rounded-xl border border-border bg-card whisper-shadow">
+            <h3 className="text-sm font-medium font-serif text-content-secondary mb-3">
               Feed Generation Settings
             </h3>
-            <p className="text-xs text-content-tertiary mb-4">
+            <p className="text-xs text-content-tertiary mb-4" style={{ letterSpacing: '0.12px' }}>
               Choose how candidate papers are selected for the next feed generation
             </p>
 
@@ -249,7 +249,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
             <button
               onClick={handleSavePreferences}
               disabled={isSaving}
-              className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium button-terracotta"
             >
               {isSaving ? 'Saving...' : 'Save Settings'}
             </button>
@@ -264,7 +264,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for papers by topic, keyword, or concept..."
-                className="w-full pl-12 pr-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                className="w-full pl-12 pr-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
               />
             </div>
           </form>
@@ -282,7 +282,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
               </button>
               {showFilters && (
-                <div className="p-4 rounded-xl border border-border bg-card">
+                <div className="p-4 rounded-xl border border-border bg-card whisper-shadow">
                   <p className="text-xs text-content-tertiary mb-2">Filters coming soon</p>
                 </div>
               )}
@@ -323,10 +323,10 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 {searchResults.map((result) => (
                   <div
                     key={result.candidatePaperId}
-                    className="p-5 rounded-xl border border-border bg-card hover:border-border-strong transition-colors"
+                    className="p-5 rounded-xl border border-border bg-card hover:border-border-strong transition-colors whisper-shadow"
                   >
                     <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className="text-lg font-serif font-medium text-content-primary flex-1">
+                      <h3 className="text-lg font-serif font-medium text-content-primary flex-1" style={{ lineHeight: 1.20 }}>
                         <a
                           href={result.url || '#'}
                           target="_blank"
@@ -340,13 +340,13 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                         {result.sourceLabel}
                       </span>
                     </div>
-                    <p className="text-sm text-content-secondary mb-2">
+                    <p className="text-sm text-content-secondary mb-2" style={{ lineHeight: 1.60 }}>
                       {result.authors.slice(0, 3).join(', ')}
                       {result.authors.length > 3 && ' et al.'}
                       {result.year && ` · ${result.year}`}
                     </p>
                     {result.plainSummary && (
-                      <p className="text-sm text-content-secondary mb-3 line-clamp-3">
+                      <p className="text-sm text-content-secondary mb-3 line-clamp-3" style={{ lineHeight: 1.60 }}>
                         {result.plainSummary}
                       </p>
                     )}
@@ -368,10 +368,10 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="px-3 py-1.5 text-sm rounded-lg bg-surface-sunken border border-border text-content-secondary hover:border-accent transition-colors">
+                      <button className="px-3 py-1.5 text-sm rounded-lg bg-secondary text-secondary-foreground border border-border hover:border-accent transition-colors">
                         Save to Library
                       </button>
-                      <button className="px-3 py-1.5 text-sm rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors">
+                      <button className="px-3 py-1.5 text-sm rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors button-terracotta">
                         Open in Workspace
                       </button>
                     </div>
@@ -379,7 +379,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 ))}
               </div>
               {totalCount > searchResults.length && (
-                <button className="w-full mt-6 py-3 rounded-xl border border-border bg-card text-content-secondary hover:border-accent transition-colors">
+                <button className="w-full mt-6 py-3 rounded-lg border border-border bg-card text-content-secondary hover:border-accent transition-colors ring-shadow-warm">
                   Load more
                 </button>
               )}

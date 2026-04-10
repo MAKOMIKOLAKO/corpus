@@ -74,7 +74,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.2 }}
-      className="group relative rounded-xl border border-border bg-card p-5 shadow-sm hover:border-border-strong transition-colors"
+      className="group relative rounded-xl border border-border bg-card p-5 whisper-shadow hover:border-border-strong transition-colors"
       aria-label={`Research paper: ${paper.title}`}
     >
       {/* Header */}
@@ -82,7 +82,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
         <div className="flex-1 min-w-0">
 
           {/* Title */}
-          <h3 className="text-[15px] font-semibold leading-snug text-content-primary mb-1">
+          <h3 className="text-[15px] font-medium leading-snug text-content-primary mb-1">
             {paper.url || paper.doi ? (
               <a
                 href={paper.url ?? `https://doi.org/${paper.doi}`}
@@ -107,12 +107,12 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
 
       {/* Summary */}
       <div className="mt-3">
-        <p className="text-[14px] leading-relaxed text-content-secondary">
+        <p className="text-[14px] text-content-secondary" style={{ lineHeight: 1.60 }}>
           {showTechnical ? paper.technicalSummary : paper.plainSummary}
         </p>
         <button
           onClick={() => setShowTechnical(!showTechnical)}
-          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-content-secondary hover:text-content-tertiary transition-colors"
+          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-content-secondary hover:text-content-tertiary transition-colors" style={{ letterSpacing: '0.12px' }}
         >
           {showTechnical ? (
             <><ChevronUp size={12} /> Plain language</>
@@ -127,7 +127,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
         <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-3.5 py-2.5">
           <div className="flex items-start gap-2">
             <Sparkles size={13} className="mt-0.5 shrink-0 text-accent" />
-            <p className="text-[13px] leading-relaxed text-accent-hover">
+            <p className="text-[13px] text-accent-hover" style={{ lineHeight: 1.60 }}>
               {paper.whyExplanation}
             </p>
           </div>
@@ -155,7 +155,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           disabled={saved || saving}
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${saved
             ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 cursor-default'
-            : 'bg-muted text-content-secondary border border-border-strong hover:bg-accent hover:text-accent-foreground hover:border-accent'
+            : 'bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground border border-border-strong hover:border-accent'
             }`}
           aria-label={saved ? 'Paper saved to library' : 'Save paper to library'}
         >
@@ -167,7 +167,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           id={`dismiss-paper-${paper.candidatePaperId}`}
           onClick={handleDismiss}
           disabled={dismissing}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-tertiary hover:border-content-secondary transition-all"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-primary hover:border-border-strong transition-all ring-shadow-warm"
           aria-label="Dismiss this paper from feed"
         >
           <EyeOff size={13} />
