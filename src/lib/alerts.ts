@@ -8,7 +8,7 @@ export const ALERT_CONFIG = {
   maxCandidatesPerQuery: 20,
   minHoursBetweenChecks: 23, // skip if checked within last 23 hours
   semanticScholarDaysBack: 3, // fetch papers from last 3 days
-  relevanceModel: 'gemini-2.5-flash',
+  relevanceModel: 'gemini-1.5-flash',
 } as const
 
 // Normalize a title for deduplication comparison

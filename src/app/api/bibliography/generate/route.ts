@@ -9,6 +9,7 @@ import {
   formatBibliography,
 } from '@/lib/bibliography'
 import { isPro } from '@/lib/plans'
+import { callGemini } from '@/lib/research/geminiResearch'
 
 const ALLOWED_STYLES: CitationStyle[] = ['APA', 'MLA', 'CHICAGO']
 const ALLOWED_ORDERINGS: BibliographyOrdering[] = ['ALPHABETICAL', 'CHRONOLOGICAL', 'SELECTION']
@@ -18,26 +19,13 @@ function getGeminiApiKey(): string {
 }
 
 async function generateRelatedWorkParagraph(prompt: string): Promise<string | null> {
-  const apiKey = getGeminiApiKey()
-  if (!apiKey) return null
-
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
-  const response = await fetch(geminiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        response_mime_type: 'text/plain',
-      },
-    }),
-  })
-
-  if (!response.ok) return null
-
-  const data = await response.json()
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-  return typeof text === 'string' && text.trim() ? text.trim() : null
+  try {
+    const text = await callGemini(prompt, "You are a research writing assistant. Write a formal related work paragraph.", 0.3, false);
+    return text.trim() || null;
+  } catch (err) {
+    console.error('[bibliography/generate] Related work generation failed:', err);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {

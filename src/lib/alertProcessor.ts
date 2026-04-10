@@ -1,6 +1,7 @@
 import { prisma } from './prismaWithRetry'
 import { ALERT_CONFIG, normalizeTitle } from './alerts'
 import { getDeduplicationKeys, findExistingGlobalEntry } from './entryDedup'
+import { callGemini } from './research/geminiResearch'
 
 // Safe title normalization with error handling
 function safeNormalizeTitle(title: string): string {
@@ -559,9 +560,8 @@ async function checkRelevance(
     return false
   }
 
-  const prompt = `You are a research paper relevance classifier.
-
-User's research interest: "${userQuery}"
+  const system = `You are a research paper relevance classifier.`
+  const prompt = `User's research interest: "${userQuery}"
 
 Paper title: "${paper.title}"
 Paper abstract: "${paper.abstract.slice(0, 800)}"
@@ -570,36 +570,11 @@ Is this paper directly relevant to the user's research interest?
 Answer with only YES or NO. No explanation.`
 
   try {
-    const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || ''
-    if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY or GOOGLE_AI_API_KEY is required for relevance filtering')
-    }
-
-    // Use the same pattern as queueProcessor.ts
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`
-    const geminiResponse = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          response_mime_type: 'text/plain',
-        },
-      }),
-    })
-
-    if (!geminiResponse.ok) {
-      console.error('[alertProcessor] Gemini API error:', geminiResponse.status)
-      return false
-    }
-
-    const geminiData = await geminiResponse.json()
-    const answer = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const answer = await callGemini(prompt, system, 0, false)
     const isRelevant = answer.trim().toUpperCase() === 'YES'
     return isRelevant
   } catch (error) {
     console.error('[alertProcessor] Gemini relevance check failed:', error)
-    console.error('[alertProcessor] Ensure GEMINI_API_KEY or GOOGLE_AI_API_KEY is set and valid')
     return false // Default to not relevant on error
   }
 }

@@ -3,7 +3,7 @@
  * Temperature settings, prompts, and output formats per spec PART 6.
  */
 
-const GEMINI_MODEL = 'gemini-2.5-flash'
+const GEMINI_MODEL = 'gemini-1.5-flash'
 
 function getGeminiKey(): string {
   const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY

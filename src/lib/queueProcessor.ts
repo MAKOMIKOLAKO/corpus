@@ -3,6 +3,7 @@ import type { ContentType, Prisma, ReadingStatus } from '@prisma/client';
 import { canAddEntry } from './plans';
 import { toEntrySource } from '@/lib/utils';
 import { saveEntryForUser } from './globalEntryService';
+import { callGemini, safeParseJson } from './research/geminiResearch';
 
 function getGeminiApiKey(): string | undefined {
   return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
@@ -209,50 +210,15 @@ Site name: ${meta.ogSiteName || ''}
 Published: ${meta.articlePublished || ''}
 Body text: ${meta.bodyText}`;
 
-  const apiKey = getGeminiApiKey();
-  let geminiResult: {
-    title?: string;
-    authors?: string[];
-    year?: number | null;
-    description?: string | null;
-    source?: string | null;
-    contentType?: string;
-    doi?: string | null;
-  };
-
   const fallback = metaFallback(url, meta);
+  let geminiResult: any;
 
-  if (!apiKey) {
+  try {
+    const text = await callGemini(promptText, "You are a web metadata extractor.", 0, true);
+    geminiResult = safeParseJson(text, fallback);
+  } catch (err) {
+    console.error('[queueProcessor] Gemini metadata extraction failed:', err);
     geminiResult = fallback;
-  } else {
-    try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const geminiResponse = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }],
-          generationConfig: {
-            response_mime_type: 'application/json',
-          },
-        }),
-      });
-
-      if (!geminiResponse.ok) {
-        geminiResult = fallback;
-      } else {
-        const geminiData = await geminiResponse.json();
-        let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-        try {
-          geminiResult = JSON.parse(text);
-        } catch {
-          geminiResult = fallback;
-        }
-      }
-    } catch {
-      geminiResult = fallback;
-    }
   }
 
   const allowedTypes: ContentType[] = [
