@@ -673,15 +673,18 @@ model CandidatePaper {
 }
 
 model UserResearchProfile {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  interestVector      Json?    // number[] — centroid of user's GlobalEntry embeddings
-  domainWeights       Json?    // Record<string, number> — domain tag frequency map
-  dismissedPaperIds   String[] // CandidatePaper ids the user has dismissed
-  preferredDailyCount Int      @default(5)
-  lastRecomputedAt    DateTime?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  interestVector          Json?    // number[] — centroid of user's GlobalEntry embeddings
+  domainWeights           Json?    // Record<string, number> — domain tag frequency map
+  dismissedPaperIds       String[] // CandidatePaper ids the user has dismissed
+  preferredDailyCount     Int      @default(5)
+  lastRecomputedAt        DateTime?
+  feedSelectionMode       String   @default("profile") // "profile" | "collection" | "phrase"
+  feedSelectionCollectionId String? // Collection ID for collection-based feed generation
+  feedSelectionPhrase     String? // Research phrase for phrase-based feed generation
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

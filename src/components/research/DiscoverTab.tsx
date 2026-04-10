@@ -37,12 +37,68 @@ interface SearchResult {
 
 export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
   const [viewMode, setViewMode] = useState<'rss' | 'discovery'>('discovery')
+  const [selectionMode, setSelectionMode] = useState<'profile' | 'collection' | 'phrase'>('profile')
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
+  const [researchPhrase, setResearchPhrase] = useState('')
+  const [collections, setCollections] = useState<Array<{ id: string; name: string }>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [showAlertsPanel, setShowAlertsPanel] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Load user's collections and preferences
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load collections
+        const collectionsRes = await fetch('/api/collections')
+        if (collectionsRes.ok) {
+          const data = await collectionsRes.json()
+          setCollections(data.collections || [])
+        }
+
+        // Load saved preferences
+        const prefsRes = await fetch('/api/research/preferences')
+        if (prefsRes.ok) {
+          const prefs = await prefsRes.json()
+          if (prefs.selectionMode) setSelectionMode(prefs.selectionMode)
+          if (prefs.selectedCollection) setSelectedCollection(prefs.selectedCollection)
+          if (prefs.researchPhrase) setResearchPhrase(prefs.researchPhrase)
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error)
+      }
+    }
+    loadData()
+  }, [])
+
+  const handleSavePreferences = async () => {
+    setIsSaving(true)
+    try {
+      const res = await fetch('/api/research/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectionMode,
+          selectedCollection: selectionMode === 'collection' ? selectedCollection : null,
+          researchPhrase: selectionMode === 'phrase' ? researchPhrase : null,
+        }),
+      })
+      if (res.ok) {
+        alert('Preferences saved! Next feed generation will use these settings.')
+      } else {
+        alert('Failed to save preferences')
+      }
+    } catch (error) {
+      console.error('Failed to save preferences:', error)
+      alert('Failed to save preferences')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,6 +169,87 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
       {/* Paper Discovery View */}
       {viewMode === 'discovery' && (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+          {/* Selection Mode Settings */}
+          <div className="mb-6 p-4 rounded-xl border border-border bg-card">
+            <h3 className="text-sm font-medium text-content-secondary mb-3">
+              Feed Generation Settings
+            </h3>
+            <p className="text-xs text-content-tertiary mb-4">
+              Choose how candidate papers are selected for the next feed generation
+            </p>
+
+            {/* Selection Mode Toggle */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setSelectionMode('profile')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'profile'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                  }`}
+              >
+                My Profile
+              </button>
+              <button
+                onClick={() => setSelectionMode('collection')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'collection'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                  }`}
+              >
+                From Collection
+              </button>
+              <button
+                onClick={() => setSelectionMode('phrase')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'phrase'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                  }`}
+              >
+                Research Phrase
+              </button>
+            </div>
+
+            {/* Collection Selector */}
+            {selectionMode === 'collection' && (
+              <div className="mb-4">
+                <select
+                  value={selectedCollection || ''}
+                  onChange={(e) => setSelectedCollection(e.target.value || null)}
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                >
+                  <option value="">Select a collection...</option>
+                  {collections.map((collection) => (
+                    <option key={collection.id} value={collection.id}>
+                      {collection.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Research Phrase Input */}
+            {selectionMode === 'phrase' && (
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={researchPhrase}
+                  onChange={(e) => setResearchPhrase(e.target.value)}
+                  placeholder="Enter your research interests (e.g., 'machine learning for drug discovery')"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                />
+              </div>
+            )}
+
+            {/* Save Button */}
+            <button
+              onClick={handleSavePreferences}
+              disabled={isSaving}
+              className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              {isSaving ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="mb-6">
             <div className="relative">

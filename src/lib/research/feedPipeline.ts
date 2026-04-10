@@ -166,18 +166,21 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
  * Steps: scoring → filtering → clustering → selection → summarization → save.
  */
 export async function generateDailyBrief(
-  userId: string,
-  mode: 'profile' | 'collection' | 'phrase' | null = null,
-  collectionId: string | null = null,
-  phrase: string | null = null
+  userId: string
 ): Promise<DailyFeedResponse> {
   const today = todayUTC()
+
+  // Get user profile with feed selection preferences
+  const profile = await getOrCreateProfile(userId)
+  const mode = (profile.feedSelectionMode as 'profile' | 'collection' | 'phrase') || 'profile'
+  const collectionId = profile.feedSelectionCollectionId || null
+  const phrase = profile.feedSelectionPhrase || null
 
   // Determine interest vector based on selection mode
   let interestVector: number[] | null = null
   let domainWeights: Record<string, number> = {}
   let dismissedIds = new Set<string>()
-  let preferredCount = 5
+  let preferredCount = profile.preferredDailyCount ?? 5
 
   if (mode === 'collection' && collectionId) {
     // Collection-based: compute interest vector from papers in the collection
@@ -227,31 +230,26 @@ export async function generateDailyBrief(
       }
     }
 
-    // Get user's preferred count from profile
-    const profile = await getOrCreateProfile(userId)
-    preferredCount = profile.preferredDailyCount ?? 5
     dismissedIds = new Set(profile.dismissedPaperIds)
   } else if (mode === 'phrase' && phrase) {
     // Phrase-based: compute interest vector from the research phrase
     const embedding = await embedBatch([buildPaperEmbeddingText(phrase, phrase)])
     interestVector = embedding[0] || null
 
-    // Get user's preferred count from profile
-    const profile = await getOrCreateProfile(userId)
-    preferredCount = profile.preferredDailyCount ?? 5
     dismissedIds = new Set(profile.dismissedPaperIds)
   } else {
     // Profile-based: use user's computed profile
-    let profile = await getOrCreateProfile(userId)
     if (!profile.interestVector || !profile.lastRecomputedAt) {
       await recomputeUserProfile(userId)
-      profile = await getOrCreateProfile(userId)
+      const updatedProfile = await getOrCreateProfile(userId)
+      interestVector = updatedProfile.interestVector as number[] | null
+      domainWeights = (updatedProfile.domainWeights as Record<string, number>) ?? {}
+    } else {
+      interestVector = profile.interestVector as number[] | null
+      domainWeights = (profile.domainWeights as Record<string, number>) ?? {}
     }
 
-    interestVector = profile.interestVector as number[] | null
-    domainWeights = (profile.domainWeights as Record<string, number>) ?? {}
     dismissedIds = new Set(profile.dismissedPaperIds)
-    preferredCount = profile.preferredDailyCount ?? 5
   }
 
   // Fetch candidate papers from last 7 days that have been embedded
