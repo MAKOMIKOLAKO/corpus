@@ -63,6 +63,11 @@ model User {
   generatedBibliographies   GeneratedBibliography[]
   userSources               UserSource[]
   watchQueries              WatchQuery[]
+  researchProfile           UserResearchProfile?
+  dailyClusters             DailyCluster[]
+  dailyPaperScores          DailyPaperScore[]
+  dailyBriefs               DailyBrief[]
+  readingSessions           PaperReadingSession[]
 }
 
 model PasswordResetToken {
@@ -635,4 +640,130 @@ model GeneratedBibliography {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// ===== RESEARCH READING SYSTEM =====
+
+model CandidatePaper {
+  id                String    @id @default(cuid())
+  doi               String?   @unique
+  arxivId           String?   @unique
+  title             String
+  authors           String[]
+  abstract          String?
+  url               String?
+  source            String?
+  publishedDate     DateTime?
+  // Embedding stored as Json array (number[]) since pgvector is not installed
+  embedding         Json?     // number[] — 768-dim Gemini text-embedding-004
+  candidateMetadata Json?     // { methodology, domainTags, noveltyIndicators, complexityScore }
+  plainSummary      String?   // cached, user-agnostic
+  technicalSummary  String?   // cached, user-agnostic
+  noveltyTag        String?
+  ingestedAt        DateTime  @default(now())
+  embeddedAt        DateTime?
+
+  dailyScores       DailyPaperScore[]
+  readingSessions   PaperReadingSession[]
+
+  @@index([publishedDate, embeddedAt])
+  @@index([doi])
+  @@index([ingestedAt])
+}
+
+model UserResearchProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  interestVector      Json?    // number[] — centroid of user's GlobalEntry embeddings
+  domainWeights       Json?    // Record<string, number> — domain tag frequency map
+  dismissedPaperIds   String[] // CandidatePaper ids the user has dismissed
+  preferredDailyCount Int      @default(5)
+  lastRecomputedAt    DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model DailyCluster {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime // store as date-only (truncate to midnight UTC)
+  clusterIndex Int
+  label        String
+  centroid     Json     // number[] embedding centroid
+  paperIds     String[] // CandidatePaper ids in this cluster
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, clusterIndex])
+  @@index([userId, date])
+}
+
+model DailyPaperScore {
+  id                String        @id @default(cuid())
+  userId            String
+  candidatePaperId  String
+  date              DateTime
+  compositeScore    Float
+  semanticScore     Float
+  domainScore       Float
+  noveltyScore      Float
+  citationScore     Float
+  engagementScore   Float
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidatePaper CandidatePaper @relation(fields: [candidatePaperId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, candidatePaperId])
+  @@index([userId, date, compositeScore])
+}
+
+model DailyBrief {
+  id                      String    @id @default(cuid())
+  userId                  String
+  date                    DateTime  // truncated to midnight UTC
+  selectedPaperIds        String[]  // ordered CandidatePaper ids
+  whyExplanations         Json      // Record<candidatePaperId, string>
+  emergingTrendsParagraph String?
+  generatedAt             DateTime  @default(now())
+  viewedAt                DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model PaperReadingSession {
+  id               String    @id @default(cuid())
+  userId           String
+  candidatePaperId String?
+  globalEntryId    String?
+  paperText        String    @db.Text
+  sections         Json      // SectionObject[]
+  sessionStarted   DateTime  @default(now())
+  lastActivity     DateTime  @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidatePaper CandidatePaper? @relation(fields: [candidatePaperId], references: [id], onDelete: SetNull)
+  messages      PaperReadingMessage[]
+
+  @@index([userId, lastActivity])
+}
+
+model PaperReadingMessage {
+  id                 String   @id @default(cuid())
+  sessionId          String
+  role               String   // "user" | "assistant"
+  content            String   @db.Text
+  referencedSections String[]
+  createdAt          DateTime @default(now())
+
+  session PaperReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([sessionId, createdAt])
 }

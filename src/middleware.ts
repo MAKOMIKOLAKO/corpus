@@ -47,6 +47,7 @@ const RESERVED_ROOT_SEGMENTS = new Set([
   "profile",
   "verify-email",
   "reset-password",
+  "research",
   "_next",
   "favicon.ico",
 ]);
@@ -64,6 +65,8 @@ function isPublicApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/collections/public/")) return true;
   if (pathname.startsWith("/api/profile/")) return true;
   if (pathname === "/api/cron/smart-alerts") return true;
+  if (pathname === "/api/cron/research-ingest") return true;
+  if (pathname === "/api/cron/research-profiles") return true;
   if (pathname === "/api/test-cron") return true;
   return false;
 }
@@ -92,7 +95,11 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Skip token parsing for cron job route - it uses Bearer token auth
-  if (pathname === "/api/cron/smart-alerts") {
+  if (
+    pathname === "/api/cron/smart-alerts" ||
+    pathname === "/api/cron/research-ingest" ||
+    pathname === "/api/cron/research-profiles"
+  ) {
     // Check rate limit for cron if needed
     return NextResponse.next();
   }
@@ -131,6 +138,8 @@ export default async function middleware(req: NextRequest) {
     if (
       pathname !== "/api/stripe/webhook" &&
       pathname !== "/api/cron/smart-alerts" &&
+      pathname !== "/api/cron/research-ingest" &&
+      pathname !== "/api/cron/research-profiles" &&
       pathname !== "/api/test-cron" &&
       !pathname.startsWith("/api/auth/")
     ) {
