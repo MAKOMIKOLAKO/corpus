@@ -5,6 +5,7 @@
  */
 
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { embedBatch, buildPaperEmbeddingText, computeCentroid } from './embeddings'
 
 export interface UserProfileSummary {
@@ -204,15 +205,15 @@ export async function recomputeUserProfile(userId: string): Promise<void> {
     where: { userId },
     create: {
       userId,
-      interestVector: interestVector.length > 0 ? interestVector : null,
-      domainWeights,
+      interestVector: (interestVector && interestVector.length > 0 ? interestVector : Prisma.JsonNull) as Prisma.InputJsonValue,
+      domainWeights: domainWeights as Prisma.InputJsonValue,
       dismissedPaperIds: [],
       preferredDailyCount: 5,
       lastRecomputedAt: new Date(),
     },
     update: {
-      interestVector: interestVector.length > 0 ? interestVector : null,
-      domainWeights,
+      interestVector: (interestVector && interestVector.length > 0 ? interestVector : Prisma.JsonNull) as Prisma.InputJsonValue,
+      domainWeights: domainWeights as Prisma.InputJsonValue,
       lastRecomputedAt: new Date(),
     },
   })
