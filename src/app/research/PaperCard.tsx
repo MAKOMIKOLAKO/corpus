@@ -73,7 +73,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.2 }}
-      className="group relative rounded-xl border border-[#30302e] bg-[#1c1c1a] p-5 shadow-sm hover:border-[#3d3d3a] transition-colors"
+      className="group relative rounded-xl border border-border bg-card p-5 shadow-sm hover:border-border-strong transition-colors"
       aria-label={`Research paper: ${paper.title}`}
     >
       {/* Header */}
@@ -86,20 +86,20 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
               {paper.noveltyTag}
             </span>
             {paper.clusterLabel && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#3d3d3a] bg-[#30302e]/60 px-2 py-0.5 text-[11px] text-[#87867f]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface-sunken px-2 py-0.5 text-[11px] text-content-tertiary">
                 {paper.clusterLabel}
               </span>
             )}
           </div>
 
           {/* Title */}
-          <h3 className="text-[15px] font-semibold leading-snug text-[#faf9f5] mb-1">
+          <h3 className="text-[15px] font-semibold leading-snug text-content-primary mb-1">
             {paper.url || paper.doi ? (
               <a
                 href={paper.url ?? `https://doi.org/${paper.doi}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-[#c96442] transition-colors inline-flex items-center gap-1"
+                className="hover:text-accent transition-colors inline-flex items-center gap-1"
               >
                 {paper.title}
                 <ExternalLink size={12} className="shrink-0 opacity-50" />
@@ -110,7 +110,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           </h3>
 
           {/* Authors + year */}
-          <p className="text-[13px] text-[#87867f]">
+          <p className="text-[13px] text-content-tertiary">
             {authorStr}{year ? ` · ${year}` : ''}{paper.source ? ` · ${paper.source}` : ''}
           </p>
         </div>
@@ -118,12 +118,12 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
 
       {/* Summary */}
       <div className="mt-3">
-        <p className="text-[14px] leading-relaxed text-[#b0aea5]">
+        <p className="text-[14px] leading-relaxed text-content-secondary">
           {showTechnical ? paper.technicalSummary : paper.plainSummary}
         </p>
         <button
           onClick={() => setShowTechnical(!showTechnical)}
-          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-[#5e5d59] hover:text-[#87867f] transition-colors"
+          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-content-secondary hover:text-content-tertiary transition-colors"
         >
           {showTechnical ? (
             <><ChevronUp size={12} /> Plain language</>
@@ -135,10 +135,10 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
 
       {/* Why this paper */}
       {paper.whyExplanation && (
-        <div className="mt-3 rounded-lg border border-[#c96442]/20 bg-[#c96442]/5 px-3.5 py-2.5">
+        <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-3.5 py-2.5">
           <div className="flex items-start gap-2">
-            <Sparkles size={13} className="mt-0.5 shrink-0 text-[#c96442]" />
-            <p className="text-[13px] leading-relaxed text-[#d97757]">
+            <Sparkles size={13} className="mt-0.5 shrink-0 text-accent" />
+            <p className="text-[13px] leading-relaxed text-accent-hover">
               {paper.whyExplanation}
             </p>
           </div>
@@ -151,7 +151,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           href={paper.openAccessUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center gap-1 text-[12px] text-[#5e5d59] hover:text-[#87867f] transition-colors"
+          className="mt-2 inline-flex items-center gap-1 text-[12px] text-content-secondary hover:text-content-tertiary transition-colors"
         >
           <ExternalLink size={11} />
           Open access PDF
@@ -167,7 +167,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${
             saved
               ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 cursor-default'
-              : 'bg-[#30302e] text-[#b0aea5] border border-[#3d3d3a] hover:bg-[#c96442] hover:text-[#faf9f5] hover:border-[#c96442]'
+              : 'bg-muted text-content-secondary border border-border-strong hover:bg-accent hover:text-accent-foreground hover:border-accent'
           }`}
           aria-label={saved ? 'Paper saved to library' : 'Save paper to library'}
         >
@@ -179,7 +179,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           id={`dismiss-paper-${paper.candidatePaperId}`}
           onClick={handleDismiss}
           disabled={dismissing}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#3d3d3a] bg-transparent px-3 py-1.5 text-[13px] text-[#5e5d59] hover:text-[#87867f] hover:border-[#5e5d59] transition-all"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-tertiary hover:border-content-secondary transition-all"
           aria-label="Dismiss this paper from feed"
         >
           <EyeOff size={13} />
@@ -190,7 +190,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
         <button
           id={`read-paper-${paper.candidatePaperId}`}
           disabled
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[#30302e] bg-transparent px-3 py-1.5 text-[13px] text-[#3d3d3a] cursor-not-allowed"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 py-1.5 text-[13px] text-content-tertiary cursor-not-allowed"
           title="Reading Assistant available in a future update"
           aria-label="Reading assistant - coming soon"
         >
