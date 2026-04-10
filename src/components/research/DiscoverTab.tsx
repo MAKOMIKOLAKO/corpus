@@ -37,32 +37,12 @@ interface SearchResult {
 
 export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
   const [viewMode, setViewMode] = useState<'rss' | 'discovery'>('discovery')
-  const [selectionMode, setSelectionMode] = useState<'profile' | 'collection' | 'phrase'>('profile')
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
-  const [researchPhrase, setResearchPhrase] = useState('')
-  const [collections, setCollections] = useState<Array<{ id: string; name: string }>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [showAlertsPanel, setShowAlertsPanel] = useState(false)
-
-  // Load user's collections
-  useEffect(() => {
-    const loadCollections = async () => {
-      try {
-        const res = await fetch('/api/collections')
-        if (res.ok) {
-          const data = await res.json()
-          setCollections(data.collections || [])
-        }
-      } catch (error) {
-        console.error('Failed to load collections:', error)
-      }
-    }
-    loadCollections()
-  }, [])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,70 +113,6 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
       {/* Paper Discovery View */}
       {viewMode === 'discovery' && (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-          {/* Selection Mode Toggle */}
-          <div className="mb-6">
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setSelectionMode('profile')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'profile'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
-                  }`}
-              >
-                My Profile
-              </button>
-              <button
-                onClick={() => setSelectionMode('collection')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'collection'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
-                  }`}
-              >
-                From Collection
-              </button>
-              <button
-                onClick={() => setSelectionMode('phrase')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'phrase'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
-                  }`}
-              >
-                Research Phrase
-              </button>
-            </div>
-
-            {/* Collection Selector */}
-            {selectionMode === 'collection' && (
-              <div className="mb-4">
-                <select
-                  value={selectedCollection || ''}
-                  onChange={(e) => setSelectedCollection(e.target.value || null)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                >
-                  <option value="">Select a collection...</option>
-                  {collections.map((collection) => (
-                    <option key={collection.id} value={collection.id}>
-                      {collection.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Research Phrase Input */}
-            {selectionMode === 'phrase' && (
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={researchPhrase}
-                  onChange={(e) => setResearchPhrase(e.target.value)}
-                  placeholder="Enter your research interests (e.g., 'machine learning for drug discovery')"
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                />
-              </div>
-            )}
-          </div>
-
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="mb-6">
             <div className="relative">
@@ -236,9 +152,6 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
             <ResearchFeedClient
               userId={userId}
               preferredCount={preferredCount}
-              selectionMode={selectionMode}
-              selectedCollection={selectedCollection}
-              researchPhrase={researchPhrase}
             />
           )}
 

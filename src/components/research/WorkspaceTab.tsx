@@ -70,9 +70,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
   }
 
   return (
-    <div className="h-[calc(100vh-73px)] flex flex-col">
+    <div className="min-h-screen">
       {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto mb-4" />
             <p className="text-content-secondary">
@@ -83,63 +83,65 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex">
-          {/* Left Pane - Paper Input / Viewer */}
-          <div className="w-full lg:w-[40%] border-r border-border">
-            {!sessionId ? (
-              <div className="p-6">
-                <h2 className="text-xl font-serif font-medium text-content-primary mb-6">
-                  Load a paper to analyze
-                </h2>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+          {!sessionId ? (
+            <div>
+              <h2 className="text-2xl font-serif font-medium text-content-primary mb-2">
+                Research Workspace
+              </h2>
+              <p className="text-content-secondary mb-8">
+                Load a paper to start analyzing and extracting insights
+              </p>
 
-                {/* Input Method Selector */}
-                <div className="flex gap-2 mb-6 bg-surface-sunken p-1 rounded-lg">
-                  <button
-                    onClick={() => setInputMethod('arxiv')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${inputMethod === 'arxiv'
-                      ? 'bg-card text-content-primary shadow-sm'
-                      : 'text-content-secondary hover:text-content-primary'
-                      }`}
-                  >
-                    <Link className="w-4 h-4" />
-                    arXiv / DOI
-                  </button>
-                  <button
-                    onClick={() => setInputMethod('pdf')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${inputMethod === 'pdf'
-                      ? 'bg-card text-content-primary shadow-sm'
-                      : 'text-content-secondary hover:text-content-primary'
-                      }`}
-                  >
-                    <Upload className="w-4 h-4" />
-                    Upload PDF
-                  </button>
-                  <button
-                    onClick={() => setInputMethod('text')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${inputMethod === 'text'
-                      ? 'bg-card text-content-primary shadow-sm'
-                      : 'text-content-secondary hover:text-content-primary'
-                      }`}
-                  >
-                    <Type className="w-4 h-4" />
-                    Paste text
-                  </button>
-                  <button
-                    onClick={() => setInputMethod('library')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${inputMethod === 'library'
-                      ? 'bg-card text-content-primary shadow-sm'
-                      : 'text-content-secondary hover:text-content-primary'
-                      }`}
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    Library
-                  </button>
-                </div>
+              {/* Input Method Selector */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                <button
+                  onClick={() => setInputMethod('arxiv')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'arxiv'
+                    ? 'border-accent bg-accent/5'
+                    : 'border-border hover:border-border-strong'
+                    }`}
+                >
+                  <Link className="w-5 h-5" />
+                  <span className="text-sm font-medium">arXiv / DOI</span>
+                </button>
+                <button
+                  onClick={() => setInputMethod('pdf')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'pdf'
+                    ? 'border-accent bg-accent/5'
+                    : 'border-border hover:border-border-strong'
+                    }`}
+                >
+                  <Upload className="w-5 h-5" />
+                  <span className="text-sm font-medium">Upload PDF</span>
+                </button>
+                <button
+                  onClick={() => setInputMethod('text')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'text'
+                    ? 'border-accent bg-accent/5'
+                    : 'border-border hover:border-border-strong'
+                    }`}
+                >
+                  <Type className="w-5 h-5" />
+                  <span className="text-sm font-medium">Paste Text</span>
+                </button>
+                <button
+                  onClick={() => setInputMethod('library')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'library'
+                    ? 'border-accent bg-accent/5'
+                    : 'border-border hover:border-border-strong'
+                    }`}
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span className="text-sm font-medium">Library</span>
+                </button>
+              </div>
 
-                {/* Input Area */}
+              {/* Input Area */}
+              <div className="max-w-2xl">
                 {inputMethod === 'arxiv' && (
-                  <div>
-                    <label className="block text-sm text-content-secondary mb-2">
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-content-secondary">
                       Paste arXiv URL or DOI
                     </label>
                     <input
@@ -147,22 +149,29 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="https://arxiv.org/abs/2301.00000 or 10.1000/xyz123"
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent mb-4"
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     />
+                    <button
+                      onClick={handleLoadPaper}
+                      disabled={!inputValue.trim()}
+                      className="px-6 py-3 rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    >
+                      Load Paper
+                    </button>
                   </div>
                 )}
 
                 {inputMethod === 'pdf' && (
-                  <div>
-                    <label className="block text-sm text-content-secondary mb-2">
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-content-secondary">
                       Upload PDF file
                     </label>
-                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent transition-colors">
-                      <Upload className="w-8 h-8 text-content-tertiary mx-auto mb-2" />
-                      <p className="text-sm text-content-secondary mb-1">
+                    <div className="border-2 border-dashed border-border rounded-xl p-12 text-center hover:border-accent transition-colors cursor-pointer">
+                      <Upload className="w-10 h-10 text-content-tertiary mx-auto mb-3" />
+                      <p className="text-content-secondary mb-1">
                         Drag and drop PDF here
                       </p>
-                      <p className="text-xs text-content-tertiary">
+                      <p className="text-sm text-content-tertiary">
                         or click to browse
                       </p>
                       <input type="file" accept=".pdf" className="hidden" />
@@ -171,23 +180,30 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 )}
 
                 {inputMethod === 'text' && (
-                  <div>
-                    <label className="block text-sm text-content-secondary mb-2">
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-content-secondary">
                       Paste paper text or abstract
                     </label>
                     <textarea
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Paste the full paper text or abstract here..."
-                      rows={10}
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent mb-4 resize-none"
+                      rows={12}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-none"
                     />
+                    <button
+                      onClick={handleLoadPaper}
+                      disabled={!inputValue.trim()}
+                      className="px-6 py-3 rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    >
+                      Load Paper
+                    </button>
                   </div>
                 )}
 
                 {inputMethod === 'library' && (
-                  <div>
-                    <label className="block text-sm text-content-secondary mb-2">
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-content-secondary">
                       Search your library
                     </label>
                     <input
@@ -195,88 +211,41 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Search saved papers..."
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent mb-4"
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     />
-                    <p className="text-xs text-content-tertiary">
+                    <p className="text-sm text-content-tertiary">
                       Library search coming soon
                     </p>
                   </div>
                 )}
-
-                {/* Load Button */}
-                {(inputMethod === 'arxiv' || inputMethod === 'text') && (
-                  <button
-                    onClick={handleLoadPaper}
-                    disabled={!inputValue.trim()}
-                    className="w-full py-3 rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    Load Paper
-                  </button>
-                )}
-
-                {/* Recent Papers */}
-                <div className="mt-8">
-                  <h3 className="text-sm font-medium text-content-secondary mb-4 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Recent papers
-                  </h3>
-                  <div className="text-sm text-content-tertiary">
-                    Recent papers will appear here
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-full overflow-y-auto">
-                <div className="p-6">
-                  <p className="text-content-secondary">
-                    Paper viewer coming soon
-                  </p>
-                  <p className="text-content-tertiary text-sm mt-2">
-                    Session ID: {sessionId}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Pane - Analysis Panel */}
-          <div className="hidden lg:block w-[60%]">
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b border-border">
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium">
-                    Understand
-                  </button>
-                  <button className="px-4 py-2 rounded-lg bg-surface-sunken text-content-secondary text-sm font-medium hover:text-content-primary">
-                    Ask
-                  </button>
-                  <button className="px-4 py-2 rounded-lg bg-surface-sunken text-content-secondary text-sm font-medium hover:text-content-primary">
-                    Notes
-                  </button>
-                  <button className="px-4 py-2 rounded-lg bg-surface-sunken text-content-secondary text-sm font-medium hover:text-content-primary">
-                    Cite
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 p-6">
-                <p className="text-content-secondary">Analysis panel coming soon</p>
               </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-serif font-medium text-content-primary">
+                  Paper Analysis
+                </h2>
+                <button
+                  onClick={() => router.push('/research?tab=workspace')}
+                  className="text-sm text-content-secondary hover:text-content-primary"
+                >
+                  Load different paper
+                </button>
+              </div>
+              <div className="border border-border rounded-xl p-8 text-center">
+                <FileText className="w-12 h-12 text-content-tertiary mx-auto mb-4" />
+                <p className="text-content-secondary mb-2">
+                  Paper viewer and analysis tools coming soon
+                </p>
+                <p className="text-sm text-content-tertiary">
+                  Session ID: {sessionId}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Mobile Toggle */}
-      <div className="lg:hidden border-t border-border bg-card p-4">
-        <div className="flex gap-2">
-          <button className="flex-1 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium">
-            View Document
-          </button>
-          <button className="flex-1 py-2 rounded-lg bg-surface-sunken text-content-secondary text-sm font-medium">
-            Analysis
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
