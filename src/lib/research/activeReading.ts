@@ -29,16 +29,24 @@ export async function fetchPaperContent(candidatePaperId: string): Promise<strin
         const $ = cheerio.load(html)
 
         // Remove scripts, styles, and navigation elements
-        $('script, style, nav, .ltx_page_footer, .ltx_page_header').remove()
+        $('script, style, nav, .ltx_page_footer, .ltx_page_header, .ltx_role_navigation').remove()
 
-        // Extract the main content (usually in .ltx_page_main or article)
-        let mainContent = $('.ltx_page_main').text() || $('article').text() || $('body').text()
+        // Try multiple selectors for main content
+        let mainContent =
+          $('.ltx_page_main').text() ||
+          $('.ltx_document').text() ||
+          $('article').text() ||
+          $('.ltx_para').map((_, el) => $(el).text()).get().join('\n\n') ||
+          $('body').text()
 
         // Clean up whitespace
         mainContent = mainContent.replace(/\s+/g, ' ').trim()
 
-        if (mainContent.length > 500) {
+        if (mainContent.length > 1000) {
+          console.log(`[activeReading] Successfully extracted ${mainContent.length} chars from ar5iv for ${paper.arxivId}`)
           return mainContent
+        } else {
+          console.log(`[activeReading] ar5iv content too short (${mainContent.length} chars) for ${paper.arxivId}`)
         }
       }
     } catch (err) {
@@ -46,8 +54,37 @@ export async function fetchPaperContent(candidatePaperId: string): Promise<strin
     }
   }
 
+  // Try fetching from URL if available
+  if (paper.url) {
+    try {
+      const response = await fetch(paper.url)
+      if (response.ok) {
+        const html = await response.text()
+        const $ = cheerio.load(html)
+
+        $('script, style, nav, footer, header').remove()
+
+        let mainContent =
+          $('article').text() ||
+          $('.abstract').text() ||
+          $('main').text() ||
+          $('body').text()
+
+        mainContent = mainContent.replace(/\s+/g, ' ').trim()
+
+        if (mainContent.length > 1000) {
+          console.log(`[activeReading] Successfully extracted ${mainContent.length} chars from URL for ${paper.title}`)
+          return mainContent
+        }
+      }
+    } catch (err) {
+      console.error(`[activeReading] Failed to fetch from URL for ${paper.title}:`, err)
+    }
+  }
+
   // Fallback to abstract if full text fails or isn't available
-  return `Title: ${paper.title}\n\nAbstract: ${paper.abstract}\n\n[Full text extraction failed or unavailable for this source.]`
+  console.log(`[activeReading] Using abstract fallback for ${paper.title}`)
+  return `Title: ${paper.title}\n\nAbstract: ${paper.abstract}\n\n[Full text extraction failed or unavailable for this source. Only abstract is available.]`
 }
 
 /**
@@ -94,11 +131,13 @@ export async function chatWithPaper(
     .map((m: any) => `${m.role.toUpperCase()}: ${m.content}`)
     .join('\n')
 
-  const system = `You are an expert research reading assistant. You are helping a user read a specific paper.
-Use the provided sections of the paper to answer accurately. 
-If the answer isn't in the provided text, say you don't know based on the current sections.
-When referencing a finding, explicitly mention which section you found it in (e.g. "In the Methodology section...").
-Be technical and precise.`
+  const system = `Act as a research reading buddy that helps me deeply understand academic papers and think clearly about them. Your goal is to turn dense research into structured understanding that I can retain and use, not just summarize text. When given a paper, first identify its core problem in simple terms, then explain why that problem matters in its field. Break the paper into clear components: problem setup, key idea or method, technical approach, experiments or evaluation, results, and limitations. For each part, explain both what it is and why it is structured that way in the context of the paper's goal. Prioritize intuition and mental models over surface-level restatement. When technical concepts appear, explain them step-by-step using simple building blocks, and connect them to familiar ideas when possible. If equations, algorithms, or architectures are present, describe their role in the system and how they contribute to the final result, rather than focusing on full derivations unless explicitly requested.
+
+Always extract and clearly state the paper's main contribution in one or two sentences. Then go one level deeper and explain what is actually new compared to prior work, including what assumption it challenges or improves. When discussing results, interpret what the numbers or findings mean in practical terms and what conclusions can and cannot be drawn. Explicitly highlight limitations, failure cases, or constraints the authors acknowledge or imply.
+
+When I ask questions, respond directly using only the paper content and logically grounded reasoning. If a concept is unclear, break it down further instead of repeating the same explanation. If I ask for comparisons between papers, structure the comparison across key dimensions such as problem framing, method, data or assumptions, and performance outcomes. Always emphasize differences in design choices and what trade-offs those choices create.
+
+Maintain a structured, readable format with clear sections and short paragraphs. Avoid unnecessary verbosity, but do not oversimplify to the point of losing technical meaning. Your job is to act like a patient expert who helps me build a correct mental model of the work, step by step, until I can explain it back myself.`
 
   const prompt = `Paper Context (Sections):
 ${sectionContext}
