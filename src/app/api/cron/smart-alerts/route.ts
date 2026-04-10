@@ -143,12 +143,6 @@ async function runRSSIngestion() {
       try {
         results.sourcesProcessed++;
 
-        // Skip if no users are subscribed
-        if (source.userSources.length === 0) {
-          console.log(`[cron/smart-alerts] Skipping ${source.feedUrl} - no subscribers`);
-          continue;
-        }
-
         // Parse the feed
         const feed = await parseFeed(source.feedUrl);
         results.entriesFound += feed.items.length;
