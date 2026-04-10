@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           { globalEntryId: paperId }
         ]
       },
-      include: { 
+      include: {
         messages: { orderBy: { createdAt: 'asc' } }
       }
     })
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // 2. If not, initialize it
     if (!readingSession) {
       console.log(`[read-api] Initializing new session for paper ${paperId}`)
-      
+
       const rawText = await fetchPaperContent(paperId)
       const sections = await sectionPaper(rawText)
 
@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(readingSession)
   } catch (err: any) {
     console.error('[read-api] Session error:', err)
+    if (err.message?.includes('Paper not found')) {
+      return NextResponse.json({ error: err.message }, { status: 404 })
+    }
     return NextResponse.json({ error: 'Failed to initialize session' }, { status: 500 })
   }
 }

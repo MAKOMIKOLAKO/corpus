@@ -17,7 +17,7 @@ export async function fetchPaperContent(candidatePaperId: string): Promise<strin
     select: { arxivId: true, url: true, title: true, abstract: true }
   })
 
-  if (!paper) throw new Error('Paper not found')
+  if (!paper) throw new Error(`Paper not found in database: ${candidatePaperId}`)
 
   // ArXiv papers are best fetched via ar5iv.org (HTML version)
   if (paper.arxivId) {
@@ -27,16 +27,16 @@ export async function fetchPaperContent(candidatePaperId: string): Promise<strin
       if (response.ok) {
         const html = await response.text()
         const $ = cheerio.load(html)
-        
+
         // Remove scripts, styles, and navigation elements
         $('script, style, nav, .ltx_page_footer, .ltx_page_header').remove()
-        
+
         // Extract the main content (usually in .ltx_page_main or article)
         let mainContent = $('.ltx_page_main').text() || $('article').text() || $('body').text()
-        
+
         // Clean up whitespace
         mainContent = mainContent.replace(/\s+/g, ' ').trim()
-        
+
         if (mainContent.length > 500) {
           return mainContent
         }
@@ -79,8 +79,8 @@ export async function chatWithPaper(
 ): Promise<string> {
   const session = await (prisma as any).paperReadingSession.findUnique({
     where: { id: sessionId },
-    include: { 
-      messages: { orderBy: { createdAt: 'desc' }, take: 6 } 
+    include: {
+      messages: { orderBy: { createdAt: 'desc' }, take: 6 }
     }
   })
 
@@ -88,7 +88,7 @@ export async function chatWithPaper(
 
   const sections = session.sections as unknown as PaperSection[]
   const sectionContext = sections.map(s => `## ${s.title}\n${s.content.slice(0, 1500)}`).join('\n\n')
-  
+
   const history = session.messages
     .reverse()
     .map((m: any) => `${m.role.toUpperCase()}: ${m.content}`)
@@ -124,7 +124,7 @@ export async function getMethodologyBreakdown(sessionId: string): Promise<string
   if (!session) throw new Error('Session not found')
 
   const sections = session.sections as unknown as PaperSection[]
-  const methodologySection = sections.find(s => 
+  const methodologySection = sections.find(s =>
     /method|approach|experiment|model|architecture/i.test(s.title)
   ) || sections[0]
 
