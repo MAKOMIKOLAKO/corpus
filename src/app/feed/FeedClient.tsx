@@ -210,7 +210,7 @@ export default function FeedClient({
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [feedList, setFeedList] = React.useState(userFeeds);
   const [showManageFeeds, setShowManageFeeds] = React.useState(false);
-  const [activeView, setActiveView] = React.useState<FeedView>('actions');
+  const [activeView, setActiveView] = React.useState<FeedView>('rss');
   const [rssFeedEntries, setRssFeedEntries] = React.useState<RSSEntry[]>(rssEntries);
   const [rssPage, setRssPage] = React.useState(1);
   const [rssHasMore, setRssHasMore] = React.useState(initialRssHasMore);
