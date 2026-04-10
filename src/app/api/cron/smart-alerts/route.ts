@@ -172,6 +172,9 @@ async function runRSSIngestion() {
             // Check if entry already exists
             const existingEntryId = await findExistingGlobalEntry(prisma, dedupKeys);
 
+            // Get or create GlobalEntry ID
+            let globalEntryId = existingEntryId;
+
             if (existingEntryId) {
               console.log(`[cron/smart-alerts] Entry already exists: ${item.title}`);
             } else {
@@ -201,6 +204,7 @@ async function runRSSIngestion() {
                   addedVia: 'rss_ingestion'
                 }
               });
+              globalEntryId = globalEntry.id;
               results.entriesCreated++;
               console.log(`[cron/smart-alerts] Created entry: ${item.title}`);
 
@@ -218,18 +222,42 @@ async function runRSSIngestion() {
                   }).then(async (res) => {
                     if (res.ok) {
                       const { summary } = await res.json();
-                      if (globalEntry) {
-                        await prisma.globalEntry.update({
-                          where: { id: globalEntry.id },
-                          data: { summary }
-                        });
-                      }
+                      await prisma.globalEntry.update({
+                        where: { id: globalEntryId! },
+                        data: { summary }
+                      });
                     }
                   }).catch(err => {
                     console.error(`[cron/smart-alerts] Failed to generate summary:`, err);
                   });
                 } catch (error) {
                   console.error(`[cron/smart-alerts] Error triggering summary:`, error);
+                }
+              }
+            }
+
+            // Create UserEntry for all subscribers
+            if (globalEntryId) {
+              for (const userSource of source.userSources) {
+                try {
+                  await prisma.userEntry.upsert({
+                    where: {
+                      userId_globalEntryId: {
+                        userId: userSource.userId,
+                        globalEntryId: globalEntryId
+                      }
+                    },
+                    create: {
+                      userId: userSource.userId,
+                      globalEntryId: globalEntryId,
+                      addedVia: 'rss_ingestion',
+                      readingStatus: 'UNREAD'
+                    },
+                    update: {} // Do nothing if it exists
+                  });
+                  results.userEntriesCreated++;
+                } catch (error) {
+                  console.error(`[cron/smart-alerts] Error linking entry to user ${userSource.userId}:`, error);
                 }
               }
             }

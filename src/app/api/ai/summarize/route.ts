@@ -8,7 +8,7 @@ import { Chat, GoogleGenAI } from '@google/genai';
 const genai = new GoogleGenAI({
   apiKey: process.env.GOOGLE_AI_API_KEY || ''
 });
-const chat = new Chat((genai as any).models.apiClient, genai.models, 'gemini-2.5-flash');
+const chat = new Chat((genai as any).models.apiClient, genai.models, 'gemini-1.5-flash');
 
 export async function POST(request: NextRequest) {
   try {
