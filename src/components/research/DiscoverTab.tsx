@@ -37,35 +37,32 @@ interface SearchResult {
 
 export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
   const [viewMode, setViewMode] = useState<'rss' | 'discovery'>('discovery')
+  const [selectionMode, setSelectionMode] = useState<'profile' | 'collection' | 'phrase'>('profile')
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
+  const [researchPhrase, setResearchPhrase] = useState('')
+  const [collections, setCollections] = useState<Array<{ id: string; name: string }>>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<string[]>([])
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [showAlertsPanel, setShowAlertsPanel] = useState(false)
 
+  // Load user's collections
   useEffect(() => {
-    if (viewMode === 'discovery' && !searchQuery) {
-      loadSuggestions()
-    }
-  }, [viewMode, searchQuery])
-
-  const loadSuggestions = async () => {
-    setIsLoadingSuggestions(true)
-    try {
-      const res = await fetch('/api/research/search/suggestions')
-      if (res.ok) {
-        const data = await res.json()
-        setSuggestions(data.suggestions || [])
+    const loadCollections = async () => {
+      try {
+        const res = await fetch('/api/collections')
+        if (res.ok) {
+          const data = await res.json()
+          setCollections(data.collections || [])
+        }
+      } catch (error) {
+        console.error('Failed to load collections:', error)
       }
-    } catch (error) {
-      console.error('Failed to load suggestions:', error)
-    } finally {
-      setIsLoadingSuggestions(false)
     }
-  }
+    loadCollections()
+  }, [])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,10 +89,6 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
     } finally {
       setIsSearching(false)
     }
-  }
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion)
   }
 
   return (
@@ -140,6 +133,70 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
       {/* Paper Discovery View */}
       {viewMode === 'discovery' && (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+          {/* Selection Mode Toggle */}
+          <div className="mb-6">
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setSelectionMode('profile')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'profile'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
+                  }`}
+              >
+                My Profile
+              </button>
+              <button
+                onClick={() => setSelectionMode('collection')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'collection'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
+                  }`}
+              >
+                From Collection
+              </button>
+              <button
+                onClick={() => setSelectionMode('phrase')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'phrase'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
+                  }`}
+              >
+                Research Phrase
+              </button>
+            </div>
+
+            {/* Collection Selector */}
+            {selectionMode === 'collection' && (
+              <div className="mb-4">
+                <select
+                  value={selectedCollection || ''}
+                  onChange={(e) => setSelectedCollection(e.target.value || null)}
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                >
+                  <option value="">Select a collection...</option>
+                  {collections.map((collection) => (
+                    <option key={collection.id} value={collection.id}>
+                      {collection.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Research Phrase Input */}
+            {selectionMode === 'phrase' && (
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={researchPhrase}
+                  onChange={(e) => setResearchPhrase(e.target.value)}
+                  placeholder="Enter your research interests (e.g., 'machine learning for drug discovery')"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                />
+              </div>
+            )}
+          </div>
+
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="mb-6">
             <div className="relative">
@@ -154,25 +211,6 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
             </div>
           </form>
 
-          {/* Suggested Queries */}
-          {!searchQuery && !isLoadingSuggestions && suggestions.length > 0 && (
-            <div className="mb-6">
-              <p className="text-xs text-content-tertiary uppercase tracking-wider mb-3">
-                Suggested queries
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                {suggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-1.5 text-sm rounded-full bg-surface-sunken border border-border text-content-secondary hover:border-accent transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Filters (collapsible) */}
           {searchQuery && (
@@ -195,7 +233,13 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
 
           {/* Empty State - Show Daily Brief */}
           {!searchQuery && (
-            <ResearchFeedClient userId={userId} preferredCount={preferredCount} />
+            <ResearchFeedClient
+              userId={userId}
+              preferredCount={preferredCount}
+              selectionMode={selectionMode}
+              selectedCollection={selectedCollection}
+              researchPhrase={researchPhrase}
+            />
           )}
 
           {/* Search Results */}

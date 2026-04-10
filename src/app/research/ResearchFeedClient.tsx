@@ -15,6 +15,9 @@ import type { DailyFeedResponse, PaperSummaryObject, ClusterObject } from '@/lib
 interface ResearchFeedClientProps {
   userId: string
   preferredCount: number
+  selectionMode?: 'profile' | 'collection' | 'phrase'
+  selectedCollection?: string | null
+  researchPhrase?: string
 }
 
 type FeedState =
@@ -54,7 +57,7 @@ function FeedSkeleton() {
   )
 }
 
-export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClientProps) {
+export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'profile', selectedCollection, researchPhrase }: ResearchFeedClientProps) {
   const [state, setState] = useState<FeedState>({ status: 'loading' })
   const [trendsExpanded, setTrendsExpanded] = useState(false)
   const [activeClusterFilter, setActiveClusterFilter] = useState<string | null>(null)
@@ -66,7 +69,19 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
   const fetchFeed = useCallback(async () => {
     setState({ status: 'loading' })
     try {
-      const res = await fetch('/api/research/feed')
+      const params = new URLSearchParams()
+      if (selectionMode !== 'profile') {
+        params.append('mode', selectionMode)
+      }
+      if (selectionMode === 'collection' && selectedCollection) {
+        params.append('collectionId', selectedCollection)
+      }
+      if (selectionMode === 'phrase' && researchPhrase) {
+        params.append('phrase', researchPhrase)
+      }
+
+      const url = `/api/research/feed${params.toString() ? `?${params.toString()}` : ''}`
+      const res = await fetch(url)
       if (res.status === 202) {
         const json = await res.json()
         setState({ status: 'polling', jobId: json.jobId })
@@ -89,7 +104,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
     } catch (err) {
       setState({ status: 'error', message: 'Network error loading feed' })
     }
-  }, [])
+  }, [selectionMode, selectedCollection, researchPhrase])
 
   // Poll if we got a 202
   useEffect(() => {

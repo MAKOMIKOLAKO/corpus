@@ -6,7 +6,7 @@
 
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { cosineSimilarity } from './embeddings'
+import { cosineSimilarity, embedBatch, buildPaperEmbeddingText } from './embeddings'
 import {
   computeSemanticScore,
   computeDomainScore,
@@ -165,20 +165,94 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
  * Run the full online pipeline for a user.
  * Steps: scoring → filtering → clustering → selection → summarization → save.
  */
-export async function generateDailyBrief(userId: string): Promise<DailyFeedResponse> {
+export async function generateDailyBrief(
+  userId: string,
+  mode: 'profile' | 'collection' | 'phrase' | null = null,
+  collectionId: string | null = null,
+  phrase: string | null = null
+): Promise<DailyFeedResponse> {
   const today = todayUTC()
 
-  // Step 5: Get user profile — recompute if needed
-  let profile = await getOrCreateProfile(userId)
-  if (!profile.interestVector || !profile.lastRecomputedAt) {
-    await recomputeUserProfile(userId)
-    profile = await getOrCreateProfile(userId)
-  }
+  // Determine interest vector based on selection mode
+  let interestVector: number[] | null = null
+  let domainWeights: Record<string, number> = {}
+  let dismissedIds = new Set<string>()
+  let preferredCount = 5
 
-  const interestVector = profile.interestVector as number[] | null
-  const domainWeights = (profile.domainWeights as Record<string, number>) ?? {}
-  const dismissedIds = new Set(profile.dismissedPaperIds)
-  const preferredCount = profile.preferredDailyCount ?? 5
+  if (mode === 'collection' && collectionId) {
+    // Collection-based: compute interest vector from papers in the collection
+    const collectionPapers = await prisma.userEntryCollection.findMany({
+      where: {
+        collectionId,
+        userEntry: {
+          userId,
+        },
+      },
+      include: {
+        userEntry: {
+          include: {
+            globalEntry: {
+              select: {
+                title: true,
+                abstract: true,
+              },
+            },
+          },
+        },
+      },
+      take: 100,
+    })
+
+    if (collectionPapers.length > 0) {
+      const texts = collectionPapers
+        .filter(p => p.userEntry.globalEntry.abstract)
+        .map(p => buildPaperEmbeddingText(p.userEntry.globalEntry.title, p.userEntry.globalEntry.abstract))
+
+      if (texts.length > 0) {
+        const embeddings = await embedBatch(texts)
+        // Average the embeddings to create a collection interest vector
+        const sumVector = new Array(embeddings[0]?.length || 0).fill(0)
+        let count = 0
+        for (const emb of embeddings) {
+          if (emb) {
+            for (let i = 0; i < emb.length; i++) {
+              sumVector[i] += emb[i]
+            }
+            count++
+          }
+        }
+        if (count > 0) {
+          interestVector = sumVector.map(v => v / count)
+        }
+      }
+    }
+
+    // Get user's preferred count from profile
+    const profile = await getOrCreateProfile(userId)
+    preferredCount = profile.preferredDailyCount ?? 5
+    dismissedIds = new Set(profile.dismissedPaperIds)
+  } else if (mode === 'phrase' && phrase) {
+    // Phrase-based: compute interest vector from the research phrase
+    const embedding = await embedBatch([buildPaperEmbeddingText(phrase, phrase)])
+    interestVector = embedding[0] || null
+
+    // Get user's preferred count from profile
+    const profile = await getOrCreateProfile(userId)
+    preferredCount = profile.preferredDailyCount ?? 5
+    dismissedIds = new Set(profile.dismissedPaperIds)
+  } else {
+    // Profile-based: use user's computed profile
+    let profile = await getOrCreateProfile(userId)
+    if (!profile.interestVector || !profile.lastRecomputedAt) {
+      await recomputeUserProfile(userId)
+      profile = await getOrCreateProfile(userId)
+    }
+
+    interestVector = profile.interestVector as number[] | null
+    domainWeights = (profile.domainWeights as Record<string, number>) ?? {}
+    dismissedIds = new Set(profile.dismissedPaperIds)
+    preferredCount = profile.preferredDailyCount ?? 5
+  }
 
   // Fetch candidate papers from last 7 days that have been embedded
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -700,7 +774,7 @@ async function ensurePaperSummaries(paper: {
       technicalSummary: summaries.technicalSummary,
       noveltyTag: summaries.noveltyTag,
     },
-  }).catch(() => {/* Non-fatal if caching fails */})
+  }).catch(() => {/* Non-fatal if caching fails */ })
 
   return summaries
 }
