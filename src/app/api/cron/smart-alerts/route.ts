@@ -126,7 +126,6 @@ async function runRSSIngestion() {
     sourcesProcessed: 0,
     entriesFound: 0,
     entriesCreated: 0,
-    userEntriesCreated: 0,
     errors: [] as string[]
   };
 
@@ -236,31 +235,6 @@ async function runRSSIngestion() {
               }
             }
 
-            // Create UserEntry for all subscribers
-            if (globalEntryId) {
-              for (const userSource of source.userSources) {
-                try {
-                  await prisma.userEntry.upsert({
-                    where: {
-                      userId_globalEntryId: {
-                        userId: userSource.userId,
-                        globalEntryId: globalEntryId
-                      }
-                    },
-                    create: {
-                      userId: userSource.userId,
-                      globalEntryId: globalEntryId,
-                      addedVia: 'rss_ingestion',
-                      readingStatus: 'UNREAD'
-                    },
-                    update: {} // Do nothing if it exists
-                  });
-                  results.userEntriesCreated++;
-                } catch (error) {
-                  console.error(`[cron/smart-alerts] Error linking entry to user ${userSource.userId}:`, error);
-                }
-              }
-            }
           } catch (error) {
             console.error(`[cron/smart-alerts] Error processing item:`, error);
             results.errors.push(`Error processing item from ${source.feedUrl}: ${error}`);

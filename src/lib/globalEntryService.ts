@@ -182,3 +182,54 @@ export async function removeEntryForUser(
     data: { entriesCount: { decrement: 1 } }
   })
 }
+
+/**
+ * Create or find a GlobalEntry without creating a UserEntry.
+ * Used for RSS ingestion where entries should appear in the RSS feed
+ * but not automatically added to the user's library.
+ */
+export async function createGlobalEntryOnly(
+  input: GlobalEntryInput
+): Promise<{ globalEntryId: string; wasNew: boolean }> {
+  // Step 1: Compute deduplication keys
+  const keys = getDeduplicationKeys({
+    doi: input.doi,
+    isbn: input.isbn?.[0] || null,
+    title: input.title,
+    authors: input.authors,
+    year: input.year,
+    url: input.url,
+  })
+
+  // Step 2: Find existing GlobalEntry or create new one
+  let globalEntryId = await findExistingGlobalEntry(prisma, keys)
+
+  if (globalEntryId) {
+    return { globalEntryId, wasNew: false }
+  }
+
+  // Create new GlobalEntry
+  const globalEntry = await prisma.globalEntry.create({
+    data: {
+      doi: keys.doi,
+      isbn: keys.isbn,
+      normalizedTitle: keys.normalizedTitle,
+      normalizedFirstAuthor: keys.normalizedFirstAuthor,
+      publicationYear: keys.publicationYear,
+      canonicalUrl: keys.canonicalUrl,
+      contentHash: keys.contentHash,
+      title: input.title,
+      authors: input.authors,
+      year: input.year,
+      abstract: input.abstract,
+      source: input.source,
+      url: input.url,
+      rawContentType: input.rawContentType,
+      metadata: input.metadata || undefined,
+      addedVia: input.addedVia ?? 'manual',
+      saveCount: 0,
+    }
+  })
+
+  return { globalEntryId: globalEntry.id, wasNew: true }
+}
