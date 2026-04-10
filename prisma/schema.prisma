@@ -535,6 +535,7 @@ model UserEntry {
   
   // Per-user state
   readingStatus   ReadingStatus @default(UNREAD)
+  notes           String?   // User's personal notes about this entry
   
   // Source tracking per user
   addedVia        String?   // "manual", "smart_alert", "shared", "collection"
@@ -744,6 +745,7 @@ model PaperReadingSession {
   globalEntryId    String?
   paperText        String    @db.Text
   sections         Json      // SectionObject[]
+  notes            String?   // User's notes for this session
   sessionStarted   DateTime  @default(now())
   lastActivity     DateTime  @updatedAt
 

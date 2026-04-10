@@ -3,16 +3,20 @@ import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/prisma'
 import { isPro } from '@/lib/plans'
-import { ResearchFeedClient } from './ResearchFeedClient'
+import { ResearchPageClient } from './ResearchPageClient'
 import { UpgradePrompt } from '@/components/UpgradePrompt'
 
 export const metadata = {
-  title: 'Research Feed · Corpus',
+  title: 'Research · Corpus',
   description:
-    'Your daily personalized research paper feed — 3 to 10 papers curated from arXiv, bioRxiv, and more, ranked by relevance to your library.',
+    'Discover papers and deepen your understanding with the Research Reading System.',
 }
 
-export default async function ResearchPage() {
+export default async function ResearchPage({
+  searchParams,
+}: {
+  searchParams: { tab?: string }
+}) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
     redirect('/auth/signin?callbackUrl=/research')
@@ -34,23 +38,14 @@ export default async function ResearchPage() {
   }
 
   const preferredCount = user.researchProfile?.preferredDailyCount ?? 5
-
-
-
-  if (!isPro(user.plan)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <UpgradePrompt reason="research_feed_pro_only" variant="inline" />
-        </div>
-      </div>
-    )
-  }
+  const tab = searchParams.tab || 'discover'
 
   return (
-    <ResearchFeedClient
+    <ResearchPageClient
       userId={user.id}
+      plan={user.plan}
       preferredCount={preferredCount}
+      initialTab={tab}
     />
   )
 }
