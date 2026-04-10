@@ -1123,7 +1123,7 @@ function PostSavePanel({
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
         },
-        body: JSON.stringify({ entryId: confirmation.id }),
+        body: JSON.stringify({ userEntryId: confirmation.id }),
       });
       if (res.ok) {
         setCollectionMsg(`Added to ${name} ✓`);

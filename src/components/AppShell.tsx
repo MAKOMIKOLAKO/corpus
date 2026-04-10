@@ -220,8 +220,8 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/research"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
-                      aria-current={pathname.startsWith("/research") ? "page" : undefined}
+                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname?.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      aria-current={pathname?.startsWith("/research") ? "page" : undefined}
                     >
                       <FlaskConical className="w-4 h-4" />
                       research
@@ -310,7 +310,7 @@ export function AppShell({
                   </Link>
                   <Link
                     href="/research"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname?.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
                   >
                     <FlaskConical className="w-5 h-5" />
                     research
