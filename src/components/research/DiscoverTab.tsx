@@ -57,7 +57,12 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
         const collectionsRes = await fetch('/api/collections')
         if (collectionsRes.ok) {
           const data = await collectionsRes.json()
-          setCollections(data.collections || [])
+          // API returns { owned: [...], member: [...] }
+          const allCollections = [
+            ...(data.owned || []).map((c: any) => ({ id: c.id, name: c.name })),
+            ...(data.member || []).map((c: any) => ({ id: c.id, name: c.name }))
+          ]
+          setCollections(allCollections)
         }
 
         // Load saved preferences
