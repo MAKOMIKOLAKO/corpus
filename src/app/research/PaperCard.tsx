@@ -12,6 +12,7 @@ import {
   Sparkles,
   Tag,
 } from 'lucide-react'
+import Link from 'next/link'
 import type { PaperSummaryObject } from '@/lib/research/feedPipeline'
 
 interface PaperCardProps {
@@ -187,16 +188,15 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
         </button>
 
         {/* Placeholder for reading assistant — Phase 2 */}
-        <button
+        <Link
+          href={`/research/read/${paper.candidatePaperId}`}
           id={`read-paper-${paper.candidatePaperId}`}
-          disabled
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 py-1.5 text-[13px] text-content-tertiary cursor-not-allowed"
-          title="Reading Assistant available in a future update"
-          aria-label="Reading assistant - coming soon"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-primary hover:border-content-secondary transition-all"
+          aria-label="Open reading assistant for this paper"
         >
           <BookOpen size={13} />
           Read
-        </button>
+        </Link>
       </div>
     </motion.article>
   )
