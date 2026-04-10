@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/prisma'
 import { isPro } from '@/lib/plans'
 import { rateLimit } from '@/lib/rateLimit'
-import { getDailyBriefCached, generateDailyBrief } from '@/lib/research/feedPipeline'
+import { getDailyBriefCached, generateDailyBrief, type FeedOverrides } from '@/lib/research/feedPipeline'
 
 // In-memory job tracking (per-process; cleared on restart)
 // Sufficient for single-user scenario — brief is persisted to DB once done.
@@ -41,10 +41,19 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Check for cached brief first
-  const cached = await getDailyBriefCached(user.id)
-  if (cached) {
-    return NextResponse.json(cached)
+  // Parse selection mode overrides from query params
+  const { searchParams } = new URL(request.url)
+  const modeOverride = searchParams.get('mode') as 'profile' | 'collection' | 'phrase' | null
+  const collectionIdOverride = searchParams.get('collectionId')
+  const phraseOverride = searchParams.get('phrase')
+
+  // Check for cached brief first (only when no overrides are provided)
+  const hasOverrides = modeOverride || collectionIdOverride || phraseOverride
+  if (!hasOverrides) {
+    const cached = await getDailyBriefCached(user.id)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
   }
 
   // No existing brief — check if a job is already running
@@ -65,7 +74,11 @@ export async function GET(request: NextRequest) {
     setTimeout(() => resolve(null), 9500)
   )
 
-  const generatePromise = generateDailyBrief(user.id).catch((err) => {
+  const overrides: FeedOverrides | undefined = hasOverrides
+    ? { mode: modeOverride || undefined, collectionId: collectionIdOverride || undefined, phrase: phraseOverride || undefined }
+    : undefined
+
+  const generatePromise = generateDailyBrief(user.id, overrides).catch((err) => {
     console.error(`[feed/route] Generation failed for ${user.id}:`, err)
     return null
   })
@@ -79,7 +92,7 @@ export async function GET(request: NextRequest) {
 
   // Generation is taking too long — run it in the background, return 202
   if (!pendingJobs.has(jobId)) {
-    const bgJob = generateDailyBrief(user.id)
+    const bgJob = generateDailyBrief(user.id, overrides)
       .catch((err) => console.error(`[feed/route] Background generation failed:`, err))
       .finally(() => pendingJobs.delete(jobId))
 

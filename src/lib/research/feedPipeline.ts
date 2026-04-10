@@ -165,16 +165,23 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
  * Run the full online pipeline for a user.
  * Steps: scoring → filtering → clustering → selection → summarization → save.
  */
+export interface FeedOverrides {
+  mode?: 'profile' | 'collection' | 'phrase'
+  collectionId?: string
+  phrase?: string
+}
+
 export async function generateDailyBrief(
-  userId: string
+  userId: string,
+  overrides?: FeedOverrides
 ): Promise<DailyFeedResponse> {
   const today = todayUTC()
 
   // Get user profile with feed selection preferences
-  const profile = await getOrCreateProfile(userId)
-  const mode = (profile.feedSelectionMode as 'profile' | 'collection' | 'phrase') || 'profile'
-  const collectionId = profile.feedSelectionCollectionId || null
-  const phrase = profile.feedSelectionPhrase || null
+  const profile = await getOrCreateProfile(userId) as any
+  const mode = overrides?.mode || (profile.feedSelectionMode as 'profile' | 'collection' | 'phrase') || 'profile'
+  const collectionId = overrides?.collectionId || profile.feedSelectionCollectionId || null
+  const phrase = overrides?.phrase || profile.feedSelectionPhrase || null
 
   // Determine interest vector based on selection mode
   let interestVector: number[] | null = null

@@ -20,11 +20,66 @@ export async function GET(request: NextRequest) {
   if (user?.plan === 'FREE') return NextResponse.json({ error: 'Pro feature' }, { status: 403 })
 
   const { searchParams } = new URL(request.url)
-  const paperId = searchParams.get('paperId')
+  const rawPaperId = searchParams.get('paperId')
 
-  if (!paperId) return NextResponse.json({ error: 'Missing paperId' }, { status: 400 })
+  if (!rawPaperId) return NextResponse.json({ error: 'Missing paperId' }, { status: 400 })
 
   try {
+    // Resolve rawPaperId to a CandidatePaper ID and/or GlobalEntry ID
+    // The client may pass an arXiv ID (e.g. "2301.00000"), a DOI, or a CUID
+    let candidatePaperId: string | null = null
+    let globalEntryId: string | null = null
+
+    // Try CandidatePaper lookup by arxivId or id
+    const candidatePaper = await (prisma as any).candidatePaper.findFirst({
+      where: {
+        OR: [
+          { id: rawPaperId },
+          { arxivId: rawPaperId },
+          { doi: rawPaperId },
+        ]
+      },
+      select: { id: true }
+    })
+
+    if (candidatePaper) {
+      candidatePaperId = candidatePaper.id
+    }
+
+    // Try GlobalEntry lookup by id or doi
+    const globalEntry = await (prisma as any).globalEntry.findFirst({
+      where: {
+        OR: [
+          { id: rawPaperId },
+          { doi: rawPaperId },
+        ]
+      },
+      select: { id: true }
+    })
+
+    if (globalEntry) {
+      globalEntryId = globalEntry.id
+      // If no candidatePaper found, try linking via GlobalEntry's arxivId
+      if (!candidatePaperId) {
+        const ge = await (prisma as any).globalEntry.findUnique({
+          where: { id: globalEntry.id },
+          select: { source: true }
+        })
+        // Try to find a CandidatePaper with matching source/arxivId
+        const arxivMatch = rawPaperId.match(/^\d{4}\.\d{4,5}$/)
+        if (arxivMatch) {
+          const cpByArxiv = await (prisma as any).candidatePaper.findUnique({
+            where: { arxivId: rawPaperId },
+            select: { id: true }
+          })
+          if (cpByArxiv) candidatePaperId = cpByArxiv.id
+        }
+      }
+    }
+
+    // If neither found, we still try with the raw ID (fetchPaperContent may handle it)
+    const effectivePaperId = candidatePaperId || rawPaperId
+
     // 1. Check if session already exists
     let readingSession
     try {
@@ -32,8 +87,10 @@ export async function GET(request: NextRequest) {
         where: {
           userId: session.user.id,
           OR: [
-            { candidatePaperId: paperId },
-            { globalEntryId: paperId }
+            ...(candidatePaperId ? [{ candidatePaperId }] : []),
+            ...(globalEntryId ? [{ globalEntryId }] : []),
+            { candidatePaperId: rawPaperId },
+            { globalEntryId: rawPaperId },
           ]
         },
         include: {
@@ -47,11 +104,11 @@ export async function GET(request: NextRequest) {
 
     // 2. If not, initialize it
     if (!readingSession) {
-      console.log(`[read-api] Initializing new session for paper ${paperId}`)
+      console.log(`[read-api] Initializing new session for paper ${effectivePaperId}`)
 
       let rawText
       try {
-        rawText = await fetchPaperContent(paperId)
+        rawText = await fetchPaperContent(effectivePaperId)
       } catch (fetchErr: any) {
         console.error('[read-api] Fetch paper error:', fetchErr)
         if (fetchErr.message?.includes('Paper not found')) {
@@ -72,7 +129,8 @@ export async function GET(request: NextRequest) {
         readingSession = await (prisma as any).paperReadingSession.create({
           data: {
             userId: session.user.id,
-            candidatePaperId: paperId, // assume candidateId for now
+            ...(candidatePaperId ? { candidatePaperId } : {}),
+            ...(globalEntryId ? { globalEntryId } : {}),
             paperText: rawText,
             sections: sections as any,
           },

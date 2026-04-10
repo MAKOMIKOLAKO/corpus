@@ -33,7 +33,7 @@ function FeedSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-border bg-card p-5 animate-pulse"
+          className="rounded-xl border border-border bg-card p-5 animate-pulse whisper-shadow"
         >
           <div className="flex gap-2 mb-3">
             <div className="h-5 w-20 rounded-full bg-muted" />
@@ -194,8 +194,8 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
                 </span>
               </div>
               <h1
-                className="text-[22px] font-semibold text-content-primary"
-                style={{ fontFamily: 'Georgia, serif' }}
+                className="text-[22px] font-medium text-content-primary font-serif"
+                style={{ lineHeight: 1.20 }}
               >
                 {today}
               </h1>
@@ -269,7 +269,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
         {/* Emerging trends */}
         {feed?.emergingTrends && (
-          <div className="mb-6 rounded-xl border border-border bg-card overflow-hidden">
+          <div className="mb-6 rounded-xl border border-border bg-card overflow-hidden whisper-shadow">
             <button
               id="emerging-trends-toggle"
               onClick={() => setTrendsExpanded(!trendsExpanded)}
@@ -294,7 +294,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <p className="px-5 pb-5 text-[14px] leading-relaxed text-content-secondary">
+                  <p className="px-5 pb-5 text-[14px] text-content-secondary" style={{ lineHeight: 1.60 }}>
                     {feed.emergingTrends}
                   </p>
                 </motion.div>
@@ -311,7 +311,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
             {(state.status === 'loading' || state.status === 'polling') && (
               <div>
                 {state.status === 'polling' && (
-                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-[13px] text-content-tertiary">
+                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-[13px] text-content-tertiary whisper-shadow">
                     <RefreshCw size={14} className="animate-spin text-accent" />
                     Generating your personalized feed — this takes a moment…
                   </div>
@@ -321,13 +321,13 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
             )}
 
             {state.status === 'empty' && (
-              <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
+              <div className="rounded-xl border border-border bg-card px-6 py-12 text-center whisper-shadow">
                 <p className="text-content-secondary text-[14px]">{state.message}</p>
               </div>
             )}
 
             {state.status === 'error' && (
-              <div className="rounded-xl border border-red-900/40 bg-red-900/10 px-6 py-8 text-center">
+              <div className="rounded-xl border border-red-900/40 bg-red-900/10 px-6 py-8 text-center whisper-shadow">
                 <p className="text-red-400 text-[14px] mb-3">{state.message}</p>
                 <button
                   onClick={fetchFeed}
@@ -345,7 +345,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
                     key="no-papers"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="rounded-xl border border-border bg-card px-6 py-8 text-center"
+                    className="rounded-xl border border-border bg-card px-6 py-8 text-center whisper-shadow"
                   >
                     <p className="text-content-secondary text-[14px]">
                       No papers found for today.
@@ -367,7 +367,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
             )}
           </main>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

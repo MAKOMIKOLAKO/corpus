@@ -40,10 +40,8 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
         }
       }
 
-      // Call the existing /api/research/read endpoint
-      const res = await fetch(`/api/research/read?paperId=${encodeURIComponent(paperId)}`, {
-        method: 'POST',
-      })
+      // Call the existing /api/research/read endpoint (GET initializes a session)
+      const res = await fetch(`/api/research/read?paperId=${encodeURIComponent(paperId)}`)
 
       if (res.status === 403) {
         router.push('/pricing?reason=reading_assistant_pro_only')
@@ -86,10 +84,10 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
           {!sessionId ? (
             <div>
-              <h2 className="text-2xl font-serif font-medium text-content-primary mb-2">
+              <h2 className="text-2xl font-serif font-medium text-content-primary mb-2" style={{ lineHeight: 1.20 }}>
                 Research Workspace
               </h2>
-              <p className="text-content-secondary mb-8">
+              <p className="text-content-secondary mb-8" style={{ lineHeight: 1.60 }}>
                 Load a paper to start analyzing and extracting insights
               </p>
 
@@ -97,9 +95,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
                 <button
                   onClick={() => setInputMethod('arxiv')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'arxiv'
-                    ? 'border-accent bg-accent/5'
-                    : 'border-border hover:border-border-strong'
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'arxiv'
+                    ? 'border-accent bg-accent/5 ring-shadow'
+                    : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
                   <Link className="w-5 h-5" />
@@ -107,9 +105,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 </button>
                 <button
                   onClick={() => setInputMethod('pdf')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'pdf'
-                    ? 'border-accent bg-accent/5'
-                    : 'border-border hover:border-border-strong'
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'pdf'
+                    ? 'border-accent bg-accent/5 ring-shadow'
+                    : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
                   <Upload className="w-5 h-5" />
@@ -117,9 +115,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 </button>
                 <button
                   onClick={() => setInputMethod('text')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'text'
-                    ? 'border-accent bg-accent/5'
-                    : 'border-border hover:border-border-strong'
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'text'
+                    ? 'border-accent bg-accent/5 ring-shadow'
+                    : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
                   <Type className="w-5 h-5" />
@@ -127,9 +125,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 </button>
                 <button
                   onClick={() => setInputMethod('library')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${inputMethod === 'library'
-                    ? 'border-accent bg-accent/5'
-                    : 'border-border hover:border-border-strong'
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'library'
+                    ? 'border-accent bg-accent/5 ring-shadow'
+                    : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
                   <BookOpen className="w-5 h-5" />
@@ -149,12 +147,12 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="https://arxiv.org/abs/2301.00000 or 10.1000/xyz123"
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     />
                     <button
                       onClick={handleLoadPaper}
                       disabled={!inputValue.trim()}
-                      className="px-6 py-3 rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      className="px-6 py-3 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium button-terracotta"
                     >
                       Load Paper
                     </button>
@@ -166,7 +164,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                     <label className="block text-sm font-medium text-content-secondary">
                       Upload PDF file
                     </label>
-                    <div className="border-2 border-dashed border-border rounded-xl p-12 text-center hover:border-accent transition-colors cursor-pointer">
+                    <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-accent transition-colors cursor-pointer">
                       <Upload className="w-10 h-10 text-content-tertiary mx-auto mb-3" />
                       <p className="text-content-secondary mb-1">
                         Drag and drop PDF here
@@ -189,12 +187,12 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Paste the full paper text or abstract here..."
                       rows={12}
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-none"
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-none"
                     />
                     <button
                       onClick={handleLoadPaper}
                       disabled={!inputValue.trim()}
-                      className="px-6 py-3 rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      className="px-6 py-3 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium button-terracotta"
                     >
                       Load Paper
                     </button>
@@ -211,7 +209,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Search saved papers..."
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     />
                     <p className="text-sm text-content-tertiary">
                       Library search coming soon
@@ -223,7 +221,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
           ) : (
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-serif font-medium text-content-primary">
+                <h2 className="text-2xl font-serif font-medium text-content-primary" style={{ lineHeight: 1.20 }}>
                   Paper Analysis
                 </h2>
                 <button
@@ -233,7 +231,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                   Load different paper
                 </button>
               </div>
-              <div className="border border-border rounded-xl p-8 text-center">
+              <div className="border border-border rounded-xl p-8 text-center whisper-shadow">
                 <FileText className="w-12 h-12 text-content-tertiary mx-auto mb-4" />
                 <p className="text-content-secondary mb-2">
                   Paper viewer and analysis tools coming soon
