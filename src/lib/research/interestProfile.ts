@@ -78,15 +78,15 @@ export async function recomputeUserProfile(userId: string): Promise<void> {
       where: { userId },
       create: {
         userId,
-        interestVector: null,
-        domainWeights: {},
+        interestVector: Prisma.JsonNull as unknown as Prisma.InputJsonValue,
+        domainWeights: {} as unknown as Prisma.InputJsonValue,
         dismissedPaperIds: [],
         preferredDailyCount: 5,
         lastRecomputedAt: new Date(),
       },
       update: {
-        interestVector: null,
-        domainWeights: {},
+        interestVector: Prisma.JsonNull as unknown as Prisma.InputJsonValue,
+        domainWeights: {} as unknown as Prisma.InputJsonValue,
         lastRecomputedAt: new Date(),
       },
     })
@@ -205,15 +205,15 @@ export async function recomputeUserProfile(userId: string): Promise<void> {
     where: { userId },
     create: {
       userId,
-      interestVector: (interestVector && interestVector.length > 0 ? interestVector : Prisma.JsonNull) as Prisma.InputJsonValue,
-      domainWeights: domainWeights as Prisma.InputJsonValue,
+      interestVector: (interestVector && interestVector.length > 0 ? interestVector : Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
+      domainWeights: domainWeights as unknown as Prisma.InputJsonValue,
       dismissedPaperIds: [],
       preferredDailyCount: 5,
       lastRecomputedAt: new Date(),
     },
     update: {
-      interestVector: (interestVector && interestVector.length > 0 ? interestVector : Prisma.JsonNull) as Prisma.InputJsonValue,
-      domainWeights: domainWeights as Prisma.InputJsonValue,
+      interestVector: (interestVector && interestVector.length > 0 ? interestVector : Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
+      domainWeights: domainWeights as unknown as Prisma.InputJsonValue,
       lastRecomputedAt: new Date(),
     },
   })
