@@ -23,13 +23,13 @@ interface PaperCardProps {
 }
 
 const NOVELTY_COLORS: Record<string, string> = {
-  'New method':             'bg-emerald-900/40 text-emerald-300 border border-emerald-700/40',
-  'New dataset':            'bg-blue-900/40 text-blue-300 border border-blue-700/40',
-  'State-of-the-art result':'bg-violet-900/40 text-violet-300 border border-violet-700/40',
-  'Survey':                 'bg-amber-900/40 text-amber-300 border border-amber-700/40',
-  'Theoretical':            'bg-rose-900/40 text-rose-300 border border-rose-700/40',
-  'Replication':            'bg-gray-800/60 text-gray-400 border border-gray-600/40',
-  'Interdisciplinary':      'bg-orange-900/40 text-orange-300 border border-orange-700/40',
+  'New method': 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/40',
+  'New dataset': 'bg-blue-900/40 text-blue-300 border border-blue-700/40',
+  'State-of-the-art result': 'bg-violet-900/40 text-violet-300 border border-violet-700/40',
+  'Survey': 'bg-amber-900/40 text-amber-300 border border-amber-700/40',
+  'Theoretical': 'bg-rose-900/40 text-rose-300 border border-rose-700/40',
+  'Replication': 'bg-gray-800/60 text-gray-400 border border-gray-600/40',
+  'Interdisciplinary': 'bg-orange-900/40 text-orange-300 border border-orange-700/40',
 }
 
 export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperCardProps) {
@@ -86,11 +86,6 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
               <Tag size={10} />
               {paper.noveltyTag}
             </span>
-            {paper.clusterLabel && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface-sunken px-2 py-0.5 text-[11px] text-content-tertiary">
-                {paper.clusterLabel}
-              </span>
-            )}
           </div>
 
           {/* Title */}
@@ -165,11 +160,10 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           id={`save-paper-${paper.candidatePaperId}`}
           onClick={handleSave}
           disabled={saved || saving}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${
-            saved
+          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${saved
               ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 cursor-default'
               : 'bg-muted text-content-secondary border border-border-strong hover:bg-accent hover:text-accent-foreground hover:border-accent'
-          }`}
+            }`}
           aria-label={saved ? 'Paper saved to library' : 'Save paper to library'}
         >
           <BookmarkPlus size={13} />
