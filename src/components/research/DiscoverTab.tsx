@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Rss, FlaskConical, Settings2, Loader2, ChevronDown, Filter, Bell, X } from 'lucide-react'
 import { ResearchFeedClient } from '@/app/research/ResearchFeedClient'
+import { AlertsManagementPanel } from '@/components/alerts/AlertsManagementPanel'
 
 interface DiscoverTabProps {
   userId: string
@@ -307,23 +308,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
             onClick={() => setShowAlertsPanel(false)}
           />
           <div className="absolute right-0 top-0 h-full w-full max-w-md bg-card border-l border-border shadow-xl">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h3 className="text-lg font-serif font-medium text-content-primary">
-                Manage Alerts
-              </h3>
-              <button
-                onClick={() => setShowAlertsPanel(false)}
-                className="p-2 rounded-full hover:bg-surface-sunken text-content-secondary hover:text-content-primary transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-content-secondary">Alerts management UI coming soon</p>
-              <p className="text-content-tertiary text-sm mt-2">
-                This will reuse the existing AlertsPageClient logic
-              </p>
-            </div>
+            <AlertsManagementPanel userId={userId} onClose={() => setShowAlertsPanel(false)} />
           </div>
         </div>
       )}
