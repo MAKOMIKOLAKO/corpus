@@ -11,7 +11,7 @@ function getGeminiKey(): string {
   return key
 }
 
-async function callGemini(
+export async function callGemini(
   prompt: string,
   systemInstruction: string,
   temperature: number = 0,
@@ -46,7 +46,7 @@ async function callGemini(
   return text.trim()
 }
 
-function safeParseJson<T>(text: string, fallback: T): T {
+export function safeParseJson<T>(text: string, fallback: T): T {
   try {
     // Strip markdown code fences if present
     const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
