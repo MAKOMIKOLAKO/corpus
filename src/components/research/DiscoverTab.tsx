@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Search, Rss, FlaskConical, Settings2, Loader2, ChevronDown, Filter, Bell, X } from 'lucide-react'
 import { ResearchFeedClient } from '@/app/research/ResearchFeedClient'
 import { AlertsManagementPanel } from '@/components/alerts/AlertsManagementPanel'
+import { RssFeedView } from './RssFeedView'
 
 interface DiscoverTabProps {
   userId: string
@@ -290,14 +291,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
 
       {/* RSS Feed View */}
       {viewMode === 'rss' && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-          <div className="text-center py-20">
-            <p className="text-content-secondary">RSS feed view coming soon</p>
-            <p className="text-content-tertiary text-sm mt-2">
-              Will show RSS entries from your subscribed feeds
-            </p>
-          </div>
-        </div>
+        <RssFeedView userId={userId} />
       )}
 
       {/* Alerts Slide-out Panel */}
