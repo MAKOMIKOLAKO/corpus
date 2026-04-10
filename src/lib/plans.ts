@@ -12,6 +12,9 @@ export const PLAN_LIMITS = {
     batchActions: false,
     advancedSearch: false,
     bibliographyGeneration: false,
+    researchFeed: false,
+    readingAssistantFeed: false,
+    paperComparison: false,
   },
   PRO: {
     maxEntries: Infinity,
@@ -24,6 +27,9 @@ export const PLAN_LIMITS = {
     batchActions: true,
     advancedSearch: true,
     bibliographyGeneration: true,
+    researchFeed: true,
+    readingAssistantFeed: true,
+    paperComparison: true,
   },
   LIFETIME_PRO: {
     maxEntries: Infinity,
@@ -36,6 +42,9 @@ export const PLAN_LIMITS = {
     batchActions: true,
     advancedSearch: true,
     bibliographyGeneration: true,
+    researchFeed: true,
+    readingAssistantFeed: true,
+    paperComparison: true,
   },
 } as const
 
@@ -162,4 +171,25 @@ export function getUserPlan(user: { plan: Plan } | null): Plan {
 
 export function hasPaidFeature(plan: Plan, feature: string): boolean {
   return isPro(plan)
+}
+
+export function canUseResearchFeed(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  if (!isPro(plan)) return { allowed: false, reason: 'research_feed_pro_only' }
+  return { allowed: true }
+}
+
+export function canUseReadingAssistantFeed(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  if (!isPro(plan)) return { allowed: false, reason: 'reading_assistant_pro_only' }
+  return { allowed: true }
+}
+
+export function canUsePaperComparison(
+  plan: Plan
+): { allowed: boolean; reason?: string } {
+  if (!isPro(plan)) return { allowed: false, reason: 'paper_comparison_pro_only' }
+  return { allowed: true }
 }

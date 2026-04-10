@@ -10,7 +10,7 @@ import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Rss } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Rss, FlaskConical } from "lucide-react";
 
 export function AppShell({
   children,
@@ -218,6 +218,14 @@ export function AppShell({
                       <Brain className="w-4 h-4" />
                       alerts
                     </Link>
+                    <Link
+                      href="/research"
+                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      aria-current={pathname.startsWith("/research") ? "page" : undefined}
+                    >
+                      <FlaskConical className="w-4 h-4" />
+                      research
+                    </Link>
                     <ThemeToggle />
                     <NotificationDropdown />
                     <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
@@ -299,6 +307,13 @@ export function AppShell({
                   >
                     <Brain className="w-5 h-5" />
                     alerts
+                  </Link>
+                  <Link
+                    href="/research"
+                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
+                  >
+                    <FlaskConical className="w-5 h-5" />
+                    research
                   </Link>
                   <div onClick={() => setIsMenuOpen(false)}>
                     <NotificationDropdown />

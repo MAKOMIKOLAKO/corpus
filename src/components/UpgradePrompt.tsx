@@ -11,7 +11,8 @@ interface UpgradePromptProps {
   reason: 'entry_limit_reached' | 'shared_collections_pro_only' |
   'personal_collection_limit_reached' | 'batch_actions_pro_only' |
   'contribution_pro_only' | 'advanced_search_pro_only' |
-  'alerts_pro_only' | 'bibliography_pro_only';
+  'alerts_pro_only' | 'bibliography_pro_only' |
+  'research_feed_pro_only' | 'reading_assistant_pro_only' | 'paper_comparison_pro_only';
   variant?: 'inline' | 'modal' | 'toast';
 }
 
@@ -76,6 +77,27 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         return {
           title: "Bibliography generation is a Pro feature",
           description: "Generate formatted citations in APA, MLA, and Chicago from entries in your library, with built-in deduplication and optional AI related-work summaries.",
+          cta: "Upgrade to Pro →",
+          href: "/settings/billing"
+        };
+      case 'research_feed_pro_only':
+        return {
+          title: "Research Feed is a Pro feature",
+          description: "Get a daily personalized feed of 3–10 research papers curated from arXiv, bioRxiv, and more — ranked by semantic similarity to your library and research interests.",
+          cta: "Upgrade to Pro →",
+          href: "/settings/billing"
+        };
+      case 'reading_assistant_pro_only':
+        return {
+          title: "Reading Assistant is a Pro feature",
+          description: "Open any paper in the reading assistant to get plain-language summaries, section-by-section explanations, and a Q&A companion that only uses the paper's own text.",
+          cta: "Upgrade to Pro →",
+          href: "/settings/billing"
+        };
+      case 'paper_comparison_pro_only':
+        return {
+          title: "Multi-paper comparison is a Pro feature",
+          description: "Select up to 5 papers and compare them side-by-side across methodology, datasets, results, and limitations — answered from the papers' own text.",
           cta: "Upgrade to Pro →",
           href: "/settings/billing"
         };
