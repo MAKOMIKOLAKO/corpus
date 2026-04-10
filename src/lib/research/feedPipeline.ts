@@ -5,6 +5,7 @@
  */
 
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { cosineSimilarity } from './embeddings'
 import {
   computeSemanticScore,
@@ -391,12 +392,12 @@ export async function generateDailyBrief(userId: string): Promise<DailyFeedRespo
           date: today,
           clusterIndex: c.clusterIndex,
           label: clusterLabels[c.clusterIndex] ?? `Topic ${c.clusterIndex + 1}`,
-          centroid: c.centroid,
+          centroid: c.centroid as Prisma.InputJsonValue,
           paperIds: c.paperIds,
         },
         update: {
           label: clusterLabels[c.clusterIndex] ?? `Topic ${c.clusterIndex + 1}`,
-          centroid: c.centroid,
+          centroid: c.centroid as Prisma.InputJsonValue,
           paperIds: c.paperIds,
         },
       })
@@ -410,13 +411,13 @@ export async function generateDailyBrief(userId: string): Promise<DailyFeedRespo
       userId,
       date: today,
       selectedPaperIds: selected.map((s) => s.candidate.id),
-      whyExplanations,
+      whyExplanations: whyExplanations as Prisma.InputJsonValue,
       emergingTrendsParagraph: emergingTrends,
       generatedAt: new Date(),
     },
     update: {
       selectedPaperIds: selected.map((s) => s.candidate.id),
-      whyExplanations,
+      whyExplanations: whyExplanations as Prisma.InputJsonValue,
       emergingTrendsParagraph: emergingTrends,
       generatedAt: new Date(),
     },
@@ -500,8 +501,15 @@ function diversitySelect(
       title: string
       authors: string[]
       abstract: string | null
+      source: string | null
+      doi: string | null
+      url: string | null
+      publishedDate: Date | null
       embedding: unknown
       candidateMetadata: unknown
+      plainSummary: string | null
+      technicalSummary: string | null
+      noveltyTag: string | null
     }
     subScores: SubScores
     composite: number

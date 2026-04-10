@@ -8,7 +8,7 @@ import { getDailyBriefCached, generateDailyBrief } from '@/lib/research/feedPipe
 
 // In-memory job tracking (per-process; cleared on restart)
 // Sufficient for single-user scenario — brief is persisted to DB once done.
-const pendingJobs = new Map<string, Promise<void>>()
+const pendingJobs = new Map<string, Promise<any>>()
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)

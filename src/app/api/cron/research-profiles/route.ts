@@ -24,7 +24,7 @@ async function runProfileRecomputation(): Promise<{
       plan: { in: ['PRO', 'LIFETIME_PRO'] },
       OR: [
         { lastFeedViewedAt: { gte: thirtyDaysAgo } },
-        { updatedAt: { gte: thirtyDaysAgo } },
+        { createdAt: { gte: thirtyDaysAgo } },
       ],
     },
     select: {
