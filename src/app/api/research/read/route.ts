@@ -60,10 +60,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(readingSession)
   } catch (err: any) {
     console.error('[read-api] Session error:', err)
+    console.error('[read-api] Error message:', err?.message)
+    console.error('[read-api] Error stack:', err?.stack)
     if (err.message?.includes('Paper not found')) {
       return NextResponse.json({ error: err.message }, { status: 404 })
     }
-    return NextResponse.json({ error: 'Failed to initialize session' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to initialize session', details: err?.message }, { status: 500 })
   }
 }
 
