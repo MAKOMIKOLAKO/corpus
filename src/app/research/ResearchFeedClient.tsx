@@ -32,23 +32,23 @@ function FeedSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-[#30302e] bg-[#1c1c1a] p-5 animate-pulse"
+          className="rounded-xl border border-border bg-card p-5 animate-pulse"
         >
           <div className="flex gap-2 mb-3">
-            <div className="h-5 w-20 rounded-full bg-[#30302e]" />
-            <div className="h-5 w-32 rounded-full bg-[#30302e]" />
+            <div className="h-5 w-20 rounded-full bg-muted" />
+            <div className="h-5 w-32 rounded-full bg-muted" />
           </div>
-          <div className="h-4 w-3/4 rounded bg-[#30302e] mb-2" />
-          <div className="h-4 w-1/2 rounded bg-[#30302e] mb-4" />
+          <div className="h-4 w-3/4 rounded bg-muted mb-2" />
+          <div className="h-4 w-1/2 rounded bg-muted mb-4" />
           <div className="space-y-2">
-            <div className="h-3 w-full rounded bg-[#30302e]" />
-            <div className="h-3 w-5/6 rounded bg-[#30302e]" />
-            <div className="h-3 w-4/6 rounded bg-[#30302e]" />
+            <div className="h-3 w-full rounded bg-muted" />
+            <div className="h-3 w-5/6 rounded bg-muted" />
+            <div className="h-3 w-4/6 rounded bg-muted" />
           </div>
-          <div className="mt-3 h-10 w-full rounded-lg bg-[#30302e]/60" />
+          <div className="mt-3 h-10 w-full rounded-lg bg-muted/60" />
           <div className="mt-4 flex gap-2">
-            <div className="h-8 w-28 rounded-lg bg-[#30302e]" />
-            <div className="h-8 w-20 rounded-lg bg-[#30302e]" />
+            <div className="h-8 w-28 rounded-lg bg-muted" />
+            <div className="h-8 w-20 rounded-lg bg-muted" />
           </div>
         </div>
       ))}
@@ -172,28 +172,28 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
   })
 
   return (
-    <div className="min-h-screen bg-[#141413] text-[#faf9f5]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Page header */}
-      <div className="border-b border-[#30302e] bg-[#1a1a18]">
+      <div className="border-b border-border bg-surface-sunken">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[11px] uppercase tracking-widest text-[#5e5d59] font-medium">
+                <span className="text-[11px] uppercase tracking-widest text-content-secondary font-medium">
                   Research Feed
                 </span>
               </div>
               <h1
-                className="text-[22px] font-semibold text-[#faf9f5]"
+                className="text-[22px] font-semibold text-content-primary"
                 style={{ fontFamily: 'Georgia, serif' }}
               >
                 {today}
               </h1>
               {feed && (
-                <p className="mt-0.5 text-[13px] text-[#5e5d59]">
+                <p className="mt-0.5 text-[13px] text-content-secondary">
                   {feed.actualCount} paper{feed.actualCount !== 1 ? 's' : ''} curated for you
                   {feed.fromCache && (
-                    <span className="ml-2 text-[#3d3d3a]">· from cache</span>
+                    <span className="ml-2 text-content-tertiary">· from cache</span>
                   )}
                 </p>
               )}
@@ -202,7 +202,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
               <button
                 id="research-feed-settings"
                 onClick={() => setSettingsOpen(!settingsOpen)}
-                className="p-2 rounded-lg border border-[#30302e] bg-[#1c1c1a] text-[#5e5d59] hover:text-[#87867f] hover:border-[#3d3d3a] transition-all"
+                className="p-2 rounded-lg border border-border bg-card text-content-secondary hover:text-content-primary hover:border-border-strong transition-all"
                 aria-label="Feed settings"
               >
                 <Settings2 size={16} />
@@ -211,7 +211,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                 id="research-feed-refresh"
                 onClick={fetchFeed}
                 disabled={state.status === 'loading' || state.status === 'polling'}
-                className="p-2 rounded-lg border border-[#30302e] bg-[#1c1c1a] text-[#5e5d59] hover:text-[#87867f] hover:border-[#3d3d3a] transition-all disabled:opacity-40"
+                className="p-2 rounded-lg border border-border bg-card text-content-secondary hover:text-content-primary hover:border-border-strong transition-all disabled:opacity-40"
                 aria-label="Refresh feed"
               >
                 <RefreshCw size={16} className={state.status === 'polling' ? 'animate-spin' : ''} />
@@ -228,8 +228,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 rounded-xl border border-[#30302e] bg-[#1c1c1a] p-4">
-                  <p className="text-[13px] text-[#87867f] mb-3">Papers per day</p>
+                <div className="mt-4 rounded-xl border border-border bg-card p-4">
+                  <p className="text-[13px] text-content-tertiary mb-3">Papers per day</p>
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
@@ -237,14 +237,14 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                       max={10}
                       value={dailyCount}
                       onChange={(e) => setDailyCount(Number(e.target.value))}
-                      className="flex-1 accent-[#c96442]"
+                      className="flex-1 accent-accent"
                       aria-label="Preferred number of papers per day"
                     />
-                    <span className="w-5 text-center text-sm text-[#faf9f5]">{dailyCount}</span>
+                    <span className="w-5 text-center text-sm text-foreground">{dailyCount}</span>
                     <button
                       onClick={savePreferredCount}
                       disabled={savingCount}
-                      className="rounded-lg bg-[#c96442] px-3 py-1.5 text-[13px] text-[#faf9f5] hover:bg-[#b8573a] transition-colors disabled:opacity-60"
+                      className="rounded-lg bg-accent px-3 py-1.5 text-[13px] text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-60"
                     >
                       {savingCount ? 'Saving…' : 'Save'}
                     </button>
@@ -259,21 +259,21 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
         {/* Emerging trends */}
         {feed?.emergingTrends && (
-          <div className="mb-6 rounded-xl border border-[#30302e] bg-[#1c1c1a] overflow-hidden">
+          <div className="mb-6 rounded-xl border border-border bg-card overflow-hidden">
             <button
               id="emerging-trends-toggle"
               onClick={() => setTrendsExpanded(!trendsExpanded)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#1e1e1c] transition-colors"
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-surface-raised transition-colors"
               aria-expanded={trendsExpanded}
             >
-              <span className="flex items-center gap-2 text-[13px] font-medium text-[#87867f]">
-                <TrendingUp size={14} className="text-[#c96442]" />
+              <span className="flex items-center gap-2 text-[13px] font-medium text-content-tertiary">
+                <TrendingUp size={14} className="text-accent" />
                 Emerging Trends
               </span>
               {trendsExpanded ? (
-                <ChevronUp size={14} className="text-[#5e5d59]" />
+                <ChevronUp size={14} className="text-content-secondary" />
               ) : (
-                <ChevronDown size={14} className="text-[#5e5d59]" />
+                <ChevronDown size={14} className="text-content-secondary" />
               )}
             </button>
             <AnimatePresence>
@@ -284,7 +284,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <p className="px-5 pb-5 text-[14px] leading-relaxed text-[#b0aea5]">
+                  <p className="px-5 pb-5 text-[14px] leading-relaxed text-content-secondary">
                     {feed.emergingTrends}
                   </p>
                 </motion.div>
@@ -301,7 +301,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                 <button
                   id="cluster-sidebar-toggle"
                   onClick={() => setShowClusters(!showClusters)}
-                  className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-[#5e5d59] mb-3 hover:text-[#87867f] transition-colors"
+                  className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-content-secondary mb-3 hover:text-content-primary transition-colors"
                 >
                   <Layers size={11} />
                   Topics
@@ -314,8 +314,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                       onClick={() => setActiveClusterFilter(null)}
                       className={`w-full text-left rounded-lg px-3 py-2 text-[13px] transition-all ${
                         activeClusterFilter === null
-                          ? 'bg-[#c96442]/15 text-[#d97757] border border-[#c96442]/20'
-                          : 'text-[#5e5d59] hover:text-[#87867f] hover:bg-[#1c1c1a]'
+                          ? 'bg-accent/15 text-accent border border-accent/20'
+                          : 'text-content-secondary hover:text-content-primary hover:bg-surface-raised'
                       }`}
                       aria-pressed={activeClusterFilter === null}
                     >
@@ -332,13 +332,13 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                         }
                         className={`w-full text-left rounded-lg px-3 py-2 text-[13px] transition-all ${
                           activeClusterFilter === c.label
-                            ? 'bg-[#c96442]/15 text-[#d97757] border border-[#c96442]/20'
-                            : 'text-[#5e5d59] hover:text-[#87867f] hover:bg-[#1c1c1a]'
+                            ? 'bg-accent/15 text-accent border border-accent/20'
+                            : 'text-content-secondary hover:text-content-primary hover:bg-surface-raised'
                         }`}
                         aria-pressed={activeClusterFilter === c.label}
                       >
                         <span className="block truncate">{c.label}</span>
-                        <span className="text-[11px] text-[#3d3d3a]">
+                        <span className="text-[11px] text-content-tertiary">
                           {c.paperCount} paper{c.paperCount !== 1 ? 's' : ''}
                         </span>
                       </button>
@@ -358,8 +358,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                   onClick={() => setActiveClusterFilter(null)}
                   className={`shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] transition-all ${
                     activeClusterFilter === null
-                      ? 'bg-[#c96442] text-[#faf9f5]'
-                      : 'bg-[#1c1c1a] border border-[#30302e] text-[#5e5d59]'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-card border border-border text-content-secondary'
                   }`}
                 >
                   <Filter size={10} /> All
@@ -372,8 +372,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                     }
                     className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] transition-all truncate max-w-[140px] ${
                       activeClusterFilter === c.label
-                        ? 'bg-[#c96442] text-[#faf9f5]'
-                        : 'bg-[#1c1c1a] border border-[#30302e] text-[#5e5d59]'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'bg-card border border-border text-content-secondary'
                     }`}
                   >
                     {c.label}
@@ -386,8 +386,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
             {(state.status === 'loading' || state.status === 'polling') && (
               <div>
                 {state.status === 'polling' && (
-                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#30302e] bg-[#1c1c1a] px-4 py-3 text-[13px] text-[#87867f]">
-                    <RefreshCw size={14} className="animate-spin text-[#c96442]" />
+                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-[13px] text-content-tertiary">
+                    <RefreshCw size={14} className="animate-spin text-accent" />
                     Generating your personalized feed — this takes a moment…
                   </div>
                 )}
@@ -396,8 +396,8 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
             )}
 
             {state.status === 'empty' && (
-              <div className="rounded-xl border border-[#30302e] bg-[#1c1c1a] px-6 py-12 text-center">
-                <p className="text-[#5e5d59] text-[14px]">{state.message}</p>
+              <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
+                <p className="text-content-secondary text-[14px]">{state.message}</p>
               </div>
             )}
 
@@ -406,7 +406,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                 <p className="text-red-400 text-[14px] mb-3">{state.message}</p>
                 <button
                   onClick={fetchFeed}
-                  className="rounded-lg bg-[#c96442] px-4 py-2 text-[13px] text-[#faf9f5] hover:bg-[#b8573a] transition-colors"
+                  className="rounded-lg bg-accent px-4 py-2 text-[13px] text-accent-foreground hover:bg-accent-hover transition-colors"
                 >
                   Try again
                 </button>
@@ -420,9 +420,9 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                     key="no-cluster-papers"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="rounded-xl border border-[#30302e] bg-[#1c1c1a] px-6 py-8 text-center"
+                    className="rounded-xl border border-border bg-card px-6 py-8 text-center"
                   >
-                    <p className="text-[#5e5d59] text-[14px]">
+                    <p className="text-content-secondary text-[14px]">
                       No papers in this topic for today.
                     </p>
                   </motion.div>

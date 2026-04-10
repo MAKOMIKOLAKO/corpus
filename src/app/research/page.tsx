@@ -39,7 +39,7 @@ export default async function ResearchPage() {
 
   if (!isPro(user.plan)) {
     return (
-      <div className="min-h-screen bg-[#141413] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <UpgradePrompt reason="research_feed_pro_only" variant="inline" />
         </div>
