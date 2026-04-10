@@ -1,15 +1,5 @@
-import type { Metadata } from "next";
-import AlertsPageClient from "./AlertsPageClient";
+import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: "Smart Alerts",
-  description: "Manage your smart paper alerts and research interests",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
-export default function ServerAlertsPage() {
-  return <AlertsPageClient />;
+export default function AlertsRedirectPage() {
+  redirect('/research?tab=discover')
 }

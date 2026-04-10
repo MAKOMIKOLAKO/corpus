@@ -182,14 +182,6 @@ export function AppShell({
                       library
                     </Link>
                     <Link
-                      href="/feed"
-                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/feed" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
-                      aria-current={pathname === "/feed" ? "page" : undefined}
-                    >
-                      <Rss className="w-4 h-4" />
-                      feed
-                    </Link>
-                    <Link
                       href="/collections"
                       className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/collections" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
                       aria-current={pathname === "/collections" ? "page" : undefined}
@@ -209,14 +201,6 @@ export function AppShell({
                           {pendingCount > 9 ? '9+' : pendingCount}
                         </span>
                       )}
-                    </Link>
-                    <Link
-                      href="/alerts"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/alerts" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
-                      aria-current={pathname === "/alerts" ? "page" : undefined}
-                    >
-                      <Brain className="w-4 h-4" />
-                      alerts
                     </Link>
                     <Link
                       href="/research"
@@ -276,13 +260,6 @@ export function AppShell({
                     library
                   </Link>
                   <Link
-                    href="/feed"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/feed" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
-                  >
-                    <Rss className="w-5 h-5" />
-                    feed
-                  </Link>
-                  <Link
                     href="/collections"
                     className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/collections" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
                   >
@@ -300,13 +277,6 @@ export function AppShell({
                         {pendingCount > 9 ? '9+' : pendingCount}
                       </span>
                     )}
-                  </Link>
-                  <Link
-                    href="/alerts"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/alerts" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
-                  >
-                    <Brain className="w-5 h-5" />
-                    alerts
                   </Link>
                   <Link
                     href="/research"
