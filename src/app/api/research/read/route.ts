@@ -4,6 +4,34 @@ import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/prisma'
 import { fetchPaperContent, sectionPaper, chatWithPaper } from '@/lib/research/activeReading'
 
+function normalizePaperId(rawInput: string): string {
+  const input = rawInput.trim()
+
+  const doiMatch = input.match(/10\.\d{4,9}\/[\w.()/:;-]+/i)
+  if (doiMatch) return doiMatch[0]
+
+  const arxivUrlMatch = input.match(/arxiv\.org\/(?:abs|pdf)\/([^?#]+)/i)
+  if (arxivUrlMatch) {
+    const cleaned = arxivUrlMatch[1].replace(/\.pdf$/i, '').trim()
+    const idMatch = cleaned.match(/(\d{4}\.\d{4,5})(?:v\d+)?$/i)
+    if (idMatch) return idMatch[1]
+    return cleaned
+  }
+
+  const ar5ivUrlMatch = input.match(/ar5iv\.org\/abs\/([^?#]+)/i)
+  if (ar5ivUrlMatch) {
+    const cleaned = ar5ivUrlMatch[1].trim()
+    const idMatch = cleaned.match(/(\d{4}\.\d{4,5})(?:v\d+)?$/i)
+    if (idMatch) return idMatch[1]
+    return cleaned
+  }
+
+  const directArxivMatch = input.match(/^(\d{4}\.\d{4,5})(?:v\d+)?$/i)
+  if (directArxivMatch) return directArxivMatch[1]
+
+  return input
+}
+
 /**
  * GET /api/research/read?paperId=[id]
  * Fetch or initialize a reading session for a specific paper.
@@ -23,6 +51,7 @@ export async function GET(request: NextRequest) {
   const rawPaperId = searchParams.get('paperId')
 
   if (!rawPaperId) return NextResponse.json({ error: 'Missing paperId' }, { status: 400 })
+  const normalizedPaperId = normalizePaperId(rawPaperId)
 
   try {
     // Resolve rawPaperId to a CandidatePaper ID and/or GlobalEntry ID
@@ -34,9 +63,9 @@ export async function GET(request: NextRequest) {
     const candidatePaper = await (prisma as any).candidatePaper.findFirst({
       where: {
         OR: [
-          { id: rawPaperId },
-          { arxivId: rawPaperId },
-          { doi: rawPaperId },
+          { id: normalizedPaperId },
+          { arxivId: normalizedPaperId },
+          { doi: normalizedPaperId },
         ]
       },
       select: { id: true }
@@ -50,8 +79,8 @@ export async function GET(request: NextRequest) {
     const globalEntry = await (prisma as any).globalEntry.findFirst({
       where: {
         OR: [
-          { id: rawPaperId },
-          { doi: rawPaperId },
+          { id: normalizedPaperId },
+          { doi: normalizedPaperId },
         ]
       },
       select: { id: true }
@@ -66,10 +95,10 @@ export async function GET(request: NextRequest) {
           select: { source: true }
         })
         // Try to find a CandidatePaper with matching source/arxivId
-        const arxivMatch = rawPaperId.match(/^\d{4}\.\d{4,5}$/)
+        const arxivMatch = normalizedPaperId.match(/^\d{4}\.\d{4,5}$/)
         if (arxivMatch) {
           const cpByArxiv = await (prisma as any).candidatePaper.findUnique({
-            where: { arxivId: rawPaperId },
+            where: { arxivId: normalizedPaperId },
             select: { id: true }
           })
           if (cpByArxiv) candidatePaperId = cpByArxiv.id
@@ -78,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If neither found, we still try with the raw ID (fetchPaperContent may handle it)
-    const effectivePaperId = candidatePaperId || rawPaperId
+    const effectivePaperId = candidatePaperId || normalizedPaperId
 
     // 1. Check if session already exists
     let readingSession
@@ -89,8 +118,8 @@ export async function GET(request: NextRequest) {
           OR: [
             ...(candidatePaperId ? [{ candidatePaperId }] : []),
             ...(globalEntryId ? [{ globalEntryId }] : []),
-            { candidatePaperId: rawPaperId },
-            { globalEntryId: rawPaperId },
+            { candidatePaperId: normalizedPaperId },
+            { globalEntryId: normalizedPaperId },
           ]
         },
         include: {
