@@ -9,6 +9,26 @@ interface WorkspaceTabProps {
   plan: string
 }
 
+function normalizeWorkspacePaperInput(input: string): string {
+  const trimmed = input.trim()
+
+  const doiMatch = trimmed.match(/10\.\d{4,9}\/[\w.()/:;-]+/i)
+  if (doiMatch) return doiMatch[0]
+
+  const arxivUrlMatch = trimmed.match(/arxiv\.org\/(?:abs|pdf)\/([^?#]+)/i)
+  if (arxivUrlMatch) {
+    const cleaned = arxivUrlMatch[1].replace(/\.pdf$/i, '').trim()
+    const idMatch = cleaned.match(/(\d{4}\.\d{4,5})(?:v\d+)?$/i)
+    if (idMatch) return idMatch[1]
+    return cleaned
+  }
+
+  const directArxivMatch = trimmed.match(/^(\d{4}\.\d{4,5})(?:v\d+)?$/i)
+  if (directArxivMatch) return directArxivMatch[1]
+
+  return trimmed
+}
+
 export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -26,19 +46,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
     setLoadingStage('fetching')
 
     try {
-      let paperId = inputValue
-
-      // Determine paperId based on input method
-      if (inputMethod === 'arxiv') {
-        // Extract arXiv ID or DOI from URL
-        const arxivMatch = inputValue.match(/arxiv\.org\/abs\/(\d+\.\d+)/)
-        const doiMatch = inputValue.match(/10\.\d{4,9}\/[\w.()/:;-]+/)
-        if (arxivMatch) {
-          paperId = arxivMatch[1]
-        } else if (doiMatch) {
-          paperId = inputValue // Use DOI directly
-        }
-      }
+      const paperId = inputMethod === 'arxiv'
+        ? normalizeWorkspacePaperInput(inputValue)
+        : inputValue.trim()
 
       // Call the existing /api/research/read endpoint (GET initializes a session)
       const res = await fetch(`/api/research/read?paperId=${encodeURIComponent(paperId)}`)
@@ -49,7 +59,14 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
       }
 
       if (!res.ok) {
-        throw new Error('Failed to load paper')
+        let errorMessage = 'Failed to load paper'
+        try {
+          const errorData = await res.json()
+          if (errorData?.error) errorMessage = errorData.error
+        } catch {
+          // Ignore JSON parse errors and keep default message
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await res.json()
@@ -61,7 +78,8 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
       router.push(`/research?tab=workspace&sessionId=${data.id}`)
     } catch (error) {
       console.error('Failed to load paper:', error)
-      alert('Failed to load paper. Please try again.')
+      const message = error instanceof Error ? error.message : 'Failed to load paper. Please try again.'
+      alert(message)
     } finally {
       setIsLoading(false)
     }

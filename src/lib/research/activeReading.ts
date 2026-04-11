@@ -8,49 +8,81 @@ export interface PaperSection {
   content: string
 }
 
+function extractArxivId(input: string): string | null {
+  const trimmed = input.trim()
+  const match = trimmed.match(/^\d{4}\.\d{4,5}(?:v\d+)?$/i)
+  if (!match) return null
+
+  return trimmed.replace(/v\d+$/i, '')
+}
+
+async function fetchArxivTextById(arxivId: string): Promise<string | null> {
+  try {
+    const ar5ivUrl = `https://ar5iv.org/abs/${arxivId}`
+    const response = await fetch(ar5ivUrl)
+    if (!response.ok) return null
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
+
+    $('script, style, nav, .ltx_page_footer, .ltx_page_header, .ltx_role_navigation').remove()
+
+    let mainContent =
+      $('.ltx_page_main').text() ||
+      $('.ltx_document').text() ||
+      $('article').text() ||
+      $('.ltx_para').map((_, el) => $(el).text()).get().join('\n\n') ||
+      $('body').text()
+
+    mainContent = mainContent.replace(/\s+/g, ' ').trim()
+
+    if (mainContent.length > 1000) {
+      console.log(`[activeReading] Successfully extracted ${mainContent.length} chars from ar5iv for ${arxivId}`)
+      return mainContent
+    }
+
+    console.log(`[activeReading] ar5iv content too short (${mainContent.length} chars) for ${arxivId}`)
+    return null
+  } catch (err) {
+    console.error(`[activeReading] Failed to fetch ar5iv for ${arxivId}:`, err)
+    return null
+  }
+}
+
 /**
  * Fetch paper content from external sources (primarily ar5iv for arXiv).
  */
 export async function fetchPaperContent(candidatePaperId: string): Promise<string> {
-  const paper = await (prisma as any).candidatePaper.findUnique({
-    where: { id: candidatePaperId },
+  const normalizedPaperRef = candidatePaperId.trim()
+
+  const paper = await (prisma as any).candidatePaper.findFirst({
+    where: {
+      OR: [
+        { id: normalizedPaperRef },
+        { arxivId: normalizedPaperRef },
+        { doi: normalizedPaperRef },
+      ]
+    },
     select: { arxivId: true, url: true, title: true, abstract: true }
   })
 
-  if (!paper) throw new Error(`Paper not found in database: ${candidatePaperId}`)
+  if (!paper) {
+    const directArxivId = extractArxivId(normalizedPaperRef)
+    if (directArxivId) {
+      const arxivText = await fetchArxivTextById(directArxivId)
+      if (arxivText) return arxivText
+
+      throw new Error(`Paper not found or inaccessible for arXiv ID: ${directArxivId}`)
+    }
+
+    throw new Error(`Paper not found in database: ${candidatePaperId}`)
+  }
 
   // ArXiv papers are best fetched via ar5iv.org (HTML version)
   if (paper.arxivId) {
-    try {
-      const ar5ivUrl = `https://ar5iv.org/abs/${paper.arxivId}`
-      const response = await fetch(ar5ivUrl)
-      if (response.ok) {
-        const html = await response.text()
-        const $ = cheerio.load(html)
-
-        // Remove scripts, styles, and navigation elements
-        $('script, style, nav, .ltx_page_footer, .ltx_page_header, .ltx_role_navigation').remove()
-
-        // Try multiple selectors for main content
-        let mainContent =
-          $('.ltx_page_main').text() ||
-          $('.ltx_document').text() ||
-          $('article').text() ||
-          $('.ltx_para').map((_, el) => $(el).text()).get().join('\n\n') ||
-          $('body').text()
-
-        // Clean up whitespace
-        mainContent = mainContent.replace(/\s+/g, ' ').trim()
-
-        if (mainContent.length > 1000) {
-          console.log(`[activeReading] Successfully extracted ${mainContent.length} chars from ar5iv for ${paper.arxivId}`)
-          return mainContent
-        } else {
-          console.log(`[activeReading] ar5iv content too short (${mainContent.length} chars) for ${paper.arxivId}`)
-        }
-      }
-    } catch (err) {
-      console.error(`[activeReading] Failed to fetch ar5iv for ${paper.arxivId}:`, err)
+    const arxivText = await fetchArxivTextById(paper.arxivId)
+    if (arxivText) {
+      return arxivText
     }
   }
 
