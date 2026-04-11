@@ -148,6 +148,8 @@ async function ingestPapers(papers: RawPaper[]): Promise<number> {
 // ========== Embedding Step ==========
 
 const EMBED_BATCH_SIZE = 50
+const EMBED_LIMIT_PER_RUN = Number(process.env.RESEARCH_EMBED_LIMIT ?? 100)
+const ENABLE_METADATA_ENRICHMENT = process.env.RESEARCH_EMBED_METADATA === 'true'
 
 async function embedUnprocessedPapers(): Promise<{
   processed: number
@@ -156,7 +158,7 @@ async function embedUnprocessedPapers(): Promise<{
   const unembedded = await prisma.candidatePaper.findMany({
     where: { embeddedAt: null, abstract: { not: null } },
     orderBy: { ingestedAt: 'desc' },
-    take: 500, // cap per cron run
+    take: EMBED_LIMIT_PER_RUN, // cap per cron run to avoid serverless timeout
     select: { id: true, title: true, abstract: true },
   })
 
@@ -210,32 +212,33 @@ async function embedUnprocessedPapers(): Promise<{
     }
   }
 
-  // Phase 3: Extract metadata for newly embedded papers (sequential with small concurrency)
-  // This is slow (1 LLM call per paper) so we limit concurrency to 5
-  const newlyEmbedded = unembedded.filter((p) => embeddingMap.has(p.id))
-  const META_CONCURRENCY = 5
+  // Phase 3: Optional metadata extraction for newly embedded papers.
+  // Disabled by default to keep cron runtime within serverless limits.
+  if (ENABLE_METADATA_ENRICHMENT) {
+    const newlyEmbedded = unembedded.filter((p) => embeddingMap.has(p.id))
+    const META_CONCURRENCY = 5
 
-  for (let i = 0; i < newlyEmbedded.length; i += META_CONCURRENCY) {
-    const chunk = newlyEmbedded.slice(i, i + META_CONCURRENCY)
-    await Promise.allSettled(
-      chunk.map(async (paper) => {
-        try {
-          const meta = await extractMetadata(paper.title, paper.abstract ?? '')
-          await prisma.candidatePaper.update({
-            where: { id: paper.id },
-            data: {
-              candidateMetadata: meta as unknown as Prisma.InputJsonValue,
-            },
-          })
-        } catch {
-          // Metadata extraction failure is non-fatal — embedding is already saved
-        }
-      })
-    )
+    for (let i = 0; i < newlyEmbedded.length; i += META_CONCURRENCY) {
+      const chunk = newlyEmbedded.slice(i, i + META_CONCURRENCY)
+      await Promise.allSettled(
+        chunk.map(async (paper) => {
+          try {
+            const meta = await extractMetadata(paper.title, paper.abstract ?? '')
+            await prisma.candidatePaper.update({
+              where: { id: paper.id },
+              data: {
+                candidateMetadata: meta as unknown as Prisma.InputJsonValue,
+              },
+            })
+          } catch {
+            // Metadata extraction failure is non-fatal — embedding is already saved
+          }
+        })
+      )
 
-    // Small pause between metadata chunks to avoid rate limits
-    if (i + META_CONCURRENCY < newlyEmbedded.length) {
-      await new Promise((r) => setTimeout(r, 500))
+      if (i + META_CONCURRENCY < newlyEmbedded.length) {
+        await new Promise((r) => setTimeout(r, 500))
+      }
     }
   }
 
