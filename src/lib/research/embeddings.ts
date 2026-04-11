@@ -67,6 +67,7 @@ async function embedBatchChunk(texts: string[]): Promise<number[][]> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBEDDING_MODEL}:batchEmbedContents?key=${apiKey}`
 
   const requests = texts.map((t) => ({
+    model: `models/${GEMINI_EMBEDDING_MODEL}`,
     content: { parts: [{ text: t.slice(0, 8000) }] },
   }))
 
