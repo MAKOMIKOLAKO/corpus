@@ -165,45 +165,77 @@ async function embedUnprocessedPapers(): Promise<{
   let processed = 0
   let failed = 0
 
+  // Phase 1: Embed all papers in batches (no LLM calls, just embedding API)
+  const embeddingMap = new Map<string, number[]>()
+
   for (let i = 0; i < unembedded.length; i += EMBED_BATCH_SIZE) {
     const batch = unembedded.slice(i, i + EMBED_BATCH_SIZE)
     const texts = batch.map((p) => buildPaperEmbeddingText(p.title, p.abstract))
 
     try {
       const embeddings = await embedBatch(texts)
-
-      // For each paper: embed + extract metadata
-      await Promise.allSettled(
-        batch.map(async (paper, j) => {
-          const embedding = embeddings[j]
-          if (!embedding) return
-
-          let meta = null
-          try {
-            meta = await extractMetadata(paper.title, paper.abstract ?? '')
-          } catch {
-            // Metadata extraction failure is non-fatal
-          }
-
-          await prisma.candidatePaper.update({
-            where: { id: paper.id },
-            data: {
-              embedding: embedding as Prisma.InputJsonValue,
-              candidateMetadata: (meta as unknown as Prisma.InputJsonValue) ?? undefined,
-              embeddedAt: new Date(),
-            },
-          })
-          processed++
-        })
-      )
+      for (let j = 0; j < batch.length; j++) {
+        if (embeddings[j]) {
+          embeddingMap.set(batch[j].id, embeddings[j])
+        }
+      }
     } catch (err) {
       console.error(`[research-ingest] Embedding batch ${i / EMBED_BATCH_SIZE} failed:`, err)
       failed += batch.length
     }
 
-    // 2-second pause between batches per spec
+    // 2-second pause between embedding batches
     if (i + EMBED_BATCH_SIZE < unembedded.length) {
       await new Promise((r) => setTimeout(r, 2000))
+    }
+  }
+
+  console.log(`[research-ingest] Got ${embeddingMap.size} embeddings, saving...`)
+
+  // Phase 2: Save embeddings to DB (fast, no API calls)
+  const embeddingEntries = Array.from(embeddingMap.entries())
+  for (const [paperId, embedding] of embeddingEntries) {
+    try {
+      await prisma.candidatePaper.update({
+        where: { id: paperId },
+        data: {
+          embedding: embedding as Prisma.InputJsonValue,
+          embeddedAt: new Date(),
+        },
+      })
+      processed++
+    } catch (err) {
+      console.error(`[research-ingest] Failed to save embedding for ${paperId}:`, err)
+      failed++
+    }
+  }
+
+  // Phase 3: Extract metadata for newly embedded papers (sequential with small concurrency)
+  // This is slow (1 LLM call per paper) so we limit concurrency to 5
+  const newlyEmbedded = unembedded.filter((p) => embeddingMap.has(p.id))
+  const META_CONCURRENCY = 5
+
+  for (let i = 0; i < newlyEmbedded.length; i += META_CONCURRENCY) {
+    const chunk = newlyEmbedded.slice(i, i + META_CONCURRENCY)
+    await Promise.allSettled(
+      chunk.map(async (paper) => {
+        try {
+          const meta = await extractMetadata(paper.title, paper.abstract ?? '')
+          await prisma.candidatePaper.update({
+            where: { id: paper.id },
+            data: {
+              candidateMetadata: meta as unknown as Prisma.InputJsonValue,
+            },
+          })
+        } catch {
+          // Metadata extraction failure is non-fatal — embedding is already saved
+        }
+      })
+    )
+
+    // Small pause between metadata chunks to avoid rate limits
+    if (i + META_CONCURRENCY < newlyEmbedded.length) {
+      await new Promise((r) => setTimeout(r, 500))
     }
   }
 
