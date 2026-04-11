@@ -1,9 +1,13 @@
 /**
- * Gemini text-embedding-004 wrapper for the Research Reading System.
+ * Gemini embedding-001 wrapper for the Research Reading System.
  * Uses 768-dimensional embeddings. No pgvector required — stored as Json.
  */
 
-const GEMINI_EMBEDDING_MODEL = 'text-embedding-004'
+const GEMINI_EMBEDDING_MODEL = 'embedding-001'
+const EMBEDDING_MODEL_FALLBACKS = [
+  GEMINI_EMBEDDING_MODEL,
+  'gemini-embedding-001',
+]
 const MAX_BATCH_SIZE = 100
 
 function getGeminiKey(): string {
@@ -13,33 +17,42 @@ function getGeminiKey(): string {
 }
 
 /**
- * Embed a single piece of text using Gemini text-embedding-004.
+ * Embed a single piece of text using Gemini embedding-001.
  * Truncates to 8000 characters before embedding.
  */
 export async function embedText(text: string): Promise<number[]> {
   const truncated = text.slice(0, 8000)
   const apiKey = getGeminiKey()
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBEDDING_MODEL}:embedContent?key=${apiKey}`
+  let lastError: Error | null = null
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      content: { parts: [{ text: truncated }] },
-    }),
-  })
+  for (const model of EMBEDDING_MODEL_FALLBACKS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent?key=${apiKey}`
 
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Gemini embedding error ${response.status}: ${err}`)
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: { parts: [{ text: truncated }] },
+      }),
+    })
+
+    if (!response.ok) {
+      const err = await response.text()
+      lastError = new Error(`Gemini embedding error [${model}] ${response.status}: ${err}`)
+      continue
+    }
+
+    const data = await response.json()
+    const values: number[] = data?.embedding?.values
+    if (!values || values.length === 0) {
+      lastError = new Error(`Gemini returned empty embedding for model [${model}]`)
+      continue
+    }
+
+    return values
   }
 
-  const data = await response.json()
-  const values: number[] = data?.embedding?.values
-  if (!values || values.length === 0) {
-    throw new Error('Gemini returned empty embedding')
-  }
-  return values
+  throw lastError ?? new Error('Gemini embedding failed for all configured models')
 }
 
 /**
@@ -64,34 +77,42 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
 
 async function embedBatchChunk(texts: string[]): Promise<number[][]> {
   const apiKey = getGeminiKey()
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBEDDING_MODEL}:batchEmbedContents?key=${apiKey}`
+  let lastError: Error | null = null
 
-  const requests = texts.map((t) => ({
-    model: `models/${GEMINI_EMBEDDING_MODEL}`,
-    content: { parts: [{ text: t.slice(0, 8000) }] },
-  }))
+  for (const model of EMBEDDING_MODEL_FALLBACKS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:batchEmbedContents?key=${apiKey}`
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests }),
-  })
+    const requests = texts.map((t) => ({
+      model: `models/${model}`,
+      content: { parts: [{ text: t.slice(0, 8000) }] },
+    }))
 
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Gemini batch embedding error ${response.status}: ${err}`)
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests }),
+    })
+
+    if (!response.ok) {
+      const err = await response.text()
+      lastError = new Error(`Gemini batch embedding error [${model}] ${response.status}: ${err}`)
+      continue
+    }
+
+    const data = await response.json()
+    const embeddings: Array<{ values: number[] }> = data?.embeddings ?? []
+
+    if (embeddings.length !== texts.length) {
+      lastError = new Error(
+        `Embedding count mismatch for [${model}]: expected ${texts.length}, got ${embeddings.length}`
+      )
+      continue
+    }
+
+    return embeddings.map((e) => e.values)
   }
 
-  const data = await response.json()
-  const embeddings: Array<{ values: number[] }> = data?.embeddings ?? []
-
-  if (embeddings.length !== texts.length) {
-    throw new Error(
-      `Embedding count mismatch: expected ${texts.length}, got ${embeddings.length}`
-    )
-  }
-
-  return embeddings.map((e) => e.values)
+  throw lastError ?? new Error('Gemini batch embedding failed for all configured models')
 }
 
 /**
