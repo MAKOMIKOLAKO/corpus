@@ -3,7 +3,7 @@
  * Uses 768-dimensional embeddings. No pgvector required — stored as Json.
  */
 
-const GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001'
+const GEMINI_EMBEDDING_MODEL = 'text-embedding-004'
 const MAX_BATCH_SIZE = 100
 
 function getGeminiKey(): string {
