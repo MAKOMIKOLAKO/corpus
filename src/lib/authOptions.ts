@@ -238,37 +238,37 @@ export const authOptions: NextAuthOptions = {
     sessionToken: {
       name: 'next-auth.session-token',
       options: {
-        httpOnly: false, // IMPORTANT: Allow JavaScript access for Chrome extension
-        sameSite: 'lax', // Allow cross-site access
+        httpOnly: process.env.NODE_ENV === 'production', // Secure in production, accessible in dev for Chrome extension
+        sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
           ? '.usecorpus.app'
-          : 'localhost'
+          : undefined
       }
     },
     callbackUrl: {
       name: 'next-auth.callback-url',
       options: {
-        httpOnly: false,
+        httpOnly: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
           ? '.usecorpus.app'
-          : 'localhost'
+          : undefined
       }
     },
     csrfToken: {
       name: 'next-auth.csrf-token',
       options: {
-        httpOnly: false,
+        httpOnly: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
           ? '.usecorpus.app'
-          : 'localhost'
+          : undefined
       }
     }
   },
