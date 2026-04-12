@@ -314,7 +314,7 @@ export default function ProfilePageClient({
                           {collection.userEntryCollections.slice(0, 2).map((item: any) => (
                             <p
                               key={item.userEntry.globalEntry.id}
-                              className="text-xs text-[var(--muted-foreground)] truncate"
+                              className="text-xs text-[var(--muted-foreground)]"
                               title={item.userEntry.globalEntry.title}
                             >
                               • {sliceTitle(item.userEntry.globalEntry.title)}

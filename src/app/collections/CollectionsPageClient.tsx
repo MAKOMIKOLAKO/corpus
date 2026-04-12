@@ -460,7 +460,7 @@ export default function CollectionsPage() {
                                                         {collection.entries.slice(0, 2).map((item) => (
                                                             <p
                                                                 key={item.entry.id}
-                                                                className="text-xs text-muted-foreground truncate"
+                                                                className="text-xs text-muted-foreground"
                                                                 title={item.entry.title}
                                                             >
                                                                 • {sliceTitle(item.entry.title)}
@@ -550,7 +550,7 @@ export default function CollectionsPage() {
                                                         {collection.entries.slice(0, 2).map((item) => (
                                                             <p
                                                                 key={item.entry.id}
-                                                                className="text-xs text-muted-foreground truncate"
+                                                                className="text-xs text-muted-foreground"
                                                                 title={item.entry.title}
                                                             >
                                                                 • {sliceTitle(item.entry.title)}
