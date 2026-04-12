@@ -109,7 +109,6 @@ export default async function middleware(req: NextRequest) {
     token = (await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
-      cookieName: "next-auth.session-token",
     })) as { userId?: string; sub?: string } | any;
   } catch (error) {
     if (error instanceof URIError) {
@@ -117,6 +116,7 @@ export default async function middleware(req: NextRequest) {
       // Clear the malformed cookie by setting it to expire
       const response = NextResponse.next();
       response.cookies.delete("next-auth.session-token");
+      response.cookies.delete("__Secure-next-auth.session-token");
       return response;
     } else {
       console.error("[middleware] Failed to parse auth token:", error);
