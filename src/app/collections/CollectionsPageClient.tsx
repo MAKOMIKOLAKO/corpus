@@ -137,9 +137,19 @@ export default function CollectionsPage() {
             });
             if (response.ok) {
                 const data = await response.json();
+                // Transform userEntryCollections to entries format for UI compatibility
+                const transformCollection = (c: any) => ({
+                    ...c,
+                    entries: c.userEntryCollections?.map((uec: any) => ({
+                        entry: {
+                            id: uec.userEntry.globalEntry.id,
+                            title: uec.userEntry.globalEntry.title
+                        }
+                    })) || []
+                });
                 const collectionsWithOwnership = [
-                    ...data.owned.map((c: any) => ({ ...c, isOwner: true, userRole: 'OWNER' as const })),
-                    ...data.member.map((c: any) => ({ ...c, isOwner: false, userRole: c.userRole || 'VIEWER' as const }))
+                    ...data.owned.map((c: any) => ({ ...transformCollection(c), isOwner: true, userRole: 'OWNER' as const })),
+                    ...data.member.map((c: any) => ({ ...transformCollection(c), isOwner: false, userRole: c.userRole || 'VIEWER' as const }))
                 ];
                 if (isCancelled?.()) return;
                 setCollections(collectionsWithOwnership);
