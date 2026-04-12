@@ -238,6 +238,20 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
                 {isPro(user.plan) ? <CheckSquare size={16} /> : <CircleDot size={16} className="text-amber-500" />}
                 Batch Select
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!isPro(user.plan)) {
+                    setUpgradeReason('bibliography_pro_only');
+                    setShowUpgradeModal(true);
+                    return;
+                  }
+                  setIsSelectionMode(true);
+                }}
+              >
+                Bibliography
+              </Button>
             </>
           )}
         </div>
