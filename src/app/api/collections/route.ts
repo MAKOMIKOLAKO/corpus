@@ -35,16 +35,20 @@ export async function GET() {
                     _count: {
                         select: { entries: true, members: true }
                     },
-                    entries: {
+                    userEntryCollections: {
                         take: 2,
                         orderBy: {
                             addedAt: 'desc',
                         },
-                        select: {
-                            entry: {
-                                select: {
-                                    id: true,
-                                    title: true,
+                        include: {
+                            userEntry: {
+                                include: {
+                                    globalEntry: {
+                                        select: {
+                                            id: true,
+                                            title: true,
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -72,16 +76,20 @@ export async function GET() {
                             _count: {
                                 select: { entries: true, members: true }
                             },
-                            entries: {
+                            userEntryCollections: {
                                 take: 2,
                                 orderBy: {
                                     addedAt: 'desc',
                                 },
-                                select: {
-                                    entry: {
-                                        select: {
-                                            id: true,
-                                            title: true,
+                                include: {
+                                    userEntry: {
+                                        include: {
+                                            globalEntry: {
+                                                select: {
+                                                    id: true,
+                                                    title: true,
+                                                }
+                                            }
                                         }
                                     }
                                 }
