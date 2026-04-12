@@ -27,8 +27,10 @@ export async function GET() {
 
       return response;
     }
-    const response = NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const response = NextResponse.json(null, { status: 200 });
     response.headers.set('Access-Control-Allow-Origin', corsOrigin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.headers.set('Vary', 'Origin');
     return response;
   } catch (error) {
