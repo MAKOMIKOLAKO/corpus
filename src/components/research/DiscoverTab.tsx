@@ -134,15 +134,15 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
   return (
     <div className="min-h-screen">
       {/* View Toggle */}
-      <div className="border-b border-border bg-surface-sunken">
+      <div className="border-b border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex items-center py-3">
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setViewMode('discovery')}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${viewMode === 'discovery'
-                  ? 'button-warm-sand text-content-primary'
-                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
+                  ? 'bg-card text-content-primary border border-border'
+                  : 'text-content-secondary hover:bg-card hover:text-content-primary'
                   }`}
               >
                 <FlaskConical className="w-4 h-4" />
@@ -151,8 +151,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
               <button
                 onClick={() => setViewMode('rss')}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${viewMode === 'rss'
-                  ? 'button-warm-sand text-content-primary'
-                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
+                  ? 'bg-card text-content-primary border border-border'
+                  : 'text-content-secondary hover:bg-card hover:text-content-primary'
                   }`}
               >
                 <Rss className="w-4 h-4" />
