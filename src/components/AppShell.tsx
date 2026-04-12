@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -20,9 +20,7 @@ export function AppShell({
   session: Session | null;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const isLanding = pathname === "/";
-  const isResearchWorkspace = pathname?.startsWith('/research') && searchParams?.get('tab') === 'workspace';
   const [pendingCount, setPendingCount] = useState(0);
   const [emailVerified, setEmailVerified] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -328,10 +326,7 @@ export function AppShell({
           </header>
           <main
             id="main-content"
-            className={isResearchWorkspace
-              ? "w-full px-4 py-6 sm:px-6 lg:px-8 sm:py-8"
-              : "max-w-4xl mx-auto px-4 py-6 sm:py-12"
-            }
+            className="max-w-4xl mx-auto px-4 py-6 sm:py-12"
             role="main"
             tabIndex={-1}
           >
