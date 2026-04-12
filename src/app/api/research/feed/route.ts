@@ -46,10 +46,12 @@ export async function GET(request: NextRequest) {
   const modeOverride = searchParams.get('mode') as 'profile' | 'collection' | 'phrase' | null
   const collectionIdOverride = searchParams.get('collectionId')
   const phraseOverride = searchParams.get('phrase')
+  const forceRefresh = searchParams.get('refresh') === '1'
 
-  // Check for cached brief first (only when no overrides are provided)
+  // Check for cached brief first. Keep feed stable across page reloads;
+  // only regenerate when explicitly requested via refresh=1.
   const hasOverrides = modeOverride || collectionIdOverride || phraseOverride
-  if (!hasOverrides) {
+  if (!forceRefresh) {
     const cached = await getDailyBriefCached(user.id)
     if (cached) {
       return NextResponse.json(cached)

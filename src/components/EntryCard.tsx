@@ -419,14 +419,6 @@ export default function EntryCard({
                                         {entry.year && (
                                             <span>{entry.year}</span>
                                         )}
-                                        {entry.saveCount && entry.saveCount > 1 && (
-                                            <>
-                                                <span className="text-border/50">•</span>
-                                                <span className="text-xs text-content-tertiary">
-                                                    {entry.saveCount} users
-                                                </span>
-                                            </>
-                                        )}
                                     </div>
                                 </div>
 

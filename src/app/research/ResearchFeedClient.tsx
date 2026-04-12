@@ -66,7 +66,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
   const [dailyCount, setDailyCount] = useState(preferredCount)
   const [savingCount, setSavingCount] = useState(false)
 
-  const fetchFeed = useCallback(async () => {
+  const fetchFeed = useCallback(async (forceRefresh = false) => {
     setState({ status: 'loading' })
     try {
       const params = new URLSearchParams()
@@ -78,6 +78,9 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
       }
       if (selectionMode === 'phrase' && researchPhrase) {
         params.append('phrase', researchPhrase)
+      }
+      if (forceRefresh) {
+        params.append('refresh', '1')
       }
 
       const url = `/api/research/feed${params.toString() ? `?${params.toString()}` : ''}`
@@ -219,7 +222,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
               </button>
               <button
                 id="research-feed-refresh"
-                onClick={fetchFeed}
+                onClick={() => fetchFeed(true)}
                 disabled={state.status === 'loading' || state.status === 'polling'}
                 className="p-2 rounded-lg border border-border bg-card text-content-secondary hover:text-content-primary hover:border-border-strong transition-all disabled:opacity-40"
                 aria-label="Refresh feed"
@@ -330,7 +333,7 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
               <div className="rounded-xl border border-red-900/40 bg-red-900/10 px-6 py-8 text-center whisper-shadow">
                 <p className="text-red-400 text-[14px] mb-3">{state.message}</p>
                 <button
-                  onClick={fetchFeed}
+                  onClick={() => fetchFeed(true)}
                   className="rounded-lg bg-accent px-4 py-2 text-[13px] text-accent-foreground hover:bg-accent-hover transition-colors"
                 >
                   Try again

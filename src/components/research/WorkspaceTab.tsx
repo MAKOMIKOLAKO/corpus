@@ -3,30 +3,11 @@
 import { useState } from 'react'
 import { Link, FileText, Upload, Type, BookOpen, Loader2, Clock } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { normalizePaperIdentifier } from '@/lib/research/paperIdentifier'
 
 interface WorkspaceTabProps {
   userId: string
   plan: string
-}
-
-function normalizeWorkspacePaperInput(input: string): string {
-  const trimmed = input.trim()
-
-  const doiMatch = trimmed.match(/10\.\d{4,9}\/[\w.()/:;-]+/i)
-  if (doiMatch) return doiMatch[0]
-
-  const arxivUrlMatch = trimmed.match(/arxiv\.org\/(?:abs|pdf)\/([^?#]+)/i)
-  if (arxivUrlMatch) {
-    const cleaned = arxivUrlMatch[1].replace(/\.pdf$/i, '').trim()
-    const idMatch = cleaned.match(/(\d{4}\.\d{4,5})(?:v\d+)?$/i)
-    if (idMatch) return idMatch[1]
-    return cleaned
-  }
-
-  const directArxivMatch = trimmed.match(/^(\d{4}\.\d{4,5})(?:v\d+)?$/i)
-  if (directArxivMatch) return directArxivMatch[1]
-
-  return trimmed
 }
 
 export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
@@ -47,7 +28,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
 
     try {
       const paperId = inputMethod === 'arxiv'
-        ? normalizeWorkspacePaperInput(inputValue)
+        ? normalizePaperIdentifier(inputValue).normalized
         : inputValue.trim()
 
       // Call the existing /api/research/read endpoint (GET initializes a session)
