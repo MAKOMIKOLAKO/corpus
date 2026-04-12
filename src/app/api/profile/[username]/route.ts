@@ -42,6 +42,16 @@ export async function GET(
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
+  // Count total connections
+  const totalConnections = await prisma.connection.count({
+    where: {
+      OR: [
+        { requesterId: user.id, status: 'ACCEPTED' },
+        { receiverId: user.id, status: 'ACCEPTED' }
+      ]
+    }
+  });
+
   let connectionStatus: string | null = null;
   let connectionId: string | null = null;
   let isSentByMe = false;
@@ -62,5 +72,5 @@ export async function GET(
     }
   }
 
-  return NextResponse.json({ ...user, isBetaTester: user.isBetaTester ?? false, connectionStatus, connectionId, isSentByMe });
+  return NextResponse.json({ ...user, isBetaTester: user.isBetaTester ?? false, connectionStatus, connectionId, isSentByMe, totalConnections });
 }

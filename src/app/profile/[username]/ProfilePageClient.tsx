@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, UserCheck, Clock, X, Check, ChevronLeft, Shield } from 'lucide-react';
+import { UserPlus, UserCheck, Clock, X, Check, ChevronLeft, Shield, FileText, Users, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+
+function sliceTitle(title: string, max = 140) {
+  return title.length > max ? `${title.slice(0, max - 3)}...` : title;
+}
 
 type Profile = {
   id: string;
@@ -18,6 +23,7 @@ type Profile = {
   connectionStatus: string | null;
   connectionId: string | null;
   isSentByMe: boolean;
+  totalConnections?: number;
 };
 
 export default function ProfilePageClient({
@@ -32,6 +38,11 @@ export default function ProfilePageClient({
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [acting, setActing] = useState(false);
+  const [publicCollections, setPublicCollections] = useState<any[]>([]);
+  const [mutualConnections, setMutualConnections] = useState<any[]>([]);
+  const [loadingExtras, setLoadingExtras] = useState(false);
+
+  const isOwnProfile = currentUserId === profile?.id;
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -46,6 +57,38 @@ export default function ProfilePageClient({
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchProfile(); }, [username]);
+
+  useEffect(() => {
+    if (profile && !isOwnProfile && currentUserId) {
+      fetchExtras();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, currentUserId]);
+
+  const fetchExtras = async () => {
+    if (!profile) return;
+    setLoadingExtras(true);
+    try {
+      const [collectionsRes, mutualRes] = await Promise.all([
+        fetch(`/api/users/${encodeURIComponent(username)}/public-collections`),
+        fetch(`/api/users/${encodeURIComponent(username)}/mutual-connections`)
+      ]);
+
+      if (collectionsRes.ok) {
+        const collectionsData = await collectionsRes.json();
+        setPublicCollections(collectionsData.collections || []);
+      }
+
+      if (mutualRes.ok) {
+        const mutualData = await mutualRes.json();
+        setMutualConnections(mutualData.mutualConnections || []);
+      }
+    } catch (error) {
+      console.error('Error fetching profile extras:', error);
+    } finally {
+      setLoadingExtras(false);
+    }
+  };
 
   const sendRequest = async () => {
     if (!profile) return;
@@ -116,7 +159,6 @@ export default function ProfilePageClient({
     );
   }
 
-  const isOwnProfile = currentUserId === profile.id;
   const memberSince = new Date(profile.createdAt).getFullYear();
 
   return (
@@ -140,6 +182,11 @@ export default function ProfilePageClient({
                 <p className="text-sm text-[var(--muted-foreground)]">@{profile.username}</p>
               )}
               <p className="text-xs text-[var(--muted-foreground)] mt-0.5">Member since {memberSince}</p>
+              {profile.totalConnections !== undefined && (
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {profile.totalConnections} {profile.totalConnections === 1 ? 'connection' : 'connections'}
+                </p>
+              )}
             </div>
           </div>
 
@@ -226,6 +273,101 @@ export default function ProfilePageClient({
           <p className="text-sm text-[var(--muted-foreground)] border-t border-[var(--border)] pt-4">{profile.bio}</p>
         )}
       </div>
+
+      {/* Public Collections */}
+      {!isOwnProfile && publicCollections.length > 0 && (
+        <Card className="border border-[var(--border)]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5" />
+              Public Collections
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {publicCollections.map((collection: any) => (
+                <Link key={collection.id} href={`/collections/${collection.id}`}>
+                  <Card className="cursor-pointer hover:border-[var(--primary)] transition-colors">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{collection.name}</CardTitle>
+                      {collection.publicDescription && (
+                        <p className="text-xs text-[var(--muted-foreground)] mt-1 line-clamp-2">
+                          {collection.publicDescription}
+                        </p>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
+                        <div className="flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          <span>{collection._count.entries} {collection._count.entries === 1 ? 'entry' : 'entries'}</span>
+                        </div>
+                        {collection.publicViewCount !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{collection.publicViewCount} views</span>
+                          </div>
+                        )}
+                      </div>
+                      {collection.userEntryCollections && collection.userEntryCollections.length > 0 && (
+                        <div className="mt-3 space-y-1 rounded-md border border-[var(--border)] bg-[var(--muted)]/20 p-2">
+                          {collection.userEntryCollections.slice(0, 2).map((item: any) => (
+                            <p
+                              key={item.userEntry.globalEntry.id}
+                              className="text-xs text-[var(--muted-foreground)] truncate"
+                              title={item.userEntry.globalEntry.title}
+                            >
+                              • {sliceTitle(item.userEntry.globalEntry.title)}
+                            </p>
+                          ))}
+                          {collection._count.entries > 2 && (
+                            <p className="text-xs text-[var(--muted-foreground)] italic">
+                              +{collection._count.entries - 2} more
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mutual Connections */}
+      {!isOwnProfile && mutualConnections.length > 0 && (
+        <Card className="border border-[var(--border)]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Mutual Connections ({mutualConnections.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {mutualConnections.map((connection: any) => (
+                <Link
+                  key={connection.id}
+                  href={`/profile/${connection.username}`}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-sm font-medium">
+                    {(connection.name || connection.username || '?')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{connection.name || connection.username}</p>
+                    {connection.username && connection.name && (
+                      <p className="text-xs text-[var(--muted-foreground)]">@{connection.username}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
