@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, UserCheck, Clock, X, Check, ChevronLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
 type Profile = {
@@ -12,6 +13,7 @@ type Profile = {
   name: string | null;
   bio: string | null;
   plan: string;
+  isBetaTester?: boolean;
   createdAt: string;
   connectionStatus: string | null;
   connectionId: string | null;
@@ -131,6 +133,9 @@ export default function ProfilePageClient({
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-xl font-semibold truncate">{profile.name || profile.username}</h1>
+              {profile.isBetaTester && (
+                <Badge variant="default" className="mt-1 w-fit">Beta Tester</Badge>
+              )}
               {profile.username && (
                 <p className="text-sm text-[var(--muted-foreground)]">@{profile.username}</p>
               )}

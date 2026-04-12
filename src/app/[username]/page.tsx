@@ -29,6 +29,7 @@ export default async function ProfilePage({ params }: Props) {
       name: true,
       username: true,
       bio: true,
+      isBetaTester: true,
       createdAt: true,
       _count: {
         select: {
@@ -37,7 +38,7 @@ export default async function ProfilePage({ params }: Props) {
         }
       }
     }
-  });
+  } as any);
 
   if (!user) notFound();
 

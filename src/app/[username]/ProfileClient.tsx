@@ -25,6 +25,7 @@ interface User {
   name: string | null;
   username: string | null;
   bio: string | null;
+  isBetaTester?: boolean;
   createdAt: string;
 }
 
@@ -103,6 +104,9 @@ export default function ProfileClient({ user, totalConnections }: Props) {
                 <h1 className="text-2xl font-bold">
                   {user.name || `@${user.username}`}
                 </h1>
+                {user.isBetaTester && (
+                  <Badge variant="default">Beta Tester</Badge>
+                )}
               </div>
 
               {user.username && (
