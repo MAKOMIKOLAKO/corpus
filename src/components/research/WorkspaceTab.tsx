@@ -224,9 +224,9 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+        <div className="w-full py-6">
           {!sessionId ? (
-            <div>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <h2 className="text-2xl font-serif font-medium text-content-primary mb-2" style={{ lineHeight: 1.20 }}>
                 Research Workspace
               </h2>

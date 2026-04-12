@@ -6,7 +6,6 @@ import { UpgradePrompt } from '@/components/UpgradePrompt'
 import { isPro } from '@/lib/plans'
 import type { Plan } from '@prisma/client'
 import { DiscoverTab } from '@/components/research/DiscoverTab'
-import { WorkspaceTab } from '@/components/research/WorkspaceTab'
 
 interface ResearchPageClientProps {
   userId: string
@@ -64,14 +63,14 @@ export function ResearchPageClient({
   return (
     <div className="min-h-screen bg-background">
       {/* Tab Switcher */}
-      <div className="border-b border-border bg-surface-sunken ring-shadow">
+      <div className="border-b border-border bg-background ring-shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex gap-8">
             <button
               onClick={() => handleTabChange('discover')}
               className={`rounded-lg px-4 py-2.5 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'discover'
-                ? 'button-warm-sand text-content-primary'
-                : 'text-content-secondary hover:bg-warm-sand hover:text-content-primary'
+                ? 'bg-card text-content-primary border border-border'
+                : 'text-content-secondary hover:bg-card hover:text-content-primary'
                 }`}
             >
               Discover
@@ -79,8 +78,8 @@ export function ResearchPageClient({
             <button
               onClick={() => handleTabChange('workspace')}
               className={`rounded-lg px-4 py-2.5 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'workspace'
-                ? 'button-warm-sand text-content-primary'
-                : 'text-content-secondary hover:bg-warm-sand hover:text-content-primary'
+                ? 'bg-card text-content-primary border border-border'
+                : 'text-content-secondary hover:bg-card hover:text-content-primary'
                 }`}
             >
               Workspace
@@ -93,7 +92,14 @@ export function ResearchPageClient({
       {activeTab === 'discover' ? (
         <DiscoverTab userId={userId} preferredCount={preferredCount} />
       ) : (
-        <WorkspaceTab userId={userId} plan={plan} />
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+          <div className="rounded-2xl border border-border bg-card p-8 text-center whisper-shadow">
+            <h2 className="text-2xl font-serif font-medium text-content-primary">Workspace is coming soon</h2>
+            <p className="mt-3 text-content-secondary" style={{ lineHeight: 1.6 }}>
+              We&apos;re rebuilding the paper workspace experience. For now, use Discover and RSS while we finish the next version.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   )
