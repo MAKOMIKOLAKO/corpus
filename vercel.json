@@ -6,6 +6,9 @@
     "src/app/api/research/feed/route.ts": {
       "maxDuration": 60
     },
+    "src/app/api/cron/smart-alerts/route.ts": {
+      "maxDuration": 300
+    },
     "src/app/api/cron/research-ingest/route.ts": {
       "maxDuration": 300
     }
@@ -24,4 +27,4 @@
       "schedule": "0 1 * * *"
     }
   ]
-}
+}

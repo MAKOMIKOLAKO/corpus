@@ -8,12 +8,18 @@ try {
 }
 
 function parseArgs(argv) {
+  const defaultEndpointBase = process.env.RESEARCH_INGEST_URL || 'https://usecorpus.app/api/cron/research-ingest'
+  const defaultEndpoint = defaultEndpointBase.includes('?')
+    ? `${defaultEndpointBase}&embedOnly=1&embedMode=title`
+    : `${defaultEndpointBase}?embedOnly=1&embedMode=title`
+
   const args = {
-    endpoint: process.env.RESEARCH_INGEST_URL || 'https://usecorpus.app/api/cron/research-ingest',
+    endpoint: defaultEndpoint,
     token: process.env.CRON_SECRET || '',
     maxRuns: Number(process.env.BACKLOG_MAX_RUNS || 50),
     sleepMs: Number(process.env.BACKLOG_SLEEP_MS || 4000),
     stopOnNoProgress: true,
+    continueOnFailures: false,
   }
 
   const positional = []
@@ -42,6 +48,10 @@ function parseArgs(argv) {
     }
     if (token === '--no-stop-on-no-progress') {
       args.stopOnNoProgress = false
+      continue
+    }
+    if (token === '--continue-on-failures') {
+      args.continueOnFailures = true
       continue
     }
 
@@ -109,9 +119,13 @@ async function main() {
 
     console.log('[drain] result:', { arxivPapers, biorxivPapers, rssPapers, embedded, failed })
 
-    if (failed > 0) {
+    if (failed > 0 && !args.continueOnFailures) {
       console.warn('[drain] stopping: embed failures detected')
       process.exit(2)
+    }
+
+    if (failed > 0) {
+      console.warn(`[drain] ${failed} embed failures this run, continuing...`)
     }
 
     if (embedded === 0) {

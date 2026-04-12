@@ -52,6 +52,36 @@ function normalizeFirstAuthor(authors) {
   return String(first).toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
+async function fetchWithRetry(url, maxRetries = 5) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await fetch(url)
+    if (res.ok) return res
+
+    if (res.status === 429) {
+      // Rate limited - wait with exponential backoff
+      const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 1000
+      console.log(`[backfill] Rate limited, waiting ${Math.round(waitTime)}ms before retry ${attempt + 1}/${maxRetries}`)
+      await new Promise(r => setTimeout(r, waitTime))
+      continue
+    }
+
+    // Other errors - don't retry
+    return res
+  }
+  throw new Error(`Max retries exceeded for ${url}`)
+}
+
+// FUTURE: Enable batch abstract fetching from arXiv API when needed
+// The arXiv RSS feeds only provide abstract snippets, not full abstracts.
+// To fetch full abstracts, use the arXiv API with batch requests:
+// https://export.arxiv.org/api/query?id_list=ID1,ID2,ID3
+// This requires:
+// 1. Collecting all arxivIds from the RSS feed
+// 2. Batch fetching abstracts in groups of 50-100
+// 3. Adding retry logic with exponential backoff for rate limiting (HTTP 429)
+// 4. Parsing the XML response to extract <summary> tags for each paper
+// See the commented-out fetchArxivAbstracts function for implementation details.
+
 async function fetchArxivCategory(category, maxItems) {
   const perPage = 100
   const papers = []
@@ -85,14 +115,18 @@ async function fetchArxivCategory(category, maxItems) {
         authors = item.author.split(/,|;/).map((a) => a.trim()).filter(Boolean)
       }
 
+      // Use RSS snippet abstract (not full abstract)
+      // FUTURE: Replace with batch-fetched full abstracts when needed
+      const abstract = (item.contentSnippet || item.summary || item.content || null)
+        ? String(item.contentSnippet || item.summary || item.content).replace(/\s+/g, ' ').trim()
+        : null
+
       papers.push({
         doi: null,
         arxivId,
         title: String(item.title || '').replace(/\s+/g, ' ').trim(),
         authors,
-        abstract: (item.contentSnippet || item.summary || item.content || null)
-          ? String(item.contentSnippet || item.summary || item.content).replace(/\s+/g, ' ').trim()
-          : null,
+        abstract,
         url: item.link || idUrl || null,
         source: `arXiv:${category}`,
         publishedDate: item.isoDate ? new Date(item.isoDate) : item.pubDate ? new Date(item.pubDate) : null,
@@ -175,41 +209,76 @@ async function filterExisting(rawPapers) {
         ...(arxivIds.length ? [{ arxivId: { in: arxivIds } }] : []),
       ],
     },
-    select: { doi: true, arxivId: true },
+    select: { id: true, doi: true, arxivId: true, abstract: true },
   })
 
-  const existingDoi = new Set(existing.map((e) => e.doi).filter(Boolean))
-  const existingArxiv = new Set(existing.map((e) => e.arxivId).filter(Boolean))
+  const existingByDoi = new Map(existing.filter(e => e.doi).map(e => [e.doi, e]))
+  const existingByArxiv = new Map(existing.filter(e => e.arxivId).map(e => [e.arxivId, e]))
 
-  return deduped.filter((p) => {
-    if (p.doi && existingDoi.has(p.doi)) return false
-    if (p.arxivId && existingArxiv.has(p.arxivId)) return false
-    return true
+  // Return all papers with existingId attached for updates
+  return deduped.map(p => {
+    // Add existing ID if this is an update
+    if (p.doi) {
+      const existing = existingByDoi.get(p.doi)
+      if (existing) return { ...p, existingId: existing.id }
+    }
+    if (p.arxivId) {
+      const existing = existingByArxiv.get(p.arxivId)
+      if (existing) return { ...p, existingId: existing.id }
+    }
+    return p
   })
 }
 
 async function insertPapers(papers) {
   let inserted = 0
+  let updated = 0
   for (let i = 0; i < papers.length; i += INSERT_BATCH) {
     const batch = papers.slice(i, i + INSERT_BATCH)
-    const result = await prisma.candidatePaper.createMany({
-      data: batch.map((p) => ({
-        doi: p.doi,
-        arxivId: p.arxivId,
-        title: p.title,
-        authors: p.authors,
-        abstract: p.abstract,
-        url: p.url,
-        source: p.source,
-        publishedDate: p.publishedDate,
-        embeddedAt: null,
-      })),
-      skipDuplicates: true,
-    })
-    inserted += result.count
-    console.log(`[backfill] inserted batch ${Math.floor(i / INSERT_BATCH) + 1}: +${result.count}`)
+
+    // Separate into new papers and updates
+    const newPapers = batch.filter(p => !p.existingId)
+    const updatePapers = batch.filter(p => p.existingId)
+
+    // Insert new papers
+    if (newPapers.length > 0) {
+      const result = await prisma.candidatePaper.createMany({
+        data: newPapers.map((p) => ({
+          doi: p.doi,
+          arxivId: p.arxivId,
+          title: p.title,
+          authors: p.authors,
+          abstract: p.abstract,
+          url: p.url,
+          source: p.source,
+          publishedDate: p.publishedDate,
+        })),
+        skipDuplicates: true,
+      })
+      inserted += result.count
+      console.log(`[backfill] inserted batch ${Math.floor(i / INSERT_BATCH) + 1}: +${result.count} new`)
+    }
+
+    // Update existing papers with abstracts
+    for (const p of updatePapers) {
+      try {
+        await prisma.candidatePaper.update({
+          where: { id: p.existingId },
+          data: { abstract: p.abstract }
+        })
+        updated++
+      } catch (err) {
+        console.error(`[backfill] Failed to update paper ${p.existingId}:`, err)
+      }
+    }
+
+    if (updated > 0) {
+      console.log(`[backfill] updated batch ${Math.floor(i / INSERT_BATCH) + 1}: +${updated} with abstracts`)
+    }
+
+    await new Promise((r) => setTimeout(r, 100))
   }
-  return inserted
+  return { inserted, updated }
 }
 
 async function main() {
@@ -246,8 +315,8 @@ async function main() {
   const candidates = await filterExisting(allPapers)
   console.log(`[backfill] candidates after dedup/existing-filter: ${candidates.length}`)
 
-  const inserted = await insertPapers(candidates)
-  console.log(`[backfill] done. inserted=${inserted}, queued_for_embedding=${inserted}`)
+  const result = await insertPapers(candidates)
+  console.log(`[backfill] done. inserted=${result.inserted}, updated=${result.updated}, queued_for_embedding=${result.inserted}`)
   console.log('[backfill] next step: run your cron endpoint repeatedly until embed backlog clears')
 }
 
