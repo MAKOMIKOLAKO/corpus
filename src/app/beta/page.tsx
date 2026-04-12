@@ -9,15 +9,21 @@ export default async function BetaPage() {
   const userId = (session?.user as { id?: string } | undefined)?.id;
 
   if (userId) {
-    await prisma.user.updateMany({
-      where: {
-        id: userId,
-        isBetaTester: false,
-      },
-      data: {
-        isBetaTester: true,
-      },
-    } as any);
+    try {
+      await prisma.user.updateMany({
+        where: {
+          id: userId,
+          isBetaTester: false,
+        },
+        data: {
+          isBetaTester: true,
+        },
+      } as any);
+    } catch (error: any) {
+      if (error?.code !== "P2022") {
+        throw error;
+      }
+    }
   }
 
   return (

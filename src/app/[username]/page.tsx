@@ -22,23 +22,45 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProfilePage({ params }: Props) {
-  const user = await prisma.user.findUnique({
-    where: { username: params.username },
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      bio: true,
-      isBetaTester: true,
-      createdAt: true,
-      _count: {
-        select: {
-          sentConnections: true,
-          receivedConnections: true
+  let user: any;
+  try {
+    user = await prisma.user.findUnique({
+      where: { username: params.username },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        bio: true,
+        isBetaTester: true,
+        createdAt: true,
+        _count: {
+          select: {
+            sentConnections: true,
+            receivedConnections: true
+          }
         }
       }
-    }
-  } as any);
+    } as any);
+  } catch (error: any) {
+    if (error?.code !== "P2022") throw error;
+
+    user = await prisma.user.findUnique({
+      where: { username: params.username },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        bio: true,
+        createdAt: true,
+        _count: {
+          select: {
+            sentConnections: true,
+            receivedConnections: true
+          }
+        }
+      }
+    } as any);
+  }
 
   if (!user) notFound();
 
@@ -56,6 +78,7 @@ export default async function ProfilePage({ params }: Props) {
     <ProfileClient
       user={{
         ...user,
+        isBetaTester: user.isBetaTester ?? false,
         createdAt: user.createdAt.toISOString()
       }}
       totalConnections={totalConnections}
