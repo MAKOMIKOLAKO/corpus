@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -214,14 +213,8 @@ export default function NotificationsPageClient() {
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
               <p className="text-muted-foreground mb-4">
-                You'll see notifications here when new papers are discovered by your Smart Alerts
+                You'll see notifications here as new research activity and platform updates arrive.
               </p>
-              <Link href="/alerts">
-                <Button>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Set up Smart Alerts
-                </Button>
-              </Link>
             </CardContent>
           </Card>
         ) : (
@@ -278,16 +271,7 @@ export default function NotificationsPageClient() {
         )}
       </div>
 
-      {hasNotifications && (
-        <div className="mt-8 text-center">
-          <Link href="/alerts">
-            <Button variant="outline">
-              <Brain className="h-4 w-4 mr-2" />
-              Manage Smart Alerts
-            </Button>
-          </Link>
-        </div>
-      )}
+      {hasNotifications && <div className="mt-8" />}
     </div>
   );
 }

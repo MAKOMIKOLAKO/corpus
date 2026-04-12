@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Rss, FlaskConical, Loader2, ChevronDown, Filter, Bell } from 'lucide-react'
+import { Search, Rss, FlaskConical, Loader2, ChevronDown, Filter } from 'lucide-react'
 import { ResearchFeedClient } from '@/app/research/ResearchFeedClient'
-import { AlertsManagementPanel } from '@/components/alerts/AlertsManagementPanel'
 import { RssFeedView } from './RssFeedView'
 
 interface DiscoverTabProps {
@@ -36,7 +35,7 @@ interface SearchResult {
 }
 
 export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
-  const [viewMode, setViewMode] = useState<'rss' | 'discovery' | 'alerts'>('discovery')
+  const [viewMode, setViewMode] = useState<'rss' | 'discovery'>('discovery')
   const [selectionMode, setSelectionMode] = useState<'profile' | 'collection' | 'phrase'>('profile')
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [researchPhrase, setResearchPhrase] = useState('')
@@ -141,8 +140,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setViewMode('discovery')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'discovery'
-                  ? 'bg-accent text-accent-foreground'
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${viewMode === 'discovery'
+                  ? 'button-warm-sand text-content-primary'
                   : 'bg-card text-content-secondary hover:text-content-primary border border-border'
                   }`}
               >
@@ -151,23 +150,13 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
               </button>
               <button
                 onClick={() => setViewMode('rss')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'rss'
-                  ? 'bg-accent text-accent-foreground'
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${viewMode === 'rss'
+                  ? 'button-warm-sand text-content-primary'
                   : 'bg-card text-content-secondary hover:text-content-primary border border-border'
                   }`}
               >
                 <Rss className="w-4 h-4" />
                 RSS Feed
-              </button>
-              <button
-                onClick={() => setViewMode('alerts')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'alerts'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
-                  }`}
-              >
-                <Bell className="w-4 h-4" />
-                Alerts
               </button>
             </div>
           </div>
@@ -201,8 +190,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 <div className="flex gap-2 mb-4 flex-wrap">
                   <button
                     onClick={() => setSelectionMode('profile')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'profile'
-                      ? 'bg-accent text-accent-foreground'
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${selectionMode === 'profile'
+                      ? 'button-warm-sand text-content-primary'
                       : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
                       }`}
                   >
@@ -210,8 +199,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                   </button>
                   <button
                     onClick={() => setSelectionMode('collection')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'collection'
-                      ? 'bg-accent text-accent-foreground'
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${selectionMode === 'collection'
+                      ? 'button-warm-sand text-content-primary'
                       : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
                       }`}
                   >
@@ -219,8 +208,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                   </button>
                   <button
                     onClick={() => setSelectionMode('phrase')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'phrase'
-                      ? 'bg-accent text-accent-foreground'
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${selectionMode === 'phrase'
+                      ? 'button-warm-sand text-content-primary'
                       : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
                       }`}
                   >
@@ -234,7 +223,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                     <select
                       value={selectedCollection || ''}
                       onChange={(e) => setSelectedCollection(e.target.value || null)}
-                      className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                      className="w-full rounded-lg border border-border bg-card px-4 py-2 text-content-primary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     >
                       <option value="">Select a collection...</option>
                       {collections.map((collection) => (
@@ -254,7 +243,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                       value={researchPhrase}
                       onChange={(e) => setResearchPhrase(e.target.value)}
                       placeholder="Enter your research interests (e.g., 'machine learning for drug discovery')"
-                      className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                      className="w-full rounded-lg border border-border bg-card px-4 py-2 text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     />
                   </div>
                 )}
@@ -280,7 +269,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for papers by topic, keyword, or concept..."
-                className="w-full pl-12 pr-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                className="w-full rounded-lg border border-border bg-card py-3 pl-12 pr-4 text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
           </form>
@@ -384,7 +373,7 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="px-3 py-1.5 text-sm rounded-lg bg-secondary text-secondary-foreground border border-border hover:border-accent transition-colors">
+                      <button className="button-warm-sand rounded-lg px-3 py-1.5 text-sm transition-colors hover:text-content-primary">
                         Save to Library
                       </button>
                       <button className="px-3 py-1.5 text-sm rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors button-terracotta">
@@ -407,14 +396,6 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
       {/* RSS Feed View */}
       {viewMode === 'rss' && (
         <RssFeedView userId={userId} />
-      )}
-
-      {viewMode === 'alerts' && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-          <div className="rounded-xl border border-border bg-card whisper-shadow">
-            <AlertsManagementPanel userId={userId} onClose={() => setViewMode('discovery')} />
-          </div>
-        </div>
       )}
     </div>
   )

@@ -69,18 +69,18 @@ export function ResearchPageClient({
           <div className="flex gap-8">
             <button
               onClick={() => handleTabChange('discover')}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'discover'
-                ? 'border-accent text-content-primary font-serif'
-                : 'border-transparent text-content-secondary hover:text-content-primary'
+              className={`rounded-lg px-4 py-2.5 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'discover'
+                ? 'button-warm-sand text-content-primary'
+                : 'text-content-secondary hover:bg-warm-sand hover:text-content-primary'
                 }`}
             >
               Discover
             </button>
             <button
               onClick={() => handleTabChange('workspace')}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'workspace'
-                ? 'border-accent text-content-primary font-serif'
-                : 'border-transparent text-content-secondary hover:text-content-primary'
+              className={`rounded-lg px-4 py-2.5 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'workspace'
+                ? 'button-warm-sand text-content-primary'
+                : 'text-content-secondary hover:bg-warm-sand hover:text-content-primary'
                 }`}
             >
               Workspace

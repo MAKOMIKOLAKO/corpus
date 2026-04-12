@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processAllAlerts } from '@/lib/alertProcessor';
+// import { processAllAlerts } from '@/lib/alertProcessor';
 import { prisma } from '@/lib/prismaWithRetry';
 import { parseFeed, normalizeFeedItem } from '@/lib/rssParser';
 import { getDeduplicationKeys, findExistingGlobalEntry, generateContentHash } from '@/lib/entryDedup';
@@ -38,18 +38,19 @@ async function runCronTasks() {
   const rssResults = await runRSSIngestion();
   console.log('[cron/smart-alerts] RSS ingestion complete:', rssResults);
 
-  // Then run smart alerts
-  console.log('[cron/smart-alerts] Starting alert processing...');
-  const alertResults = await processAllAlerts();
-  console.log('[cron/smart-alerts] Alert processing complete:', alertResults);
+  // Smart alerts processing is temporarily disabled.
+  // console.log('[cron/smart-alerts] Starting alert processing...');
+  // const alertResults = await processAllAlerts();
+  // console.log('[cron/smart-alerts] Alert processing complete:', alertResults);
 
   return NextResponse.json({
     success: true,
     rss: rssResults,
     alerts: {
-      processed: alertResults.queriesProcessed,
-      papersAdded: alertResults.totalPapersAdded,
-      errors: alertResults.errors.length
+      disabled: true,
+      processed: 0,
+      papersAdded: 0,
+      errors: 0
     }
   });
 }
