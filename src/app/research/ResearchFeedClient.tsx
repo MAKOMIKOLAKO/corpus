@@ -74,6 +74,7 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
   const [dailyCount, setDailyCount] = useState(preferredCount)
   const [savingPreferences, setSavingPreferences] = useState(false)
   const [savingCount, setSavingCount] = useState(false)
+  const [loadingSummaries, setLoadingSummaries] = useState(false)
 
   useEffect(() => {
     async function loadSettings() {
@@ -189,6 +190,14 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
   // Initial load
   useEffect(() => { fetchFeed() }, [fetchFeed])
 
+  // Lazy-load summaries when feed is ready and needs them
+  useEffect(() => {
+    if (state.status === 'ready' && (state.feed as any)?.needsLazySummaries) {
+      const paperIds = state.feed.papers.map(p => p.candidatePaperId)
+      loadSummaries(paperIds)
+    }
+  }, [state.status])
+
   async function handleSave(paperId: string) {
     const res = await fetch('/api/research/feed/save', {
       method: 'POST',
@@ -218,6 +227,48 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
     } finally {
       setSavingCount(false)
       setSettingsOpen(false)
+    }
+  }
+
+  async function loadSummaries(paperIds: string[]) {
+    if (paperIds.length === 0) return
+    setLoadingSummaries(true)
+    try {
+      const res = await fetch('/api/research/feed/summaries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paperIds }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setState(prev => {
+          if (prev.status !== 'ready') return prev
+          const summariesMap = data.summaries as Record<string, { plainSummary: string; technicalSummary: string; noveltyTag: string }>
+          const updatedPapers = prev.feed.papers.map(paper => {
+            const summary = summariesMap[paper.candidatePaperId]
+            if (summary) {
+              return {
+                ...paper,
+                plainSummary: summary.plainSummary,
+                technicalSummary: summary.technicalSummary,
+                noveltyTag: summary.noveltyTag,
+              }
+            }
+            return paper
+          })
+          return {
+            ...prev,
+            feed: {
+              ...prev.feed,
+              papers: updatedPapers,
+            },
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error loading summaries:', error)
+    } finally {
+      setLoadingSummaries(false)
     }
   }
 
@@ -454,6 +505,13 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
                   </div>
                 )}
                 <FeedSkeleton />
+              </div>
+            )}
+
+            {loadingSummaries && (
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-[13px] text-content-tertiary whisper-shadow">
+                <RefreshCw size={14} className="animate-spin text-accent" />
+                Loading paper summaries…
               </div>
             )}
 

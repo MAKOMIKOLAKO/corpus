@@ -169,6 +169,7 @@ export interface FeedOverrides {
   mode?: 'profile' | 'collection' | 'phrase'
   collectionId?: string
   phrase?: string
+  skipSummarization?: boolean
 }
 
 export async function generateDailyBrief(
@@ -385,37 +386,63 @@ export async function generateDailyBrief(
   // Step 8: Diversity-aware selection
   const selected = diversitySelect(top100, clusters, preferredCount)
 
+  const skipSummarization = overrides?.skipSummarization ?? false
+
   // Step 9: Summarization — label clusters + generate summaries + why explanations
-  const clusterLabels = await labelClusters(clusters, top100)
+  // Skip if skipSummarization is true (for cron pre-generation)
+  let clusterLabels: Record<number, string> = {}
+  let summaryResults: PromiseSettledResult<{ plainSummary: string; technicalSummary: string; noveltyTag: string }>[] = []
+  let whyExplanations: Record<string, string> = {}
+  let emergingTrends: string | null = null
 
-  // Generate or retrieve summaries for selected papers
-  const summaryResults = await Promise.allSettled(
-    selected.map((item) => ensurePaperSummaries(item.candidate))
-  )
+  if (!skipSummarization) {
+    clusterLabels = await labelClusters(clusters, top100)
 
-  // Build why explanations
-  const userCtx = buildUserContext(domainWeights, recentEntryTitles)
-  const whyResults = await Promise.allSettled(
-    selected.map((item) =>
-      generateWhyExplanation(
-        {
-          title: item.candidate.title,
-          abstract: item.candidate.abstract,
-          candidateMetadata: item.candidate.candidateMetadata as PaperMetadata | null,
-        },
-        userCtx
+    // Generate or retrieve summaries for selected papers
+    summaryResults = await Promise.allSettled(
+      selected.map((item) => ensurePaperSummaries(item.candidate))
+    )
+
+    // Build why explanations
+    const userCtx = buildUserContext(domainWeights, recentEntryTitles)
+    const whyResults = await Promise.allSettled(
+      selected.map((item) =>
+        generateWhyExplanation(
+          {
+            title: item.candidate.title,
+            abstract: item.candidate.abstract,
+            candidateMetadata: item.candidate.candidateMetadata as PaperMetadata | null,
+          },
+          userCtx
+        )
       )
     )
-  )
 
-  // Emerging trends
-  const selectedTitles = selected.map((s) => s.candidate.title)
-  const allClusterLabels = Object.values(clusterLabels)
-  let emergingTrends: string | null = null
-  try {
-    emergingTrends = await generateEmergingTrends(allClusterLabels, selectedTitles)
-  } catch (err) {
-    console.error('[feedPipeline] Emerging trends generation failed:', err)
+    // Emerging trends
+    const selectedTitles = selected.map((s) => s.candidate.title)
+    const allClusterLabels = Object.values(clusterLabels)
+    try {
+      emergingTrends = await generateEmergingTrends(allClusterLabels, selectedTitles)
+    } catch (err) {
+      console.error('[feedPipeline] Emerging trends generation failed:', err)
+    }
+
+    // Build why explanations map
+    for (let i = 0; i < selected.length; i++) {
+      const item = selected[i]
+      const whyResult = whyResults[i]
+      const why =
+        whyResult.status === 'fulfilled'
+          ? whyResult.value
+          : 'This paper is relevant to your research interests.'
+      whyExplanations[item.candidate.id] = why
+    }
+  } else {
+    // When skipping summarization, use generic cluster labels
+    clusterLabels = {}
+    for (const cluster of clusters) {
+      clusterLabels[cluster.clusterIndex] = `Topic ${cluster.clusterIndex + 1}`
+    }
   }
 
   // Build cluster label lookup per candidatePaperId
@@ -428,49 +455,67 @@ export async function generateDailyBrief(
   }
 
   // Build output objects
-  const whyExplanations: Record<string, string> = {}
   const paperObjects: PaperSummaryObject[] = []
 
   for (let i = 0; i < selected.length; i++) {
     const item = selected[i]
     const p = item.candidate
 
-    const summaryResult = summaryResults[i]
-    const summaries =
-      summaryResult.status === 'fulfilled'
-        ? summaryResult.value
-        : { plainSummary: p.plainSummary ?? '', technicalSummary: p.technicalSummary ?? '', noveltyTag: p.noveltyTag ?? 'New method' }
-
-    const whyResult = whyResults[i]
-    const why =
-      whyResult.status === 'fulfilled'
-        ? whyResult.value
-        : 'This paper is relevant to your research interests.'
-
-    whyExplanations[p.id] = why
-
     const meta = p.candidateMetadata as (PaperMetadata & { openAccessUrl?: string }) | null
 
-    paperObjects.push({
-      candidatePaperId: p.id,
-      globalEntryId: null,
-      title: p.title,
-      authors: p.authors,
-      year: p.publishedDate?.getFullYear() ?? null,
-      publishedDate: p.publishedDate?.toISOString() ?? null,
-      source: p.source,
-      doi: p.doi,
-      url: p.url,
-      plainSummary: summaries.plainSummary,
-      technicalSummary: summaries.technicalSummary,
-      whyExplanation: why,
-      noveltyTag: summaries.noveltyTag,
-      compositeScore: item.composite,
-      scoreBreakdown: item.subScores,
-      clusterLabel: paperToClusterLabel.get(p.id) ?? '',
-      alreadySaved: savedDois.has(p.doi ?? '') || savedPaperIds.has(p.id),
-      openAccessUrl: meta?.openAccessUrl ?? null,
-    })
+    // If skipping summarization, use cached summaries if available, otherwise empty
+    if (skipSummarization) {
+      paperObjects.push({
+        candidatePaperId: p.id,
+        globalEntryId: null,
+        title: p.title,
+        authors: p.authors,
+        year: p.publishedDate?.getFullYear() ?? null,
+        publishedDate: p.publishedDate?.toISOString() ?? null,
+        source: p.source,
+        doi: p.doi,
+        url: p.url,
+        plainSummary: p.plainSummary ?? '',
+        technicalSummary: p.technicalSummary ?? '',
+        whyExplanation: '',
+        noveltyTag: p.noveltyTag ?? 'New method',
+        compositeScore: item.composite,
+        scoreBreakdown: item.subScores,
+        clusterLabel: paperToClusterLabel.get(p.id) ?? '',
+        alreadySaved: savedDois.has(p.doi ?? '') || savedPaperIds.has(p.id),
+        openAccessUrl: meta?.openAccessUrl ?? null,
+      })
+    } else {
+      // Use the summaries we just generated
+      const summaryResult = summaryResults[i]
+      const summaries =
+        summaryResult.status === 'fulfilled'
+          ? summaryResult.value
+          : { plainSummary: p.plainSummary ?? '', technicalSummary: p.technicalSummary ?? '', noveltyTag: p.noveltyTag ?? 'New method' }
+
+      const why = whyExplanations[p.id] ?? 'This paper is relevant to your research interests.'
+
+      paperObjects.push({
+        candidatePaperId: p.id,
+        globalEntryId: null,
+        title: p.title,
+        authors: p.authors,
+        year: p.publishedDate?.getFullYear() ?? null,
+        publishedDate: p.publishedDate?.toISOString() ?? null,
+        source: p.source,
+        doi: p.doi,
+        url: p.url,
+        plainSummary: summaries.plainSummary,
+        technicalSummary: summaries.technicalSummary,
+        whyExplanation: why,
+        noveltyTag: summaries.noveltyTag,
+        compositeScore: item.composite,
+        scoreBreakdown: item.subScores,
+        clusterLabel: paperToClusterLabel.get(p.id) ?? '',
+        alreadySaved: savedDois.has(p.doi ?? '') || savedPaperIds.has(p.id),
+        openAccessUrl: meta?.openAccessUrl ?? null,
+      })
+    }
   }
 
   // Step 9: Save DailyBrief

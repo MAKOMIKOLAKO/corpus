@@ -51,9 +51,15 @@ export async function GET(request: NextRequest) {
   // Check for cached brief first. Keep feed stable across page reloads;
   // only regenerate when explicitly requested via refresh=1.
   const hasOverrides = modeOverride || collectionIdOverride || phraseOverride
-  if (!forceRefresh) {
+  if (!forceRefresh && !hasOverrides) {
     const cached = await getDailyBriefCached(user.id)
     if (cached) {
+      // Check if feed has summaries (if not, it was pre-generated via cron)
+      const needsSummaries = cached.papers.some(p => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
+      if (needsSummaries) {
+        // Return feed without summaries, frontend will lazy-load them
+        return NextResponse.json({ ...cached, needsLazySummaries: true })
+      }
       return NextResponse.json(cached)
     }
   }
