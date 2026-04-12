@@ -243,7 +243,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? 'usecorpus.app'
+          ? '.usecorpus.app'
           : 'localhost'
       }
     },
@@ -255,7 +255,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? 'usecorpus.app'
+          ? '.usecorpus.app'
           : 'localhost'
       }
     },
@@ -267,7 +267,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production'
-          ? 'usecorpus.app'
+          ? '.usecorpus.app'
           : 'localhost'
       }
     }
