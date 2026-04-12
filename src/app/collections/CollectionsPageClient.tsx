@@ -414,6 +414,85 @@ export default function CollectionsPage() {
                 </div>
             )}
 
+            {/* Discovery Collections */}
+            {discoveryCollections.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-semibold mb-4">Discovery</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        {discoveryCollections.map((collection) => (
+                            <div key={collection.id} className="relative">
+                                <Link href={`/collections/${collection.id}`}>
+                                    <Card className="h-full cursor-pointer rounded-[12px] border border-slate-300/80 bg-gradient-to-b from-[var(--card)] to-[var(--muted)]/25 ring-0 transition-all duration-200 hover:border-slate-400/90 hover:shadow-[0_0_0_3px_rgba(148,163,184,0.18)] dark:border-slate-700 dark:hover:border-slate-500 dark:hover:shadow-[0_0_0_3px_rgba(100,116,139,0.28)]">
+                                        <CardHeader className="pb-4 pt-5">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1 min-w-0">
+                                                    <CardTitle className="text-xl text-balance break-words">{collection.name}</CardTitle>
+                                                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <Globe className="h-3.5 w-3.5" />
+                                                        <span>{collection.user?.name || collection.user?.username || 'Unknown'}</span>
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                        <Badge variant="secondary" className="text-xs">Discovery</Badge>
+                                                        {collection.isPublic && (
+                                                            <Badge variant="outline" className="text-xs">Public</Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {collection.publicDescription && (
+                                                <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
+                                                    {collection.publicDescription}
+                                                </p>
+                                            )}
+                                            <div className="mt-3 space-y-1 rounded-md border border-[var(--border)] bg-[var(--muted)]/20 p-2">
+                                                {collection.entries && collection.entries.length > 0 ? (
+                                                    <>
+                                                        {collection.entries.slice(0, 2).map((item) => (
+                                                            <p
+                                                                key={item.entry.id}
+                                                                className="text-xs text-muted-foreground truncate"
+                                                                title={item.entry.title}
+                                                            >
+                                                                • {sliceTitle(item.entry.title)}
+                                                            </p>
+                                                        ))}
+                                                        {collection._count.entries > 2 && (
+                                                            <p className="text-xs text-muted-foreground italic">
+                                                                +{collection._count.entries - 2} more
+                                                            </p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground italic">No entries yet</p>
+                                                )}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="pt-4 pb-5">
+                                            <div className="flex items-center text-sm text-muted-foreground">
+                                                <div className="flex flex-wrap items-center gap-4">
+                                                    <div className="flex items-center gap-1">
+                                                        <FileText className="w-4 h-4" />
+                                                        <span className="font-medium">{collection._count.entries}</span>
+                                                        <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
+                                                    </div>
+                                                    {collection.publicViewCount !== undefined && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Eye className="w-4 h-4" />
+                                                            <span className="font-medium">{collection.publicViewCount}</span>
+                                                            <span>views</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Collections */}
             {myCollections.length > 0 && (
                 <div>
@@ -457,18 +536,25 @@ export default function CollectionsPage() {
                                             )}
                                             <div className="mt-3 space-y-1 rounded-md border border-[var(--border)] bg-[var(--muted)]/20 p-2">
                                                 {collection.entries && collection.entries.length > 0 ? (
-                                                    collection.entries.slice(0, 2).map((item) => (
-                                                        <p
-                                                            key={item.entry.id}
-                                                            className="text-xs text-muted-foreground"
-                                                            title={item.entry.title}
-                                                        >
-                                                            • {sliceTitle(item.entry.title)}
-                                                        </p>
-                                                    ))
+                                                    <>
+                                                        {collection.entries.slice(0, 2).map((item) => (
+                                                            <p
+                                                                key={item.entry.id}
+                                                                className="text-xs text-muted-foreground truncate"
+                                                                title={item.entry.title}
+                                                            >
+                                                                • {sliceTitle(item.entry.title)}
+                                                            </p>
+                                                        ))}
+                                                        {collection._count.entries > 2 && (
+                                                            <p className="text-xs text-muted-foreground italic">
+                                                                +{collection._count.entries - 2} more
+                                                            </p>
+                                                        )}
+                                                    </>
                                                 ) : (
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <p className="text-xs text-muted-foreground">No entries yet</p>
+                                                        <p className="text-xs text-muted-foreground italic">No entries yet</p>
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {

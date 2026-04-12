@@ -1,47 +1,106 @@
 import * as cheerio from 'cheerio'
 import prisma from '@/lib/prisma'
 import { callGemini, safeParseJson } from './geminiResearch'
-import { Prisma } from '@prisma/client'
+import { normalizePaperIdentifier } from './paperIdentifier'
+
+type FetchContentStatus = 'full_text' | 'metadata_only'
+
+type PaperResolutionErrorCode =
+  | 'INVALID_IDENTIFIER'
+  | 'UNRESOLVED_IDENTIFIER'
+  | 'FETCH_FAILED'
+
+export class PaperResolutionError extends Error {
+  code: PaperResolutionErrorCode
+
+  constructor(message: string, code: PaperResolutionErrorCode) {
+    super(message)
+    this.name = 'PaperResolutionError'
+    this.code = code
+  }
+}
+
+export interface FetchPaperContentResult {
+  text: string
+  candidatePaperId: string | null
+  status: FetchContentStatus
+  note: string | null
+}
+
+interface ResolvedPaperData {
+  title: string
+  authors: string[]
+  abstract: string | null
+  url: string | null
+  source: string
+  doi: string | null
+  arxivId: string | null
+  publishedDate: Date | null
+}
 
 export interface PaperSection {
   title: string
   content: string
 }
 
-function extractArxivId(input: string): string | null {
-  const trimmed = input.trim()
-  const match = trimmed.match(/^\d{4}\.\d{4,5}(?:v\d+)?$/i)
-  if (!match) return null
-
-  return trimmed.replace(/v\d+$/i, '')
+function normalizeWhitespace(content: string): string {
+  return content.replace(/\s+/g, ' ').trim()
 }
 
-async function fetchArxivTextById(arxivId: string): Promise<string | null> {
+function extractTextFromHtml(html: string): string {
+  const $ = cheerio.load(html)
+  $('script, style, nav, footer, header, .ltx_page_footer, .ltx_page_header, .ltx_role_navigation').remove()
+
+  const mainContent =
+    $('.ltx_page_main').text() ||
+    $('.ltx_document').text() ||
+    $('article').text() ||
+    $('.ltx_para').map((_, el) => $(el).text()).get().join('\n\n') ||
+    $('.abstract').text() ||
+    $('main').text() ||
+    $('body').text()
+
+  return normalizeWhitespace(mainContent)
+}
+
+async function fetchReadableTextFromUrl(url: string, sourceLabel: string): Promise<string | null> {
   try {
-    const ar5ivUrl = `https://ar5iv.org/abs/${arxivId}`
-    const response = await fetch(ar5ivUrl)
-    if (!response.ok) return null
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      },
+    })
 
-    const html = await response.text()
-    const $ = cheerio.load(html)
-
-    $('script, style, nav, .ltx_page_footer, .ltx_page_header, .ltx_role_navigation').remove()
-
-    let mainContent =
-      $('.ltx_page_main').text() ||
-      $('.ltx_document').text() ||
-      $('article').text() ||
-      $('.ltx_para').map((_, el) => $(el).text()).get().join('\n\n') ||
-      $('body').text()
-
-    mainContent = mainContent.replace(/\s+/g, ' ').trim()
-
-    if (mainContent.length > 1000) {
-      console.log(`[activeReading] Successfully extracted ${mainContent.length} chars from ar5iv for ${arxivId}`)
-      return mainContent
+    if (!response.ok) {
+      return null
     }
 
-    console.log(`[activeReading] ar5iv content too short (${mainContent.length} chars) for ${arxivId}`)
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/pdf')) {
+      return null
+    }
+
+    const text = await response.text()
+    const extracted = extractTextFromHtml(text)
+
+    if (extracted.length > 1000) {
+      console.log(`[activeReading] Extracted ${extracted.length} chars from ${sourceLabel}: ${url}`)
+      return extracted
+    }
+
+    return null
+  } catch (err) {
+    console.error(`[activeReading] Failed fetching ${sourceLabel} URL ${url}:`, err)
+    return null
+  }
+}
+
+async function fetchAr5ivTextById(arxivId: string): Promise<string | null> {
+  try {
+    const ar5ivUrl = `https://ar5iv.org/abs/${arxivId}`
+    const text = await fetchReadableTextFromUrl(ar5ivUrl, 'ar5iv')
+    if (text) return text
+
     return null
   } catch (err) {
     console.error(`[activeReading] Failed to fetch ar5iv for ${arxivId}:`, err)
@@ -49,11 +108,189 @@ async function fetchArxivTextById(arxivId: string): Promise<string | null> {
   }
 }
 
+async function fetchArxivTextById(arxivId: string): Promise<string | null> {
+  const ar5ivText = await fetchAr5ivTextById(arxivId)
+  if (ar5ivText) return ar5ivText
+
+  const arxivAbsText = await fetchReadableTextFromUrl(`https://arxiv.org/abs/${arxivId}`, 'arxiv-abs')
+  if (arxivAbsText) return arxivAbsText
+
+  return null
+}
+
+function stripHtmlLikeTags(text: string): string {
+  return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+async function fetchCrossrefMetadata(doi: string): Promise<ResolvedPaperData | null> {
+  try {
+    const response = await fetch(`https://api.crossref.org/works/${encodeURIComponent(doi)}`)
+    if (!response.ok) {
+      return null
+    }
+
+    const payload = await response.json()
+    const message = payload?.message
+    if (!message?.title?.[0]) {
+      return null
+    }
+
+    const title = String(message.title[0]).trim()
+    const authors = Array.isArray(message.author)
+      ? message.author
+        .map((author: { given?: string; family?: string; name?: string }) => {
+          if (author?.name) return String(author.name).trim()
+          const name = `${author?.given ?? ''} ${author?.family ?? ''}`.trim()
+          return name
+        })
+        .filter(Boolean)
+      : []
+
+    const abstract = typeof message.abstract === 'string'
+      ? stripHtmlLikeTags(message.abstract)
+      : null
+
+    const issuedDateParts = message?.issued?.['date-parts']?.[0]
+    const publishedDate = Array.isArray(issuedDateParts) && issuedDateParts.length >= 1
+      ? new Date(
+        issuedDateParts[0],
+        Math.max(0, (issuedDateParts[1] ?? 1) - 1),
+        issuedDateParts[2] ?? 1,
+      )
+      : null
+
+    return {
+      title,
+      authors,
+      abstract,
+      url: typeof message.URL === 'string' ? message.URL : `https://doi.org/${doi}`,
+      source: 'Crossref',
+      doi,
+      arxivId: null,
+      publishedDate,
+    }
+  } catch (err) {
+    console.error(`[activeReading] Crossref lookup failed for DOI ${doi}:`, err)
+    return null
+  }
+}
+
+async function fetchUnpaywallUrls(doi: string): Promise<string[]> {
+  const email = process.env.UNPAYWALL_EMAIL || process.env.RESEARCH_CONTACT_EMAIL
+  if (!email) return []
+
+  try {
+    const response = await fetch(`https://api.unpaywall.org/v2/${encodeURIComponent(doi)}?email=${encodeURIComponent(email)}`)
+    if (!response.ok) return []
+
+    const payload = await response.json()
+    const best = payload?.best_oa_location
+
+    const urls = [
+      best?.url_for_pdf,
+      best?.url,
+    ].filter((value): value is string => Boolean(value && typeof value === 'string'))
+
+    return Array.from(new Set(urls))
+  } catch (err) {
+    console.error(`[activeReading] Unpaywall lookup failed for DOI ${doi}:`, err)
+    return []
+  }
+}
+
+async function upsertResolvedCandidatePaper(data: ResolvedPaperData): Promise<string | null> {
+  try {
+    if (data.doi) {
+      const paper = await (prisma as any).candidatePaper.upsert({
+        where: { doi: data.doi },
+        update: {
+          title: data.title,
+          authors: data.authors,
+          abstract: data.abstract,
+          url: data.url,
+          source: data.source,
+          publishedDate: data.publishedDate,
+        },
+        create: {
+          doi: data.doi,
+          arxivId: data.arxivId,
+          title: data.title,
+          authors: data.authors,
+          abstract: data.abstract,
+          url: data.url,
+          source: data.source,
+          publishedDate: data.publishedDate,
+        },
+        select: { id: true },
+      })
+      return paper.id
+    }
+
+    if (data.arxivId) {
+      const paper = await (prisma as any).candidatePaper.upsert({
+        where: { arxivId: data.arxivId },
+        update: {
+          title: data.title,
+          authors: data.authors,
+          abstract: data.abstract,
+          url: data.url,
+          source: data.source,
+          publishedDate: data.publishedDate,
+        },
+        create: {
+          doi: data.doi,
+          arxivId: data.arxivId,
+          title: data.title,
+          authors: data.authors,
+          abstract: data.abstract,
+          url: data.url,
+          source: data.source,
+          publishedDate: data.publishedDate,
+        },
+        select: { id: true },
+      })
+      return paper.id
+    }
+
+    const created = await (prisma as any).candidatePaper.create({
+      data: {
+        doi: data.doi,
+        arxivId: data.arxivId,
+        title: data.title,
+        authors: data.authors,
+        abstract: data.abstract,
+        url: data.url,
+        source: data.source,
+        publishedDate: data.publishedDate,
+      },
+      select: { id: true },
+    })
+
+    return created.id
+  } catch (err) {
+    console.error('[activeReading] Failed to upsert resolved CandidatePaper:', err)
+    return null
+  }
+}
+
+function buildMetadataFallbackText(data: {
+  title: string
+  authors: string[]
+  abstract: string | null
+  note: string
+}): string {
+  const authorLine = data.authors.length > 0 ? data.authors.join(', ') : 'Unknown authors'
+  const abstractLine = data.abstract || 'No abstract available.'
+
+  return `Title: ${data.title}\n\nAuthors: ${authorLine}\n\nAbstract: ${abstractLine}\n\n[${data.note}]`
+}
+
 /**
  * Fetch paper content from external sources (primarily ar5iv for arXiv).
  */
-export async function fetchPaperContent(candidatePaperId: string): Promise<string> {
-  const normalizedPaperRef = candidatePaperId.trim()
+export async function fetchPaperContent(candidatePaperId: string): Promise<FetchPaperContentResult> {
+  const normalizedIdentifier = normalizePaperIdentifier(candidatePaperId)
+  const normalizedPaperRef = normalizedIdentifier.normalized
 
   const paper = await (prisma as any).candidatePaper.findFirst({
     where: {
@@ -63,60 +300,137 @@ export async function fetchPaperContent(candidatePaperId: string): Promise<strin
         { doi: normalizedPaperRef },
       ]
     },
-    select: { arxivId: true, url: true, title: true, abstract: true }
+    select: { id: true, arxivId: true, url: true, title: true, abstract: true }
   })
 
   if (!paper) {
-    const directArxivId = extractArxivId(normalizedPaperRef)
-    if (directArxivId) {
-      const arxivText = await fetchArxivTextById(directArxivId)
-      if (arxivText) return arxivText
+    if (normalizedIdentifier.kind === 'arxiv' && normalizedIdentifier.arxivId) {
+      const arxivText = await fetchArxivTextById(normalizedIdentifier.arxivId)
+      if (arxivText) {
+        const hydratedId = await upsertResolvedCandidatePaper({
+          title: `arXiv:${normalizedIdentifier.arxivId}`,
+          authors: [],
+          abstract: null,
+          url: `https://arxiv.org/abs/${normalizedIdentifier.arxivId}`,
+          source: 'arXiv:direct',
+          doi: null,
+          arxivId: normalizedIdentifier.arxivId,
+          publishedDate: null,
+        })
 
-      throw new Error(`Paper not found or inaccessible for arXiv ID: ${directArxivId}`)
+        return {
+          text: arxivText,
+          candidatePaperId: hydratedId,
+          status: 'full_text',
+          note: null,
+        }
+      }
+
+      throw new PaperResolutionError(
+        `Paper not found or inaccessible for arXiv ID: ${normalizedIdentifier.arxivId}`,
+        'UNRESOLVED_IDENTIFIER',
+      )
     }
 
-    throw new Error(`Paper not found in database: ${candidatePaperId}`)
+    if (normalizedIdentifier.kind === 'doi' && normalizedIdentifier.doi) {
+      const crossrefData = await fetchCrossrefMetadata(normalizedIdentifier.doi)
+      if (!crossrefData) {
+        throw new PaperResolutionError(
+          `Could not resolve DOI: ${normalizedIdentifier.doi}`,
+          'UNRESOLVED_IDENTIFIER',
+        )
+      }
+
+      const unpaywallUrls = await fetchUnpaywallUrls(normalizedIdentifier.doi)
+      const candidateUrls = Array.from(
+        new Set(
+          [...unpaywallUrls, crossrefData.url].filter((url): url is string => Boolean(url)),
+        ),
+      )
+
+      for (const url of candidateUrls) {
+        const text = await fetchReadableTextFromUrl(url, 'doi')
+        if (text) {
+          const hydratedId = await upsertResolvedCandidatePaper({
+            ...crossrefData,
+            url,
+          })
+
+          return {
+            text,
+            candidatePaperId: hydratedId,
+            status: 'full_text',
+            note: null,
+          }
+        }
+      }
+
+      const hydratedId = await upsertResolvedCandidatePaper(crossrefData)
+      const note = 'Full text could not be retrieved (likely paywalled). Loaded metadata and abstract instead.'
+
+      return {
+        text: buildMetadataFallbackText({
+          title: crossrefData.title,
+          authors: crossrefData.authors,
+          abstract: crossrefData.abstract,
+          note,
+        }),
+        candidatePaperId: hydratedId,
+        status: 'metadata_only',
+        note,
+      }
+    }
+
+    if (normalizedIdentifier.kind === 'unknown') {
+      throw new PaperResolutionError(
+        `Paper not found in database: ${candidatePaperId}`,
+        'UNRESOLVED_IDENTIFIER',
+      )
+    }
+
+    throw new PaperResolutionError('Invalid paper identifier format.', 'INVALID_IDENTIFIER')
   }
 
   // ArXiv papers are best fetched via ar5iv.org (HTML version)
   if (paper.arxivId) {
     const arxivText = await fetchArxivTextById(paper.arxivId)
     if (arxivText) {
-      return arxivText
+      return {
+        text: arxivText,
+        candidatePaperId: paper.id,
+        status: 'full_text',
+        note: null,
+      }
     }
   }
 
   // Try fetching from URL if available
   if (paper.url) {
-    try {
-      const response = await fetch(paper.url)
-      if (response.ok) {
-        const html = await response.text()
-        const $ = cheerio.load(html)
-
-        $('script, style, nav, footer, header').remove()
-
-        let mainContent =
-          $('article').text() ||
-          $('.abstract').text() ||
-          $('main').text() ||
-          $('body').text()
-
-        mainContent = mainContent.replace(/\s+/g, ' ').trim()
-
-        if (mainContent.length > 1000) {
-          console.log(`[activeReading] Successfully extracted ${mainContent.length} chars from URL for ${paper.title}`)
-          return mainContent
-        }
+    const urlText = await fetchReadableTextFromUrl(paper.url, 'paper-url')
+    if (urlText) {
+      return {
+        text: urlText,
+        candidatePaperId: paper.id,
+        status: 'full_text',
+        note: null,
       }
-    } catch (err) {
-      console.error(`[activeReading] Failed to fetch from URL for ${paper.title}:`, err)
     }
   }
 
   // Fallback to abstract if full text fails or isn't available
   console.log(`[activeReading] Using abstract fallback for ${paper.title}`)
-  return `Title: ${paper.title}\n\nAbstract: ${paper.abstract}\n\n[Full text extraction failed or unavailable for this source. Only abstract is available.]`
+  const note = 'Full text extraction failed or unavailable for this source. Only abstract/metadata is available.'
+  return {
+    text: buildMetadataFallbackText({
+      title: paper.title,
+      authors: [],
+      abstract: paper.abstract,
+      note,
+    }),
+    candidatePaperId: paper.id,
+    status: 'metadata_only',
+    note,
+  }
 }
 
 /**

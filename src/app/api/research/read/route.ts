@@ -2,35 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/prisma'
-import { fetchPaperContent, sectionPaper, chatWithPaper } from '@/lib/research/activeReading'
-
-function normalizePaperId(rawInput: string): string {
-  const input = rawInput.trim()
-
-  const doiMatch = input.match(/10\.\d{4,9}\/[\w.()/:;-]+/i)
-  if (doiMatch) return doiMatch[0]
-
-  const arxivUrlMatch = input.match(/arxiv\.org\/(?:abs|pdf)\/([^?#]+)/i)
-  if (arxivUrlMatch) {
-    const cleaned = arxivUrlMatch[1].replace(/\.pdf$/i, '').trim()
-    const idMatch = cleaned.match(/(\d{4}\.\d{4,5})(?:v\d+)?$/i)
-    if (idMatch) return idMatch[1]
-    return cleaned
-  }
-
-  const ar5ivUrlMatch = input.match(/ar5iv\.org\/abs\/([^?#]+)/i)
-  if (ar5ivUrlMatch) {
-    const cleaned = ar5ivUrlMatch[1].trim()
-    const idMatch = cleaned.match(/(\d{4}\.\d{4,5})(?:v\d+)?$/i)
-    if (idMatch) return idMatch[1]
-    return cleaned
-  }
-
-  const directArxivMatch = input.match(/^(\d{4}\.\d{4,5})(?:v\d+)?$/i)
-  if (directArxivMatch) return directArxivMatch[1]
-
-  return input
-}
+import { fetchPaperContent, sectionPaper, chatWithPaper, PaperResolutionError } from '@/lib/research/activeReading'
+import {
+  looksLikeBrokenArxivInput,
+  looksLikeBrokenDoiInput,
+  normalizePaperIdentifier,
+} from '@/lib/research/paperIdentifier'
 
 /**
  * GET /api/research/read?paperId=[id]
@@ -51,7 +28,16 @@ export async function GET(request: NextRequest) {
   const rawPaperId = searchParams.get('paperId')
 
   if (!rawPaperId) return NextResponse.json({ error: 'Missing paperId' }, { status: 400 })
-  const normalizedPaperId = normalizePaperId(rawPaperId)
+  const normalized = normalizePaperIdentifier(rawPaperId)
+  const normalizedPaperId = normalized.normalized
+
+  if (looksLikeBrokenDoiInput(rawPaperId) && normalized.kind !== 'doi') {
+    return NextResponse.json({ error: 'Invalid DOI format' }, { status: 400 })
+  }
+
+  if (looksLikeBrokenArxivInput(rawPaperId) && normalized.kind !== 'arxiv') {
+    return NextResponse.json({ error: 'Invalid arXiv identifier format' }, { status: 400 })
+  }
 
   try {
     // Resolve rawPaperId to a CandidatePaper ID and/or GlobalEntry ID
@@ -137,11 +123,23 @@ export async function GET(request: NextRequest) {
 
       let rawText
       try {
-        rawText = await fetchPaperContent(effectivePaperId)
+        const fetched = await fetchPaperContent(effectivePaperId)
+        rawText = fetched.text
+        if (!candidatePaperId && fetched.candidatePaperId) {
+          candidatePaperId = fetched.candidatePaperId
+        }
       } catch (fetchErr: any) {
         console.error('[read-api] Fetch paper error:', fetchErr)
-        if (fetchErr.message?.includes('Paper not found')) {
-          return NextResponse.json({ error: fetchErr.message }, { status: 404 })
+        if (fetchErr instanceof PaperResolutionError) {
+          if (fetchErr.code === 'INVALID_IDENTIFIER') {
+            return NextResponse.json({ error: fetchErr.message }, { status: 400 })
+          }
+
+          if (fetchErr.code === 'UNRESOLVED_IDENTIFIER') {
+            return NextResponse.json({ error: fetchErr.message }, { status: 404 })
+          }
+
+          return NextResponse.json({ error: fetchErr.message }, { status: 500 })
         }
         return NextResponse.json({ error: 'Failed to fetch paper content', details: fetchErr?.message }, { status: 500 })
       }
