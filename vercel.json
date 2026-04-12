@@ -11,6 +11,9 @@
     },
     "src/app/api/cron/research-ingest/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/cron/research-feeds/route.ts": {
+      "maxDuration": 300
     }
   },
   "crons": [
@@ -25,6 +28,10 @@
     {
       "path": "/api/cron/research-profiles",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/research-feeds",
+      "schedule": "0 6 * * *"
     }
   ]
 }

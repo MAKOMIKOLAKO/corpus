@@ -6,7 +6,10 @@ const CRON_SECRET = process.env.CRON_SECRET
 
 function isCronAuthorized(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization')
-  return authHeader === `Bearer ${CRON_SECRET}`
+  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
+    return true
+  }
+  return Boolean(request.headers.get('x-vercel-cron'))
 }
 
 async function runProfileRecomputation(): Promise<{
