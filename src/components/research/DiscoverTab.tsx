@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Rss, FlaskConical, Settings2, Loader2, ChevronDown, Filter, Bell, X } from 'lucide-react'
+import { Search, Rss, FlaskConical, Loader2, ChevronDown, Filter, Bell } from 'lucide-react'
 import { ResearchFeedClient } from '@/app/research/ResearchFeedClient'
 import { AlertsManagementPanel } from '@/components/alerts/AlertsManagementPanel'
 import { RssFeedView } from './RssFeedView'
@@ -36,7 +36,7 @@ interface SearchResult {
 }
 
 export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
-  const [viewMode, setViewMode] = useState<'rss' | 'discovery'>('discovery')
+  const [viewMode, setViewMode] = useState<'rss' | 'discovery' | 'alerts'>('discovery')
   const [selectionMode, setSelectionMode] = useState<'profile' | 'collection' | 'phrase'>('profile')
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [researchPhrase, setResearchPhrase] = useState('')
@@ -45,8 +45,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [settingsExpanded, setSettingsExpanded] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
-  const [showAlertsPanel, setShowAlertsPanel] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   // Load user's collections and preferences
@@ -137,8 +137,8 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
       {/* View Toggle */}
       <div className="border-b border-border bg-surface-sunken">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex items-center justify-between py-3">
-            <div className="flex gap-2">
+          <div className="flex items-center py-3">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setViewMode('discovery')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'discovery'
@@ -159,14 +159,17 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
                 <Rss className="w-4 h-4" />
                 RSS Feed
               </button>
+              <button
+                onClick={() => setViewMode('alerts')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'alerts'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-card text-content-secondary hover:text-content-primary border border-border'
+                  }`}
+              >
+                <Bell className="w-4 h-4" />
+                Alerts
+              </button>
             </div>
-            <button
-              onClick={() => setShowAlertsPanel(true)}
-              className="p-2 rounded-lg border border-border bg-card text-content-secondary hover:text-content-primary"
-              title="Manage alerts"
-            >
-              <Bell className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </div>
@@ -176,83 +179,96 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
           {/* Selection Mode Settings */}
           <div className="mb-6 p-4 rounded-xl border border-border bg-card whisper-shadow">
-            <h3 className="text-sm font-medium font-serif text-content-secondary mb-3">
-              Feed Generation Settings
-            </h3>
-            <p className="text-xs text-content-tertiary mb-4" style={{ letterSpacing: '0.12px' }}>
-              Choose how candidate papers are selected for the next feed generation
-            </p>
-
-            {/* Selection Mode Toggle */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setSelectionMode('profile')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'profile'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
-                  }`}
-              >
-                My Profile
-              </button>
-              <button
-                onClick={() => setSelectionMode('collection')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'collection'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
-                  }`}
-              >
-                From Collection
-              </button>
-              <button
-                onClick={() => setSelectionMode('phrase')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'phrase'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
-                  }`}
-              >
-                Research Phrase
-              </button>
-            </div>
-
-            {/* Collection Selector */}
-            {selectionMode === 'collection' && (
-              <div className="mb-4">
-                <select
-                  value={selectedCollection || ''}
-                  onChange={(e) => setSelectedCollection(e.target.value || null)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                >
-                  <option value="">Select a collection...</option>
-                  {collections.map((collection) => (
-                    <option key={collection.id} value={collection.id}>
-                      {collection.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Research Phrase Input */}
-            {selectionMode === 'phrase' && (
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={researchPhrase}
-                  onChange={(e) => setResearchPhrase(e.target.value)}
-                  placeholder="Enter your research interests (e.g., 'machine learning for drug discovery')"
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                />
-              </div>
-            )}
-
-            {/* Save Button */}
             <button
-              onClick={handleSavePreferences}
-              disabled={isSaving}
-              className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium button-terracotta"
+              onClick={() => setSettingsExpanded((prev) => !prev)}
+              className="w-full flex items-center justify-between text-left"
+              aria-expanded={settingsExpanded}
             >
-              {isSaving ? 'Saving...' : 'Save Settings'}
+              <div>
+                <h3 className="text-sm font-medium font-serif text-content-secondary">
+                  Feed Generation Settings
+                </h3>
+                <p className="text-xs text-content-tertiary mt-1" style={{ letterSpacing: '0.12px' }}>
+                  Choose how candidate papers are selected for the next feed generation
+                </p>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-content-tertiary transition-transform ${settingsExpanded ? 'rotate-180' : ''}`} />
             </button>
+
+            {settingsExpanded && (
+              <div className="mt-4">
+                {/* Selection Mode Toggle */}
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  <button
+                    onClick={() => setSelectionMode('profile')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'profile'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                      }`}
+                  >
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => setSelectionMode('collection')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'collection'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                      }`}
+                  >
+                    From Collection
+                  </button>
+                  <button
+                    onClick={() => setSelectionMode('phrase')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode === 'phrase'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                      }`}
+                  >
+                    Research Phrase
+                  </button>
+                </div>
+
+                {/* Collection Selector */}
+                {selectionMode === 'collection' && (
+                  <div className="mb-4">
+                    <select
+                      value={selectedCollection || ''}
+                      onChange={(e) => setSelectedCollection(e.target.value || null)}
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                    >
+                      <option value="">Select a collection...</option>
+                      {collections.map((collection) => (
+                        <option key={collection.id} value={collection.id}>
+                          {collection.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Research Phrase Input */}
+                {selectionMode === 'phrase' && (
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={researchPhrase}
+                      onChange={(e) => setResearchPhrase(e.target.value)}
+                      placeholder="Enter your research interests (e.g., 'machine learning for drug discovery')"
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                    />
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <button
+                  onClick={handleSavePreferences}
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium button-terracotta"
+                >
+                  {isSaving ? 'Saving...' : 'Save Settings'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -393,15 +409,10 @@ export function DiscoverTab({ userId, preferredCount }: DiscoverTabProps) {
         <RssFeedView userId={userId} />
       )}
 
-      {/* Alerts Slide-out Panel */}
-      {showAlertsPanel && (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowAlertsPanel(false)}
-          />
-          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-card border-l border-border shadow-xl">
-            <AlertsManagementPanel userId={userId} onClose={() => setShowAlertsPanel(false)} />
+      {viewMode === 'alerts' && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+          <div className="rounded-xl border border-border bg-card whisper-shadow">
+            <AlertsManagementPanel userId={userId} onClose={() => setViewMode('discovery')} />
           </div>
         </div>
       )}

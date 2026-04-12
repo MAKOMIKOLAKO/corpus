@@ -8,9 +8,21 @@ import { normalizeUrl } from '@/lib/entryDedup';
 // Verify cron job authorization
 const CRON_SECRET = process.env.CRON_SECRET;
 
+function isVercelCronRequest(request: NextRequest): boolean {
+  return Boolean(request.headers.get('x-vercel-cron'));
+}
+
 function isCronAuthorized(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
-  return authHeader === `Bearer ${CRON_SECRET}`;
+  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
+    return true;
+  }
+
+  if (isVercelCronRequest(request)) {
+    return true;
+  }
+
+  return false;
 }
 
 async function runCronTasks() {
@@ -132,8 +144,16 @@ async function runRSSIngestion() {
   try {
     // Get all unique RSS feeds
     const sources = await prisma.source.findMany({
+      where: {
+        userSources: {
+          some: {}
+        }
+      },
       include: {
-        userSources: true
+        userSources: {
+          select: { id: true },
+          take: 1
+        }
       }
     });
 

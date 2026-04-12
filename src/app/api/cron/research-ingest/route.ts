@@ -8,9 +8,21 @@ import { Prisma } from '@prisma/client'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
+function isVercelCronRequest(request: NextRequest): boolean {
+  return Boolean(request.headers.get('x-vercel-cron'))
+}
+
 function isCronAuthorized(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization')
-  return authHeader === `Bearer ${CRON_SECRET}`
+  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
+    return true
+  }
+
+  if (isVercelCronRequest(request)) {
+    return true
+  }
+
+  return false
 }
 
 // ========== Ingestion Sources ==========
@@ -155,9 +167,11 @@ async function embedUnprocessedPapers(): Promise<{
   processed: number
   failed: number
 }> {
+  // FUTURE: Re-enable abstract: { not: null } filter when full abstracts are available
+  // Currently using title-only embedding for papers without abstracts from RSS snippets
   const unembedded = await prisma.candidatePaper.findMany({
-    where: { embeddedAt: null, abstract: { not: null } },
-    orderBy: { ingestedAt: 'desc' },
+    where: { embeddedAt: null },
+    orderBy: { ingestedAt: 'asc' },
     take: EMBED_LIMIT_PER_RUN, // cap per cron run to avoid serverless timeout
     select: { id: true, title: true, abstract: true },
   })
@@ -316,6 +330,57 @@ async function runIngestPipeline() {
   return results
 }
 
+async function runEmbedOnlyPipeline(embedByTitle: boolean) {
+  const results = {
+    arxivPapers: 0,
+    biorxivPapers: 0,
+    rssPapers: 0,
+    embedded: 0,
+    embedFailed: 0,
+  }
+
+  // Step 2: Embed unprocessed papers
+  console.log(`[research-ingest] Embedding unprocessed papers (embed-only mode${embedByTitle ? ', title-only' : ''})...`)
+  const unembedded = await prisma.candidatePaper.findMany({
+    where: { embeddedAt: null },
+    orderBy: { ingestedAt: 'asc' },
+    take: EMBED_LIMIT_PER_RUN,
+    select: { id: true, title: true, abstract: true },
+  })
+
+  let processed = 0
+  let failed = 0
+
+  for (let i = 0; i < unembedded.length; i += EMBED_BATCH_SIZE) {
+    const batch = unembedded.slice(i, i + EMBED_BATCH_SIZE)
+    const texts = batch.map((p) => buildPaperEmbeddingText(p.title, embedByTitle ? null : p.abstract))
+    try {
+      const embeddings = await embedBatch(texts)
+      for (let j = 0; j < batch.length; j++) {
+        const emb = embeddings[j]
+        if (!emb) continue
+        await prisma.candidatePaper.update({
+          where: { id: batch[j].id },
+          data: {
+            embedding: emb as Prisma.InputJsonValue,
+            embeddedAt: new Date(),
+          },
+        })
+        processed += 1
+      }
+    } catch (err) {
+      failed += batch.length
+      console.error(`[research-ingest] Embed-only batch ${i / EMBED_BATCH_SIZE} failed:`, err)
+    }
+  }
+
+  const embedResult = { processed, failed }
+  results.embedded = embedResult.processed
+  results.embedFailed = embedResult.failed
+
+  return results
+}
+
 export async function GET(request: NextRequest) {
   if (!isCronAuthorized(request)) {
     if (process.env.NODE_ENV === 'production') {
@@ -325,8 +390,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const { searchParams } = new URL(request.url)
+    const embedOnly = searchParams.get('embedOnly') === '1' || searchParams.get('embedOnly') === 'true'
+    const embedByTitle = searchParams.get('embedMode') === 'title' || searchParams.get('embedByTitle') === '1'
+
     console.log('[research-ingest] Starting...')
-    const results = await runIngestPipeline()
+    const results = embedOnly
+      ? await runEmbedOnlyPipeline(embedByTitle)
+      : await runIngestPipeline()
     console.log('[research-ingest] Complete:', results)
     return NextResponse.json({ success: true, ...results })
   } catch (err) {

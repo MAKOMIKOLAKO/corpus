@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { normalizeTitle } from '@/lib/alerts';
 import { analytics } from '@/lib/analytics';
+import { saveEntryForUser } from '@/lib/globalEntryService';
 
 type AlertEntryRecord = {
   id: string;
@@ -54,6 +55,9 @@ export async function approveAlertEntry(userId: string, containerId: string, ent
 
   const doi = alertEntry.metadata?.doi ?? null;
   const normalizedAlertTitle = normalizeTitle(alertEntry.title);
+  const metadataGlobalEntryId = typeof alertEntry.metadata?.globalEntryId === 'string'
+    ? alertEntry.metadata.globalEntryId
+    : null;
 
   const existingEntries = await prisma.entry.findMany({
     where: { userId },
@@ -70,8 +74,75 @@ export async function approveAlertEntry(userId: string, containerId: string, ent
     existingEntryId = byTitle?.id ?? null;
   }
 
+  let existingGlobalEntryId: string | null = metadataGlobalEntryId;
+  if (!existingGlobalEntryId && doi) {
+    const byDoi = await prisma.globalEntry.findUnique({
+      where: { doi },
+      select: { id: true },
+    });
+    existingGlobalEntryId = byDoi?.id ?? null;
+  }
+  if (!existingGlobalEntryId) {
+    const byTitle = await prisma.globalEntry.findFirst({
+      where: {
+        normalizedTitle: normalizedAlertTitle,
+      },
+      select: { id: true },
+    });
+    existingGlobalEntryId = byTitle?.id ?? null;
+  }
+
+  const existingUserEntry = existingGlobalEntryId
+    ? await prisma.userEntry.findUnique({
+      where: {
+        userId_globalEntryId: {
+          userId,
+          globalEntryId: existingGlobalEntryId,
+        },
+      },
+      select: { id: true },
+    })
+    : null;
+
   let finalEntryId = existingEntryId;
   const createdNew = !existingEntryId;
+  let finalGlobalEntryId = existingGlobalEntryId;
+  let finalUserEntryId = existingUserEntry?.id ?? null;
+
+  if (!finalUserEntryId) {
+    const result = await saveEntryForUser(
+      userId,
+      {
+        title: alertEntry.title,
+        authors: alertEntry.authors,
+        year: alertEntry.year,
+        abstract: alertEntry.abstract,
+        doi,
+        url: alertEntry.url,
+        source: 'SMART_ALERT',
+        rawContentType: 'PAPER',
+        metadata: alertEntry.metadata ?? null,
+      },
+      {
+        readingStatus: 'UNREAD',
+        addedVia: 'smart_alert',
+        addedByQueryId: alertEntry.container.watchQueryId,
+        collectionId: alertEntry.container.collectionId ?? undefined,
+      }
+    );
+
+    finalGlobalEntryId = result.globalEntryId;
+    finalUserEntryId = result.userEntryId;
+  } else if (alertEntry.container.collectionId) {
+    await prisma.userEntryCollection.create({
+      data: {
+        userEntryId: finalUserEntryId,
+        collectionId: alertEntry.container.collectionId,
+      },
+    }).catch(() => {
+      // Already linked
+    });
+  }
 
   if (!finalEntryId) {
     const created = await prisma.entry.create({
@@ -115,6 +186,24 @@ export async function approveAlertEntry(userId: string, containerId: string, ent
     await analytics.entrySaved(userId, created.id, created.contentType);
   }
 
+  if (finalGlobalEntryId) {
+    await prisma.signal.create({
+      data: {
+        userId,
+        type: 'ENTRY_SAVED',
+        globalEntryId: finalGlobalEntryId,
+        metadata: {
+          source: 'SMART_ALERT',
+          alertEntryId: alertEntry.id,
+          userEntryId: finalUserEntryId,
+        },
+        isPublic: false,
+      },
+    }).catch(() => {
+      // Non-fatal
+    });
+  }
+
   if (finalEntryId && alertEntry.container.collectionId) {
     const existingCollectionLink = await prisma.entryCollection.findUnique({
       where: {
@@ -143,7 +232,7 @@ export async function approveAlertEntry(userId: string, containerId: string, ent
 
   return {
     status: 'APPROVED' as const,
-    entryId: finalEntryId,
+    entryId: finalUserEntryId ?? finalEntryId,
     createdNew,
   };
 }
