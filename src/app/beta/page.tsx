@@ -4,8 +4,6 @@ import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 import BetaWelcomeModal from "@/components/BetaWelcomeModal";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default async function BetaPage() {
   const session = await getServerSession(authOptions);
@@ -73,7 +71,7 @@ export default async function BetaPage() {
         </p>
         <Link
           href={userId ? "/library" : "/login?callbackUrl=%2Fbeta"}
-          className={cn(buttonVariants({ size: "lg" }), "h-14 w-full text-base font-medium sm:w-auto sm:min-w-[280px]")}
+          className="group/button inline-flex h-14 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent bg-accent bg-clip-padding px-6 text-base font-medium text-accent-foreground outline-none transition-all select-none hover:bg-accent/80 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:min-w-[280px]"
         >
           {userId ? "Go to your library" : "Sign Up / Sign In"}
         </Link>
