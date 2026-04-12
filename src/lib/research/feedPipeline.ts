@@ -259,17 +259,31 @@ export async function generateDailyBrief(
     dismissedIds = new Set(profile.dismissedPaperIds)
   }
 
-  // Fetch candidate papers from last 7 days that have been embedded
-  // Only include arXiv and bioRxiv/medRxiv papers, exclude user RSS feeds
+  // Fetch embedded candidate papers from recent windows.
+  // Use publishedDate when available, but fall back to ingest/embed recency
+  // because many backlog papers are older by publication date.
+  // Only include arXiv and bioRxiv/medRxiv papers, exclude user RSS feeds.
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const candidates = await prisma.candidatePaper.findMany({
     where: {
       embeddedAt: { not: null },
-      publishedDate: { gte: sevenDaysAgo },
-      OR: [
-        { source: { startsWith: 'arXiv:' } },
-        { source: { equals: 'bioRxiv' } },
-        { source: { equals: 'medRxiv' } },
+      AND: [
+        {
+          OR: [
+            { publishedDate: { gte: sevenDaysAgo } },
+            { ingestedAt: { gte: thirtyDaysAgo } },
+            { embeddedAt: { gte: thirtyDaysAgo } },
+          ],
+        },
+        {
+          OR: [
+            { source: { startsWith: 'arXiv:' } },
+            { source: { contains: 'arxiv', mode: 'insensitive' } },
+            { source: { contains: 'biorxiv', mode: 'insensitive' } },
+            { source: { contains: 'medrxiv', mode: 'insensitive' } },
+          ],
+        },
       ],
     },
     orderBy: { publishedDate: 'desc' },
