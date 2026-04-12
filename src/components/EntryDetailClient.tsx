@@ -309,9 +309,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                                     </p>
                                     <p className="text-xs text-amber-700 dark:text-amber-300">
                                         Corpus found this paper based on your research interests and added it to your library.
-                                        <a href="/alerts" className="ml-1 underline hover:text-amber-600 dark:hover:text-amber-100">
-                                            Manage your Smart Alerts
-                                        </a>
                                     </p>
                                 </div>
                             </div>

@@ -238,8 +238,8 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
                 <button
                   onClick={() => setInputMethod('arxiv')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'arxiv'
-                    ? 'border-accent bg-accent/5 ring-shadow'
+                  className={`flex flex-col items-center gap-2 rounded-lg border p-4 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${inputMethod === 'arxiv'
+                    ? 'button-warm-sand border-border-strong text-content-primary'
                     : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
@@ -248,8 +248,8 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 </button>
                 <button
                   onClick={() => setInputMethod('pdf')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'pdf'
-                    ? 'border-accent bg-accent/5 ring-shadow'
+                  className={`flex flex-col items-center gap-2 rounded-lg border p-4 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${inputMethod === 'pdf'
+                    ? 'button-warm-sand border-border-strong text-content-primary'
                     : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
@@ -258,8 +258,8 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 </button>
                 <button
                   onClick={() => setInputMethod('text')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'text'
-                    ? 'border-accent bg-accent/5 ring-shadow'
+                  className={`flex flex-col items-center gap-2 rounded-lg border p-4 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${inputMethod === 'text'
+                    ? 'button-warm-sand border-border-strong text-content-primary'
                     : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
@@ -268,8 +268,8 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                 </button>
                 <button
                   onClick={() => setInputMethod('library')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${inputMethod === 'library'
-                    ? 'border-accent bg-accent/5 ring-shadow'
+                  className={`flex flex-col items-center gap-2 rounded-lg border p-4 text-[15px] font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${inputMethod === 'library'
+                    ? 'button-warm-sand border-border-strong text-content-primary'
                     : 'border-border hover:border-border-strong ring-shadow-warm'
                     }`}
                 >
@@ -290,7 +290,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="https://arxiv.org/abs/2301.00000 or 10.1000/xyz123"
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                      className="w-full rounded-lg border border-border bg-card px-4 py-3 text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     />
                     <button
                       onClick={handleLoadPaper}
@@ -330,7 +330,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Paste the full paper text or abstract here..."
                       rows={12}
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-none"
+                      className="w-full resize-none rounded-lg border border-border bg-card px-4 py-3 text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     />
                     <button
                       onClick={handleLoadPaper}
@@ -352,7 +352,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Search saved papers..."
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                      className="w-full rounded-lg border border-border bg-card px-4 py-3 text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     />
                     <p className="text-sm text-content-tertiary">
                       Library search coming soon
@@ -440,7 +440,7 @@ export function WorkspaceTab({ userId, plan }: WorkspaceTabProps) {
                                 key={`${section.title}-${index}`}
                                 onClick={() => setActiveSection(index)}
                                 className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors border ${activeSection === index
-                                  ? 'border-accent bg-accent/5 text-content-primary'
+                                  ? 'button-warm-sand border-border-strong text-content-primary'
                                   : 'border-transparent text-content-secondary hover:bg-card hover:border-border'
                                   }`}
                               >

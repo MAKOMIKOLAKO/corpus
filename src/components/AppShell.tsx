@@ -10,7 +10,7 @@ import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, Brain, Rss, FlaskConical } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, FlaskConical } from "lucide-react";
 
 export function AppShell({
   children,
@@ -28,6 +28,14 @@ export function AppShell({
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const desktopNavLinkClassName =
+    "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[15px] font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
+  const desktopNavLinkActiveClassName =
+    "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]";
+  const desktopNavLinkInactiveClassName =
+    "text-content-secondary hover:text-content-primary hover:bg-warm-sand";
+  const mobileNavLinkClassName =
+    "flex items-center gap-3 rounded-lg px-4 h-12 text-[15px] font-sans font-medium transition-colors";
 
   // Close menu when route changes
   useEffect(() => {
@@ -167,7 +175,7 @@ export function AppShell({
                   <>
                     <Link
                       href="/add"
-                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/add" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
+                      className={`${desktopNavLinkClassName} ${pathname === "/add" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
                       aria-current={pathname === "/add" ? "page" : undefined}
                     >
                       <Plus className="w-4 h-4" />
@@ -175,7 +183,7 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/library"
-                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/library" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
+                      className={`${desktopNavLinkClassName} ${pathname === "/library" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
                       aria-current={pathname === "/library" ? "page" : undefined}
                     >
                       <BookOpen className="w-4 h-4" />
@@ -183,7 +191,7 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/collections"
-                      className={`inline-flex items-center gap-2 text-sm font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg px-3 py-2 ${pathname === "/collections" ? "bg-terracotta text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px]" : "text-content-secondary hover:text-content-primary hover:bg-warm-sand"}`}
+                      className={`${desktopNavLinkClassName} ${pathname === "/collections" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
                       aria-current={pathname === "/collections" ? "page" : undefined}
                     >
                       <Folder className="w-4 h-4" />
@@ -191,20 +199,20 @@ export function AppShell({
                     </Link>
                     <Link
                       href="/connections"
-                      className={`inline-flex items-center gap-1.5 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname === "/connections" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      className={`${desktopNavLinkClassName} ${pathname === "/connections" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
                       aria-current={pathname === "/connections" ? "page" : undefined}
                     >
                       <Users className="w-4 h-4" />
                       connections
                       {pendingCount > 0 && (
-                        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] text-[10px] font-bold">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-terracotta text-white text-[10px] font-bold">
                           {pendingCount > 9 ? '9+' : pendingCount}
                         </span>
                       )}
                     </Link>
                     <Link
                       href="/research"
-                      className={`inline-flex items-center gap-2 text-sm font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1.5 ${pathname?.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/60"}`}
+                      className={`${desktopNavLinkClassName} ${pathname?.startsWith("/research") ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
                       aria-current={pathname?.startsWith("/research") ? "page" : undefined}
                     >
                       <FlaskConical className="w-4 h-4" />
@@ -212,10 +220,10 @@ export function AppShell({
                     </Link>
                     <ThemeToggle />
                     <NotificationDropdown />
-                    <div className="h-4 w-px shrink-0 bg-[var(--border)] mx-2" aria-hidden="true" />
+                    <div className="h-4 w-px shrink-0 bg-border mx-2" aria-hidden="true" />
                     <button
                       onClick={() => setShowFeedback(true)}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium leading-none hover:text-[var(--primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-md px-2 py-1"
+                      className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[15px] font-sans font-medium leading-none text-content-secondary transition-colors hover:text-content-primary hover:bg-warm-sand focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <MessageSquare className="w-4 h-4" />
                       feedback
@@ -231,7 +239,7 @@ export function AppShell({
               {/* Mobile Hamburger Button */}
               {session && (
                 <button
-                  className="md:hidden flex items-center justify-center p-2 text-[var(--foreground)] hover:bg-[var(--muted)] rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="md:hidden flex items-center justify-center rounded-lg p-2 text-content-primary transition-colors hover:bg-warm-sand focus:outline-none focus:ring-2 focus:ring-ring"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   aria-expanded={isMenuOpen}
                   aria-label="Toggle menu"
@@ -243,44 +251,44 @@ export function AppShell({
 
             {/* Mobile Navigation Menu */}
             {isMenuOpen && session && (
-              <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]/98 backdrop-blur animate-in slide-in-from-top duration-300">
+              <div className="md:hidden border-t border-border bg-background/95 backdrop-blur animate-in slide-in-from-top duration-300">
                 <nav className="flex flex-col p-4 space-y-2">
                   <Link
                     href="/add"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/add" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                    className={`${mobileNavLinkClassName} ${pathname === "/add" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
                   >
                     <Plus className="w-5 h-5" />
                     add
                   </Link>
                   <Link
                     href="/library"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/library" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                    className={`${mobileNavLinkClassName} ${pathname === "/library" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
                   >
                     <BookOpen className="w-5 h-5" />
                     library
                   </Link>
                   <Link
                     href="/collections"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/collections" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                    className={`${mobileNavLinkClassName} ${pathname === "/collections" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
                   >
                     <Folder className="w-5 h-5" />
                     collections
                   </Link>
                   <Link
                     href="/connections"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname === "/connections" ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "hover:bg-[var(--muted)]"}`}
+                    className={`${mobileNavLinkClassName} ${pathname === "/connections" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
                   >
                     <Users className="w-5 h-5" />
                     connections
                     {pendingCount > 0 && (
-                      <span className="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] text-xs font-bold">
+                      <span className="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-terracotta text-white text-xs font-bold">
                         {pendingCount > 9 ? '9+' : pendingCount}
                       </span>
                     )}
                   </Link>
                   <Link
                     href="/research"
-                    className={`flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium transition-colors ${pathname?.startsWith("/research") ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"}`}
+                    className={`${mobileNavLinkClassName} ${pathname?.startsWith("/research") ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
                   >
                     <FlaskConical className="w-5 h-5" />
                     research
@@ -289,22 +297,22 @@ export function AppShell({
                     <NotificationDropdown />
                   </div>
                   <div className="px-4 py-2">
-                    <p className="text-xs text-[var(--muted-foreground)] mb-2 uppercase tracking-wider font-semibold">Appearance</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12px] text-content-tertiary">Appearance</p>
                     <ThemeToggle />
                   </div>
                   <button
                     onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}
-                    className="flex items-center gap-3 px-4 h-12 rounded-md text-base font-medium hover:bg-[var(--muted)] transition-colors text-left"
+                    className="flex h-12 items-center gap-3 rounded-lg px-4 text-left text-[15px] font-sans font-medium text-content-secondary transition-colors hover:bg-warm-sand hover:text-content-primary"
                   >
                     <MessageSquare className="w-5 h-5" />
                     feedback
                   </button>
-                  <div className="h-px bg-[var(--border)] my-2" />
+                  <div className="my-2 h-px bg-border" />
                   <div className="px-4 py-2">
-                    <p className="text-xs text-[var(--muted-foreground)] mb-2 uppercase tracking-wider font-semibold">Account</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12px] text-content-tertiary">Account</p>
                     <Link
                       href="/account/settings"
-                      className="flex items-center gap-3 h-12 rounded-md text-base font-medium hover:bg-[var(--muted)] transition-colors border border-[var(--border)] px-4"
+                      className="flex h-12 items-center gap-3 rounded-lg border border-border px-4 text-[15px] font-sans font-medium text-content-secondary transition-colors hover:bg-warm-sand hover:text-content-primary"
                     >
                       Settings
                     </Link>
