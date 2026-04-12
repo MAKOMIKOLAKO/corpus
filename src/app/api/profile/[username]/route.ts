@@ -18,9 +18,10 @@ export async function GET(
       name: true,
       bio: true,
       plan: true,
+      isBetaTester: true,
       createdAt: true,
     },
-  });
+  } as any);
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
