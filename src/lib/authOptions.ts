@@ -103,6 +103,13 @@ export const authOptions: NextAuthOptions = {
               name: (profile?.name ?? token.name ?? null) as string | null,
               username: `user_${Math.random().toString(36).substring(2, 10)}` // Random username
             },
+            select: {
+              id: true,
+              plan: true,
+              username: true,
+              entriesCount: true,
+              personalCollectionsCount: true,
+            },
           })) as any;
           (token as any).userId = dbUser.id;
           (token as any).plan = dbUser.plan || 'FREE';
