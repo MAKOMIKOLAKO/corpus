@@ -15,9 +15,13 @@ import type { DailyFeedResponse, PaperSummaryObject, ClusterObject } from '@/lib
 interface ResearchFeedClientProps {
   userId: string
   preferredCount: number
-  selectionMode?: 'profile' | 'collection' | 'phrase'
-  selectedCollection?: string | null
-  researchPhrase?: string
+}
+
+type SelectionMode = 'profile' | 'collection' | 'phrase'
+
+interface CollectionOption {
+  id: string
+  name: string
 }
 
 type FeedState =
@@ -57,14 +61,57 @@ function FeedSkeleton() {
   )
 }
 
-export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'profile', selectedCollection, researchPhrase }: ResearchFeedClientProps) {
+export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClientProps) {
   const [state, setState] = useState<FeedState>({ status: 'loading' })
   const [trendsExpanded, setTrendsExpanded] = useState(false)
   const [activeClusterFilter, setActiveClusterFilter] = useState<string | null>(null)
   const [showClusters, setShowClusters] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('profile')
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
+  const [researchPhrase, setResearchPhrase] = useState('')
+  const [collections, setCollections] = useState<CollectionOption[]>([])
   const [dailyCount, setDailyCount] = useState(preferredCount)
+  const [savingPreferences, setSavingPreferences] = useState(false)
   const [savingCount, setSavingCount] = useState(false)
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const [collectionsRes, prefsRes] = await Promise.all([
+          fetch('/api/collections'),
+          fetch('/api/research/preferences'),
+        ])
+
+        if (collectionsRes.ok) {
+          const data = await collectionsRes.json()
+          const owned = Array.isArray(data?.owned) ? data.owned : []
+          const member = Array.isArray(data?.member) ? data.member : []
+          const allCollections: CollectionOption[] = [...owned, ...member]
+            .filter((collection) => collection?.id && collection?.name)
+            .map((collection) => ({ id: collection.id, name: collection.name }))
+          setCollections(allCollections)
+        }
+
+        if (prefsRes.ok) {
+          const prefs = await prefsRes.json()
+          if (prefs.selectionMode === 'profile' || prefs.selectionMode === 'collection' || prefs.selectionMode === 'phrase') {
+            setSelectionMode(prefs.selectionMode)
+          }
+          if (typeof prefs.selectedCollection === 'string') {
+            setSelectedCollection(prefs.selectedCollection)
+          }
+          if (typeof prefs.researchPhrase === 'string') {
+            setResearchPhrase(prefs.researchPhrase)
+          }
+        }
+      } catch {
+        // noop
+      }
+    }
+
+    loadSettings()
+  }, [userId])
 
   const fetchFeed = useCallback(async (forceRefresh = false) => {
     setState({ status: 'loading' })
@@ -174,6 +221,23 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
     }
   }
 
+  async function saveFeedGenerationSettings() {
+    setSavingPreferences(true)
+    try {
+      await fetch('/api/research/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectionMode,
+          selectedCollection: selectionMode === 'collection' ? selectedCollection : null,
+          researchPhrase: selectionMode === 'phrase' ? researchPhrase : null,
+        }),
+      })
+    } finally {
+      setSavingPreferences(false)
+    }
+  }
+
   const feed = state.status === 'ready' ? state.feed : null
 
   const papers: PaperSummaryObject[] = feed?.papers ?? []
@@ -242,6 +306,76 @@ export function ResearchFeedClient({ userId, preferredCount, selectionMode = 'pr
                 className="overflow-hidden"
               >
                 <div className="mt-4 rounded-xl border border-border bg-card p-4">
+                  <p className="text-[13px] text-content-tertiary mb-3">Feed generation</p>
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    <button
+                      onClick={() => setSelectionMode('profile')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${selectionMode === 'profile'
+                        ? 'button-warm-sand text-content-primary'
+                        : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                        }`}
+                    >
+                      My Profile
+                    </button>
+                    <button
+                      onClick={() => setSelectionMode('collection')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${selectionMode === 'collection'
+                        ? 'button-warm-sand text-content-primary'
+                        : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                        }`}
+                    >
+                      From Collection
+                    </button>
+                    <button
+                      onClick={() => setSelectionMode('phrase')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${selectionMode === 'phrase'
+                        ? 'button-warm-sand text-content-primary'
+                        : 'bg-surface-sunken text-content-secondary hover:text-content-primary'
+                        }`}
+                    >
+                      Research Phrase
+                    </button>
+                  </div>
+
+                  {selectionMode === 'collection' && (
+                    <div className="mb-3">
+                      <select
+                        value={selectedCollection || ''}
+                        onChange={(e) => setSelectedCollection(e.target.value || null)}
+                        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] text-content-primary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      >
+                        <option value="">Select a collection...</option>
+                        {collections.map((collection) => (
+                          <option key={collection.id} value={collection.id}>
+                            {collection.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {selectionMode === 'phrase' && (
+                    <div className="mb-3">
+                      <input
+                        type="text"
+                        value={researchPhrase}
+                        onChange={(e) => setResearchPhrase(e.target.value)}
+                        placeholder="e.g. machine learning for drug discovery"
+                        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    onClick={saveFeedGenerationSettings}
+                    disabled={savingPreferences}
+                    className="mb-4 rounded-lg bg-accent px-3 py-1.5 text-[13px] text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-60"
+                  >
+                    {savingPreferences ? 'Saving…' : 'Save feed settings'}
+                  </button>
+
+                  <div className="mb-3 h-px bg-border" />
+
                   <p className="text-[13px] text-content-tertiary mb-3">Papers per day</p>
                   <div className="flex items-center gap-3">
                     <input
