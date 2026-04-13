@@ -133,11 +133,7 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
     SELECT "id", "embedding"::text AS "embeddingText"
     FROM "CandidatePaper"
     WHERE "embedding" IS NOT NULL
-      AND (
-        "publishedDate" >= ${thirtyDaysAgo}
-        OR "ingestedAt" >= ${thirtyDaysAgo}
-        OR "embeddedAt" >= ${thirtyDaysAgo}
-      )
+    LIMIT 1000
   `)
 
   console.log('[dailyResearchIndex] Raw rows returned:', rawRows.length)
