@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/prisma'
 import { getDailyBriefCached } from '@/lib/research/feedPipelineV2'
+import type { PaperSummaryObject } from '@/lib/research/feedPipelineV2'
 
 export async function GET(
   request: NextRequest,
@@ -25,6 +26,10 @@ export async function GET(
   try {
     const feed = await getDailyBriefCached(user.id)
     if (feed) {
+      const needsSummaries = feed.papers.some((p: PaperSummaryObject) => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
+      if (needsSummaries) {
+        return NextResponse.json({ status: 'ready', feed: { ...feed, needsLazySummaries: true } })
+      }
       return NextResponse.json({ status: 'ready', feed })
     }
     return NextResponse.json({ status: 'pending', feed: null, reason: 'no_cached_brief' })

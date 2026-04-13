@@ -111,5 +111,9 @@ async function handleGet(request: NextRequest) {
   console.log('[research-feed] Using overrides:', overrides)
 
   const fresh = await generateDailyBrief(user.id, overrides)
+  const needsSummaries = fresh.papers.some((p: PaperSummaryObject) => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
+  if (needsSummaries) {
+    return NextResponse.json({ ...fresh, needsLazySummaries: true })
+  }
   return NextResponse.json(fresh)
 }
