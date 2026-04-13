@@ -67,6 +67,10 @@ export interface ClusterObject {
   representativePaperIds: string[]
 }
 
+const MAX_CANDIDATES_FOR_SCORING = 5000
+const SCORING_BATCH_SIZE = 250
+const MAX_SCORED_POOL = 500
+
 function isValidEmbeddingVector(value: unknown): value is number[] {
   return (
     Array.isArray(value) &&
@@ -292,7 +296,7 @@ export async function generateDailyBrief(
     hasInterestVector: !!interestVector
   })
 
-  const candidates = await prisma.candidatePaper.findMany({
+  const candidateIndex = await prisma.candidatePaper.findMany({
     where: {
       embeddedAt: { not: null },
       AND: [
@@ -314,12 +318,21 @@ export async function generateDailyBrief(
       ],
     },
     orderBy: { publishedDate: 'desc' },
-    take: 5000,
+    take: MAX_CANDIDATES_FOR_SCORING,
+    select: {
+      id: true,
+      publishedDate: true,
+      candidateMetadata: true,
+    },
   })
 
-  console.log(`[feedPipeline] Found ${candidates.length} candidate papers`)
+  console.log(`[feedPipeline] Found ${candidateIndex.length} candidate papers`, {
+    cap: MAX_CANDIDATES_FOR_SCORING,
+    capped: candidateIndex.length >= MAX_CANDIDATES_FOR_SCORING,
+    batchSize: SCORING_BATCH_SIZE,
+  })
 
-  if (candidates.length === 0) {
+  if (candidateIndex.length === 0) {
     console.log(`[feedPipeline] No candidates found - returning empty brief`)
     return buildEmptyBrief(userId, today, preferredCount, 'No embedded papers found for the past 7 days.')
   }
@@ -336,7 +349,7 @@ export async function generateDailyBrief(
 
   // Compute p95 citation velocity across today's corpus
   const p95Velocity = computeP95Velocity(
-    candidates.map((c) => ({
+    candidateIndex.map((c) => ({
       citationCount: (c.candidateMetadata as Record<string, number> | null)?.citationCount ?? null,
       publishedDate: c.publishedDate,
     }))
@@ -344,7 +357,21 @@ export async function generateDailyBrief(
 
   // Step 5: Score all candidates
   const scored: Array<{
-    candidate: typeof candidates[0]
+    candidate: {
+      id: string
+      title: string
+      authors: string[]
+      abstract: string | null
+      source: string | null
+      doi: string | null
+      url: string | null
+      publishedDate: Date | null
+      embedding: unknown
+      candidateMetadata: unknown
+      plainSummary: string | null
+      technicalSummary: string | null
+      noveltyTag: string | null
+    }
     subScores: SubScores
     composite: number
   }> = []
@@ -358,84 +385,121 @@ export async function generateDailyBrief(
     lowScore: 0
   }
 
-  console.log(`[feedPipeline] Starting scoring for ${candidates.length} candidates`)
+  console.log(`[feedPipeline] Starting scoring for ${candidateIndex.length} candidates`)
 
-  for (const c of candidates) {
-    const rawEmbedding = c.embedding
-    if (!rawEmbedding) {
-      filteredOut.noEmbedding++
-      continue
+  let processedCandidates = 0
+  for (let i = 0; i < candidateIndex.length; i += SCORING_BATCH_SIZE) {
+    const batchIds = candidateIndex.slice(i, i + SCORING_BATCH_SIZE).map((c) => c.id)
+    const batchCandidates = await prisma.candidatePaper.findMany({
+      where: { id: { in: batchIds } },
+      select: {
+        id: true,
+        title: true,
+        authors: true,
+        abstract: true,
+        source: true,
+        doi: true,
+        url: true,
+        publishedDate: true,
+        embedding: true,
+        candidateMetadata: true,
+        plainSummary: true,
+        technicalSummary: true,
+        noveltyTag: true,
+      },
+    })
+
+    processedCandidates += batchCandidates.length
+
+    for (const c of batchCandidates) {
+      const rawEmbedding = c.embedding
+      if (!rawEmbedding) {
+        filteredOut.noEmbedding++
+        continue
+      }
+
+      if (!isValidEmbeddingVector(rawEmbedding)) {
+        filteredOut.invalidEmbedding++
+        continue
+      }
+
+      const embedding = rawEmbedding
+
+      if (interestVector && embedding.length !== interestVector.length) {
+        filteredOut.embeddingLengthMismatch++
+        continue
+      }
+
+      // Step 6: Filter
+      if (dismissedIds.has(c.id)) {
+        filteredOut.dismissed++
+        continue
+      }
+      if (savedDois.has(c.doi ?? '')) {
+        filteredOut.alreadySaved++
+        continue
+      }
+      if (savedPaperIds.has(c.id)) {
+        filteredOut.alreadySaved++
+        continue
+      }
+
+      const meta = c.candidateMetadata as PaperMetadata | null
+
+      const semantic = interestVector
+        ? computeSemanticScore(embedding, interestVector)
+        : 0.5
+
+      const domain = computeDomainScore(meta?.domainTags ?? [], domainWeights)
+
+      const novelty = computeNoveltyScore(
+        embedding,
+        c.publishedDate,
+        recentLibraryEmbeddings
+      )
+
+      const citation = computeCitationScore(
+        (c.candidateMetadata as Record<string, number> | null)?.citationCount ?? null,
+        c.publishedDate,
+        p95Velocity
+      )
+
+      const engagement = computeEngagementScore(0, 0) // Cohort < 5 for new system
+
+      const subScores: SubScores = { semantic, domain, novelty, citation, engagement }
+      const composite = computeCompositeScore(subScores, true) // small cohort
+
+      if (!Number.isFinite(composite)) {
+        filteredOut.lowScore++
+        continue
+      }
+
+      // Filter below threshold
+      if (composite < 0.25) {
+        filteredOut.lowScore++
+        continue
+      }
+
+      scored.push({ candidate: c, subScores, composite })
     }
 
-    if (!isValidEmbeddingVector(rawEmbedding)) {
-      filteredOut.invalidEmbedding++
-      continue
+    if (scored.length > MAX_SCORED_POOL * 2) {
+      scored.sort((a, b) => b.composite - a.composite)
+      scored.length = MAX_SCORED_POOL
     }
+  }
 
-    const embedding = rawEmbedding
-
-    if (interestVector && embedding.length !== interestVector.length) {
-      filteredOut.embeddingLengthMismatch++
-      continue
-    }
-
-    // Step 6: Filter
-    if (dismissedIds.has(c.id)) {
-      filteredOut.dismissed++
-      continue
-    }
-    if (savedDois.has(c.doi ?? '')) {
-      filteredOut.alreadySaved++
-      continue
-    }
-    if (savedPaperIds.has(c.id)) {
-      filteredOut.alreadySaved++
-      continue
-    }
-
-    const meta = c.candidateMetadata as PaperMetadata | null
-
-    const semantic = interestVector
-      ? computeSemanticScore(embedding, interestVector)
-      : 0.5
-
-    const domain = computeDomainScore(meta?.domainTags ?? [], domainWeights)
-
-    const novelty = computeNoveltyScore(
-      embedding,
-      c.publishedDate,
-      recentLibraryEmbeddings
-    )
-
-    const citation = computeCitationScore(
-      (c.candidateMetadata as Record<string, number> | null)?.citationCount ?? null,
-      c.publishedDate,
-      p95Velocity
-    )
-
-    const engagement = computeEngagementScore(0, 0) // Cohort < 5 for new system
-
-    const subScores: SubScores = { semantic, domain, novelty, citation, engagement }
-    const composite = computeCompositeScore(subScores, true) // small cohort
-
-    if (!Number.isFinite(composite)) {
-      filteredOut.lowScore++
-      continue
-    }
-
-    // Filter below threshold
-    if (composite < 0.25) {
-      filteredOut.lowScore++
-      continue
-    }
-
-    scored.push({ candidate: c, subScores, composite })
+  if (scored.length > MAX_SCORED_POOL) {
+    scored.sort((a, b) => b.composite - a.composite)
+    scored.length = MAX_SCORED_POOL
   }
 
   console.log(`[feedPipeline] Scoring complete:`, {
-    totalCandidates: candidates.length,
+    totalCandidates: candidateIndex.length,
+    processedCandidates,
     passedFilters: scored.length,
-    filteredOut
+    filteredOut,
+    scoredPoolCap: MAX_SCORED_POOL,
   })
 
   // Sort and take top 100
