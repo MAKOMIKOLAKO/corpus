@@ -133,6 +133,7 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
     SELECT "id", "embedding"::text AS "embeddingText"
     FROM "CandidatePaper"
     WHERE "embedding" IS NOT NULL
+      AND ("source" LIKE 'arXiv:%' OR "source" = 'bioRxiv' OR "source" = 'medRxiv')
     LIMIT 1000
   `)
 
