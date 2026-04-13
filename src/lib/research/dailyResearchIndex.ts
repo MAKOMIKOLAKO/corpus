@@ -27,11 +27,17 @@ function isVector(v: unknown): v is number[] {
 function parseVectorText(value: string | null): number[] | null {
   if (!value) return null
   const trimmed = value.trim()
-  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return null
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) {
+    console.log('[parseVectorText] Invalid format (no brackets):', trimmed.slice(0, 50))
+    return null
+  }
   const body = trimmed.slice(1, -1)
   if (!body) return null
   const parsed = body.split(',').map((x) => Number(x.trim()))
-  if (parsed.some((n) => !Number.isFinite(n))) return null
+  if (parsed.some((n) => !Number.isFinite(n))) {
+    console.log('[parseVectorText] Invalid number in vector')
+    return null
+  }
   return parsed
 }
 
@@ -134,9 +140,16 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
       )
   `)
 
+  console.log('[dailyResearchIndex] Raw rows returned:', rawRows.length)
+  if (rawRows.length > 0) {
+    console.log('[dailyResearchIndex] Sample embeddingText:', rawRows[0].embeddingText?.slice(0, 100))
+  }
+
   const rows = rawRows
     .map((r) => ({ id: r.id, embedding: parseVectorText(r.embeddingText) }))
     .filter((r): r is { id: string; embedding: number[] } => isVector(r.embedding))
+
+  console.log('[dailyResearchIndex] Rows after parsing:', rows.length)
 
   const k = Math.max(8, Math.min(12, Math.floor(Math.sqrt(Math.max(1, rows.length)))))
   const clusters = simpleDeterministicKMeans(rows, k)
