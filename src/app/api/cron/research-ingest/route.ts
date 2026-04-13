@@ -160,7 +160,7 @@ async function ingestPapers(papers: RawPaper[]): Promise<number> {
 // ========== Embedding Step ==========
 
 const EMBED_BATCH_SIZE = 50
-const EMBED_LIMIT_PER_RUN = Number(process.env.RESEARCH_EMBED_LIMIT ?? 100)
+const EMBED_LIMIT_PER_RUN = Number(process.env.RESEARCH_EMBED_LIMIT ?? 1000)
 const ENABLE_METADATA_ENRICHMENT = process.env.RESEARCH_EMBED_METADATA === 'true'
 
 function vectorLiteral(v: number[]): string {
@@ -298,26 +298,6 @@ async function embedUnprocessedPapers(): Promise<{
   return { processed, failed }
 }
 
-// ========== User RSS Sources ==========
-
-async function ingestUserRSSFeeds(): Promise<number> {
-  const sources = await prisma.source.findMany({
-    include: { userSources: { take: 1 } }, // only fetch sources with at least one subscriber
-  })
-  const activeSources = sources.filter((s) => s.userSources.length > 0)
-
-  let created = 0
-  for (const source of activeSources) {
-    const papers = await ingestFromFeed(source.feedUrl, source.title ?? source.domain)
-    created += await ingestPapers(papers)
-    await prisma.source.update({
-      where: { id: source.id },
-      data: { lastFetchedAt: new Date() },
-    })
-  }
-  return created
-}
-
 // ========== Main Handler ==========
 
 async function runIngestPipeline() {
@@ -352,9 +332,7 @@ async function runIngestPipeline() {
   results.biorxivPapers = await ingestPapers(bioPapers)
   console.log(`[research-ingest] bioRxiv/medRxiv: ${results.biorxivPapers} new papers`)
 
-  // Step 1c: User RSS subscriptions
-  results.rssPapers = await ingestUserRSSFeeds()
-  console.log(`[research-ingest] User RSS: ${results.rssPapers} new papers`)
+  results.rssPapers = 0
 
   // Step 2: Embed unprocessed papers
   console.log('[research-ingest] Embedding unprocessed papers...')
