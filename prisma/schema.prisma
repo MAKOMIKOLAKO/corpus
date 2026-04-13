@@ -65,7 +65,6 @@ model User {
   userSources               UserSource[]
   watchQueries              WatchQuery[]
   researchProfile           UserResearchProfile?
-  dailyClusters             DailyCluster[]
   dailyPaperScores          DailyPaperScore[]
   dailyBriefs               DailyBrief[]
   readingSessions           PaperReadingSession[]
@@ -656,8 +655,9 @@ model CandidatePaper {
   url               String?
   source            String?
   publishedDate     DateTime?
-  // Embedding stored as Json array (number[]) since pgvector is not installed
-  embedding         Json?     // number[] — 768-dim Gemini text-embedding-004
+  embedding         Unsupported("vector(768)")?
+  clusterId         Int?
+  clusterDate       DateTime?
   candidateMetadata Json?     // { methodology, domainTags, noveltyIndicators, complexityScore }
   plainSummary      String?   // cached, user-agnostic
   technicalSummary  String?   // cached, user-agnostic
@@ -667,10 +667,13 @@ model CandidatePaper {
 
   dailyScores       DailyPaperScore[]
   readingSessions   PaperReadingSession[]
+  dailySetLinks     DailyCandidateSetPaper[]
+  dailyClusterLinks DailyClusterPaper[]
 
   @@index([publishedDate, embeddedAt])
   @@index([doi])
   @@index([ingestedAt])
+  @@index([clusterDate, clusterId])
 }
 
 model UserResearchProfile {
@@ -693,18 +696,50 @@ model UserResearchProfile {
 }
 
 model DailyCluster {
-  id           String   @id @default(cuid())
-  userId       String
-  date         DateTime // store as date-only (truncate to midnight UTC)
-  clusterIndex Int
-  label        String
-  centroid     Json     // number[] embedding centroid
-  paperIds     String[] // CandidatePaper ids in this cluster
+  id                String   @id @default(cuid())
+  date              DateTime // store as date-only (truncate to midnight UTC)
+  clusterId         Int
+  centroidEmbedding Unsupported("vector(768)")
+  size              Int
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  papers DailyClusterPaper[]
 
-  @@unique([userId, date, clusterIndex])
-  @@index([userId, date])
+  @@unique([date, clusterId])
+  @@index([date])
+}
+
+model DailyClusterPaper {
+  id               String @id @default(cuid())
+  dailyClusterId   String
+  candidatePaperId String
+
+  dailyCluster   DailyCluster   @relation(fields: [dailyClusterId], references: [id], onDelete: Cascade)
+  candidatePaper CandidatePaper @relation(fields: [candidatePaperId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyClusterId, candidatePaperId])
+  @@index([candidatePaperId])
+}
+
+model DailyCandidateSet {
+  id        String   @id @default(cuid())
+  date      DateTime @unique // date-only UTC bucket
+  createdAt DateTime @default(now())
+
+  papers DailyCandidateSetPaper[]
+
+  @@index([date])
+}
+
+model DailyCandidateSetPaper {
+  id                  String @id @default(cuid())
+  dailyCandidateSetId String
+  candidatePaperId    String
+
+  dailyCandidateSet DailyCandidateSet @relation(fields: [dailyCandidateSetId], references: [id], onDelete: Cascade)
+  candidatePaper    CandidatePaper    @relation(fields: [candidatePaperId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyCandidateSetId, candidatePaperId])
+  @@index([candidatePaperId])
 }
 
 model DailyPaperScore {
