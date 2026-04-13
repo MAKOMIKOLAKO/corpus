@@ -136,56 +136,48 @@ async function handleGet(request: NextRequest) {
 
   console.log('[research-feed] Using overrides:', overrides)
 
-  const generatePromise = generateDailyBrief(user.id, overrides).catch((err) => {
-    console.error(`[feed/route] Generation failed for ${user.id}:`, err)
-    console.error(`[feed/route] Error stack:`, err?.stack)
-    console.error(`[feed/route] Error details:`, {
-      message: err?.message,
-      name: err?.name,
-      code: err?.code,
-      overrides
+  const generatePromise = generateDailyBrief(user.id, overrides)
+    .then((result) => {
+      console.log('[research-feed] Background job completed:', {
+        jobId,
+        paperCount: result?.papers?.length || 0
+      })
+      return result
     })
-    return null
-  })
+    .catch((err) => {
+      console.error(`[feed/route] Background generation failed:`, err)
+      console.error(`[feed/route] Background error details:`, {
+        message: err?.message,
+        stack: err?.stack
+      })
+      throw err
+    })
+    .finally(() => {
+      console.log('[research-feed] Background job cleaned up:', jobId)
+      pendingJobs.delete(jobId)
+    })
+
+  pendingJobs.set(jobId, generatePromise)
 
   // Race: if generation completes within ~9.5s, return it directly
   console.log('[research-feed] Racing generation against timeout...')
-  const raceResult = await Promise.race([generatePromise, timeoutPromise])
+  const timeoutResult = { timeout: true } as const
+  const raceResult = await Promise.race([
+    generatePromise,
+    timeoutPromise.then(() => timeoutResult),
+  ])
 
-  if (raceResult !== null && Date.now() - startTime < 9500) {
+  if (!('timeout' in raceResult) && Date.now() - startTime < 9500) {
     console.log('[research-feed] Generation completed within timeout:', {
       duration: Date.now() - startTime,
       paperCount: raceResult.papers?.length || 0
     })
+    pendingJobs.delete(jobId)
     return NextResponse.json(raceResult)
   }
 
   console.log('[research-feed] Generation taking too long, switching to background job')
-  // Generation is taking too long — run it in the background, return 202
-  if (!pendingJobs.has(jobId)) {
-    const bgJob = generateDailyBrief(user.id, overrides)
-      .then((result) => {
-        console.log('[research-feed] Background job completed:', {
-          jobId,
-          paperCount: result?.papers?.length || 0
-        })
-        return result
-      })
-      .catch((err) => {
-        console.error(`[feed/route] Background generation failed:`, err)
-        console.error(`[feed/route] Background error details:`, {
-          message: err?.message,
-          stack: err?.stack
-        })
-        return null
-      })
-      .finally(() => {
-        console.log('[research-feed] Background job cleaned up:', jobId)
-        pendingJobs.delete(jobId)
-      })
-
-    pendingJobs.set(jobId, bgJob)
-  }
+  // Generation continues in the shared in-flight promise in pendingJobs.
 
   return NextResponse.json({ status: 'pending', jobId }, { status: 202 })
 }
