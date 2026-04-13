@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 
 type PaperRow = {
   id: string
-  embedding: number[] | null
+  embeddingText: string | null
 }
 
 type ClusterSeed = {
@@ -22,6 +22,17 @@ function todayUTC(): Date {
 
 function isVector(v: unknown): v is number[] {
   return Array.isArray(v) && v.length > 0 && v.every((x) => typeof x === 'number' && Number.isFinite(x))
+}
+
+function parseVectorText(value: string | null): number[] | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return null
+  const body = trimmed.slice(1, -1)
+  if (!body) return null
+  const parsed = body.split(',').map((x) => Number(x.trim()))
+  if (parsed.some((n) => !Number.isFinite(n))) return null
+  return parsed
 }
 
 function deterministicShuffle<T>(arr: T[], seed: number): T[] {
@@ -113,7 +124,7 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
   const rawRows = await prisma.$queryRaw<PaperRow[]>(Prisma.sql`
-    SELECT "id", "embedding"
+    SELECT "id", "embedding"::text AS "embeddingText"
     FROM "CandidatePaper"
     WHERE "embedding" IS NOT NULL
       AND (
@@ -123,7 +134,9 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
       )
   `)
 
-  const rows = rawRows.filter((r) => isVector(r.embedding)).map((r) => ({ id: r.id, embedding: r.embedding as number[] }))
+  const rows = rawRows
+    .map((r) => ({ id: r.id, embedding: parseVectorText(r.embeddingText) }))
+    .filter((r): r is { id: string; embedding: number[] } => isVector(r.embedding))
 
   const k = Math.max(8, Math.min(12, Math.floor(Math.sqrt(Math.max(1, rows.length)))))
   const clusters = simpleDeterministicKMeans(rows, k)

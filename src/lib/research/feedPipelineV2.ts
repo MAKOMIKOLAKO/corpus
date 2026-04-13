@@ -73,6 +73,7 @@ type TopKRow = {
 }
 
 type CachedPaperRow = Omit<TopKRow, 'distance'>
+type CandidateSetDateRow = { date: Date }
 
 const TOP_K = 260
 
@@ -331,6 +332,21 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
   const savedIds = await getUserSavedCandidateIds(userId)
   const vector = vectorLiteral(resolved.vector)
 
+  const candidateSetDateRows = await prisma.$queryRaw<CandidateSetDateRow[]>(Prisma.sql`
+    SELECT "date"
+    FROM "DailyCandidateSet"
+    WHERE "date" <= ${today}
+    ORDER BY "date" DESC
+    LIMIT 1
+  `)
+  const fallbackCandidateSetDateRows = await prisma.$queryRaw<CandidateSetDateRow[]>(Prisma.sql`
+    SELECT "date"
+    FROM "DailyCandidateSet"
+    ORDER BY "date" DESC
+    LIMIT 1
+  `)
+  const candidateSetDate = candidateSetDateRows[0]?.date ?? fallbackCandidateSetDateRows[0]?.date ?? today
+
   const topK = await prisma.$queryRaw<TopKRow[]>(Prisma.sql`
     SELECT
       cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
@@ -339,7 +355,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     FROM "CandidatePaper" cp
     INNER JOIN "DailyCandidateSetPaper" dcsp ON dcsp."candidatePaperId" = cp."id"
     INNER JOIN "DailyCandidateSet" dcs ON dcs."id" = dcsp."dailyCandidateSetId"
-    WHERE dcs."date" = ${today}
+    WHERE dcs."date" = ${candidateSetDate}
       AND cp."embedding" IS NOT NULL
     ORDER BY cp."embedding" <=> ${vector}::vector ASC
     LIMIT ${TOP_K}
