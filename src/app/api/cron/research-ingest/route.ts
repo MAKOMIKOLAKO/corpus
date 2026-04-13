@@ -174,10 +174,24 @@ async function embedUnprocessedPapers(): Promise<{
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY
   console.log(`[research-ingest] GEMINI_API_KEY present: ${Boolean(apiKey)}`)
 
+  await prisma.$executeRaw(Prisma.sql`
+    UPDATE "CandidatePaper"
+    SET "embeddedAt" = NULL
+    WHERE "embedding" IS NULL
+      AND ("source" LIKE 'arXiv:%' OR "source" = 'bioRxiv' OR "source" = 'medRxiv')
+  `)
+
   // FUTURE: Re-enable abstract: { not: null } filter when full abstracts are available
   // Currently using title-only embedding for papers without abstracts from RSS snippets
   const unembedded = await prisma.candidatePaper.findMany({
-    where: { embeddedAt: null },
+    where: {
+      embeddedAt: null,
+      OR: [
+        { source: { startsWith: 'arXiv:' } },
+        { source: 'bioRxiv' },
+        { source: 'medRxiv' },
+      ],
+    },
     orderBy: { ingestedAt: 'asc' },
     take: EMBED_LIMIT_PER_RUN, // cap per cron run to avoid serverless timeout
     select: { id: true, title: true, abstract: true },
@@ -317,16 +331,14 @@ async function runIngestPipeline() {
 
   // Step 1: Ingest from arXiv RSS
   console.log('[research-ingest] Fetching arXiv feeds...')
-  const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
-
   const arxivPapers: RawPaper[] = []
   for (const feedUrl of ARXIV_RSS_FEEDS) {
     const feedLabel = feedUrl.split('/').pop() ?? 'arXiv'
     const papers = await ingestFromFeed(feedUrl, `arXiv:${feedLabel}`)
-    arxivPapers.push(
-      ...papers.filter((p) => !p.publishedDate || p.publishedDate >= fortyEightHoursAgo)
-    )
+    console.log(`[research-ingest] Fetched ${papers.length} papers from ${feedLabel}`)
+    arxivPapers.push(...papers)
   }
+  console.log(`[research-ingest] Total arXiv papers fetched: ${arxivPapers.length}`)
   results.arxivPapers = await ingestPapers(arxivPapers)
   console.log(`[research-ingest] arXiv: ${results.arxivPapers} new papers`)
 
@@ -335,9 +347,7 @@ async function runIngestPipeline() {
   for (const feedUrl of BIORXIV_FEEDS) {
     const label = feedUrl.includes('medrxiv') ? 'medRxiv' : 'bioRxiv'
     const papers = await ingestFromFeed(feedUrl, label)
-    bioPapers.push(
-      ...papers.filter((p) => !p.publishedDate || p.publishedDate >= fortyEightHoursAgo)
-    )
+    bioPapers.push(...papers)
   }
   results.biorxivPapers = await ingestPapers(bioPapers)
   console.log(`[research-ingest] bioRxiv/medRxiv: ${results.biorxivPapers} new papers`)
@@ -366,8 +376,22 @@ async function runEmbedOnlyPipeline(embedByTitle: boolean) {
 
   // Step 2: Embed unprocessed papers
   console.log(`[research-ingest] Embedding unprocessed papers (embed-only mode${embedByTitle ? ', title-only' : ''})...`)
+  await prisma.$executeRaw(Prisma.sql`
+    UPDATE "CandidatePaper"
+    SET "embeddedAt" = NULL
+    WHERE "embedding" IS NULL
+      AND ("source" LIKE 'arXiv:%' OR "source" = 'bioRxiv' OR "source" = 'medRxiv')
+  `)
+
   const unembedded = await prisma.candidatePaper.findMany({
-    where: { embeddedAt: null },
+    where: {
+      embeddedAt: null,
+      OR: [
+        { source: { startsWith: 'arXiv:' } },
+        { source: 'bioRxiv' },
+        { source: 'medRxiv' },
+      ],
+    },
     orderBy: { ingestedAt: 'asc' },
     take: EMBED_LIMIT_PER_RUN,
     select: { id: true, title: true, abstract: true },
