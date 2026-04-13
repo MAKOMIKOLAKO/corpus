@@ -140,7 +140,10 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
       }
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        setState({ status: 'error', message: json?.error ?? 'Failed to load feed' })
+        const message = json?.details
+          ? `${json?.error ?? 'Failed to load feed'}: ${json.details}`
+          : (json?.error ?? 'Failed to load feed')
+        setState({ status: 'error', message })
         return
       }
       const feed: DailyFeedResponse = await res.json()

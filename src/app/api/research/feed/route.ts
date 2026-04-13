@@ -11,6 +11,20 @@ import { getDailyBriefCached, generateDailyBrief, type FeedOverrides } from '@/l
 const pendingJobs = new Map<string, Promise<any>>()
 
 export async function GET(request: NextRequest) {
+  try {
+    return await handleGet(request)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    const stack = err instanceof Error ? err.stack : undefined
+    console.error('[research-feed] Unhandled route error:', { message, stack })
+    return NextResponse.json(
+      { error: 'Research feed failed', details: message },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleGet(request: NextRequest) {
   console.log('[research-feed] API called')
 
   const session = await getServerSession(authOptions)
