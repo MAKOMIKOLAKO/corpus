@@ -68,24 +68,28 @@ export async function GET(request: NextRequest) {
   const hasOverrides = modeOverride || collectionIdOverride || phraseOverride
   if (!forceRefresh && !hasOverrides) {
     console.log('[research-feed] Checking for cached feed...')
-    const cached = await getDailyBriefCached(user.id)
-    if (cached) {
-      console.log('[research-feed] Found cached feed:', {
-        paperCount: cached.papers.length,
-        fromCache: cached.fromCache,
-        generatedAt: cached.generatedAt
-      })
-      // Check if feed has summaries (if not, it was pre-generated via cron)
-      const needsSummaries = cached.papers.some(p => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
-      if (needsSummaries) {
-        console.log('[research-feed] Feed needs lazy summaries')
-        // Return feed without summaries, frontend will lazy-load them
-        return NextResponse.json({ ...cached, needsLazySummaries: true })
+    try {
+      const cached = await getDailyBriefCached(user.id)
+      if (cached) {
+        console.log('[research-feed] Found cached feed:', {
+          paperCount: cached.papers.length,
+          fromCache: cached.fromCache,
+          generatedAt: cached.generatedAt
+        })
+        // Check if feed has summaries (if not, it was pre-generated via cron)
+        const needsSummaries = cached.papers.some(p => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
+        if (needsSummaries) {
+          console.log('[research-feed] Feed needs lazy summaries')
+          // Return feed without summaries, frontend will lazy-load them
+          return NextResponse.json({ ...cached, needsLazySummaries: true })
+        }
+        console.log('[research-feed] Returning cached feed with summaries')
+        return NextResponse.json(cached)
       }
-      console.log('[research-feed] Returning cached feed with summaries')
-      return NextResponse.json(cached)
+      console.log('[research-feed] No cached feed found')
+    } catch (err) {
+      console.error('[research-feed] Cached feed lookup failed, continuing with fresh generation:', err)
     }
-    console.log('[research-feed] No cached feed found')
   } else {
     console.log('[research-feed] Skipping cache due to overrides or refresh')
   }
@@ -120,6 +124,13 @@ export async function GET(request: NextRequest) {
 
   const generatePromise = generateDailyBrief(user.id, overrides).catch((err) => {
     console.error(`[feed/route] Generation failed for ${user.id}:`, err)
+    console.error(`[feed/route] Error stack:`, err?.stack)
+    console.error(`[feed/route] Error details:`, {
+      message: err?.message,
+      name: err?.name,
+      code: err?.code,
+      overrides
+    })
     return null
   })
 
@@ -148,6 +159,10 @@ export async function GET(request: NextRequest) {
       })
       .catch((err) => {
         console.error(`[feed/route] Background generation failed:`, err)
+        console.error(`[feed/route] Background error details:`, {
+          message: err?.message,
+          stack: err?.stack
+        })
         return null
       })
       .finally(() => {

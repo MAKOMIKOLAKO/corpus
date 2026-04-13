@@ -67,6 +67,14 @@ export interface ClusterObject {
   representativePaperIds: string[]
 }
 
+function isValidEmbeddingVector(value: unknown): value is number[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((n) => typeof n === 'number' && Number.isFinite(n))
+  )
+}
+
 /** Truncated UTC date for DailyBrief deduplication (midnight UTC). */
 function todayUTC(): Date {
   const d = new Date()
@@ -343,6 +351,8 @@ export async function generateDailyBrief(
 
   let filteredOut = {
     noEmbedding: 0,
+    invalidEmbedding: 0,
+    embeddingLengthMismatch: 0,
     dismissed: 0,
     alreadySaved: 0,
     lowScore: 0
@@ -351,9 +361,21 @@ export async function generateDailyBrief(
   console.log(`[feedPipeline] Starting scoring for ${candidates.length} candidates`)
 
   for (const c of candidates) {
-    const embedding = c.embedding as number[] | null
-    if (!embedding) {
+    const rawEmbedding = c.embedding
+    if (!rawEmbedding) {
       filteredOut.noEmbedding++
+      continue
+    }
+
+    if (!isValidEmbeddingVector(rawEmbedding)) {
+      filteredOut.invalidEmbedding++
+      continue
+    }
+
+    const embedding = rawEmbedding
+
+    if (interestVector && embedding.length !== interestVector.length) {
+      filteredOut.embeddingLengthMismatch++
       continue
     }
 
@@ -396,6 +418,11 @@ export async function generateDailyBrief(
     const subScores: SubScores = { semantic, domain, novelty, citation, engagement }
     const composite = computeCompositeScore(subScores, true) // small cohort
 
+    if (!Number.isFinite(composite)) {
+      filteredOut.lowScore++
+      continue
+    }
+
     // Filter below threshold
     if (composite < 0.25) {
       filteredOut.lowScore++
@@ -435,9 +462,9 @@ export async function generateDailyBrief(
   const papersForClustering = top100
     .map((item) => ({
       id: item.candidate.id,
-      embedding: item.candidate.embedding as number[],
+      embedding: item.candidate.embedding,
     }))
-    .filter((p) => p.embedding != null)
+    .filter((p) => isValidEmbeddingVector(p.embedding)) as Array<{ id: string; embedding: number[] }>
 
   const clusters = clusterPapers(papersForClustering, 8, 12)
 
