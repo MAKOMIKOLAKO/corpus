@@ -163,6 +163,10 @@ const EMBED_BATCH_SIZE = 50
 const EMBED_LIMIT_PER_RUN = Number(process.env.RESEARCH_EMBED_LIMIT ?? 100)
 const ENABLE_METADATA_ENRICHMENT = process.env.RESEARCH_EMBED_METADATA === 'true'
 
+function vectorLiteral(v: number[]): string {
+  return `[${v.join(',')}]`
+}
+
 async function embedUnprocessedPapers(): Promise<{
   processed: number
   failed: number
@@ -212,13 +216,13 @@ async function embedUnprocessedPapers(): Promise<{
   const embeddingEntries = Array.from(embeddingMap.entries())
   for (const [paperId, embedding] of embeddingEntries) {
     try {
-      await prisma.candidatePaper.update({
-        where: { id: paperId },
-        data: {
-          embedding: embedding as Prisma.InputJsonValue,
-          embeddedAt: new Date(),
-        },
-      })
+      const embeddingVector = vectorLiteral(embedding)
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE "CandidatePaper"
+        SET "embedding" = ${embeddingVector}::vector,
+            "embeddedAt" = NOW()
+        WHERE "id" = ${paperId}
+      `)
       processed++
     } catch (err) {
       console.error(`[research-ingest] Failed to save embedding for ${paperId}:`, err)
@@ -359,13 +363,13 @@ async function runEmbedOnlyPipeline(embedByTitle: boolean) {
       for (let j = 0; j < batch.length; j++) {
         const emb = embeddings[j]
         if (!emb) continue
-        await prisma.candidatePaper.update({
-          where: { id: batch[j].id },
-          data: {
-            embedding: emb as Prisma.InputJsonValue,
-            embeddedAt: new Date(),
-          },
-        })
+        const embeddingVector = vectorLiteral(emb)
+        await prisma.$executeRaw(Prisma.sql`
+          UPDATE "CandidatePaper"
+          SET "embedding" = ${embeddingVector}::vector,
+              "embeddedAt" = NOW()
+          WHERE "id" = ${batch[j].id}
+        `)
         processed += 1
       }
     } catch (err) {

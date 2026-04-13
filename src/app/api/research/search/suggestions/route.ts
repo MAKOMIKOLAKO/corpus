@@ -47,11 +47,12 @@ export async function GET(request: NextRequest) {
     let clusterLabels: string[] = []
     if (dailyBrief && dailyBrief.selectedPaperIds.length > 0) {
       const clusters = await prisma.dailyCluster.findMany({
-        where: { userId: user.id, date: today },
-        select: { label: true },
+        where: { date: today },
+        select: { clusterId: true },
+        orderBy: { clusterId: 'asc' },
         take: 3,
       })
-      clusterLabels = clusters.map((c) => c.label)
+      clusterLabels = clusters.map((c) => `Topic ${c.clusterId + 1}`)
     }
 
     // Combine and deduplicate suggestions

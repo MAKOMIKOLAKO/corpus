@@ -5,6 +5,32 @@ import prisma from '@/lib/prisma'
 import { isPro } from '@/lib/plans'
 import { embedText } from '@/lib/research/embeddings'
 import { cosineSimilarity } from '@/lib/research/embeddings'
+import { Prisma } from '@prisma/client'
+
+type SearchCandidateRow = {
+  id: string
+  title: string
+  authors: string[]
+  abstract: string | null
+  url: string | null
+  source: string | null
+  publishedDate: Date | null
+  doi: string | null
+  arxivId: string | null
+  plainSummary: string | null
+  embeddingText: string | null
+}
+
+function parseVectorText(value: string | null): number[] | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return null
+  const body = trimmed.slice(1, -1)
+  if (!body) return null
+  const parsed = body.split(',').map((x) => Number(x.trim()))
+  if (parsed.some((n) => !Number.isFinite(n))) return null
+  return parsed
+}
 
 interface SearchRequest {
   query?: string
@@ -147,25 +173,29 @@ export async function POST(request: NextRequest) {
     const subscribedSourceIds = new Set(userSources.map((us) => us.sourceId))
 
     // Step 4: Get all CandidatePapers with embeddings
-    const candidatePapers = await prisma.candidatePaper.findMany({
-      where: {
-        embeddedAt: { not: null },
-      },
-      select: {
-        id: true,
-        title: true,
-        authors: true,
-        abstract: true,
-        url: true,
-        source: true,
-        publishedDate: true,
-        doi: true,
-        arxivId: true,
-        embedding: true,
-        plainSummary: true,
-      },
-      take: 500, // Limit initial fetch for performance
-    })
+    const candidateRows = await prisma.$queryRaw<SearchCandidateRow[]>(Prisma.sql`
+      SELECT
+        cp."id",
+        cp."title",
+        cp."authors",
+        cp."abstract",
+        cp."url",
+        cp."source",
+        cp."publishedDate",
+        cp."doi",
+        cp."arxivId",
+        cp."plainSummary",
+        cp."embedding"::text AS "embeddingText"
+      FROM "CandidatePaper" cp
+      WHERE cp."embeddedAt" IS NOT NULL
+      ORDER BY cp."ingestedAt" DESC
+      LIMIT 500
+    `)
+
+    const candidatePapers = candidateRows.map((paper) => ({
+      ...paper,
+      embedding: parseVectorText(paper.embeddingText),
+    }))
 
     // Step 5: Run keyword and semantic search in parallel
     const queryLower = query.toLowerCase()
