@@ -699,7 +699,7 @@ model DailyCluster {
   id                String   @id @default(cuid())
   date              DateTime // store as date-only (truncate to midnight UTC)
   clusterId         Int
-  centroidEmbedding Unsupported("vector(768)")
+  centroidEmbedding Unsupported("vector(3072)")
   size              Int
 
   papers DailyClusterPaper[]
