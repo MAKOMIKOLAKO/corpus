@@ -11,8 +11,11 @@ import { getDailyBriefCached, generateDailyBrief, type FeedOverrides } from '@/l
 const pendingJobs = new Map<string, Promise<any>>()
 
 export async function GET(request: NextRequest) {
+  console.log('[research-feed] API called')
+
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
+    console.log('[research-feed] Unauthorized - no session')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -22,10 +25,14 @@ export async function GET(request: NextRequest) {
   })
 
   if (!user) {
+    console.log('[research-feed] User not found:', session.user.email)
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
+  console.log('[research-feed] User found:', { userId: user.id, plan: user.plan })
+
   if (!isPro(user.plan)) {
+    console.log('[research-feed] Access denied - not Pro plan:', user.plan)
     return NextResponse.json(
       { error: 'Pro required', reason: 'research_feed_pro_only' },
       { status: 403 }
@@ -35,6 +42,7 @@ export async function GET(request: NextRequest) {
   // Rate limit: 10 requests per user per hour
   const rl = rateLimit(`research-feed:${user.id}`, 10, 60 * 60 * 1000)
   if (!rl.success) {
+    console.log('[research-feed] Rate limit exceeded for user:', user.id)
     return NextResponse.json(
       { error: 'Rate limit exceeded. Try again later.' },
       { status: 429 }
@@ -48,20 +56,38 @@ export async function GET(request: NextRequest) {
   const phraseOverride = searchParams.get('phrase')
   const forceRefresh = searchParams.get('refresh') === '1'
 
+  console.log('[research-feed] Request params:', {
+    modeOverride,
+    collectionIdOverride,
+    phraseOverride,
+    forceRefresh
+  })
+
   // Check for cached brief first. Keep feed stable across page reloads;
   // only regenerate when explicitly requested via refresh=1.
   const hasOverrides = modeOverride || collectionIdOverride || phraseOverride
   if (!forceRefresh && !hasOverrides) {
+    console.log('[research-feed] Checking for cached feed...')
     const cached = await getDailyBriefCached(user.id)
     if (cached) {
+      console.log('[research-feed] Found cached feed:', {
+        paperCount: cached.papers.length,
+        fromCache: cached.fromCache,
+        generatedAt: cached.generatedAt
+      })
       // Check if feed has summaries (if not, it was pre-generated via cron)
       const needsSummaries = cached.papers.some(p => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
       if (needsSummaries) {
+        console.log('[research-feed] Feed needs lazy summaries')
         // Return feed without summaries, frontend will lazy-load them
         return NextResponse.json({ ...cached, needsLazySummaries: true })
       }
+      console.log('[research-feed] Returning cached feed with summaries')
       return NextResponse.json(cached)
     }
+    console.log('[research-feed] No cached feed found')
+  } else {
+    console.log('[research-feed] Skipping cache due to overrides or refresh')
   }
 
   // No existing brief — check if a job is already running
@@ -69,13 +95,17 @@ export async function GET(request: NextRequest) {
   today.setUTCHours(0, 0, 0, 0)
   const jobId = `${user.id}-${today.toISOString().split('T')[0]}`
 
+  console.log('[research-feed] Job ID:', jobId)
+
   if (pendingJobs.has(jobId)) {
+    console.log('[research-feed] Job already in progress:', jobId)
     // Job already in progress — return 202 so client polls
     return NextResponse.json({ status: 'pending', jobId }, { status: 202 })
   }
 
   // Start generation with a 10-second timeout check
   const startTime = Date.now()
+  console.log('[research-feed] Starting feed generation...')
 
   // For fast connections: attempt synchronous generation first with 10s timeout
   const timeoutPromise = new Promise<null>((resolve) =>
@@ -86,23 +116,44 @@ export async function GET(request: NextRequest) {
     ? { mode: modeOverride || undefined, collectionId: collectionIdOverride || undefined, phrase: phraseOverride || undefined }
     : undefined
 
+  console.log('[research-feed] Using overrides:', overrides)
+
   const generatePromise = generateDailyBrief(user.id, overrides).catch((err) => {
     console.error(`[feed/route] Generation failed for ${user.id}:`, err)
     return null
   })
 
   // Race: if generation completes within ~9.5s, return it directly
+  console.log('[research-feed] Racing generation against timeout...')
   const raceResult = await Promise.race([generatePromise, timeoutPromise])
 
   if (raceResult !== null && Date.now() - startTime < 9500) {
+    console.log('[research-feed] Generation completed within timeout:', {
+      duration: Date.now() - startTime,
+      paperCount: raceResult.papers?.length || 0
+    })
     return NextResponse.json(raceResult)
   }
 
+  console.log('[research-feed] Generation taking too long, switching to background job')
   // Generation is taking too long — run it in the background, return 202
   if (!pendingJobs.has(jobId)) {
     const bgJob = generateDailyBrief(user.id, overrides)
-      .catch((err) => console.error(`[feed/route] Background generation failed:`, err))
-      .finally(() => pendingJobs.delete(jobId))
+      .then((result) => {
+        console.log('[research-feed] Background job completed:', {
+          jobId,
+          paperCount: result?.papers?.length || 0
+        })
+        return result
+      })
+      .catch((err) => {
+        console.error(`[feed/route] Background generation failed:`, err)
+        return null
+      })
+      .finally(() => {
+        console.log('[research-feed] Background job cleaned up:', jobId)
+        pendingJobs.delete(jobId)
+      })
 
     pendingJobs.set(jobId, bgJob)
   }
