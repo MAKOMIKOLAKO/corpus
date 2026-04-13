@@ -176,13 +176,24 @@ export async function generateDailyBrief(
   userId: string,
   overrides?: FeedOverrides
 ): Promise<DailyFeedResponse> {
+  const startTime = Date.now()
+  console.log(`[feedPipeline] Starting generation for user ${userId}`, { overrides })
   const today = todayUTC()
 
   // Get user profile with feed selection preferences
   const profile = await getOrCreateProfile(userId) as any
+  console.log(`[feedPipeline] Profile loaded:`, {
+    hasInterestVector: !!profile.interestVector,
+    lastRecomputedAt: profile.lastRecomputedAt,
+    mode: profile.feedSelectionMode,
+    collectionId: profile.feedSelectionCollectionId
+  })
+
   const mode = overrides?.mode || (profile.feedSelectionMode as 'profile' | 'collection' | 'phrase') || 'profile'
   const collectionId = overrides?.collectionId || profile.feedSelectionCollectionId || null
   const phrase = overrides?.phrase || profile.feedSelectionPhrase || null
+
+  console.log(`[feedPipeline] Using selection mode:`, { mode, collectionId, phrase })
 
   // Determine interest vector based on selection mode
   let interestVector: number[] | null = null
@@ -266,6 +277,13 @@ export async function generateDailyBrief(
   // Only include arXiv and bioRxiv/medRxiv papers, exclude user RSS feeds.
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+  console.log(`[feedPipeline] Fetching candidates from:`, {
+    sevenDaysAgo: sevenDaysAgo.toISOString(),
+    thirtyDaysAgo: thirtyDaysAgo.toISOString(),
+    hasInterestVector: !!interestVector
+  })
+
   const candidates = await prisma.candidatePaper.findMany({
     where: {
       embeddedAt: { not: null },
@@ -291,7 +309,10 @@ export async function generateDailyBrief(
     take: 5000,
   })
 
+  console.log(`[feedPipeline] Found ${candidates.length} candidate papers`)
+
   if (candidates.length === 0) {
+    console.log(`[feedPipeline] No candidates found - returning empty brief`)
     return buildEmptyBrief(userId, today, preferredCount, 'No embedded papers found for the past 7 days.')
   }
 
@@ -320,14 +341,35 @@ export async function generateDailyBrief(
     composite: number
   }> = []
 
+  let filteredOut = {
+    noEmbedding: 0,
+    dismissed: 0,
+    alreadySaved: 0,
+    lowScore: 0
+  }
+
+  console.log(`[feedPipeline] Starting scoring for ${candidates.length} candidates`)
+
   for (const c of candidates) {
     const embedding = c.embedding as number[] | null
-    if (!embedding) continue
+    if (!embedding) {
+      filteredOut.noEmbedding++
+      continue
+    }
 
     // Step 6: Filter
-    if (dismissedIds.has(c.id)) continue
-    if (savedDois.has(c.doi ?? '')) continue
-    if (savedPaperIds.has(c.id)) continue
+    if (dismissedIds.has(c.id)) {
+      filteredOut.dismissed++
+      continue
+    }
+    if (savedDois.has(c.doi ?? '')) {
+      filteredOut.alreadySaved++
+      continue
+    }
+    if (savedPaperIds.has(c.id)) {
+      filteredOut.alreadySaved++
+      continue
+    }
 
     const meta = c.candidateMetadata as PaperMetadata | null
 
@@ -355,16 +397,32 @@ export async function generateDailyBrief(
     const composite = computeCompositeScore(subScores, true) // small cohort
 
     // Filter below threshold
-    if (composite < 0.25) continue
+    if (composite < 0.25) {
+      filteredOut.lowScore++
+      continue
+    }
 
     scored.push({ candidate: c, subScores, composite })
   }
+
+  console.log(`[feedPipeline] Scoring complete:`, {
+    totalCandidates: candidates.length,
+    passedFilters: scored.length,
+    filteredOut
+  })
 
   // Sort and take top 100
   scored.sort((a, b) => b.composite - a.composite)
   const top100 = scored.slice(0, 100)
 
+  console.log(`[feedPipeline] Top 100 scores range:`, {
+    highest: top100[0]?.composite || 0,
+    lowest: top100[top100.length - 1]?.composite || 0,
+    count: top100.length
+  })
+
   if (top100.length < 3) {
+    console.log(`[feedPipeline] Insufficient papers after scoring: ${top100.length}`)
     return buildEmptyBrief(
       userId,
       today,
@@ -384,9 +442,12 @@ export async function generateDailyBrief(
   const clusters = clusterPapers(papersForClustering, 8, 12)
 
   // Step 8: Diversity-aware selection
+  console.log(`[feedPipeline] Starting diversity selection...`)
   const selected = diversitySelect(top100, clusters, preferredCount)
+  console.log(`[feedPipeline] Selected ${selected.length} papers after diversity selection`)
 
   const skipSummarization = overrides?.skipSummarization ?? false
+  console.log(`[feedPipeline] Skip summarization:`, skipSummarization)
 
   // Step 9: Summarization — label clusters + generate summaries + why explanations
   // Skip if skipSummarization is true (for cron pre-generation)
@@ -396,12 +457,15 @@ export async function generateDailyBrief(
   let emergingTrends: string | null = null
 
   if (!skipSummarization) {
+    console.log(`[feedPipeline] Starting summarization...`)
     clusterLabels = await labelClusters(clusters, top100)
+    console.log(`[feedPipeline] Cluster labels generated`)
 
     // Generate or retrieve summaries for selected papers
     summaryResults = await Promise.allSettled(
       selected.map((item) => ensurePaperSummaries(item.candidate))
     )
+    console.log(`[feedPipeline] Paper summaries generated`)
 
     // Build why explanations
     const userCtx = buildUserContext(domainWeights, recentEntryTitles)
@@ -417,12 +481,14 @@ export async function generateDailyBrief(
         )
       )
     )
+    console.log(`[feedPipeline] Why explanations generated`)
 
     // Emerging trends
     const selectedTitles = selected.map((s) => s.candidate.title)
     const allClusterLabels = Object.values(clusterLabels)
     try {
       emergingTrends = await generateEmergingTrends(allClusterLabels, selectedTitles)
+      console.log(`[feedPipeline] Emerging trends generated`)
     } catch (err) {
       console.error('[feedPipeline] Emerging trends generation failed:', err)
     }
@@ -438,6 +504,7 @@ export async function generateDailyBrief(
       whyExplanations[item.candidate.id] = why
     }
   } else {
+    console.log(`[feedPipeline] Skipping summarization, using generic labels`)
     // When skipping summarization, use generic cluster labels
     clusterLabels = {}
     for (const cluster of clusters) {
@@ -567,7 +634,7 @@ export async function generateDailyBrief(
     },
   })
 
-  return {
+  const result = {
     date: today.toISOString().split('T')[0],
     userId,
     preferredCount,
@@ -578,6 +645,16 @@ export async function generateDailyBrief(
     generatedAt: brief.generatedAt.toISOString(),
     fromCache: false,
   }
+
+  console.log(`[feedPipeline] Feed generation complete:`, {
+    userId,
+    paperCount: paperObjects.length,
+    clusterCount: clusterObjects.length,
+    hasEmergingTrends: !!emergingTrends,
+    generationTime: Date.now() - startTime
+  })
+
+  return result
 }
 
 // ===== Helpers =====
