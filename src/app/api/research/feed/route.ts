@@ -4,11 +4,7 @@ import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/prisma'
 import { isPro } from '@/lib/plans'
 import { rateLimit } from '@/lib/rateLimit'
-import { getDailyBriefCached, generateDailyBrief, type FeedOverrides } from '@/lib/research/feedPipeline'
-
-// In-memory job tracking (per-process; cleared on restart)
-// Sufficient for single-user scenario — brief is persisted to DB once done.
-const pendingJobs = new Map<string, Promise<any>>()
+import { getDailyBriefCached, generateDailyBrief, type FeedOverrides, type PaperSummaryObject } from '@/lib/research/feedPipelineV2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,7 +87,7 @@ async function handleGet(request: NextRequest) {
           generatedAt: cached.generatedAt
         })
         // Check if feed has summaries (if not, it was pre-generated via cron)
-        const needsSummaries = cached.papers.some(p => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
+        const needsSummaries = cached.papers.some((p: PaperSummaryObject) => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
         if (needsSummaries) {
           console.log('[research-feed] Feed needs lazy summaries')
           // Return feed without summaries, frontend will lazy-load them
@@ -108,76 +104,12 @@ async function handleGet(request: NextRequest) {
     console.log('[research-feed] Skipping cache due to overrides or refresh')
   }
 
-  // No existing brief — check if a job is already running
-  const today = new Date()
-  today.setUTCHours(0, 0, 0, 0)
-  const jobId = `${user.id}-${today.toISOString().split('T')[0]}`
-
-  console.log('[research-feed] Job ID:', jobId)
-
-  if (pendingJobs.has(jobId)) {
-    console.log('[research-feed] Job already in progress:', jobId)
-    // Job already in progress — return 202 so client polls
-    return NextResponse.json({ status: 'pending', jobId }, { status: 202 })
-  }
-
-  // Start generation with a 10-second timeout check
-  const startTime = Date.now()
-  console.log('[research-feed] Starting feed generation...')
-
-  // For fast connections: attempt synchronous generation first with 10s timeout
-  const timeoutPromise = new Promise<null>((resolve) =>
-    setTimeout(() => resolve(null), 9500)
-  )
-
   const overrides: FeedOverrides | undefined = hasOverrides
     ? { mode: modeOverride || undefined, collectionId: collectionIdOverride || undefined, phrase: phraseOverride || undefined }
     : undefined
 
   console.log('[research-feed] Using overrides:', overrides)
 
-  const generatePromise = generateDailyBrief(user.id, overrides)
-    .then((result) => {
-      console.log('[research-feed] Background job completed:', {
-        jobId,
-        paperCount: result?.papers?.length || 0
-      })
-      return result
-    })
-    .catch((err) => {
-      console.error(`[feed/route] Background generation failed:`, err)
-      console.error(`[feed/route] Background error details:`, {
-        message: err?.message,
-        stack: err?.stack
-      })
-      throw err
-    })
-    .finally(() => {
-      console.log('[research-feed] Background job cleaned up:', jobId)
-      pendingJobs.delete(jobId)
-    })
-
-  pendingJobs.set(jobId, generatePromise)
-
-  // Race: if generation completes within ~9.5s, return it directly
-  console.log('[research-feed] Racing generation against timeout...')
-  const timeoutResult = { timeout: true } as const
-  const raceResult = await Promise.race([
-    generatePromise,
-    timeoutPromise.then(() => timeoutResult),
-  ])
-
-  if (!('timeout' in raceResult) && Date.now() - startTime < 9500) {
-    console.log('[research-feed] Generation completed within timeout:', {
-      duration: Date.now() - startTime,
-      paperCount: raceResult.papers?.length || 0
-    })
-    pendingJobs.delete(jobId)
-    return NextResponse.json(raceResult)
-  }
-
-  console.log('[research-feed] Generation taking too long, switching to background job')
-  // Generation continues in the shared in-flight promise in pendingJobs.
-
-  return NextResponse.json({ status: 'pending', jobId }, { status: 202 })
+  const fresh = await generateDailyBrief(user.id, overrides)
+  return NextResponse.json(fresh)
 }

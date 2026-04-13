@@ -13,7 +13,7 @@ import {
   Tag,
 } from 'lucide-react'
 import Link from 'next/link'
-import type { PaperSummaryObject } from '@/lib/research/feedPipeline'
+import type { PaperSummaryObject } from '@/lib/research/feedPipelineV2'
 
 interface PaperCardProps {
   paper: PaperSummaryObject

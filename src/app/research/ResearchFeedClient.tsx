@@ -10,7 +10,7 @@ import {
   Settings2,
 } from 'lucide-react'
 import { PaperCard } from './PaperCard'
-import type { DailyFeedResponse, PaperSummaryObject, ClusterObject } from '@/lib/research/feedPipeline'
+import type { DailyFeedResponse, PaperSummaryObject, ClusterObject } from '@/lib/research/feedPipelineV2'
 
 interface ResearchFeedClientProps {
   userId: string

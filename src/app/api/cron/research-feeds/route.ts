@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { generateDailyBrief } from '@/lib/research/feedPipeline'
+import { generateDailyBrief } from '@/lib/research/feedPipelineV2'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -40,7 +40,7 @@ async function runFeedPreGeneration(): Promise<{
       // Check if daily brief already exists for today
       const today = new Date()
       today.setUTCHours(0, 0, 0, 0)
-      
+
       const existingBrief = await prisma.dailyBrief.findUnique({
         where: { userId_date: { userId: user.id, date: today } },
       })
