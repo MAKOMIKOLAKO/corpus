@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { parseFeed } from '@/lib/rssParser'
 import { normalizeTitle, normalizeFirstAuthor, normalizeDoi } from '@/lib/entryDedup'
-import { embedBatch, buildPaperEmbeddingText } from '@/lib/research/embeddings'
+import { embedBatch, embedText, buildPaperEmbeddingText } from '@/lib/research/embeddings'
 import { extractMetadata } from '@/lib/research/geminiResearch'
 import { Prisma } from '@prisma/client'
 
@@ -171,6 +171,9 @@ async function embedUnprocessedPapers(): Promise<{
   processed: number
   failed: number
 }> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY
+  console.log(`[research-ingest] GEMINI_API_KEY present: ${Boolean(apiKey)}`)
+
   // FUTURE: Re-enable abstract: { not: null } filter when full abstracts are available
   // Currently using title-only embedding for papers without abstracts from RSS snippets
   const unembedded = await prisma.candidatePaper.findMany({
@@ -195,13 +198,31 @@ async function embedUnprocessedPapers(): Promise<{
     try {
       const embeddings = await embedBatch(texts)
       for (let j = 0; j < batch.length; j++) {
-        if (embeddings[j]) {
+        if (embeddings[j] && embeddings[j].length > 0) {
           embeddingMap.set(batch[j].id, embeddings[j])
         }
       }
     } catch (err) {
-      console.error(`[research-ingest] Embedding batch ${i / EMBED_BATCH_SIZE} failed:`, err)
-      failed += batch.length
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error(`[research-ingest] Embedding batch ${i / EMBED_BATCH_SIZE} failed:`, errorMessage)
+      console.error(`[research-ingest] Sample text from failed batch:`, texts[0]?.slice(0, 100))
+
+      // Fallback: attempt single-item embedding to salvage partial progress
+      // when batch endpoint/model behavior is flaky.
+      for (let j = 0; j < batch.length; j++) {
+        try {
+          const single = await embedText(texts[j])
+          if (single && single.length > 0) {
+            embeddingMap.set(batch[j].id, single)
+          } else {
+            failed += 1
+          }
+        } catch (singleErr) {
+          const singleMessage = singleErr instanceof Error ? singleErr.message : String(singleErr)
+          console.error(`[research-ingest] Single embedding failed for ${batch[j].id}:`, singleMessage)
+          failed += 1
+        }
+      }
     }
 
     // 2-second pause between embedding batches
