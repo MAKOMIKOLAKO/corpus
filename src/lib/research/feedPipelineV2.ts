@@ -178,7 +178,7 @@ function rerankScore(row: TopKRow): number {
 }
 
 function selectDiverse(rows: TopKRow[], preferred: number): TopKRow[] {
-  const target = clampTarget(preferred)
+  const target = 5
   const sorted = [...rows].sort((a, b) => rerankScore(b) - rerankScore(a))
   return sorted.slice(0, target)
 }
@@ -193,7 +193,7 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
     return {
       date: today.toISOString().split('T')[0],
       userId,
-      preferredCount: 12,
+      preferredCount: 5,
       actualCount: 0,
       emergingTrends: brief.emergingTrendsParagraph,
       papers: [],
@@ -248,7 +248,7 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
   return {
     date: today.toISOString().split('T')[0],
     userId,
-    preferredCount: 12,
+    preferredCount: 5,
     actualCount: papers.length,
     emergingTrends: brief.emergingTrendsParagraph,
     papers,
@@ -266,7 +266,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     return {
       date: today.toISOString().split('T')[0],
       userId,
-      preferredCount: clampTarget(resolved.preferred),
+      preferredCount: 5,
       actualCount: 0,
       emergingTrends: null,
       papers: [],
@@ -374,7 +374,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
   return {
     date: today.toISOString().split('T')[0],
     userId,
-    preferredCount: clampTarget(resolved.preferred),
+    preferredCount: 5,
     actualCount: papers.length,
     emergingTrends: null,
     papers,
