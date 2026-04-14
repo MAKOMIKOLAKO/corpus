@@ -3,6 +3,14 @@ import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import SetupUsernameClient from './SetupUsernameClient';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function SetupUsernamePage() {
   const session = await getServerSession(authOptions);

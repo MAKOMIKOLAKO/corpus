@@ -2,50 +2,82 @@ import { MetadataRoute } from 'next'
 import prisma from '@/lib/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://usecorpus.app'
+  const baseUrl = 'https://usecorpus.app'
 
   // Static pages
-  const staticPages = [
+  const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      changeFrequency: 'daily' as const,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
       priority: 1,
     },
     {
       url: `${baseUrl}/pricing`,
-      changeFrequency: 'monthly' as const,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/privacy`,
-      changeFrequency: 'yearly' as const,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
       priority: 0.3,
     },
   ]
 
-  let publicCollectionPages: any[] = []
-
+  // Dynamic public collections
+  let collectionPages: MetadataRoute.Sitemap = []
   try {
-    // Get all public collections
-    const publicCollections = await prisma.collection.findMany({
+    const collections = await prisma.collection.findMany({
       where: {
-        publicSlug: { not: null }
+        isPublic: true,
+        publicSlug: {
+          not: null
+        }
       },
       select: {
-        publicSlug: true
+        publicSlug: true,
+        createdAt: true,
       },
-      take: 100 // Limit for sitemap during build
+      take: 1000, // Limit to prevent oversized sitemap
     })
 
-    // Public collection pages
-    publicCollectionPages = publicCollections.map((collection) => ({
+    collectionPages = collections.map((collection) => ({
       url: `${baseUrl}/c/${collection.publicSlug}`,
-      changeFrequency: 'weekly' as const,
+      lastModified: collection.createdAt,
+      changeFrequency: 'weekly',
       priority: 0.7,
     }))
   } catch (error) {
-    console.error('Error fetching data for sitemap:', error)
+    console.error('Error fetching collections for sitemap:', error)
   }
 
-  return [...staticPages, ...publicCollectionPages]
+  // Dynamic public profiles
+  let profilePages: MetadataRoute.Sitemap = []
+  try {
+    const profiles = await prisma.user.findMany({
+      where: {
+        username: {
+          not: null
+        }
+      },
+      select: {
+        username: true,
+        createdAt: true,
+      },
+      take: 1000, // Limit to prevent oversized sitemap
+    })
+
+    profilePages = profiles.map((profile) => ({
+      url: `${baseUrl}/profile/${profile.username}`,
+      lastModified: profile.createdAt,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+  } catch (error) {
+    console.error('Error fetching profiles for sitemap:', error)
+  }
+
+  return [...staticPages, ...collectionPages, ...profilePages]
 }

@@ -1,31 +1,57 @@
 "use client";
 
 interface SoftwareApplicationJsonLdProps {
-  url?: string;
+  name?: string;
   description?: string;
+  url?: string;
+  applicationCategory?: string;
+  operatingSystem?: string;
+  offers?: {
+    price?: string;
+    priceCurrency?: string;
+    availability?: string;
+  };
+  aggregateRating?: {
+    ratingValue?: number;
+    ratingCount?: number;
+  };
 }
 
-export default function SoftwareApplicationJsonLd({ 
-  url = "https://corpus-lemon.vercel.app", 
-  description = "Collaborative research platform for saving and sharing papers" 
+export default function SoftwareApplicationJsonLd({
+  name = "Corpus",
+  description = "Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.",
+  url = "https://usecorpus.app",
+  applicationCategory = "EducationalApplication",
+  operatingSystem = "Web",
+  offers = {
+    price: "7",
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+  },
+  aggregateRating,
 }: SoftwareApplicationJsonLdProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Corpus",
-    "url": url,
-    "description": description,
-    "applicationCategory": "EducationalApplication",
-    "operatingSystem": "Web",
-    "author": {
+    name,
+    description,
+    url,
+    applicationCategory,
+    operatingSystem,
+    offers,
+    ...(aggregateRating && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: aggregateRating.ratingValue,
+        ratingCount: aggregateRating.ratingCount,
+        bestRating: "5",
+        worstRating: "1",
+      },
+    }),
+    author: {
       "@type": "Person",
       "name": "Corpus Team"
     },
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    }
   };
 
   return (
