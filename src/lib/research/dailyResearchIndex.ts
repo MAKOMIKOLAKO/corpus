@@ -170,19 +170,13 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
     const batchSize = 100
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize)
-      const values = batch
-        .map(
-          (row) =>
-            `(gen_random_uuid()::text, ${Prisma.join([dailySetId, row.id])})`
-        )
-        .join(', ')
-      await prisma.$executeRaw(
-        Prisma.sql`
-          INSERT INTO "DailyCandidateSetPaper" ("id", "dailyCandidateSetId", "candidatePaperId")
-          VALUES ${Prisma.raw(values)}
-          ON CONFLICT DO NOTHING
-        `
-      )
+      await prisma.dailyCandidateSetPaper.createMany({
+        data: batch.map((row) => ({
+          dailyCandidateSetId: dailySetId,
+          candidatePaperId: row.id,
+        })),
+        skipDuplicates: true,
+      })
     }
   }
 
@@ -202,16 +196,13 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
     const batchSize = 100
     for (let i = 0; i < cluster.members.length; i += batchSize) {
       const batch = cluster.members.slice(i, i + batchSize)
-      const values = batch
-        .map((pid) => `(gen_random_uuid()::text, ${Prisma.join([dailyClusterId, pid])})`)
-        .join(', ')
-      await prisma.$executeRaw(
-        Prisma.sql`
-          INSERT INTO "DailyClusterPaper" ("id", "dailyClusterId", "candidatePaperId")
-          VALUES ${Prisma.raw(values)}
-          ON CONFLICT DO NOTHING
-        `
-      )
+      await prisma.dailyClusterPaper.createMany({
+        data: batch.map((pid) => ({
+          dailyClusterId: dailyClusterId,
+          candidatePaperId: pid,
+        })),
+        skipDuplicates: true,
+      })
     }
 
     await prisma.$executeRaw(
