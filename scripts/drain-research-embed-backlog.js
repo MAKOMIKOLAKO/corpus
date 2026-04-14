@@ -72,16 +72,50 @@ async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function computeBackoffMs(attempt, retryAfterHeader) {
+  const retryAfterSeconds = Number(retryAfterHeader)
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return Math.min(60000, retryAfterSeconds * 1000)
+  }
+  const jitter = Math.floor(Math.random() * 1000)
+  return Math.min(60000, 1500 * Math.pow(2, attempt) + jitter)
+}
+
 async function runOnce(endpoint, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {}
   const res = await fetch(endpoint, { method: 'POST', headers })
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const err = new Error(`HTTP ${res.status}: ${text}`)
+    err.status = res.status
+    err.retryAfter = res.headers.get('retry-after')
+    throw err
   }
 
   return res.json()
+}
+
+async function runOnceWithRetry(endpoint, token, maxRetries = 6) {
+  for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+    try {
+      return await runOnce(endpoint, token)
+    } catch (err) {
+      const status = Number(err?.status || 0)
+      const isTransient = status === 429 || status >= 500
+      if (!isTransient || attempt === maxRetries - 1) {
+        throw err
+      }
+
+      const waitMs = computeBackoffMs(attempt, err?.retryAfter)
+      console.warn(
+        `[drain] transient HTTP ${status}, retrying in ${Math.round(waitMs)}ms (${attempt + 1}/${maxRetries})`
+      )
+      await sleep(waitMs)
+    }
+  }
+
+  throw new Error('Exhausted retries')
 }
 
 async function main() {
@@ -103,7 +137,7 @@ async function main() {
 
     let result
     try {
-      result = await runOnce(args.endpoint, args.token)
+      result = await runOnceWithRetry(args.endpoint, args.token)
     } catch (err) {
       console.error('[drain] run failed:', err.message || err)
       process.exit(1)

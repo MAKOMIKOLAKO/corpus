@@ -1,0 +1,17 @@
+{
+  "processed": 27606,
+  "inserted": 13746,
+  "updated": 10039,
+  "started_at": "2026-04-14T02:29:50.685718",
+  "last_saved_at": "2026-04-14T03:36:23.218984",
+  "stream_offsets": {
+    "cat:cs.AI": 3750,
+    "cat:cs.LG": 3750,
+    "cat:cs.CL": 3750,
+    "cat:cs.CV": 3750,
+    "cat:cs.NE": 3750,
+    "cat:stat.ML": 3750,
+    "cat:q-bio": 1356,
+    "cat:eess.SP": 3750
+  }
+}

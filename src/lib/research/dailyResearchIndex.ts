@@ -151,60 +151,77 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
   const k = Math.max(8, Math.min(12, Math.floor(Math.sqrt(Math.max(1, rows.length)))))
   const clusters = simpleDeterministicKMeans(rows, k)
 
-  await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw(Prisma.sql`DELETE FROM "DailyClusterPaper"`)
-    await tx.$executeRaw(Prisma.sql`DELETE FROM "DailyCluster" WHERE "date" = ${bucketDate}`)
-    await tx.$executeRaw(Prisma.sql`DELETE FROM "DailyCandidateSetPaper"`)
-    await tx.$executeRaw(Prisma.sql`DELETE FROM "DailyCandidateSet" WHERE "date" = ${bucketDate}`)
+  await prisma.$executeRaw(Prisma.sql`DELETE FROM "DailyClusterPaper"`)
+  await prisma.$executeRaw(Prisma.sql`DELETE FROM "DailyCluster" WHERE "date" = ${bucketDate}`)
+  await prisma.$executeRaw(Prisma.sql`DELETE FROM "DailyCandidateSetPaper"`)
+  await prisma.$executeRaw(Prisma.sql`DELETE FROM "DailyCandidateSet" WHERE "date" = ${bucketDate}`)
 
-    await tx.$executeRaw(Prisma.sql`
-      INSERT INTO "DailyCandidateSet" ("id", "date", "createdAt")
-      VALUES (gen_random_uuid()::text, ${bucketDate}, NOW())
-    `)
+  await prisma.$executeRaw(Prisma.sql`
+    INSERT INTO "DailyCandidateSet" ("id", "date", "createdAt")
+    VALUES (gen_random_uuid()::text, ${bucketDate}, NOW())
+  `)
 
-    const dailySetRows = await tx.$queryRaw<DailySetIdRow[]>(Prisma.sql`
-      SELECT "id" FROM "DailyCandidateSet" WHERE "date" = ${bucketDate} LIMIT 1
-    `)
-    const dailySetId = dailySetRows[0]?.id
+  const dailySetRows = await prisma.$queryRaw<DailySetIdRow[]>(Prisma.sql`
+    SELECT "id" FROM "DailyCandidateSet" WHERE "date" = ${bucketDate} LIMIT 1
+  `)
+  const dailySetId = dailySetRows[0]?.id
 
-    if (dailySetId) {
-      for (const row of rows) {
-        await tx.$executeRaw(Prisma.sql`
+  if (dailySetId) {
+    const batchSize = 100
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize)
+      const values = batch
+        .map(
+          (row) =>
+            `(gen_random_uuid()::text, ${Prisma.join([dailySetId, row.id])})`
+        )
+        .join(', ')
+      await prisma.$executeRaw(
+        Prisma.sql`
           INSERT INTO "DailyCandidateSetPaper" ("id", "dailyCandidateSetId", "candidatePaperId")
-          VALUES (gen_random_uuid()::text, ${dailySetId}, ${row.id})
+          VALUES ${Prisma.raw(values)}
           ON CONFLICT DO NOTHING
-        `)
-      }
+        `
+      )
     }
+  }
 
-    for (const cluster of clusters) {
-      const dcRows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-        INSERT INTO "DailyCluster" ("id", "date", "clusterId", "centroidEmbedding", "size")
-        VALUES (gen_random_uuid()::text, ${bucketDate}, ${cluster.clusterId}, ${vectorLiteral(cluster.centroid)}::vector, ${cluster.members.length})
-        ON CONFLICT ("date", "clusterId") DO UPDATE
-          SET "centroidEmbedding" = EXCLUDED."centroidEmbedding",
-              "size" = EXCLUDED."size"
-        RETURNING "id"
-      `)
+  for (const cluster of clusters) {
+    const dcRows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+      INSERT INTO "DailyCluster" ("id", "date", "clusterId", "centroidEmbedding", "size")
+      VALUES (gen_random_uuid()::text, ${bucketDate}, ${cluster.clusterId}, ${vectorLiteral(cluster.centroid)}::vector, ${cluster.members.length})
+      ON CONFLICT ("date", "clusterId") DO UPDATE
+        SET "centroidEmbedding" = EXCLUDED."centroidEmbedding",
+            "size" = EXCLUDED."size"
+      RETURNING "id"
+    `)
 
-      const dailyClusterId = dcRows[0]?.id
-      if (!dailyClusterId) continue
+    const dailyClusterId = dcRows[0]?.id
+    if (!dailyClusterId) continue
 
-      for (const pid of cluster.members) {
-        await tx.$executeRaw(Prisma.sql`
+    const batchSize = 100
+    for (let i = 0; i < cluster.members.length; i += batchSize) {
+      const batch = cluster.members.slice(i, i + batchSize)
+      const values = batch
+        .map((pid) => `(gen_random_uuid()::text, ${Prisma.join([dailyClusterId, pid])})`)
+        .join(', ')
+      await prisma.$executeRaw(
+        Prisma.sql`
           INSERT INTO "DailyClusterPaper" ("id", "dailyClusterId", "candidatePaperId")
-          VALUES (gen_random_uuid()::text, ${dailyClusterId}, ${pid})
+          VALUES ${Prisma.raw(values)}
           ON CONFLICT DO NOTHING
-        `)
-
-        await tx.$executeRaw(Prisma.sql`
-          UPDATE "CandidatePaper"
-          SET "clusterId" = ${cluster.clusterId}, "clusterDate" = ${bucketDate}
-          WHERE "id" = ${pid}
-        `)
-      }
+        `
+      )
     }
-  })
+
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE "CandidatePaper"
+        SET "clusterId" = ${cluster.clusterId}, "clusterDate" = ${bucketDate}
+        WHERE "id" IN (${Prisma.join(cluster.members)})
+      `
+    )
+  }
 
   return {
     date: bucketDate.toISOString().split('T')[0],
