@@ -179,46 +179,8 @@ function rerankScore(row: TopKRow): number {
 
 function selectDiverse(rows: TopKRow[], preferred: number): TopKRow[] {
   const target = clampTarget(preferred)
-  const byCluster = new Map<number, TopKRow[]>()
-  for (const row of rows) {
-    const k = row.clusterId ?? 0
-    const list = byCluster.get(k) || []
-    list.push(row)
-    byCluster.set(k, list)
-  }
-
-  Array.from(byCluster.values()).forEach((list: TopKRow[]) => {
-    list.sort((a: TopKRow, b: TopKRow) => rerankScore(b) - rerankScore(a))
-  })
-
-  const clusterIds = Array.from(byCluster.keys()).sort((a, b) => a - b)
-  const offsets = new Map<number, number>(clusterIds.map((id) => [id, 0]))
-  const selected: TopKRow[] = []
-  while (selected.length < target) {
-    let progressed = false
-    for (const cid of clusterIds) {
-      if (selected.length >= target) break
-      const list = byCluster.get(cid) || []
-      const off = offsets.get(cid) || 0
-      if (off < list.length) {
-        selected.push(list[off])
-        offsets.set(cid, off + 1)
-        progressed = true
-      }
-    }
-    if (!progressed) break
-  }
-
-  if (selected.length < 8) {
-    const picked = new Set(selected.map((s) => s.id))
-    const fallback = [...rows].sort((a, b) => rerankScore(b) - rerankScore(a))
-    for (const row of fallback) {
-      if (selected.length >= Math.min(8, rows.length)) break
-      if (!picked.has(row.id)) selected.push(row)
-    }
-  }
-
-  return selected.slice(0, 20)
+  const sorted = [...rows].sort((a, b) => rerankScore(b) - rerankScore(a))
+  return sorted.slice(0, target)
 }
 
 export async function getDailyBriefCached(userId: string): Promise<DailyFeedResponse | null> {
@@ -259,7 +221,6 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
     .filter((r): r is CachedPaperRow => !!r)
     .map((r) => {
       const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
-      const clusterLabel = `Topic ${(r.clusterId ?? 0) + 1}`
       return {
         candidatePaperId: r.id,
         globalEntryId: null,
@@ -276,26 +237,13 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
         noveltyTag: r.noveltyTag ?? 'New method',
         compositeScore: 0,
         scoreBreakdown: { semantic: 0, domain: 0, novelty: 0, citation: 0, engagement: 0 },
-        clusterLabel,
+        clusterLabel: '',
         alreadySaved: savedDois.has(r.doi ?? '') || savedIds.has(r.id),
         openAccessUrl: meta.openAccessUrl ?? null,
       }
     })
 
-  const byCluster = new Map<number, string[]>()
-  for (const p of papers) {
-    const clusterIndex = Number(p.clusterLabel.replace('Topic ', '')) - 1 || 0
-    const list = byCluster.get(clusterIndex) || []
-    list.push(p.candidatePaperId)
-    byCluster.set(clusterIndex, list)
-  }
-
-  const clusters: ClusterObject[] = Array.from(byCluster.entries()).map(([clusterIndex, idsInCluster]) => ({
-    clusterIndex,
-    label: `Topic ${clusterIndex + 1}`,
-    paperCount: idsInCluster.length,
-    representativePaperIds: idsInCluster.slice(0, 3),
-  }))
+  const clusters: ClusterObject[] = []
 
   return {
     date: today.toISOString().split('T')[0],
@@ -373,8 +321,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
 
   const papers: PaperSummaryObject[] = selected.map((r) => {
     const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
-    const clusterId = r.clusterId ?? 0
-    const why = `Matched your ${resolved.mode} interests and selected for topic diversity in today's index.`
+    const why = `Matched your ${resolved.mode} interests.`
     whyExplanations[r.id] = why
     return {
       candidatePaperId: r.id,
@@ -398,26 +345,13 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
         citation: 0,
         engagement: 0,
       },
-      clusterLabel: `Topic ${clusterId + 1}`,
+      clusterLabel: '',
       alreadySaved: false,
       openAccessUrl: meta.openAccessUrl ?? null,
     }
   })
 
-  const byCluster = new Map<number, string[]>()
-  for (const p of papers) {
-    const idx = Number(p.clusterLabel.replace('Topic ', '')) - 1 || 0
-    const list = byCluster.get(idx) || []
-    list.push(p.candidatePaperId)
-    byCluster.set(idx, list)
-  }
-
-  const clusters: ClusterObject[] = Array.from(byCluster.entries()).map(([clusterIndex, ids]) => ({
-    clusterIndex,
-    label: `Topic ${clusterIndex + 1}`,
-    paperCount: ids.length,
-    representativePaperIds: ids.slice(0, 3),
-  }))
+  const clusters: ClusterObject[] = []
 
   const brief = await prisma.dailyBrief.upsert({
     where: { userId_date: { userId, date: today } },
