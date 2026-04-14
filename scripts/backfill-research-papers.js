@@ -14,6 +14,13 @@ const parser = new Parser({ timeout: 15000 })
 
 const ARXIV_CATEGORIES = ['cs.AI', 'cs.LG', 'cs.CL', 'cs.CV', 'cs.NE', 'stat.ML', 'q-bio', 'eess.SP']
 const INSERT_BATCH = 200
+const BASE_RETRY_MS = 1500
+const MAX_RETRY_MS = 30000
+
+async function sleep(ms) {
+  if (ms <= 0) return
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 function parseArgs(argv) {
   const args = {
@@ -52,23 +59,53 @@ function normalizeFirstAuthor(authors) {
   return String(first).toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
-async function fetchWithRetry(url, maxRetries = 5) {
+function computeBackoffMs(attempt, retryAfterHeader) {
+  const retryAfterSeconds = Number(retryAfterHeader)
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return Math.min(MAX_RETRY_MS, retryAfterSeconds * 1000)
+  }
+  const jitter = Math.floor(Math.random() * 1000)
+  return Math.min(MAX_RETRY_MS, BASE_RETRY_MS * Math.pow(2, attempt) + jitter)
+}
+
+async function fetchWithRetry(url, maxRetries = 6) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const res = await fetch(url)
     if (res.ok) return res
 
-    if (res.status === 429) {
-      // Rate limited - wait with exponential backoff
-      const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 1000
-      console.log(`[backfill] Rate limited, waiting ${Math.round(waitTime)}ms before retry ${attempt + 1}/${maxRetries}`)
-      await new Promise(r => setTimeout(r, waitTime))
+    if (res.status === 429 || res.status >= 500) {
+      const waitTime = computeBackoffMs(attempt, res.headers.get('retry-after'))
+      console.log(
+        `[backfill] HTTP ${res.status} for ${url}. Waiting ${Math.round(waitTime)}ms before retry ${attempt + 1}/${maxRetries}`
+      )
+      await sleep(waitTime)
       continue
     }
 
-    // Other errors - don't retry
+    // Other errors: fail fast
     return res
   }
   throw new Error(`Max retries exceeded for ${url}`)
+}
+
+async function parseFeedWithRetry(url, maxRetries = 6) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await parser.parseURL(url)
+    } catch (err) {
+      const message = err && err.message ? String(err.message) : String(err)
+      const likelyRateLimited = /429|too many requests|rate limit|econnreset|etimedout/i.test(message)
+      if (!likelyRateLimited || attempt === maxRetries - 1) {
+        throw err
+      }
+      const waitTime = computeBackoffMs(attempt)
+      console.log(
+        `[backfill] RSS parse retry for ${url} after error "${message}". Waiting ${Math.round(waitTime)}ms (${attempt + 1}/${maxRetries})`
+      )
+      await sleep(waitTime)
+    }
+  }
+  throw new Error(`Max RSS retries exceeded for ${url}`)
 }
 
 // FUTURE: Enable batch abstract fetching from arXiv API when needed
@@ -92,7 +129,7 @@ async function fetchArxivCategory(category, maxItems) {
 
     let feed
     try {
-      feed = await parser.parseURL(url)
+      feed = await parseFeedWithRetry(url)
     } catch (err) {
       console.error(`[backfill] arXiv fetch failed for ${category} start=${start}:`, err.message || err)
       break
@@ -133,7 +170,7 @@ async function fetchArxivCategory(category, maxItems) {
       })
     }
 
-    await new Promise((r) => setTimeout(r, 400))
+    await sleep(900)
   }
 
   return papers
@@ -147,7 +184,7 @@ async function fetchBioRxiv(server, maxItems) {
     const url = `https://api.biorxiv.org/details/${server}/2018-01-01/3000-01-01/${cursor}`
     let json
     try {
-      const res = await fetch(url)
+      const res = await fetchWithRetry(url)
       if (!res.ok) {
         console.error(`[backfill] ${server} API failed at cursor=${cursor}: ${res.status}`)
         break
@@ -181,7 +218,7 @@ async function fetchBioRxiv(server, maxItems) {
     }
 
     cursor += collection.length
-    await new Promise((r) => setTimeout(r, 400))
+    await sleep(900)
   }
 
   return papers
@@ -276,7 +313,7 @@ async function insertPapers(papers) {
       console.log(`[backfill] updated batch ${Math.floor(i / INSERT_BATCH) + 1}: +${updated} with abstracts`)
     }
 
-    await new Promise((r) => setTimeout(r, 100))
+    await sleep(250)
   }
   return { inserted, updated }
 }
