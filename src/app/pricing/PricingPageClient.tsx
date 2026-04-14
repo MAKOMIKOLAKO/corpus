@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import FAQPageJsonLd from '@/components/FAQPageJsonLd';
+import ProductJsonLd from '@/components/ProductJsonLd';
 
 export default function PricingPage() {
   const { data: session, status } = useSession();
@@ -52,6 +54,39 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <FAQPageJsonLd
+        faqs={[
+          {
+            question: "What's included in the free plan?",
+            answer: "The free plan includes 50 saved entries, 1 personal collection, paper and book search, AI metadata extraction, full text search, and the Chrome extension."
+          },
+          {
+            question: "What's the difference between monthly and annual billing?",
+            answer: "Annual billing gives you 2 months free (pay for 10 months, get 12). Monthly billing is $7/month, while annual billing is $60/year."
+          },
+          {
+            question: "Can I cancel my subscription anytime?",
+            answer: "Yes, you can cancel your subscription anytime from your account settings. You'll continue to have access until the end of your billing period."
+          }
+        ]}
+      />
+      <ProductJsonLd
+        name="Corpus Pro"
+        description="Unlimited research papers, collections, and shared collections with priority queue processing."
+        url="https://usecorpus.app/pricing"
+        offers={[
+          {
+            price: "7",
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock"
+          },
+          {
+            price: "60",
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock"
+          }
+        ]}
+      />
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold tracking-tight mb-4">

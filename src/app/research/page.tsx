@@ -10,6 +10,10 @@ export const metadata = {
   title: 'Research · Corpus',
   description:
     'Discover papers and deepen your understanding with the Research Reading System.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default async function ResearchPage({

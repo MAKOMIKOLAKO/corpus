@@ -4,6 +4,14 @@ import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 import BetaWelcomeModal from "@/components/BetaWelcomeModal";
 import { Badge } from "@/components/ui/badge";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function BetaPage() {
   const session = await getServerSession(authOptions);

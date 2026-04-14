@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Plus, Database, Sparkles, Save, Repeat, BookOpen, Layers, CheckCircle } from "lucide-react";
 import SoftwareApplicationJsonLd from "@/components/SoftwareApplicationJsonLd";
+import WebSiteJsonLd from "@/components/WebSiteJsonLd";
+import OrganizationJsonLd from "@/components/OrganizationJsonLd";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const GRAIN_BG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`;
@@ -33,7 +35,7 @@ const staggerItem = {
 
 function FeedEntry({ title, journal, time, isNew = false }: { title: string, journal: string, time: string, isNew?: boolean }) {
   return (
-    <motion.div 
+    <motion.div
       variants={staggerItem}
       className="flex flex-col gap-2 p-4 rounded-xl border border-[#f0eee6] dark:border-[#30302e] bg-white/50 dark:bg-[#30302e]/30 shadow-sm"
     >
@@ -66,7 +68,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#f5f4ed] dark:bg-[#141413] text-[#141413] dark:text-[#faf9f5] font-sans antialiased selection:bg-[#c96442]/20 dark:selection:bg-[#c96442]/30 selection:text-[#141413] dark:selection:text-[#faf9f5] transition-colors duration-300">
       <SoftwareApplicationJsonLd />
-      
+      <WebSiteJsonLd />
+      <OrganizationJsonLd />
+
       {/* Dynamic Grain Background */}
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.03] mix-blend-overlay z-0"
@@ -76,9 +80,8 @@ export default function LandingPage() {
 
       {/* Header */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-          navScrolled ? "bg-[#f5f4ed]/80 dark:bg-[#141413]/80 backdrop-blur-md border-b border-[#f0eee6] dark:border-[#30302e]" : "bg-transparent border-transparent"
-        }`}
+        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${navScrolled ? "bg-[#f5f4ed]/80 dark:bg-[#141413]/80 backdrop-blur-md border-b border-[#f0eee6] dark:border-[#30302e]" : "bg-transparent border-transparent"
+          }`}
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 relative z-10">
           <Link href="/" className="text-[1.3rem] font-medium tracking-tight font-serif text-[#141413] dark:text-[#faf9f5] flex items-center gap-2 transition-colors">
@@ -108,13 +111,13 @@ export default function LandingPage() {
         </div>
         {mobileOpen && (
           <div className="border-t border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed]/95 dark:bg-[#141413]/95 px-4 py-4 backdrop-blur-md md:hidden relative z-10 transition-colors">
-             <div className="flex flex-col gap-3">
-               <div className="py-1">
-                 <ThemeToggle />
-               </div>
-               <Link href="/login" className="py-2 font-medium text-[#141413] dark:text-[#faf9f5] text-[15px]">Sign In</Link>
-               <Link href="/login" className="rounded-lg py-2 text-center font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442]">Get Started</Link>
-             </div>
+            <div className="flex flex-col gap-3">
+              <div className="py-1">
+                <ThemeToggle />
+              </div>
+              <Link href="/login" className="py-2 font-medium text-[#141413] dark:text-[#faf9f5] text-[15px]">Sign In</Link>
+              <Link href="/login" className="rounded-lg py-2 text-center font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442]">Get Started</Link>
+            </div>
           </div>
         )}
       </header>
@@ -123,9 +126,9 @@ export default function LandingPage() {
         {/* 1. Hero Section */}
         <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-24 pb-16">
           <div className="mx-auto grid max-w-6xl gap-16 px-4 lg:grid-cols-2 lg:items-center lg:gap-12">
-            
+
             {/* Left: Copy */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
@@ -165,37 +168,37 @@ export default function LandingPage() {
                   </div>
                   <span className="text-[12px] font-medium text-[#87867f]">Incoming Research</span>
                 </div>
-                
-                <motion.div 
+
+                <motion.div
                   variants={staggerContainer}
                   initial="hidden"
                   animate="show"
                   className="p-4 space-y-3 bg-[#faf9f5] dark:bg-[#141413] transition-colors"
                 >
-                  <FeedEntry 
-                    title="Attention Is All You Need: A Retrospective Analysis" 
-                    journal="Nature Communications" 
-                    time="10 mins ago" 
+                  <FeedEntry
+                    title="Attention Is All You Need: A Retrospective Analysis"
+                    journal="Nature Communications"
+                    time="10 mins ago"
                     isNew={true}
                   />
-                  <FeedEntry 
-                    title="Emergent Abilities of Large Language Models in Scientific Reasoning" 
-                    journal="arXiv cs.AI" 
-                    time="1 hour ago" 
+                  <FeedEntry
+                    title="Emergent Abilities of Large Language Models in Scientific Reasoning"
+                    journal="arXiv cs.AI"
+                    time="1 hour ago"
                     isNew={true}
                   />
-                  <FeedEntry 
-                    title="Optimization Dynamics in Neural Network Training" 
-                    journal="JMLR" 
-                    time="3 hours ago" 
+                  <FeedEntry
+                    title="Optimization Dynamics in Neural Network Training"
+                    journal="JMLR"
+                    time="3 hours ago"
                   />
-                  <FeedEntry 
-                    title="Scaling Laws for Autoregressive Generative Modeling" 
-                    journal="arXiv cs.LG" 
-                    time="Yesterday" 
+                  <FeedEntry
+                    title="Scaling Laws for Autoregressive Generative Modeling"
+                    journal="arXiv cs.LG"
+                    time="Yesterday"
                   />
                 </motion.div>
-                
+
                 {/* Fade out bottom */}
                 <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[#faf9f5] dark:from-[#141413] to-transparent pointer-events-none transition-colors" />
               </div>
@@ -213,7 +216,7 @@ export default function LandingPage() {
                 { step: "02", title: "We track and update your feed", icon: <Database className="w-5 h-5 text-[#c96442]" /> },
                 { step: "03", title: "Read, summarize, and save", icon: <BookOpen className="w-5 h-5 text-[#c96442]" /> },
               ].map((item, i) => (
-                <motion.div 
+                <motion.div
                   key={item.step}
                   {...fadeUpParams}
                   transition={{ duration: 0.3, delay: i * 0.1 }}
@@ -233,43 +236,43 @@ export default function LandingPage() {
         <section className="py-32 bg-[#faf9f5] dark:bg-[#141413] overflow-hidden transition-colors">
           <div className="mx-auto max-w-6xl px-4">
             <motion.div {...fadeUpParams} className="text-center mb-16">
-               <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] transition-colors">This keeps working without you.</h2>
+              <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] transition-colors">This keeps working without you.</h2>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               {...fadeUpParams}
               className="relative rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-white dark:bg-[#30302e]/10 p-8 sm:p-16 overflow-hidden shadow-[rgba(0,0,0,0.05)_0px_4px_24px] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] transition-colors"
             >
-               {/* Animated Loop Highlight */}
-               <motion.div 
-                 animate={{ rotate: 360 }}
-                 transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
-                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] rounded-full border border-[#c96442]/10 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(201,100,66,0)_0%,rgba(201,100,66,0.1)_50%,rgba(201,100,66,0)_100%)] pointer-events-none opacity-50"
-               />
+              {/* Animated Loop Highlight */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] rounded-full border border-[#c96442]/10 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(201,100,66,0)_0%,rgba(201,100,66,0.1)_50%,rgba(201,100,66,0)_100%)] pointer-events-none opacity-50"
+              />
 
-               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4">
-                 {[
-                   { label: "INPUT", icon: <Plus className="w-5 h-5" /> },
-                   { label: "FEED", icon: <Database className="w-5 h-5" /> },
-                   { label: "SUMMARY", icon: <Sparkles className="w-5 h-5" /> },
-                   { label: "SAVE", icon: <Save className="w-5 h-5" /> },
-                   { label: "REPEAT", icon: <Repeat className="w-5 h-5" /> },
-                 ].map((stage, i, arr) => (
-                   <div key={stage.label} className="flex flex-col md:flex-row items-center gap-8 md:gap-4 flex-1 justify-center">
-                     <div className="flex flex-col items-center gap-4">
-                       <div className="w-16 h-16 rounded-full bg-[#f5f4ed] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] text-[#5e5d59] dark:text-[#b0aea5] flex items-center justify-center shadow-[rgba(0,0,0,0.05)_0px_4px_24px] transition-colors">
-                         {stage.icon}
-                       </div>
-                       <span className="text-[12px] font-sans font-medium text-[#87867f] tracking-widest uppercase transition-colors">{stage.label}</span>
-                     </div>
-                     {i < arr.length - 1 && (
-                       <div className="flex justify-center items-center text-[#d1cfc5] dark:text-[#30302e] h-8 md:h-auto transition-colors">
-                         <ArrowRight className="w-5 h-5 rotate-90 md:rotate-0" />
-                       </div>
-                     )}
-                   </div>
-                 ))}
-               </div>
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4">
+                {[
+                  { label: "INPUT", icon: <Plus className="w-5 h-5" /> },
+                  { label: "FEED", icon: <Database className="w-5 h-5" /> },
+                  { label: "SUMMARY", icon: <Sparkles className="w-5 h-5" /> },
+                  { label: "SAVE", icon: <Save className="w-5 h-5" /> },
+                  { label: "REPEAT", icon: <Repeat className="w-5 h-5" /> },
+                ].map((stage, i, arr) => (
+                  <div key={stage.label} className="flex flex-col md:flex-row items-center gap-8 md:gap-4 flex-1 justify-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-[#f5f4ed] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] text-[#5e5d59] dark:text-[#b0aea5] flex items-center justify-center shadow-[rgba(0,0,0,0.05)_0px_4px_24px] transition-colors">
+                        {stage.icon}
+                      </div>
+                      <span className="text-[12px] font-sans font-medium text-[#87867f] tracking-widest uppercase transition-colors">{stage.label}</span>
+                    </div>
+                    {i < arr.length - 1 && (
+                      <div className="flex justify-center items-center text-[#d1cfc5] dark:text-[#30302e] h-8 md:h-auto transition-colors">
+                        <ArrowRight className="w-5 h-5 rotate-90 md:rotate-0" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </motion.div>
           </div>
         </section>
@@ -277,45 +280,45 @@ export default function LandingPage() {
         {/* 4. Feature Highlights */}
         <section className="py-24 border-y border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed] dark:bg-[#141413] transition-colors">
           <div className="mx-auto max-w-6xl px-4 grid gap-8 sm:grid-cols-2">
-             {[
-               { title: "Automated research feed", desc: "Your sources are polled continuously. Papers arrive without you searching.", icon: <Repeat className="w-5 h-5" /> },
-               { title: "AI summaries", desc: "Every paper is instantly summarized. Skim hours of research in minutes.", icon: <Sparkles className="w-5 h-5" /> },
-               { title: "Deduplication", desc: "No repeated content. We merge preprints and published versions.", icon: <CheckCircle className="w-5 h-5" /> },
-               { title: "Collections", desc: "Save papers to custom collections. Organize your thinking seamlessly.", icon: <Layers className="w-5 h-5" /> },
-             ].map((feature, i) => (
-                <motion.div 
-                  key={feature.title}
-                  {...fadeUpParams}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  className="rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-white dark:bg-[#141413] p-8 hover:bg-[#faf9f5] dark:hover:bg-[#30302e]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
-                >
-                   <div className="w-10 h-10 rounded-[8px] bg-[#faf9f5] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center text-[#c96442] shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] mb-6 transition-colors">
-                     {feature.icon}
-                   </div>
-                   <h3 className="text-[1.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] mb-3 transition-colors">{feature.title}</h3>
-                   <p className="text-[16px] text-[#5e5d59] dark:text-[#b0aea5] leading-[1.60] transition-colors">{feature.desc}</p>
-                </motion.div>
-             ))}
+            {[
+              { title: "Automated research feed", desc: "Your sources are polled continuously. Papers arrive without you searching.", icon: <Repeat className="w-5 h-5" /> },
+              { title: "AI summaries", desc: "Every paper is instantly summarized. Skim hours of research in minutes.", icon: <Sparkles className="w-5 h-5" /> },
+              { title: "Deduplication", desc: "No repeated content. We merge preprints and published versions.", icon: <CheckCircle className="w-5 h-5" /> },
+              { title: "Collections", desc: "Save papers to custom collections. Organize your thinking seamlessly.", icon: <Layers className="w-5 h-5" /> },
+            ].map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                {...fadeUpParams}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-white dark:bg-[#141413] p-8 hover:bg-[#faf9f5] dark:hover:bg-[#30302e]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
+              >
+                <div className="w-10 h-10 rounded-[8px] bg-[#faf9f5] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center text-[#c96442] shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] mb-6 transition-colors">
+                  {feature.icon}
+                </div>
+                <h3 className="text-[1.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] mb-3 transition-colors">{feature.title}</h3>
+                <p className="text-[16px] text-[#5e5d59] dark:text-[#b0aea5] leading-[1.60] transition-colors">{feature.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </section>
 
         {/* 5. Context & Final CTA */}
         <section className="py-32 bg-[#f5f4ed] dark:bg-[#141413] text-center px-4 transition-colors">
           <div className="mx-auto max-w-2xl">
-             <motion.div {...fadeUpParams}>
-               <p className="text-[12px] font-sans text-[#87867f] uppercase tracking-[0.12em] font-medium mb-6 transition-colors">
-                 Built by students. Used for tracking technical content.
-               </p>
-               <h2 className="text-[2.3rem] sm:text-[3.25rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] leading-[1.10] mb-10 transition-colors">
-                 Set it once.<br />It keeps updating.
-               </h2>
-               <Link
-                 href="/login"
-                 className="inline-flex items-center justify-center rounded-[12px] px-[24px] py-[16px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757] transition-colors"
-               >
-                 Get started free
-               </Link>
-             </motion.div>
+            <motion.div {...fadeUpParams}>
+              <p className="text-[12px] font-sans text-[#87867f] uppercase tracking-[0.12em] font-medium mb-6 transition-colors">
+                Built by students. Used for tracking technical content.
+              </p>
+              <h2 className="text-[2.3rem] sm:text-[3.25rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] leading-[1.10] mb-10 transition-colors">
+                Set it once.<br />It keeps updating.
+              </h2>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-[12px] px-[24px] py-[16px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757] transition-colors"
+              >
+                Get started free
+              </Link>
+            </motion.div>
           </div>
         </section>
 

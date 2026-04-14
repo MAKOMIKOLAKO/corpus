@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ResetPasswordClient from "./ResetPasswordClient";
+import ForgotPasswordClient from "./ForgotPasswordClient";
 
 export const metadata: Metadata = {
   title: 'Reset Password',
@@ -9,6 +9,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ResetPasswordPage() {
-  return <ResetPasswordClient />;
+export default function ForgotPasswordPage() {
+  return <ForgotPasswordClient />;
 }

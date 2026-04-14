@@ -17,7 +17,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${user.name || user.username} - Corpus Profile`,
-    description: user.bio || `View ${user.name || user.username}'s research profile on Corpus`
+    description: user.bio || `View ${user.name || user.username}'s research profile on Corpus`,
+    alternates: {
+      canonical: `https://usecorpus.app/profile/${user.username}`,
+    },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

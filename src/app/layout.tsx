@@ -15,10 +15,19 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 export const metadata: Metadata = {
   metadataBase: new URL('https://usecorpus.app'),
   title: {
-    default: 'Corpus — Personal Knowledge Indexing for Researchers',
+    default: 'Corpus — Collaborative Research Platform for Academics',
     template: '%s | Corpus'
   },
-  description: 'Corpus is a personal knowledge management system for researchers, academics, and students. Save research papers by DOI, articles by URL, and books by ISBN. Automatically organized with AI keyword extraction and a semantic knowledge graph.',
+  description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f4ed' },
+    { media: '(prefers-color-scheme: dark)', color: '#141413' },
+  ],
   icons: {
     icon: [
       { url: '/favicon.png', sizes: 'any' },
@@ -54,34 +63,41 @@ export const metadata: Metadata = {
     'save research papers',
     'organize articles',
     'knowledge base software',
-    'research reading tracker'
+    'research reading tracker',
+    'collaborative research',
+    'citation generator',
+    'academic reference manager',
+    'arXiv'
   ],
-  authors: [{ name: 'Corpus' }],
+  authors: [{ name: 'Corpus', url: 'https://usecorpus.app' }],
   creator: 'Corpus',
-  verification: {
-    google: 'PASTE_YOUR_VERIFICATION_CODE_HERE'
-  },
+  category: 'productivity',
+  // Google Search Console verification: Add verification code here when available
+  // verification: { google: 'YOUR_VERIFICATION_CODE' },
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: '/',
     siteName: 'Corpus',
-    title: 'Corpus — Personal Knowledge Indexing for Researchers',
-    description: 'Index everything you read. Automatically organized, instantly searchable.',
+    title: 'Corpus — Collaborative Research Platform for Academics',
+    description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Corpus — Personal Knowledge Indexing'
+        alt: 'Corpus — Collaborative Research Platform'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Corpus — Personal Knowledge Indexing for Researchers',
-    description: 'Index everything you read. Automatically organized, instantly searchable.',
+    title: 'Corpus — Collaborative Research Platform for Academics',
+    description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
     images: ['/og-image.png'],
+  },
+  alternates: {
+    canonical: 'https://usecorpus.app',
   },
   robots: {
     index: true,
@@ -155,6 +171,8 @@ export default async function RootLayout({
   return (
     <html lang="en" className={cn("font-sans scroll-smooth", inter.variable)}>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <ThemeBootstrapScript />
         <ExtensionDetection />
       </head>
