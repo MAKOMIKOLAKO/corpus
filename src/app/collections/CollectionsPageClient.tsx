@@ -33,6 +33,8 @@ interface Collection {
     name: string;
     description: string | null;
     createdAt: string;
+    entryCount?: number;
+    memberCount?: number;
     isOwner?: boolean;
     userRole?: 'OWNER' | 'VIEWER' | 'CONTRIBUTOR' | 'ADMIN';
     members?: any[];
@@ -145,7 +147,9 @@ export default function CollectionsPage() {
                             id: uec.userEntry.globalEntry.id,
                             title: uec.userEntry.globalEntry.title
                         }
-                    })) || []
+                    })) || [],
+                    entryCount: c.entryCount ?? c._count?.userEntryCollections ?? c._count?.entries ?? 0,
+                    memberCount: c.memberCount ?? c.members?.length ?? c._count?.members ?? 0,
                 });
                 const collectionsWithOwnership = [
                     ...data.owned.map((c: any) => ({ ...transformCollection(c), isOwner: true, userRole: 'OWNER' as const })),
@@ -466,9 +470,9 @@ export default function CollectionsPage() {
                                                                 • {sliceTitle(item.entry.title)}
                                                             </p>
                                                         ))}
-                                                        {collection._count.entries > 2 && (
+                                                        {(collection.entryCount ?? collection._count.entries) > 2 && (
                                                             <p className="text-xs text-muted-foreground italic">
-                                                                +{collection._count.entries - 2} more
+                                                                +{(collection.entryCount ?? collection._count.entries) - 2} more
                                                             </p>
                                                         )}
                                                     </>
@@ -482,8 +486,8 @@ export default function CollectionsPage() {
                                                 <div className="flex flex-wrap items-center gap-4">
                                                     <div className="flex items-center gap-1">
                                                         <FileText className="w-4 h-4" />
-                                                        <span className="font-medium">{collection._count.entries}</span>
-                                                        <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
+                                                        <span className="font-medium">{collection.entryCount ?? collection._count.entries}</span>
+                                                        <span>{(collection.entryCount ?? collection._count.entries) === 1 ? 'entry' : 'entries'}</span>
                                                     </div>
                                                     {collection.publicViewCount !== undefined && (
                                                         <div className="flex items-center gap-1">
@@ -556,9 +560,9 @@ export default function CollectionsPage() {
                                                                 • {sliceTitle(item.entry.title)}
                                                             </p>
                                                         ))}
-                                                        {collection._count.entries > 2 && (
+                                                        {(collection.entryCount ?? collection._count.entries) > 2 && (
                                                             <p className="text-xs text-muted-foreground italic">
-                                                                +{collection._count.entries - 2} more
+                                                                +{(collection.entryCount ?? collection._count.entries) - 2} more
                                                             </p>
                                                         )}
                                                     </>
@@ -586,8 +590,8 @@ export default function CollectionsPage() {
                                                 <div className="flex flex-wrap items-center gap-4">
                                                     <div className="flex items-center gap-1">
                                                         <FileText className="w-4 h-4" />
-                                                        <span className="font-medium">{collection._count.entries}</span>
-                                                        <span>{collection._count.entries === 1 ? 'entry' : 'entries'}</span>
+                                                        <span className="font-medium">{collection.entryCount ?? collection._count.entries}</span>
+                                                        <span>{(collection.entryCount ?? collection._count.entries) === 1 ? 'entry' : 'entries'}</span>
                                                     </div>
                                                     {collection.isPublic && (
                                                         <div className="flex items-center gap-1">
@@ -596,11 +600,11 @@ export default function CollectionsPage() {
                                                             <span>views</span>
                                                         </div>
                                                     )}
-                                                    {collection._count?.members !== undefined && collection._count.members > 0 && (
+                                                    {(collection.memberCount ?? collection._count.members) !== undefined && (collection.memberCount ?? collection._count.members ?? 0) > 0 && (
                                                         <div className="flex items-center gap-1">
                                                             <Users className="w-4 h-4" />
-                                                            <span className="font-medium">{collection._count.members + 1}</span>
-                                                            <span>{collection._count.members + 1 === 1 ? 'member' : 'members'}</span>
+                                                            <span className="font-medium">{(collection.memberCount ?? collection._count.members ?? 0) + 1}</span>
+                                                            <span>{((collection.memberCount ?? collection._count.members ?? 0) + 1) === 1 ? 'member' : 'members'}</span>
                                                         </div>
                                                     )}
                                                 </div>

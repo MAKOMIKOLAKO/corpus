@@ -7,6 +7,22 @@ import { timedJson } from '@/lib/serverTiming';
 
 export const dynamic = 'force-dynamic';
 
+function normalizeCollectionSummary(collection: any) {
+    const previewEntries = (collection.userEntryCollections || []).map((uec: any) => ({
+        entry: {
+            id: uec.userEntry.globalEntry.id,
+            title: uec.userEntry.globalEntry.title,
+        }
+    }));
+
+    return {
+        ...collection,
+        entries: previewEntries,
+        entryCount: collection._count?.userEntryCollections ?? previewEntries.length,
+        memberCount: collection.members?.length ?? collection._count?.members ?? 0,
+    };
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 200,
@@ -33,7 +49,7 @@ export async function GET() {
                         }
                     },
                     _count: {
-                        select: { entries: true, members: true }
+                        select: { userEntryCollections: true, members: true }
                     },
                     userEntryCollections: {
                         take: 2,
@@ -74,7 +90,7 @@ export async function GET() {
                                 }
                             },
                             _count: {
-                                select: { entries: true, members: true }
+                                select: { userEntryCollections: true, members: true }
                             },
                             userEntryCollections: {
                                 take: 2,
@@ -104,8 +120,8 @@ export async function GET() {
         ]);
 
         return timedJson({
-            owned: ownedCollections,
-            member: memberCollections.map(cm => cm.collection)
+            owned: ownedCollections.map(normalizeCollectionSummary),
+            member: memberCollections.map(cm => normalizeCollectionSummary(cm.collection))
         }, startedAt, undefined, 'collections.get');
 
     } catch (error) {

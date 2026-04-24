@@ -47,7 +47,7 @@ export async function GET(
           orderBy: { invitedAt: 'desc' },
         },
         _count: {
-          select: { entries: true, members: true },
+          select: { userEntryCollections: true, members: true },
         },
       },
     } as any);
@@ -80,10 +80,16 @@ export async function GET(
       },
     });
 
+    const collectionWithRelations = collection as any
+
     // Transform userEntries to match expected format
     const transformedCollection = {
       ...collection,
-      entries: (collection as any).userEntryCollections?.map((ue: any) => ({
+      _count: {
+        ...collectionWithRelations._count,
+        entries: collectionWithRelations._count?.userEntryCollections ?? collectionWithRelations.userEntryCollections?.length ?? 0,
+      },
+      entries: collectionWithRelations.userEntryCollections?.map((ue: any) => ({
         ...flattenUserEntry(ue.userEntry),
         addedAt: ue.addedAt
       })) ?? [],
