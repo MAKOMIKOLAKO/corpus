@@ -183,6 +183,39 @@ function selectDiverse(rows: TopKRow[], preferred: number): TopKRow[] {
   return sorted.slice(0, target)
 }
 
+async function loadFallbackRows(candidateSetDate: Date | null): Promise<TopKRow[]> {
+  const fromCandidateSet = candidateSetDate
+    ? await prisma.$queryRaw<TopKRow[]>(Prisma.sql`
+        SELECT
+          cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
+          cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId",
+          0.35::float AS distance
+        FROM "CandidatePaper" cp
+        INNER JOIN "DailyCandidateSetPaper" dcsp ON dcsp."candidatePaperId" = cp."id"
+        INNER JOIN "DailyCandidateSet" dcs ON dcs."id" = dcsp."dailyCandidateSetId"
+        WHERE dcs."date" = ${candidateSetDate}
+          AND cp."embedding" IS NOT NULL
+        ORDER BY cp."publishedDate" DESC NULLS LAST, cp."ingestedAt" DESC
+        LIMIT ${TOP_K}
+      `)
+    : []
+
+  if (fromCandidateSet.length > 0) {
+    return fromCandidateSet
+  }
+
+  return prisma.$queryRaw<TopKRow[]>(Prisma.sql`
+    SELECT
+      cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
+      cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId",
+      0.35::float AS distance
+    FROM "CandidatePaper" cp
+    WHERE cp."embedding" IS NOT NULL
+    ORDER BY cp."publishedDate" DESC NULLS LAST, cp."ingestedAt" DESC
+    LIMIT ${TOP_K}
+  `)
+}
+
 export async function getDailyBriefCached(userId: string): Promise<DailyFeedResponse | null> {
   const today = todayUTC()
   const brief = await prisma.dailyBrief.findUnique({ where: { userId_date: { userId, date: today } } })
@@ -262,24 +295,6 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
   const today = todayUTC()
   const resolved = await resolveInterestVector(userId, overrides)
 
-  if (!resolved.vector || resolved.vector.length === 0) {
-    return {
-      date: today.toISOString().split('T')[0],
-      userId,
-      preferredCount: 5,
-      actualCount: 0,
-      emergingTrends: null,
-      papers: [],
-      clusters: [],
-      generatedAt: new Date().toISOString(),
-      fromCache: false,
-    }
-  }
-
-  const savedDois = await getUserSavedDois(userId)
-  const savedIds = await getUserSavedCandidateIds(userId)
-  const vector = vectorLiteral(resolved.vector)
-
   const candidateSetDateRows = await prisma.$queryRaw<CandidateSetDateRow[]>(Prisma.sql`
     SELECT "date"
     FROM "DailyCandidateSet"
@@ -293,7 +308,57 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     ORDER BY "date" DESC
     LIMIT 1
   `)
-  const candidateSetDate = candidateSetDateRows[0]?.date ?? fallbackCandidateSetDateRows[0]?.date ?? today
+  const candidateSetDate = candidateSetDateRows[0]?.date ?? fallbackCandidateSetDateRows[0]?.date ?? null
+
+  if (!resolved.vector || resolved.vector.length === 0) {
+    const fallbackRows = await loadFallbackRows(candidateSetDate)
+    const selected = selectDiverse(fallbackRows, resolved.preferred)
+    const papers: PaperSummaryObject[] = selected.map((r) => {
+      const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
+      return {
+        candidatePaperId: r.id,
+        globalEntryId: null,
+        title: r.title,
+        authors: r.authors,
+        year: r.publishedDate?.getFullYear() ?? null,
+        publishedDate: r.publishedDate?.toISOString() ?? null,
+        source: r.source,
+        doi: r.doi,
+        url: r.url,
+        plainSummary: r.plainSummary ?? '',
+        technicalSummary: r.technicalSummary ?? '',
+        whyExplanation: 'Trending recent research while we learn your interests.',
+        noveltyTag: r.noveltyTag ?? 'New method',
+        compositeScore: Math.max(0, 1 - Math.max(0, r.distance)),
+        scoreBreakdown: {
+          semantic: Math.max(0, 1 - Math.max(0, r.distance)),
+          domain: 0,
+          novelty: 0,
+          citation: 0,
+          engagement: 0,
+        },
+        clusterLabel: '',
+        alreadySaved: false,
+        openAccessUrl: meta.openAccessUrl ?? null,
+      }
+    })
+
+    return {
+      date: today.toISOString().split('T')[0],
+      userId,
+      preferredCount: 5,
+      actualCount: papers.length,
+      emergingTrends: null,
+      papers,
+      clusters: [],
+      generatedAt: new Date().toISOString(),
+      fromCache: false,
+    }
+  }
+
+  const savedDois = await getUserSavedDois(userId)
+  const savedIds = await getUserSavedCandidateIds(userId)
+  const vector = vectorLiteral(resolved.vector)
 
   const topK = await prisma.$queryRaw<TopKRow[]>(Prisma.sql`
     SELECT
@@ -309,7 +374,9 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     LIMIT ${TOP_K}
   `)
 
-  const filtered = topK.filter((r) => {
+  const candidateRows = topK.length > 0 ? topK : await loadFallbackRows(candidateSetDate)
+
+  const filtered = candidateRows.filter((r) => {
     if (resolved.dismissed.has(r.id)) return false
     if (savedDois.has(r.doi ?? '')) return false
     if (savedIds.has(r.id)) return false

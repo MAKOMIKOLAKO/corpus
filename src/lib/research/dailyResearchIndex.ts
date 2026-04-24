@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
@@ -127,7 +128,6 @@ function vectorLiteral(v: number[]): string {
 
 export async function buildDailyResearchIndex(): Promise<{ date: string; candidateCount: number; clusterCount: number }> {
   const bucketDate = todayUTC()
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
   const rawRows = await prisma.$queryRaw<PaperRow[]>(Prisma.sql`
     SELECT "id", "embedding"::text AS "embeddingText"
@@ -170,14 +170,14 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
     const batchSize = 100
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize)
-      const values = batch.map((row) => `(gen_random_uuid()::text, ${Prisma.join([dailySetId, row.id])})`).join(', ')
-      await prisma.$executeRaw(
-        Prisma.sql`
-          INSERT INTO "DailyCandidateSetPaper" ("id", "dailyCandidateSetId", "candidatePaperId")
-          VALUES ${Prisma.raw(values)}
-          ON CONFLICT DO NOTHING
-        `
-      )
+      await prisma.dailyCandidateSetPaper.createMany({
+        data: batch.map((row) => ({
+          id: randomUUID(),
+          dailyCandidateSetId: dailySetId,
+          candidatePaperId: row.id,
+        })),
+        skipDuplicates: true,
+      })
     }
   }
 
