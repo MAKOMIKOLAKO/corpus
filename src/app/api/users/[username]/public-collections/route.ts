@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+function normalizePublicCollection(collection: any) {
+  return {
+    ...collection,
+    _count: {
+      ...collection._count,
+      entries: collection._count?.userEntryCollections ?? collection.userEntryCollections?.length ?? 0,
+    },
+    entryCount: collection._count?.userEntryCollections ?? collection.userEntryCollections?.length ?? 0,
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { username: string } }
@@ -30,7 +41,7 @@ export async function GET(
           }
         },
         _count: {
-          select: { entries: true, members: true }
+          select: { userEntryCollections: true, members: true }
         },
         userEntryCollections: {
           take: 2,
@@ -56,7 +67,7 @@ export async function GET(
 
     return NextResponse.json({
       user,
-      collections
+      collections: collections.map(normalizePublicCollection)
     });
   } catch (error) {
     console.error('Error fetching public collections:', error);

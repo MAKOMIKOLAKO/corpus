@@ -22,9 +22,13 @@ export async function GET(
             username: true
           }
         },
-        entries: {
+        userEntryCollections: {
           include: {
-            entry: true
+            userEntry: {
+              include: {
+                globalEntry: true
+              }
+            }
           },
           orderBy: {
             addedAt: 'desc'
@@ -32,7 +36,7 @@ export async function GET(
         },
         _count: {
           select: {
-            entries: true
+            userEntryCollections: true
           }
         }
       }
@@ -53,17 +57,16 @@ export async function GET(
       publicViewCount: collection.publicViewCount + 1, // Include the incremented view
       createdAt: collection.createdAt,
       owner: collection.user,
-      entryCount: collection._count.entries,
-      entries: collection.entries.map(ec => ({
-        id: ec.entry.id,
-        title: ec.entry.title,
-        authors: ec.entry.authors,
-        year: ec.entry.year,
-        contentType: ec.entry.contentType,
-        source: ec.entry.source,
-        url: ec.entry.url,
-        doi: ec.entry.doi,
-        addedAt: ec.addedAt
+      entryCount: collection._count.userEntryCollections,
+      entries: collection.userEntryCollections.map(uec => ({
+        id: uec.userEntry.globalEntry.id,
+        title: uec.userEntry.globalEntry.title,
+        authors: uec.userEntry.globalEntry.authors,
+        year: uec.userEntry.globalEntry.year,
+        source: uec.userEntry.globalEntry.source,
+        url: uec.userEntry.globalEntry.url,
+        doi: uec.userEntry.globalEntry.doi,
+        addedAt: uec.addedAt
       }))
     };
 
