@@ -1,5 +1,6 @@
 import { canAddFeed, getUserPlan } from '@/lib/plans';
 import { prisma } from '@/lib/prismaWithRetry';
+import { ingestSourceById } from '@/lib/rssIngestion';
 import {
   normalizeFeedUrl,
   normalizeFeedUrlForComparison
@@ -252,6 +253,12 @@ export async function subscribeToDefaultFeed(params: {
       }
     });
 
+    try {
+      await ingestSourceById(source.id);
+    } catch (error) {
+      console.error('[rssSubscriptions] Immediate ingestion failed for default feed:', error);
+    }
+
     return {
       status: 'created',
       subscription: serializeSubscription(created)
@@ -356,6 +363,12 @@ export async function subscribeToCustomFeed(params: {
         }
       }
     });
+
+    try {
+      await ingestSourceById(source.id);
+    } catch (error) {
+      console.error('[rssSubscriptions] Immediate ingestion failed for custom feed:', error);
+    }
 
     return {
       status: 'created',
