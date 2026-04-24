@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import { processAllAlerts } from '@/lib/alertProcessor';
 import { prisma } from '@/lib/prismaWithRetry';
-import { parseFeed, normalizeFeedItem } from '@/lib/rssParser';
-import { getDeduplicationKeys, findExistingGlobalEntry, generateContentHash } from '@/lib/entryDedup';
-import { normalizeUrl } from '@/lib/entryDedup';
+import { ingestSourceById } from '@/lib/rssIngestion';
 
 // Verify cron job authorization
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -163,104 +161,9 @@ async function runRSSIngestion() {
     for (const source of sources) {
       try {
         results.sourcesProcessed++;
-
-        // Parse the feed
-        const feed = await parseFeed(source.feedUrl);
-        results.entriesFound += feed.items.length;
-
-        // Process each item
-        for (const item of feed.items) {
-          try {
-            // Normalize the item for deduplication
-            const normalized = normalizeFeedItem(item);
-
-            // Get deduplication keys
-            const dedupKeys = getDeduplicationKeys({
-              doi: null,
-              isbn: null,
-              title: item.title,
-              authors: item.author ? [item.author] : [],
-              url: item.url
-            });
-
-            // Check if entry already exists
-            const existingEntryId = await findExistingGlobalEntry(prisma, dedupKeys);
-
-            // Get or create GlobalEntry ID
-            let globalEntryId = existingEntryId;
-
-            if (existingEntryId) {
-              console.log(`[cron/smart-alerts] Entry already exists: ${item.title}`);
-            } else {
-              // Create new global entry
-              const contentHash = generateContentHash({
-                doi: null,
-                isbn: null,
-                normalizedTitle: normalized.normalizedTitle,
-                normalizedFirstAuthor: normalized.normalizedFirstAuthor,
-                publicationYear: normalized.publicationYear,
-                canonicalUrl: normalized.canonicalUrl
-              });
-
-              const globalEntry = await prisma.globalEntry.create({
-                data: {
-                  title: item.title,
-                  authors: item.author ? [item.author] : [],
-                  year: normalized.publicationYear,
-                  abstract: item.description || item.content,
-                  url: item.url,
-                  source: source.title || source.domain,
-                  normalizedTitle: normalized.normalizedTitle,
-                  normalizedFirstAuthor: normalized.normalizedFirstAuthor,
-                  publicationYear: normalized.publicationYear,
-                  canonicalUrl: normalized.canonicalUrl,
-                  contentHash,
-                  addedVia: 'rss_ingestion'
-                }
-              });
-              globalEntryId = globalEntry.id;
-              results.entriesCreated++;
-              console.log(`[cron/smart-alerts] Created entry: ${item.title}`);
-
-              // Trigger AI summary generation asynchronously
-              const summaryInput = item.description || item.content;
-              if (summaryInput) {
-                try {
-                  fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/summarize`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      text: summaryInput,
-                      maxSentences: 3
-                    })
-                  }).then(async (res) => {
-                    if (res.ok) {
-                      const { summary } = await res.json();
-                      await prisma.globalEntry.update({
-                        where: { id: globalEntryId! },
-                        data: { summary }
-                      });
-                    }
-                  }).catch(err => {
-                    console.error(`[cron/smart-alerts] Failed to generate summary:`, err);
-                  });
-                } catch (error) {
-                  console.error(`[cron/smart-alerts] Error triggering summary:`, error);
-                }
-              }
-            }
-
-          } catch (error) {
-            console.error(`[cron/smart-alerts] Error processing item:`, error);
-            results.errors.push(`Error processing item from ${source.feedUrl}: ${error}`);
-          }
-        }
-
-        // Update source last fetched timestamp
-        await prisma.source.update({
-          where: { id: source.id },
-          data: { lastFetchedAt: new Date() }
-        });
+        const ingestion = await ingestSourceById(source.id);
+        results.entriesFound += ingestion.entriesFound;
+        results.entriesCreated += ingestion.entriesCreated;
       } catch (error) {
         console.error(`[cron/smart-alerts] Error processing source ${source.feedUrl}:`, error);
         results.errors.push(`Error processing source ${source.feedUrl}: ${error}`);

@@ -41,6 +41,11 @@ async function handleGet(request: NextRequest) {
 
   console.log('[research-feed] User found:', { userId: user.id, plan: user.plan })
 
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastFeedViewedAt: new Date() },
+  })
+
   if (!isPro(user.plan)) {
     console.log('[research-feed] Access denied - not Pro plan:', user.plan)
     return NextResponse.json(

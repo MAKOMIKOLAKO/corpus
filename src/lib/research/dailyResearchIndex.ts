@@ -148,7 +148,12 @@ export async function buildDailyResearchIndex(): Promise<{ date: string; candida
 
   console.log('[dailyResearchIndex] Rows after parsing:', rows.length)
 
-  await prisma.$executeRaw(Prisma.sql`DELETE FROM "DailyCandidateSetPaper"`)
+  await prisma.$executeRaw(Prisma.sql`
+    DELETE FROM "DailyCandidateSetPaper"
+    WHERE "dailyCandidateSetId" IN (
+      SELECT "id" FROM "DailyCandidateSet" WHERE "date" = ${bucketDate}
+    )
+  `)
   await prisma.$executeRaw(Prisma.sql`DELETE FROM "DailyCandidateSet" WHERE "date" = ${bucketDate}`)
 
   await prisma.$executeRaw(Prisma.sql`
