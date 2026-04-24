@@ -86,15 +86,19 @@ async function handleGet(request: NextRequest) {
           fromCache: cached.fromCache,
           generatedAt: cached.generatedAt
         })
-        // Check if feed has summaries (if not, it was pre-generated via cron)
-        const needsSummaries = cached.papers.some((p: PaperSummaryObject) => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
-        if (needsSummaries) {
-          console.log('[research-feed] Feed needs lazy summaries')
-          // Return feed without summaries, frontend will lazy-load them
-          return NextResponse.json({ ...cached, needsLazySummaries: true })
+        if (cached.actualCount === 0) {
+          console.log('[research-feed] Cached feed is empty, regenerating fresh feed')
+        } else {
+          // Check if feed has summaries (if not, it was pre-generated via cron)
+          const needsSummaries = cached.papers.some((p: PaperSummaryObject) => !p.plainSummary || !p.technicalSummary || p.whyExplanation === '')
+          if (needsSummaries) {
+            console.log('[research-feed] Feed needs lazy summaries')
+            // Return feed without summaries, frontend will lazy-load them
+            return NextResponse.json({ ...cached, needsLazySummaries: true })
+          }
+          console.log('[research-feed] Returning cached feed with summaries')
+          return NextResponse.json(cached)
         }
-        console.log('[research-feed] Returning cached feed with summaries')
-        return NextResponse.json(cached)
       }
       console.log('[research-feed] No cached feed found')
     } catch (err) {
