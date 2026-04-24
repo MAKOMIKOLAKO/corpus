@@ -314,8 +314,6 @@ export default function EntryCard({
     };
 
     const handleDelete = async () => {
-        if (!confirm(`Are you sure you want to delete "${entry.title}"?`)) return;
-
         try {
             const response = await fetch(`/api/entries/${entry.id}`, {
                 method: 'DELETE',
