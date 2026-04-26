@@ -1,38 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
-export function adminAuth(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export function isAdminUser(userId: string): boolean {
+  try {
+    if (!userId) {
+      return false;
+    }
+
+    const adminUserIds = process.env.ADMIN_USER_IDS;
+
+    if (!adminUserIds) {
+      return false;
+    }
+
+    const allowedIds = adminUserIds
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    if (allowedIds.length === 0) {
+      return false;
+    }
+
+    return allowedIds.includes(userId);
+  } catch {
+    return false;
   }
-
-  // Decode Basic Auth
-  const base64Credentials = authHeader.split(' ')[1];
-  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-  const [username, password] = credentials.split(':');
-
-  // Check against environment variables
-  const adminUsername = process.env.ADMIN_USERNAME;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  if (!adminUsername || !adminPassword) {
-    console.error('Admin credentials not configured in environment variables');
-    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-  }
-
-  if (username !== adminUsername || password !== adminPassword) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
-
-  return null; // Success
 }
 
-// For use in API routes
-export async function validateAdminAuth(request: NextRequest) {
-  const authResult = adminAuth(request);
-  if (authResult) {
-    return authResult;
+export async function requireAdminSession() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return null;
+    }
+
+    if (!isAdminUser(session.user.id)) {
+      return null;
+    }
+
+    return session;
+  } catch {
+    return null;
   }
-  return null;
 }

@@ -68,6 +68,10 @@ model User {
   dailyPaperScores          DailyPaperScore[]
   dailyBriefs               DailyBrief[]
   readingSessions           PaperReadingSession[]
+
+  @@index([plan])
+  @@index([createdAt])
+  @@index([plan, subscriptionStatus])
 }
 
 model PasswordResetToken {
@@ -144,6 +148,8 @@ model Collection {
   userEntryCollections UserEntryCollection[]
   signals           Signal[]
   watchQueries      WatchQuery[]
+
+  @@index([isShared, isPublic])
 }
 
 model WatchQuery {
@@ -235,6 +241,8 @@ model PromoCode {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
   user      User?     @relation(fields: [usedBy], references: [id])
+
+  @@index([usedAt])
 }
 
 model Connection {
@@ -248,6 +256,7 @@ model Connection {
   requester   User             @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
 
   @@unique([requesterId, receiverId])
+  @@index([status, createdAt])
 }
 
 model SharedEntry {
@@ -312,6 +321,7 @@ model AnalyticsEvent {
 
   @@index([event, timestamp])
   @@index([userId, event])
+  @@index([userId, timestamp])
 }
 
 model Feedback {
@@ -344,6 +354,9 @@ model QueueItem {
   priority     Int             @default(0)
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   globalEntry  GlobalEntry?    @relation("GlobalEntryQueueItems", fields: [globalEntryId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Notification {
@@ -524,6 +537,7 @@ model GlobalEntry {
   @@index([contentHash])
   @@index([normalizedTitle, normalizedFirstAuthor, publicationYear])
   @@index([saveCount])
+  @@index([createdAt])
 }
 
 model UserEntry {
@@ -558,6 +572,8 @@ model UserEntry {
   @@index([globalEntryId])
   @@index([userId, readingStatus])
   @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([addedVia])
 }
 
 model UserEntryCollection {
@@ -641,6 +657,33 @@ model GeneratedBibliography {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([citationStyle])
+}
+
+model DailyMetricsSnapshot {
+  id                     String   @id @default(cuid())
+  date                   DateTime
+  totalUsers             Int
+  newUsers               Int
+  activeUsers            Int
+  proUsers               Int
+  newProSubscriptions    Int
+  churnedSubscriptions   Int
+  totalEntries           Int
+  newEntries             Int
+  totalCollections       Int
+  newCollections         Int
+  totalConnections       Int
+  newConnections         Int
+  queueItemsProcessed    Int
+  queueSuccessRate       Float
+  dailyBriefsGenerated   Int
+  readingSessionsStarted Int
+  bibliographiesGenerated Int
+  createdAt              DateTime @default(now())
+
+  @@index([date])
+  @@unique([date])
 }
 
 // ===== RESEARCH READING SYSTEM =====
@@ -775,6 +818,8 @@ model DailyBrief {
 
   @@unique([userId, date])
   @@index([userId, date])
+  @@index([generatedAt])
+  @@index([viewedAt])
 }
 
 model PaperReadingSession {
@@ -793,6 +838,7 @@ model PaperReadingSession {
   messages      PaperReadingMessage[]
 
   @@index([userId, lastActivity])
+  @@index([sessionStarted])
 }
 
 model PaperReadingMessage {
