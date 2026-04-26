@@ -142,6 +142,16 @@ function normalizeBucketCounts<T extends { date: Date | string; value: number }>
   }));
 }
 
+async function findDailyMetricsSnapshots(args: unknown): Promise<SnapshotRow[]> {
+  try {
+    const rows = await withRetry(() => prismaDynamic.dailyMetricsSnapshot.findMany(args));
+    return rows as SnapshotRow[];
+  } catch (error) {
+    console.warn('[adminMetrics] DailyMetricsSnapshot unavailable, using fallback metrics.', error);
+    return [];
+  }
+}
+
 async function getQueueSuccessRateSince(startDate: Date) {
   const queueStatuses = await withRetry(() => prisma.queueItem.groupBy({
     by: ['status'],
@@ -402,10 +412,10 @@ export async function getOverviewMetrics() {
     },
   }));
 
-  const snapshots = await withRetry(() => prismaDynamic.dailyMetricsSnapshot.findMany({
+  const snapshots = await findDailyMetricsSnapshots({
     where: { date: { gte: monthAgo } },
     orderBy: { date: 'asc' },
-  })) as SnapshotRow[];
+  });
 
   const sparkline = snapshots.map((snapshot) => ({
     date: formatDateKey(snapshot.date),
@@ -526,10 +536,10 @@ export async function getOverviewMetrics() {
 
 export async function getGrowthMetrics(period: Period) {
   const { start, end, bucket } = getPeriodRange(period);
-  const snapshots = await withRetry(() => prismaDynamic.dailyMetricsSnapshot.findMany({
+  const snapshots = await findDailyMetricsSnapshots({
     where: { date: { gte: start, lte: end } },
     orderBy: { date: 'asc' },
-  })) as SnapshotRow[];
+  });
 
   let rows: SnapshotRow[] = snapshots;
 
