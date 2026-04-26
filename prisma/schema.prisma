@@ -68,6 +68,7 @@ model User {
   dailyPaperScores          DailyPaperScore[]
   dailyBriefs               DailyBrief[]
   readingSessions           PaperReadingSession[]
+  geminiApiCalls            GeminiApiCall[]
 
   @@index([plan])
   @@index([createdAt])
@@ -683,6 +684,49 @@ model DailyMetricsSnapshot {
   createdAt              DateTime @default(now())
 
   @@index([date])
+  @@unique([date])
+}
+
+model GeminiApiCall {
+  id           String   @id @default(cuid())
+  userId       String?
+  feature      String
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  inputCost    Float
+  outputCost   Float
+  totalCost    Float
+  success      Boolean
+  errorMessage String?
+  durationMs   Int?
+  calledAt     DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, calledAt])
+  @@index([feature, calledAt])
+  @@index([calledAt])
+  @@index([model, calledAt])
+  @@index([userId, feature, calledAt])
+}
+
+model DailyCostSnapshot {
+  id                   String   @id @default(cuid())
+  date                 DateTime
+  totalCost            Float
+  totalCalls           Int
+  totalInputTokens     Int
+  totalOutputTokens    Int
+  costByFeature        Json
+  callsByFeature       Json
+  costByModel          Json
+  uniqueUsersServed    Int
+  avgCostPerActiveUser Float
+  projectedMonthlyCost Float
+  reportText           String?  @db.Text
+  createdAt            DateTime @default(now())
+
   @@unique([date])
 }
 

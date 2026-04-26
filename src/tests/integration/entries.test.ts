@@ -16,6 +16,8 @@ jest.mock('@/lib/prisma', () => ({
 
 import prisma from '@/lib/prisma'
 
+const mockPrisma = prisma as any
+
 describe('/api/entries', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -30,8 +32,8 @@ describe('/api/entries', () => {
         createTestUserEntry({ id: 'entry-2' }),
       ]
 
-      prisma.userEntry.findMany.mockResolvedValue(mockEntries)
-      prisma.userEntry.count.mockResolvedValue(2)
+      mockPrisma.userEntry.findMany.mockResolvedValue(mockEntries)
+      mockPrisma.userEntry.count.mockResolvedValue(2)
 
       // Create mock request
       const request = new NextRequest('http://localhost:3000/api/entries?page=1&limit=10')
@@ -50,8 +52,8 @@ describe('/api/entries', () => {
 
     it('should filter by search query', async () => {
       // Arrange
-      prisma.userEntry.findMany.mockResolvedValue([])
-      prisma.userEntry.count.mockResolvedValue(0)
+      mockPrisma.userEntry.findMany.mockResolvedValue([])
+      mockPrisma.userEntry.count.mockResolvedValue(0)
 
       const request = new NextRequest('http://localhost:3000/api/entries?q=machine+learning')
 
@@ -59,7 +61,7 @@ describe('/api/entries', () => {
       await GET(request)
 
       // Assert
-      expect(prisma.userEntry.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.userEntry.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             globalEntry: {
@@ -76,8 +78,8 @@ describe('/api/entries', () => {
 
     it('should filter by reading status', async () => {
       // Arrange
-      prisma.userEntry.findMany.mockResolvedValue([])
-      prisma.userEntry.count.mockResolvedValue(0)
+      mockPrisma.userEntry.findMany.mockResolvedValue([])
+      mockPrisma.userEntry.count.mockResolvedValue(0)
 
       const request = new NextRequest('http://localhost:3000/api/entries?readingStatus=COMPLETED')
 
@@ -85,7 +87,7 @@ describe('/api/entries', () => {
       await GET(request)
 
       // Assert
-      expect(prisma.userEntry.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.userEntry.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             readingStatus: 'COMPLETED',
@@ -120,12 +122,12 @@ describe('/api/entries', () => {
       const mockGlobalEntry = createTestGlobalEntry()
       const mockUserEntry = createTestUserEntry()
 
-      prisma.globalEntry.findFirst.mockResolvedValue(null)
-      prisma.globalEntry.create.mockResolvedValue(mockGlobalEntry)
-      prisma.userEntry.findUnique.mockResolvedValue(null)
-      prisma.userEntry.create.mockResolvedValue(mockUserEntry)
-      prisma.user.update.mockResolvedValue({} as any)
-      prisma.signal.create.mockResolvedValue({} as any)
+      mockPrisma.globalEntry.findFirst.mockResolvedValue(null)
+      mockPrisma.globalEntry.create.mockResolvedValue(mockGlobalEntry)
+      mockPrisma.userEntry.findUnique.mockResolvedValue(null)
+      mockPrisma.userEntry.create.mockResolvedValue(mockUserEntry)
+      mockPrisma.user.update.mockResolvedValue({} as any)
+      mockPrisma.signal.create.mockResolvedValue({} as any)
 
       const request = new NextRequest('http://localhost:3000/api/entries', {
         method: 'POST',
@@ -148,7 +150,7 @@ describe('/api/entries', () => {
       const existingEntry = createTestEntry({ title: 'Existing Paper' })
       const mockUserEntry = createTestUserEntry({ title: 'Existing Paper' })
 
-      prisma.userEntry.findUnique.mockResolvedValue(mockUserEntry)
+      mockPrisma.userEntry.findUnique.mockResolvedValue(mockUserEntry)
 
       const request = new NextRequest('http://localhost:3000/api/entries', {
         method: 'POST',
@@ -196,7 +198,7 @@ describe('/api/entries/[id]', () => {
     it('should return a specific entry', async () => {
       // Arrange
       const mockUserEntry = createTestUserEntry({ id: 'entry-1' })
-      prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
+      mockPrisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
 
       const request = new NextRequest('http://localhost:3000/api/entries/entry-1')
       const params = { id: 'entry-1' }
@@ -208,7 +210,7 @@ describe('/api/entries/[id]', () => {
       // Assert
       expect(response.status).toBe(200)
       expect(data.id).toBe('entry-1')
-      expect(prisma.userEntry.update).toHaveBeenCalledWith({
+      expect(mockPrisma.userEntry.update).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
         data: { lastViewedAt: expect.any(Date) },
       })
@@ -216,7 +218,7 @@ describe('/api/entries/[id]', () => {
 
     it('should return 404 for non-existent entry', async () => {
       // Arrange
-      prisma.userEntry.findFirst.mockResolvedValue(null)
+      mockPrisma.userEntry.findFirst.mockResolvedValue(null)
 
       const request = new NextRequest('http://localhost:3000/api/entries/non-existent')
       const params = { id: 'non-existent' }
@@ -249,8 +251,8 @@ describe('/api/entries/[id]', () => {
       const mockUserEntry = createTestUserEntry({ id: 'entry-1', readingStatus: 'UNREAD' })
       const updatedEntry = { ...mockUserEntry, readingStatus: 'COMPLETED' }
 
-      prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
-      prisma.userEntry.update.mockResolvedValue(updatedEntry)
+      mockPrisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
+      mockPrisma.userEntry.update.mockResolvedValue(updatedEntry)
 
       const request = new NextRequest('http://localhost:3000/api/entries/entry-1', {
         method: 'PATCH',
@@ -264,7 +266,7 @@ describe('/api/entries/[id]', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(prisma.userEntry.update).toHaveBeenCalledWith({
+      expect(mockPrisma.userEntry.update).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
         data: { readingStatus: 'COMPLETED', updatedAt: expect.any(Date) },
       })
@@ -277,10 +279,10 @@ describe('/api/entries/[id]', () => {
         metadata: { notes: [{ text: 'Existing note', createdAt: '2024-01-01' }] },
       })
 
-      prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
-      prisma.globalEntry.findUnique.mockResolvedValue(mockGlobalEntry)
-      prisma.globalEntry.update.mockResolvedValue(mockGlobalEntry)
-      prisma.userEntry.findUnique.mockResolvedValue(mockUserEntry)
+      mockPrisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
+      mockPrisma.globalEntry.findUnique.mockResolvedValue(mockGlobalEntry)
+      mockPrisma.globalEntry.update.mockResolvedValue(mockGlobalEntry)
+      mockPrisma.userEntry.findUnique.mockResolvedValue(mockUserEntry)
 
       const request = new NextRequest('http://localhost:3000/api/entries/entry-1', {
         method: 'PATCH',
@@ -296,7 +298,7 @@ describe('/api/entries/[id]', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(prisma.globalEntry.update).toHaveBeenCalledWith({
+      expect(mockPrisma.globalEntry.update).toHaveBeenCalledWith({
         where: { id: mockUserEntry.globalEntryId },
         data: {
           metadata: {
@@ -316,10 +318,10 @@ describe('/api/entries/[id]', () => {
       // Arrange
       const mockUserEntry = createTestUserEntry({ id: 'entry-1' })
 
-      prisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
-      prisma.userEntry.delete.mockResolvedValue({} as any)
-      prisma.globalEntry.update.mockResolvedValue({} as any)
-      prisma.user.update.mockResolvedValue({} as any)
+      mockPrisma.userEntry.findFirst.mockResolvedValue(mockUserEntry)
+      mockPrisma.userEntry.delete.mockResolvedValue({} as any)
+      mockPrisma.globalEntry.update.mockResolvedValue({} as any)
+      mockPrisma.user.update.mockResolvedValue({} as any)
 
       const request = new NextRequest('http://localhost:3000/api/entries/entry-1', {
         method: 'DELETE',
@@ -333,7 +335,7 @@ describe('/api/entries/[id]', () => {
       // Assert
       expect(response.status).toBe(200)
       expect(data.success).toBe(true)
-      expect(prisma.userEntry.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.userEntry.delete).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
       })
     })
@@ -354,10 +356,10 @@ describe('/api/entries/batch', () => {
         createTestUserEntry({ id: 'entry-2' }),
       ]
 
-      prisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
-      prisma.userEntry.delete.mockResolvedValue({} as any)
-      prisma.globalEntry.update.mockResolvedValue({} as any)
-      prisma.user.update.mockResolvedValue({} as any)
+      mockPrisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
+      mockPrisma.userEntry.delete.mockResolvedValue({} as any)
+      mockPrisma.globalEntry.update.mockResolvedValue({} as any)
+      mockPrisma.user.update.mockResolvedValue({} as any)
 
       const request = new NextRequest('http://localhost:3000/api/entries/batch', {
         method: 'POST',
@@ -385,8 +387,8 @@ describe('/api/entries/batch', () => {
         createTestUserEntry({ id: 'entry-2', readingStatus: 'UNREAD' }),
       ]
 
-      prisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
-      prisma.userEntry.updateMany.mockResolvedValue({ count: 2 })
+      mockPrisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
+      mockPrisma.userEntry.updateMany.mockResolvedValue({ count: 2 })
 
       const request = new NextRequest('http://localhost:3000/api/entries/batch', {
         method: 'POST',
@@ -403,7 +405,7 @@ describe('/api/entries/batch', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(prisma.userEntry.updateMany).toHaveBeenCalledWith({
+      expect(mockPrisma.userEntry.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['entry-1', 'entry-2'] } },
         data: { readingStatus: 'COMPLETED' },
       })
@@ -416,10 +418,10 @@ describe('/api/entries/batch', () => {
         createTestUserEntry({ id: 'entry-2' }),
       ]
 
-      prisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
-      prisma.collection.findUnique.mockResolvedValue({ userId: 'user-1' } as any)
-      prisma.userEntryCollection.createMany.mockResolvedValue({ count: 2 })
-      prisma.signal.create.mockResolvedValue({} as any)
+      mockPrisma.userEntry.findMany.mockResolvedValue(mockUserEntries)
+      mockPrisma.collection.findUnique.mockResolvedValue({ userId: 'user-1' } as any)
+      mockPrisma.userEntryCollection.createMany.mockResolvedValue({ count: 2 })
+      mockPrisma.signal.create.mockResolvedValue({} as any)
 
       const request = new NextRequest('http://localhost:3000/api/entries/batch', {
         method: 'POST',
@@ -436,7 +438,7 @@ describe('/api/entries/batch', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(prisma.userEntryCollection.createMany).toHaveBeenCalledWith({
+      expect(mockPrisma.userEntryCollection.createMany).toHaveBeenCalledWith({
         data: [
           { userEntryId: 'entry-1', collectionId: 'collection-1' },
           { userEntryId: 'entry-2', collectionId: 'collection-1' },

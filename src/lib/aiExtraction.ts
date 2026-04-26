@@ -3,13 +3,7 @@
  * Direct calls to Google AI without HTTP requests
  */
 
-import { Chat, GoogleGenAI } from '@google/genai';
-
-// Initialize GoogleGenAI and chat
-const genai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || ''
-});
-const chat = new Chat((genai as any).models.apiClient, genai.models, 'gemini-1.5-flash');
+import { callGemini } from '@/lib/research/geminiResearch';
 
 export interface AIMetadata {
   title: string;
@@ -22,10 +16,6 @@ export interface AIMetadata {
  * Extract metadata from text using Google AI
  */
 export async function extractMetadataFromAI(url: string, text: string): Promise<AIMetadata> {
-  if (!process.env.GOOGLE_AI_API_KEY) {
-    throw new Error('Google AI API key is not configured');
-  }
-
   const prompt = `Extract structured metadata from the following web content. You MUST respond with a valid JSON object only. Do not include any explanations, markdown formatting, or text outside the JSON.
 
 Required JSON format:
@@ -44,8 +34,17 @@ ${text.slice(0, 8000)}
 JSON Response:`;
 
   try {
-    const response = await chat.sendMessage({ message: prompt });
-    const content = response.text;
+    const content = await callGemini(
+      prompt,
+      'You extract structured web metadata and return valid JSON only.',
+      0,
+      true,
+      {
+        feature: 'url_metadata_extraction',
+        userId: null,
+        model: 'gemini-2.5-flash',
+      }
+    );
 
     if (!content) {
       console.error('AI Response: No content received');
@@ -173,10 +172,6 @@ function extractBasicSummary(text: string): string {
  * Generate a summary using Google AI
  */
 export async function generateSummary(text: string, maxSentences: number = 2): Promise<string> {
-  if (!process.env.GOOGLE_AI_API_KEY) {
-    throw new Error('Google AI API key is not configured');
-  }
-
   const prompt = `Create a concise summary of exactly ${maxSentences} sentence(s) for the following text. The summary should capture the main points clearly and briefly.
 
 Text:
@@ -185,8 +180,17 @@ ${text.slice(0, 4000)} // Limit text to manage token usage
 Summary:`;
 
   try {
-    const response = await chat.sendMessage({ message: prompt });
-    const summary = response.text?.trim();
+    const summary = await callGemini(
+      prompt,
+      'You write concise, accurate summaries in plain text.',
+      0.2,
+      false,
+      {
+        feature: 'paper_summarization',
+        userId: null,
+        model: 'gemini-2.5-flash',
+      }
+    );
 
     if (!summary) {
       throw new Error('No response from AI');

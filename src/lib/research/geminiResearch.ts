@@ -3,47 +3,32 @@
  * Temperature settings, prompts, and output formats per spec PART 6.
  */
 
-const GEMINI_MODEL = 'gemini-2.5-flash'
+import { callGemini as callGeminiClient } from '@/lib/geminiClient'
 
-function getGeminiKey(): string {
-  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY
-  if (!key) throw new Error('GEMINI_API_KEY is required')
-  return key
-}
+const GEMINI_MODEL = 'gemini-2.5-flash'
 
 export async function callGemini(
   prompt: string,
   systemInstruction: string,
   temperature: number = 0,
-  expectJson: boolean = true
+  expectJson: boolean = true,
+  options?: {
+    feature?: string
+    userId?: string | null
+    model?: string
+    maxOutputTokens?: number
+  }
 ): Promise<string> {
-  const apiKey = getGeminiKey()
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
-
-  const body: Record<string, unknown> = {
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    systemInstruction: { parts: [{ text: systemInstruction }] },
-    generationConfig: {
-      temperature,
-      ...(expectJson ? { response_mime_type: 'application/json' } : {}),
-    },
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return callGeminiClient({
+    model: options?.model ?? GEMINI_MODEL,
+    prompt,
+    systemPrompt: systemInstruction,
+    temperature,
+    maxOutputTokens: options?.maxOutputTokens,
+    feature: options?.feature ?? 'other',
+    userId: options?.userId ?? null,
+    responseMimeType: expectJson ? 'application/json' : undefined,
   })
-
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Gemini API error ${response.status}: ${err}`)
-  }
-
-  const data = await response.json()
-  const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  if (!text) throw new Error('Gemini returned empty response')
-  return text.trim()
 }
 
 export function safeParseJson<T>(text: string, fallback: T): T {
@@ -72,7 +57,8 @@ export interface PaperMetadata {
  */
 export async function extractMetadata(
   title: string,
-  abstract: string
+  abstract: string,
+  options?: { userId?: string | null }
 ): Promise<PaperMetadata> {
   const system = `You are a research paper metadata extractor. Return only valid JSON. Do not add any explanation.`
   const prompt = `Title: "${title}"
@@ -86,7 +72,10 @@ Extract the following and return as JSON:
   "complexityScore": integer 1-5 where 1=undergraduate accessible, 5=requires deep domain expertise
 }`
 
-  const text = await callGemini(prompt, system, 0, true)
+  const text = await callGemini(prompt, system, 0, true, {
+    feature: 'metadata_extraction',
+    userId: options?.userId ?? null,
+  })
   return safeParseJson<PaperMetadata>(text, {
     methodology: 'empirical',
     domainTags: [],
@@ -103,7 +92,8 @@ Extract the following and return as JSON:
  * Temperature: 0 (deterministic).
  */
 export async function labelCluster(
-  papers: Array<{ title: string; abstract?: string | null }>
+  papers: Array<{ title: string; abstract?: string | null }>,
+  options?: { userId?: string | null }
 ): Promise<string> {
   const system = `You are a research topic labeler. Return only a JSON object with one field: label (string, 3-6 words max).`
   const paperList = papers
@@ -116,7 +106,10 @@ ${paperList}
 
 Provide a concise thematic label that captures what these papers have in common. Be specific — not "Machine Learning" but "Efficient Transformer Attention Mechanisms".`
 
-  const text = await callGemini(prompt, system, 0, true)
+  const text = await callGemini(prompt, system, 0, true, {
+    feature: 'cluster_labeling',
+    userId: options?.userId ?? null,
+  })
   const parsed = safeParseJson<{ label: string }>(text, { label: 'Research Papers' })
   return parsed.label || 'Research Papers'
 }
@@ -149,7 +142,7 @@ export async function generatePaperSummaries(paper: {
   authors: string[]
   abstract?: string | null
   candidateMetadata?: PaperMetadata | null
-}): Promise<PaperSummaries> {
+}, options?: { userId?: string | null }): Promise<PaperSummaries> {
   const system = `You are a research summarizer writing for an intelligent non-specialist. Be precise. Do not oversimplify to the point of inaccuracy. Return only a JSON object.`
   const prompt = `Title: "${paper.title}"
 Authors: ${paper.authors.slice(0, 5).join(', ')}
@@ -163,7 +156,10 @@ Return JSON:
   "noveltyTag": one of ${JSON.stringify(NOVELTY_TAGS)}
 }`
 
-  const text = await callGemini(prompt, system, 0.3, true)
+  const text = await callGemini(prompt, system, 0.3, true, {
+    feature: 'paper_summarization',
+    userId: options?.userId ?? null,
+  })
   return safeParseJson<PaperSummaries>(text, {
     plainSummary: paper.abstract?.slice(0, 300) ?? '',
     technicalSummary: paper.abstract?.slice(0, 200) ?? '',
@@ -181,7 +177,8 @@ export async function generateWhyExplanation(
   userContext: {
     topDomains: string[] // top 5 domain tags by weight
     recentPaperTitles: string[] // last 5 saved paper titles
-  }
+  },
+  options?: { userId?: string | null }
 ): Promise<string> {
   const system = `You are a personalized research recommender. Return only a JSON object.`
   const prompt = `Paper title: "${paper.title}"
@@ -197,7 +194,10 @@ Return JSON:
   "whyExplanation": "1-2 sentences explaining specifically why this paper is relevant to this user's research interests. Reference specific aspects of their interests. Never be generic."
 }`
 
-  const text = await callGemini(prompt, system, 0.3, true)
+  const text = await callGemini(prompt, system, 0.3, true, {
+    feature: 'why_explanation',
+    userId: options?.userId ?? null,
+  })
   const parsed = safeParseJson<{ whyExplanation: string }>(text, {
     whyExplanation: 'This paper aligns with your research interests.',
   })
@@ -210,7 +210,8 @@ Return JSON:
  */
 export async function generateEmergingTrends(
   clusterLabels: string[],
-  paperTitles: string[]
+  paperTitles: string[],
+  options?: { userId?: string | null }
 ): Promise<string> {
   const system = `You are a research landscape analyst. Return only plain text, no JSON.`
   const prompt = `Today's research themes (cluster labels): ${clusterLabels.join(', ')}
@@ -220,5 +221,8 @@ ${paperTitles.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
 Write a 3-5 sentence paragraph describing what research directions appear to be active today based on this personalized feed. Focus on patterns and momentum, not individual papers.`
 
-  return callGemini(prompt, system, 0.3, false)
+  return callGemini(prompt, system, 0.3, false, {
+    feature: 'emerging_trends',
+    userId: options?.userId ?? null,
+  })
 }

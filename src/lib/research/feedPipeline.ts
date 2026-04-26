@@ -552,12 +552,12 @@ export async function generateDailyBrief(
 
   if (!skipSummarization) {
     console.log(`[feedPipeline] Starting summarization...`)
-    clusterLabels = await labelClusters(clusters, top100)
+    clusterLabels = await labelClusters(clusters, top100, userId)
     console.log(`[feedPipeline] Cluster labels generated`)
 
     // Generate or retrieve summaries for selected papers
     summaryResults = await Promise.allSettled(
-      selected.map((item) => ensurePaperSummaries(item.candidate))
+      selected.map((item) => ensurePaperSummaries(item.candidate, userId))
     )
     console.log(`[feedPipeline] Paper summaries generated`)
 
@@ -571,7 +571,8 @@ export async function generateDailyBrief(
             abstract: item.candidate.abstract,
             candidateMetadata: item.candidate.candidateMetadata as PaperMetadata | null,
           },
-          userCtx
+          userCtx,
+          { userId }
         )
       )
     )
@@ -581,7 +582,7 @@ export async function generateDailyBrief(
     const selectedTitles = selected.map((s) => s.candidate.title)
     const allClusterLabels = Object.values(clusterLabels)
     try {
-      emergingTrends = await generateEmergingTrends(allClusterLabels, selectedTitles)
+      emergingTrends = await generateEmergingTrends(allClusterLabels, selectedTitles, { userId })
       console.log(`[feedPipeline] Emerging trends generated`)
     } catch (err) {
       console.error('[feedPipeline] Emerging trends generation failed:', err)
@@ -946,7 +947,8 @@ function diversitySelect(
  */
 async function labelClusters(
   clusters: ClusterResult[],
-  scored: Array<{ candidate: { id: string; title: string; abstract: string | null }, composite: number }>
+  scored: Array<{ candidate: { id: string; title: string; abstract: string | null }, composite: number }>,
+  userId: string
 ): Promise<Record<number, string>> {
   const labels: Record<number, string> = {}
 
@@ -967,7 +969,7 @@ async function labelClusters(
       }
 
       try {
-        const label = await labelCluster(sample)
+        const label = await labelCluster(sample, { userId })
         labels[cluster.clusterIndex] = label
       } catch {
         labels[cluster.clusterIndex] = `Topic ${cluster.clusterIndex + 1}`
@@ -991,7 +993,7 @@ async function ensurePaperSummaries(paper: {
   plainSummary: string | null
   technicalSummary: string | null
   noveltyTag: string | null
-}): Promise<{ plainSummary: string; technicalSummary: string; noveltyTag: string }> {
+}, userId: string): Promise<{ plainSummary: string; technicalSummary: string; noveltyTag: string }> {
   if (paper.plainSummary && paper.technicalSummary && paper.noveltyTag) {
     return {
       plainSummary: paper.plainSummary,
@@ -1005,7 +1007,7 @@ async function ensurePaperSummaries(paper: {
     authors: paper.authors,
     abstract: paper.abstract,
     candidateMetadata: paper.candidateMetadata as PaperMetadata | null,
-  })
+  }, { userId })
 
   // Cache on CandidatePaper
   await prisma.candidatePaper.update({

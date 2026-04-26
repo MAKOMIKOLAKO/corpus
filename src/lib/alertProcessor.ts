@@ -233,7 +233,7 @@ export async function processQuery(query: {
   for (let i = 0; i < candidates.length; i += batchSize) {
     const batch = candidates.slice(i, i + batchSize)
     const results = await Promise.allSettled(
-      batch.map(paper => checkRelevance(query.query, paper))
+      batch.map(paper => checkRelevance(query.query, paper, query.userId))
     )
 
     for (let j = 0; j < results.length; j++) {
@@ -552,7 +552,8 @@ async function fetchCandidatePapers(
 
 async function checkRelevance(
   userQuery: string,
-  paper: CandidatePaper
+  paper: CandidatePaper,
+  userId: string | null
 ): Promise<boolean> {
   if (!paper.abstract) {
     // No abstract — use title only with lower confidence
@@ -570,7 +571,10 @@ Is this paper directly relevant to the user's research interest?
 Answer with only YES or NO. No explanation.`
 
   try {
-    const answer = await callGemini(prompt, system, 0, false)
+    const answer = await callGemini(prompt, system, 0, false, {
+      feature: 'relevance_check',
+      userId,
+    })
     const isRelevant = answer.trim().toUpperCase() === 'YES'
     return isRelevant
   } catch (error) {

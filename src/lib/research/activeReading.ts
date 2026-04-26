@@ -446,7 +446,10 @@ Split the text into logical sections (e.g., Abstract, Introduction, Background, 
 Return a JSON array of objects: [{"title": "Section Title", "content": "Full section text content"}]
 Keep the content verbatim from the input. Do not summarize. If a section is very long, keep the most important parts.`
 
-  const responseText = await callGemini(prompt, system, 0, true)
+  const responseText = await callGemini(prompt, system, 0, true, {
+    feature: 'section_explanation',
+    userId: null,
+  })
   return safeParseJson<PaperSection[]>(responseText, [
     { title: 'Full Text', content: text.slice(0, 10000) }
   ])
@@ -495,7 +498,10 @@ USER: ${userMessage}
 ASSISTANT:`
 
   // Use temperature 0.3 for a balance of precision and helpfulness
-  return callGemini(prompt, system, 0.3, false)
+  return callGemini(prompt, system, 0.3, false, {
+    feature: 'qa_response',
+    userId: session.userId,
+  })
 }
 
 /**
@@ -525,5 +531,8 @@ Analyze the methodology and provide:
 4. Evaluation metrics used
 5. Key assumptions or limitations stated by the authors.`
 
-  return callGemini(prompt, system, 0, false)
+  return callGemini(prompt, system, 0, false, {
+    feature: 'method_breakdown',
+    userId: session.userId,
+  })
 }
