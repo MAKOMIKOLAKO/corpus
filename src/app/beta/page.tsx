@@ -45,6 +45,19 @@ export default async function BetaPage() {
         </p>
       </div>
 
+      <div className="rounded-2xl border border-border-cream bg-ivory px-5 py-5 shadow-[0px_0px_0px_1px_rgba(209,207,197,0.35)] sm:px-6">
+        <div className="space-y-2">
+          <p className="text-sm font-medium uppercase tracking-[0.12em] text-terracotta">Beta tester reward</p>
+          <p className="text-2xl font-medium leading-tight text-content-primary sm:text-3xl">
+            Involved beta testers will be given a free year of premium.
+          </p>
+          <p className="max-w-2xl text-base leading-7 text-content-secondary">
+            If you give thoughtful, consistent feedback and help shape the product, I&apos;ll make sure your effort is
+            rewarded with a complimentary year of premium access.
+          </p>
+        </div>
+      </div>
+
       <div className="space-y-6">
         <h2 className="text-xl font-medium text-content-primary">What Corpus does</h2>
         <div className="space-y-4 text-base leading-7 text-content-secondary">
@@ -74,8 +87,8 @@ export default async function BetaPage() {
 
       <div className="space-y-4">
         <p className="max-w-2xl text-base leading-7 text-content-secondary">
-          Thanks for joining early. A welcome note is open now with details on how to share feedback and shape what we
-          build next.
+          Thanks for joining early. A welcome note is open now with details on how to share feedback, shape what we
+          build next, and qualify for the free premium year.
         </p>
         <Link
           href={userId ? "/library" : "/login?callbackUrl=%2Fbeta"}
