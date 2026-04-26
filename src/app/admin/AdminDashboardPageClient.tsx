@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -40,22 +39,28 @@ const sections: Array<{ key: SectionKey; label: string }> = [
   { key: 'feedback', label: 'Feedback' },
 ];
 
-const chartPalette = ['#c96442', '#d97757', '#b0aea5', '#87867f', '#f5f4ed'];
+const chartPalette = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
+const chartGridColor = 'color-mix(in srgb, var(--foreground) 10%, transparent)';
+const chartAxisColor = 'var(--content-secondary)';
+const chartPrimaryColor = 'var(--chart-1)';
+const chartSecondaryColor = 'var(--accent-hover)';
+const chartMutedColor = 'var(--chart-5)';
 
 async function fetchJson(url: string) {
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
-    throw new Error('Request failed');
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.error ?? `Request failed (${response.status})`);
   }
   return response.json();
 }
 
 function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <Card className="border-border bg-[#30302e] text-[#faf9f5] ring-1 ring-white/10">
+    <Card className="bg-card text-card-foreground">
       <CardHeader>
-        <CardTitle className="text-[#faf9f5]">{title}</CardTitle>
-        {subtitle ? <CardDescription className="text-[#b0aea5]">{subtitle}</CardDescription> : null}
+        <CardTitle>{title}</CardTitle>
+        {subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
@@ -63,13 +68,14 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle?: st
 }
 
 function LoadingState() {
-  return <div className="h-72 animate-pulse rounded-2xl bg-white/5" />;
+  return <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />;
 }
 
-function ErrorState({ onRetry }: { onRetry: () => void }) {
+function ErrorState({ message, onRetry }: { message?: string | null; onRetry: () => void }) {
   return (
-    <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-6 text-sm text-red-100">
+    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-6 text-sm text-destructive">
       <div className="mb-3">Failed to load this section.</div>
+      {message ? <div className="mb-4 text-xs text-content-secondary">{message}</div> : null}
       <Button variant="warm-sand" onClick={onRetry}>Retry</Button>
     </div>
   );
@@ -171,14 +177,14 @@ export default function AdminDashboardPageClient({
   const overviewGrowth = data.overviewGrowth;
 
   return (
-    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#141413] text-[#faf9f5]">
+    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-background text-foreground">
       <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-[1440px] flex-col lg:flex-row">
-        <aside className="w-full border-b border-white/10 bg-[#1e1e1c] p-4 lg:w-72 lg:border-b-0 lg:border-r">
+        <aside className="w-full border-b border-border bg-card/70 p-4 backdrop-blur-sm lg:w-72 lg:border-b-0 lg:border-r">
           <div className="mb-6 flex items-center gap-3 px-2">
-            <div className="rounded-xl bg-terracotta/15 p-2 text-terracotta"><Shield className="h-5 w-5" /></div>
+            <div className="rounded-xl bg-accent-muted p-2 text-accent"><Shield className="h-5 w-5" /></div>
             <div>
               <div className="font-serif text-xl">Admin Dashboard</div>
-              <div className="text-sm text-[#b0aea5]">Platform analytics</div>
+              <div className="text-sm text-content-secondary">Platform analytics</div>
             </div>
           </div>
           <nav className="space-y-1">
@@ -188,7 +194,9 @@ export default function AdminDashboardPageClient({
                 onClick={() => navigateSection(section.key)}
                 className={cn(
                   'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors',
-                  activeSection === section.key ? 'bg-terracotta text-white' : 'text-[#b0aea5] hover:bg-white/5 hover:text-white'
+                  activeSection === section.key
+                    ? 'bg-accent text-accent-foreground ring-1 ring-accent'
+                    : 'text-content-secondary hover:bg-muted hover:text-foreground'
                 )}
               >
                 <span>{section.label}</span>
@@ -199,15 +207,15 @@ export default function AdminDashboardPageClient({
         </aside>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-serif text-3xl">Admin Dashboard</h1>
-              <p className="mt-1 text-sm text-[#b0aea5]">
+              <p className="mt-1 text-sm text-content-secondary">
                 Last updated: {lastUpdated}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-[#b0aea5]">
+              <div className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-content-secondary ring-1 ring-foreground/10">
                 {sessionUser.name || sessionUser.email}
               </div>
               <Button variant="warm-sand" onClick={handleRefresh} disabled={loading}>
@@ -217,7 +225,7 @@ export default function AdminDashboardPageClient({
             </div>
           </div>
 
-          {error ? <ErrorState onRetry={handleRefresh} /> : null}
+          {error ? <ErrorState message={error} onRetry={handleRefresh} /> : null}
 
           {activeSection === 'overview' && (
             loading && !overview ? <LoadingState /> : overview ? (
@@ -231,12 +239,12 @@ export default function AdminDashboardPageClient({
                     { title: 'Daily Active Users', value: overview.dailyActiveUsers, sub: `${overview.weeklyActiveUsers} this week, ${overview.monthlyActiveUsers} this month` },
                     { title: 'Feature Adoption', value: overview.featureAdoption.usersWithThreePlusFeatures, sub: `${overview.featureAdoption.mostPopularFeature.name} most popular` },
                   ].map((card) => (
-                    <Card key={card.title} className="border-white/10 bg-[#30302e] text-[#faf9f5] ring-1 ring-white/10">
+                    <Card key={card.title} className="bg-card text-card-foreground">
                       <CardHeader>
-                        <CardDescription className="text-[#b0aea5]">{card.title}</CardDescription>
-                        <CardTitle className="text-3xl text-[#faf9f5]">{card.value}</CardTitle>
+                        <CardDescription>{card.title}</CardDescription>
+                        <CardTitle className="text-3xl">{card.value}</CardTitle>
                       </CardHeader>
-                      <CardContent className="text-sm text-[#b0aea5]">{card.sub}</CardContent>
+                      <CardContent className="text-sm text-content-secondary">{card.sub}</CardContent>
                     </Card>
                   ))}
                 </div>
@@ -246,12 +254,12 @@ export default function AdminDashboardPageClient({
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={overviewGrowth?.cumulativeUsers?.map((item: any, index: number) => ({ date: item.date, cumulativeUsers: item.value, newUsers: overviewGrowth.newUsers[index]?.value ?? 0 })) ?? []}>
-                          <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                          <XAxis dataKey="date" stroke="#b0aea5" />
-                          <YAxis stroke="#b0aea5" />
+                          <CartesianGrid stroke={chartGridColor} vertical={false} />
+                          <XAxis dataKey="date" stroke={chartAxisColor} />
+                          <YAxis stroke={chartAxisColor} />
                           <Tooltip />
-                          <Bar dataKey="newUsers" fill="#d97757" radius={[8, 8, 0, 0]} />
-                          <Line type="monotone" dataKey="cumulativeUsers" stroke="#c96442" strokeWidth={3} dot={false} />
+                          <Bar dataKey="newUsers" fill={chartSecondaryColor} radius={[8, 8, 0, 0]} />
+                          <Line type="monotone" dataKey="cumulativeUsers" stroke={chartPrimaryColor} strokeWidth={3} dot={false} />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -260,11 +268,11 @@ export default function AdminDashboardPageClient({
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={overviewGrowth?.mrr ?? []}>
-                          <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                          <XAxis dataKey="date" stroke="#b0aea5" />
-                          <YAxis stroke="#b0aea5" />
+                          <CartesianGrid stroke={chartGridColor} vertical={false} />
+                          <XAxis dataKey="date" stroke={chartAxisColor} />
+                          <YAxis stroke={chartAxisColor} />
                           <Tooltip />
-                          <Area type="monotone" dataKey="value" stroke="#c96442" fill="#c96442" fillOpacity={0.25} />
+                          <Area type="monotone" dataKey="value" stroke={chartPrimaryColor} fill={chartPrimaryColor} fillOpacity={0.2} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -273,13 +281,13 @@ export default function AdminDashboardPageClient({
 
                 <div className="grid gap-6 xl:grid-cols-3">
                   <ChartCard title="Most Recent Signups">
-                    <div className="space-y-3 text-sm">{overview.recentSignups.map((user: any) => <div key={user.id} className="flex items-center justify-between border-b border-white/5 pb-2"><div>{user.email}</div><div className="text-[#b0aea5]">{user.plan}</div></div>)}</div>
+                    <div className="space-y-3 text-sm">{overview.recentSignups.map((user: any) => <div key={user.id} className="flex items-center justify-between border-b border-border/60 pb-2"><div>{user.email}</div><div className="text-content-secondary">{user.plan}</div></div>)}</div>
                   </ChartCard>
                   <ChartCard title="Recent Pro Conversions">
-                    <div className="space-y-3 text-sm">{overview.recentProConversions.map((user: any) => <div key={user.id} className="flex items-center justify-between border-b border-white/5 pb-2"><div>{user.email}</div><div className="text-[#b0aea5]">{relativeTime(user.convertedAt)}</div></div>)}</div>
+                    <div className="space-y-3 text-sm">{overview.recentProConversions.map((user: any) => <div key={user.id} className="flex items-center justify-between border-b border-border/60 pb-2"><div>{user.email}</div><div className="text-content-secondary">{relativeTime(user.convertedAt)}</div></div>)}</div>
                   </ChartCard>
                   <ChartCard title="Recent Feedback">
-                    <div className="space-y-3 text-sm">{overview.recentFeedback.map((item: any) => <div key={item.id} className="border-b border-white/5 pb-2"><div>{item.message}</div><div className="mt-1 text-xs text-[#b0aea5]">{relativeTime(item.createdAt)}</div></div>)}</div>
+                    <div className="space-y-3 text-sm">{overview.recentFeedback.map((item: any) => <div key={item.id} className="border-b border-border/60 pb-2"><div>{item.message}</div><div className="mt-1 text-xs text-content-secondary">{relativeTime(item.createdAt)}</div></div>)}</div>
                   </ChartCard>
                 </div>
               </div>
@@ -289,10 +297,10 @@ export default function AdminDashboardPageClient({
           {activeSection === 'growth' && (
             loading && !data.growth ? <LoadingState /> : data.growth ? (
               <div className="grid gap-6 xl:grid-cols-2">
-                <ChartCard title="User Acquisition"><div className="h-72"><ResponsiveContainer><BarChart data={data.growth.newUsers}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Bar dataKey="value" fill="#c96442" radius={[8,8,0,0]} /></BarChart></ResponsiveContainer></div></ChartCard>
-                <ChartCard title="Pro Subscription Growth"><div className="h-72"><ResponsiveContainer><AreaChart data={data.growth.cumulativeProUsers}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Area dataKey="value" stroke="#d97757" fill="#d97757" fillOpacity={0.24} /></AreaChart></ResponsiveContainer></div></ChartCard>
-                <ChartCard title="Active Users"><div className="h-72"><ResponsiveContainer><LineChart data={data.growth.activeUsers}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Line dataKey="value" stroke="#c96442" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
-                <ChartCard title="MRR"><div className="h-72"><ResponsiveContainer><LineChart data={data.growth.mrr}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Line dataKey="value" stroke="#b0aea5" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
+                <ChartCard title="User Acquisition"><div className="h-72"><ResponsiveContainer><BarChart data={data.growth.newUsers}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Bar dataKey="value" fill={chartPrimaryColor} radius={[8, 8, 0, 0]} /></BarChart></ResponsiveContainer></div></ChartCard>
+                <ChartCard title="Pro Subscription Growth"><div className="h-72"><ResponsiveContainer><AreaChart data={data.growth.cumulativeProUsers}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Area dataKey="value" stroke={chartSecondaryColor} fill={chartSecondaryColor} fillOpacity={0.2} /></AreaChart></ResponsiveContainer></div></ChartCard>
+                <ChartCard title="Active Users"><div className="h-72"><ResponsiveContainer><LineChart data={data.growth.activeUsers}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Line dataKey="value" stroke={chartPrimaryColor} strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
+                <ChartCard title="MRR"><div className="h-72"><ResponsiveContainer><LineChart data={data.growth.mrr}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Line dataKey="value" stroke={chartMutedColor} strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
               </div>
             ) : null
           )}
@@ -300,14 +308,14 @@ export default function AdminDashboardPageClient({
           {activeSection === 'users' && (
             <div className="space-y-4">
               <div className="flex gap-3">
-                <Input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="Search email or username" className="max-w-md bg-white/5 text-white" />
+                <Input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="Search email or username" className="max-w-md bg-background" />
                 <Button variant="warm-sand" onClick={handleRefresh}>Search</Button>
               </div>
               {loading && !data.users ? <LoadingState /> : data.users ? (
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#30302e]">
+                <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-white/5 text-[#b0aea5]"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Entries</th><th className="px-4 py-3">Collections</th><th className="px-4 py-3">Connections</th><th className="px-4 py-3">Last Active</th></tr></thead>
-                    <tbody>{data.users.users.map((user: any) => <tr key={user.id} className="border-t border-white/5 align-top"><td className="px-4 py-3"><div className="font-medium">{user.email}</div><div className="text-xs text-[#b0aea5]">{user.username || 'No username'}</div><div className="mt-2 text-xs text-[#b0aea5]">Full email: {user.fullEmail}</div></td><td className="px-4 py-3"><Badge variant="secondary">{user.plan}</Badge></td><td className="px-4 py-3">{user.entriesCount}</td><td className="px-4 py-3">{user.collectionCount}</td><td className="px-4 py-3">{user.connectionCount}</td><td className="px-4 py-3">{relativeTime(user.lastActivity)}</td></tr>)}</tbody>
+                    <thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Entries</th><th className="px-4 py-3">Collections</th><th className="px-4 py-3">Connections</th><th className="px-4 py-3">Last Active</th></tr></thead>
+                    <tbody>{data.users.users.map((user: any) => <tr key={user.id} className="border-t border-border/60 align-top"><td className="px-4 py-3"><div className="font-medium">{user.email}</div><div className="text-xs text-content-secondary">{user.username || 'No username'}</div><div className="mt-2 text-xs text-content-secondary">Full email: {user.fullEmail}</div></td><td className="px-4 py-3"><Badge variant="secondary">{user.plan}</Badge></td><td className="px-4 py-3">{user.entriesCount}</td><td className="px-4 py-3">{user.collectionCount}</td><td className="px-4 py-3">{user.connectionCount}</td><td className="px-4 py-3">{relativeTime(user.lastActivity)}</td></tr>)}</tbody>
                   </table>
                 </div>
               ) : null}
@@ -329,11 +337,11 @@ export default function AdminDashboardPageClient({
             loading && !data.engagement ? <LoadingState /> : data.engagement ? (
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Day 1 retention</CardDescription><CardTitle>{formatPercent(data.engagement.retention.day1)}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Day 7 retention</CardDescription><CardTitle>{formatPercent(data.engagement.retention.day7)}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Day 30 retention</CardDescription><CardTitle>{formatPercent(data.engagement.retention.day30)}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Day 1 retention</CardDescription><CardTitle>{formatPercent(data.engagement.retention.day1)}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Day 7 retention</CardDescription><CardTitle>{formatPercent(data.engagement.retention.day7)}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Day 30 retention</CardDescription><CardTitle>{formatPercent(data.engagement.retention.day30)}</CardTitle></CardHeader></Card>
                 </div>
-                <ChartCard title="Time to First Entry"><div className="h-72"><ResponsiveContainer><BarChart data={Object.entries(data.engagement.timeToFirstEntryHistogram).map(([bucket, value]) => ({ bucket, value }))}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="bucket" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Bar dataKey="value" fill="#c96442" radius={[8,8,0,0]} /></BarChart></ResponsiveContainer></div></ChartCard>
+                <ChartCard title="Time to First Entry"><div className="h-72"><ResponsiveContainer><BarChart data={Object.entries(data.engagement.timeToFirstEntryHistogram).map(([bucket, value]) => ({ bucket, value }))}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="bucket" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Bar dataKey="value" fill={chartPrimaryColor} radius={[8, 8, 0, 0]} /></BarChart></ResponsiveContainer></div></ChartCard>
               </div>
             ) : null
           )}
@@ -348,7 +356,7 @@ export default function AdminDashboardPageClient({
                     ['New subscriptions this month', data.revenue.newSubscriptionsThisMonth],
                     ['Churn this month', data.revenue.churnThisMonth],
                     ['Net new MRR', formatCurrency(data.revenue.netNewMrrThisMonth)],
-                  ].map(([title, value]) => <Card key={String(title)} className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">{title}</CardDescription><CardTitle>{value}</CardTitle></CardHeader></Card>)}
+                  ].map(([title, value]) => <Card key={String(title)}><CardHeader><CardDescription>{title}</CardDescription><CardTitle>{value}</CardTitle></CardHeader></Card>)}
                 </div>
                 <ChartCard title="Subscription Status Breakdown"><div className="h-72"><ResponsiveContainer><PieChart><Pie data={data.revenue.subscriptionStatuses} dataKey="count" nameKey="status" innerRadius={60} outerRadius={90}>{data.revenue.subscriptionStatuses.map((entry: any, index: number) => <Cell key={entry.status} fill={chartPalette[index % chartPalette.length]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div></ChartCard>
               </div>
@@ -359,11 +367,11 @@ export default function AdminDashboardPageClient({
             loading && !data.logins ? <LoadingState /> : data.logins ? (
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Active last 24h</CardDescription><CardTitle>{data.logins.activeLast24h}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Active last 7 days</CardDescription><CardTitle>{data.logins.activeLast7d}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Active last 30 days</CardDescription><CardTitle>{data.logins.activeLast30d}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Active last 24h</CardDescription><CardTitle>{data.logins.activeLast24h}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Active last 7 days</CardDescription><CardTitle>{data.logins.activeLast7d}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Active last 30 days</CardDescription><CardTitle>{data.logins.activeLast30d}</CardTitle></CardHeader></Card>
                 </div>
-                <ChartCard title="Daily Active Users"><div className="h-72"><ResponsiveContainer><LineChart data={data.logins.daily}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Bar dataKey="uniqueActiveUsers" fill="#d97757" radius={[8,8,0,0]} /><Line dataKey="uniqueActiveUsers" stroke="#c96442" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
+                <ChartCard title="Daily Active Users"><div className="h-72"><ResponsiveContainer><LineChart data={data.logins.daily}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Bar dataKey="uniqueActiveUsers" fill={chartSecondaryColor} radius={[8, 8, 0, 0]} /><Line dataKey="uniqueActiveUsers" stroke={chartPrimaryColor} strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
               </div>
             ) : null
           )}
@@ -372,14 +380,14 @@ export default function AdminDashboardPageClient({
             loading && !data.feedback ? <LoadingState /> : data.feedback ? (
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-4">
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Total feedback</CardDescription><CardTitle>{data.feedback.aggregates.total}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">This week</CardDescription><CardTitle>{data.feedback.aggregates.thisWeek}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">This month</CardDescription><CardTitle>{data.feedback.aggregates.thisMonth}</CardTitle></CardHeader></Card>
-                  <Card className="border-white/10 bg-[#30302e] text-[#faf9f5]"><CardHeader><CardDescription className="text-[#b0aea5]">Authenticated</CardDescription><CardTitle>{data.feedback.aggregates.authenticated}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Total feedback</CardDescription><CardTitle>{data.feedback.aggregates.total}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>This week</CardDescription><CardTitle>{data.feedback.aggregates.thisWeek}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>This month</CardDescription><CardTitle>{data.feedback.aggregates.thisMonth}</CardTitle></CardHeader></Card>
+                  <Card><CardHeader><CardDescription>Authenticated</CardDescription><CardTitle>{data.feedback.aggregates.authenticated}</CardTitle></CardHeader></Card>
                 </div>
-                <ChartCard title="Feedback Volume"><div className="h-72"><ResponsiveContainer><BarChart data={data.feedback.aggregates.submissionsPerDay}><CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#b0aea5" /><YAxis stroke="#b0aea5" /><Tooltip /><Bar dataKey="value" fill="#c96442" radius={[8,8,0,0]} /></BarChart></ResponsiveContainer></div></ChartCard>
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#30302e]">
-                  <table className="w-full text-left text-sm"><thead className="bg-white/5 text-[#b0aea5]"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Feedback</th></tr></thead><tbody>{data.feedback.items.map((item: any) => <tr key={item.id} className="border-t border-white/5"><td className="px-4 py-3">{relativeTime(item.createdAt)}</td><td className="px-4 py-3">{item.user?.email || item.anonymousEmail || 'Anonymous'}</td><td className="px-4 py-3">{item.user?.plan || 'Anonymous'}</td><td className="px-4 py-3">{item.content}</td></tr>)}</tbody></table>
+                <ChartCard title="Feedback Volume"><div className="h-72"><ResponsiveContainer><BarChart data={data.feedback.aggregates.submissionsPerDay}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Bar dataKey="value" fill={chartPrimaryColor} radius={[8, 8, 0, 0]} /></BarChart></ResponsiveContainer></div></ChartCard>
+                <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
+                  <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Feedback</th></tr></thead><tbody>{data.feedback.items.map((item: any) => <tr key={item.id} className="border-t border-border/60"><td className="px-4 py-3">{relativeTime(item.createdAt)}</td><td className="px-4 py-3">{item.user?.email || item.anonymousEmail || 'Anonymous'}</td><td className="px-4 py-3">{item.user?.plan || 'Anonymous'}</td><td className="px-4 py-3">{item.content}</td></tr>)}</tbody></table>
                 </div>
               </div>
             ) : null
