@@ -19,14 +19,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { RefreshCw, Shield, TrendingUp } from 'lucide-react';
+import { Download, RefreshCw, Shield, TrendingDown, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { formatCost } from '@/lib/geminiPricing';
 import { cn } from '@/lib/utils';
 
-type SectionKey = 'overview' | 'growth' | 'users' | 'features' | 'engagement' | 'revenue' | 'logins' | 'feedback';
+type SectionKey = 'overview' | 'growth' | 'users' | 'features' | 'engagement' | 'revenue' | 'costs' | 'logins' | 'feedback';
 
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: 'overview', label: 'Overview' },
@@ -35,6 +36,7 @@ const sections: Array<{ key: SectionKey; label: string }> = [
   { key: 'features', label: 'Features' },
   { key: 'engagement', label: 'Engagement' },
   { key: 'revenue', label: 'Revenue' },
+  { key: 'costs', label: 'Costs' },
   { key: 'logins', label: 'Logins' },
   { key: 'feedback', label: 'Feedback' },
 ];
@@ -89,6 +91,18 @@ function formatPercent(value: number) {
   return `${Math.round((value || 0) * 100)}%`;
 }
 
+function formatCostDisplay(value: number) {
+  return formatCost(value || 0);
+}
+
+function formatLargeNumber(value: number) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value || 0);
+}
+
+function tooltipCurrencyFormatter(value: unknown) {
+  return [formatCostDisplay(Number(value) || 0), 'Cost'];
+}
+
 function relativeTime(value?: string | Date | null) {
   if (!value) return 'Never';
   return formatDistanceToNow(new Date(value), { addSuffix: true });
@@ -107,6 +121,10 @@ export default function AdminDashboardPageClient({
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Record<string, any>>({});
   const [userSearch, setUserSearch] = useState('');
+  const [costPeriod, setCostPeriod] = useState<'today' | '7d' | '30d' | 'all'>('30d');
+  const [costSeriesPeriod, setCostSeriesPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
+  const [costUserDetails, setCostUserDetails] = useState<any | null>(null);
+  const [rawCallsOpen, setRawCallsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +153,16 @@ export default function AdminDashboardPageClient({
           nextData.engagement = await fetchJson(`/api/admin/metrics/engagement?t=${timestamp}`);
         } else if (activeSection === 'revenue') {
           nextData.revenue = await fetchJson(`/api/admin/metrics/revenue?t=${timestamp}`);
+        } else if (activeSection === 'costs') {
+          const [overview, byFeature, byUser, byDay, byMonth, rawCalls] = await Promise.all([
+            fetchJson(`/api/admin/costs/overview?t=${timestamp}`),
+            fetchJson(`/api/admin/costs/by-feature?period=30d&t=${timestamp}`),
+            fetchJson(`/api/admin/costs/by-user?period=${costPeriod}&page=1&limit=25&sort=cost&t=${timestamp}`),
+            fetchJson(`/api/admin/costs/by-day?period=${costSeriesPeriod}&t=${timestamp}`),
+            fetchJson(`/api/admin/costs/by-user-by-month?months=3&t=${timestamp}`),
+            fetchJson(`/api/admin/costs/raw-calls?page=1&limit=25&t=${timestamp}`),
+          ]);
+          nextData.costs = { overview, byFeature, byUser, byDay, byMonth, rawCalls };
         } else if (activeSection === 'logins') {
           nextData.logins = await fetchJson(`/api/admin/metrics/logins?t=${timestamp}`);
         } else if (activeSection === 'feedback') {
@@ -159,7 +187,7 @@ export default function AdminDashboardPageClient({
     return () => {
       cancelled = true;
     };
-  }, [activeSection, refreshKey]);
+  }, [activeSection, refreshKey, costPeriod, costSeriesPeriod]);
 
   const lastUpdated = useMemo(() => {
     const source =
@@ -172,9 +200,97 @@ export default function AdminDashboardPageClient({
 
   const handleRefresh = () => setRefreshKey((value) => value + 1);
   const navigateSection = (section: SectionKey) => router.push(`/admin?section=${section}`);
+  const handleDownloadCostReport = async () => {
+    const response = await fetch('/api/admin/costs/report', { method: 'POST' });
+    if (!response.ok) {
+      throw new Error('Failed to download report');
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `corpus-cost-report-${new Date().toISOString().split('T')[0]}.txt`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+  const loadCostUserDetails = async (userId: string) => {
+    const [daily, raw] = await Promise.all([
+      fetchJson(`/api/admin/costs/by-user-by-day?userId=${encodeURIComponent(userId)}&period=30d&t=${Date.now()}`),
+      fetchJson(`/api/admin/costs/raw-calls?page=1&limit=100&userId=${encodeURIComponent(userId)}&t=${Date.now()}`),
+    ]);
+    setCostUserDetails({
+      userId,
+      daily,
+      raw,
+      user: data.costs?.byUser?.users?.find((item: any) => item.userId === userId) ?? null,
+    });
+  };
 
   const overview = data.overview;
   const overviewGrowth = data.overviewGrowth;
+  const costs = data.costs;
+  const rollingAverage = useMemo(() => {
+    const points = costs?.byDay?.points ?? [];
+    return points.map((point: any, index: number) => {
+      const window = points.slice(Math.max(0, index - 6), index + 1);
+      const avg = window.reduce((sum: number, item: any) => sum + (item.totalCost || 0), 0) / Math.max(window.length, 1);
+      return { ...point, rollingAverage: avg };
+    });
+  }, [costs]);
+  const featureStackData = useMemo(() => {
+    const points = costs?.byDay?.points ?? [];
+    return points.map((point: any) => ({ date: point.date, ...(point.costByFeature || {}) }));
+  }, [costs]);
+  const featureKeys = useMemo(() => {
+    const keys = new Set<string>();
+    featureStackData.forEach((row: any) => Object.keys(row).forEach((key) => key !== 'date' && keys.add(key)));
+    return Array.from(keys);
+  }, [featureStackData]);
+  const monthlyUserRows = useMemo(() => {
+    const rows = costs?.byMonth?.rows ?? [];
+    const months = Array.from(new Set<string>(rows.map((row: any) => String(row.month)))).sort().reverse().slice(0, 3);
+    const grouped = new Map<string, any>();
+    rows.forEach((row: any) => {
+      const existing = grouped.get(row.userId ?? row.email ?? row.username ?? 'CRON') ?? {
+        key: row.userId ?? row.email ?? row.username ?? 'CRON',
+        userId: row.userId,
+        email: row.email,
+        username: row.username,
+        plan: row.plan,
+        months: {},
+      };
+      existing.months[row.month] = row.totalCost;
+      grouped.set(existing.key, existing);
+    });
+    return {
+      months,
+      rows: Array.from(grouped.values())
+        .map((row) => {
+          const total = months.reduce((sum: number, month: string) => sum + Number(row.months[month] ?? 0), 0);
+          return {
+            ...row,
+            total,
+            avg: total / Math.max(months.length, 1),
+          };
+        })
+        .sort((a, b) => b.total - a.total),
+    };
+  }, [costs]);
+  const costProjection = useMemo(() => {
+    const points = costs?.byDay?.points ?? [];
+    const avg30 = points.length > 0
+      ? points.reduce((sum: number, point: any) => sum + (point.totalCost || 0), 0) / points.length
+      : 0;
+    const estimatedMrr = costs?.overview?.estimatedMrr ?? 0;
+    return {
+      averageDailyCost: avg30,
+      next30: avg30 * 30,
+      next90: avg30 * 90,
+      next12Months: avg30 * 365,
+      percentOfMrr: estimatedMrr > 0 ? (avg30 * 30) / estimatedMrr : 0,
+      estimatedMrr,
+    };
+  }, [costs]);
 
   return (
     <div className="relative left-1/2 w-screen -translate-x-1/2 bg-background text-foreground">
@@ -359,6 +475,179 @@ export default function AdminDashboardPageClient({
                   ].map(([title, value]) => <Card key={String(title)}><CardHeader><CardDescription>{title}</CardDescription><CardTitle>{value}</CardTitle></CardHeader></Card>)}
                 </div>
                 <ChartCard title="Subscription Status Breakdown"><div className="h-72"><ResponsiveContainer><PieChart><Pie data={data.revenue.subscriptionStatuses} dataKey="count" nameKey="status" innerRadius={60} outerRadius={90}>{data.revenue.subscriptionStatuses.map((entry: any, index: number) => <Cell key={entry.status} fill={chartPalette[index % chartPalette.length]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div></ChartCard>
+              </div>
+            ) : null
+          )}
+
+          {activeSection === 'costs' && (
+            loading && !costs ? <LoadingState /> : costs ? (
+              <div className="space-y-6">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h2 className="font-serif text-2xl">Gemini Costs</h2>
+                    <p className="text-sm text-content-secondary">Tracking API spend, usage, projections, and raw call diagnostics.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button variant="warm-sand" onClick={() => void handleDownloadCostReport()}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Report
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <Card><CardHeader><CardDescription>Today's Gemini Cost</CardDescription><CardTitle>{formatCostDisplay(costs.overview.today.totalCost)}</CardTitle></CardHeader><CardContent className="text-sm text-content-secondary">{formatLargeNumber(costs.overview.today.totalCalls)} API calls · {formatLargeNumber(costs.overview.today.totalTokens)} tokens<br />{costs.overview.today.trendVsYesterday >= 0 ? '+' : ''}{(costs.overview.today.trendVsYesterday * 100).toFixed(1)}% vs yesterday</CardContent></Card>
+                  <Card><CardHeader><CardDescription>This Month's Cost</CardDescription><CardTitle>{formatCostDisplay(costs.overview.currentMonth.totalCost)}</CardTitle></CardHeader><CardContent className="text-sm text-content-secondary">Projected: {formatCostDisplay(costs.overview.currentMonth.estimatedEndOfMonthCost)}</CardContent></Card>
+                  <Card><CardHeader><CardDescription>All-Time Cost</CardDescription><CardTitle>{formatCostDisplay(costs.overview.allTimeCost)}</CardTitle></CardHeader><CardContent className="text-sm text-content-secondary">{formatLargeNumber(costs.overview.allTimeCalls)} total API calls<br />Tracking began {costs.overview.firstTrackedAt ? relativeTime(costs.overview.firstTrackedAt) : 'not yet'}</CardContent></Card>
+                  <Card><CardHeader><CardDescription>Cost Per Active User (Today)</CardDescription><CardTitle>{costs.overview.today.uniqueUsersServed > 0 ? formatCostDisplay(costs.overview.today.avgCostPerActiveUser) : '--'}</CardTitle></CardHeader><CardContent className="text-sm text-content-secondary">{formatLargeNumber(costs.overview.today.uniqueUsersServed)} users served today</CardContent></Card>
+                  <Card><CardHeader><CardDescription>Most Expensive Feature</CardDescription><CardTitle>{costs.overview.currentMonth.topFeature?.label ?? 'No data'}</CardTitle></CardHeader><CardContent className="text-sm text-content-secondary">{costs.overview.currentMonth.topFeature ? `${formatCostDisplay(costs.overview.currentMonth.topFeature.totalCost)} · ${(costs.overview.currentMonth.topFeature.percentage * 100).toFixed(1)}% of month · ${formatLargeNumber(costs.overview.currentMonth.topFeature.callCount)} calls` : 'No Gemini usage this month yet.'}</CardContent></Card>
+                  <Card><CardHeader><CardDescription>API Success Rate</CardDescription><CardTitle>{(costs.overview.successRate * 100).toFixed(1)}%</CardTitle></CardHeader><CardContent className="text-sm text-content-secondary">{formatLargeNumber(costs.overview.failedCalls)} failed calls{costs.overview.failedCalls > 0 && costs.overview.mostCommonError ? <><br />Most common error: {costs.overview.mostCommonError}</> : null}</CardContent></Card>
+                </div>
+
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="space-y-6">
+                    <ChartCard title="Cost Trend" subtitle="Daily cost with 7-day rolling average">
+                      <div className="mb-4 flex gap-2">
+                        {(['7d', '30d', '90d', '1y'] as const).map((period) => (
+                          <Button key={period} variant={costSeriesPeriod === period ? 'warm-sand' : 'outline'} onClick={() => setCostSeriesPeriod(period)}>{period.toUpperCase()}</Button>
+                        ))}
+                      </div>
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={rollingAverage}>
+                            <CartesianGrid stroke={chartGridColor} vertical={false} />
+                            <XAxis dataKey="date" stroke={chartAxisColor} />
+                            <YAxis stroke={chartAxisColor} tickFormatter={(value) => formatCostDisplay(value)} />
+                            <Tooltip formatter={tooltipCurrencyFormatter} />
+                            <Bar dataKey="totalCost" fill={chartSecondaryColor} radius={[8, 8, 0, 0]} />
+                            <Line type="monotone" dataKey="rollingAverage" stroke={chartPrimaryColor} strokeWidth={3} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </ChartCard>
+
+                    <ChartCard title="Cost By Feature Over Time" subtitle="Stacked daily feature cost breakdown">
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={featureStackData}>
+                            <CartesianGrid stroke={chartGridColor} vertical={false} />
+                            <XAxis dataKey="date" stroke={chartAxisColor} />
+                            <YAxis stroke={chartAxisColor} tickFormatter={(value) => formatCostDisplay(value)} />
+                            <Tooltip formatter={tooltipCurrencyFormatter} />
+                            {featureKeys.map((key, index) => (
+                              <Area key={key} type="monotone" dataKey={key} stackId="1" stroke={chartPalette[index % chartPalette.length]} fill={chartPalette[index % chartPalette.length]} fillOpacity={0.28} />
+                            ))}
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </ChartCard>
+                  </div>
+
+                  <Card className="h-fit">
+                    <CardHeader>
+                      <CardTitle>Cost Projections</CardTitle>
+                      <CardDescription>Estimates based on recent averages</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm text-content-secondary">
+                      <div className="flex items-center justify-between"><span>Next 30 days</span><span className="font-medium text-foreground">{formatCostDisplay(costProjection.next30)}</span></div>
+                      <div className="flex items-center justify-between"><span>Next 90 days</span><span className="font-medium text-foreground">{formatCostDisplay(costProjection.next90)}</span></div>
+                      <div className="flex items-center justify-between"><span>Next 12 months</span><span className="font-medium text-foreground">{formatCostDisplay(costProjection.next12Months)}</span></div>
+                      <div className="border-t border-border pt-3">
+                        <div className="flex items-center justify-between"><span>Current estimated MRR</span><span className="font-medium text-foreground">{formatCurrency(costProjection.estimatedMrr)}</span></div>
+                        <div className="mt-2 flex items-center justify-between"><span>Gemini cost as % of MRR</span><span className="font-medium text-foreground">{(costProjection.percentOfMrr * 100).toFixed(1)}%</span></div>
+                      </div>
+                      <p className="text-xs">These projections are estimates based on current daily averages and should be treated as directional rather than exact.</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <ChartCard title="Cost By Feature" subtitle="Ordered by total month cost">
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">Feature</th><th className="px-4 py-3">Total cost</th><th className="px-4 py-3">Calls</th><th className="px-4 py-3">Avg/call</th><th className="px-4 py-3">Avg input</th><th className="px-4 py-3">Avg output</th><th className="px-4 py-3">Success</th><th className="px-4 py-3">% of total</th></tr></thead>
+                      <tbody>{(costs.byFeature.features || []).map((feature: any) => <tr key={feature.feature} className="border-t border-border/60 align-top"><td className="px-4 py-3"><div className="font-medium">{feature.label}</div><div className="text-xs text-content-secondary">{feature.feature}</div></td><td className="px-4 py-3">{formatCostDisplay(feature.totalCost)}</td><td className="px-4 py-3">{formatLargeNumber(feature.totalCalls)}</td><td className="px-4 py-3">{formatCostDisplay(feature.avgCostPerCall)}</td><td className="px-4 py-3">{formatLargeNumber(feature.avgInputTokensPerCall)}</td><td className="px-4 py-3">{formatLargeNumber(feature.avgOutputTokensPerCall)}</td><td className="px-4 py-3">{(feature.successRate * 100).toFixed(1)}%</td><td className="px-4 py-3"><div className="flex items-center gap-2"><div className="h-2 w-24 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(4, feature.costAsPercentOfTotal * 100)}%` }} /></div><span>{(feature.costAsPercentOfTotal * 100).toFixed(1)}%</span></div></td></tr>)}</tbody>
+                    </table>
+                  </div>
+                </ChartCard>
+
+                <ChartCard title="Cost Per User" subtitle="Identify high-cost accounts and drill into usage">
+                  <div className="mb-4 flex gap-2">
+                    {(['today', '7d', '30d', 'all'] as const).map((period) => (
+                      <Button key={period} variant={costPeriod === period ? 'warm-sand' : 'outline'} onClick={() => setCostPeriod(period)}>{period === 'today' ? 'Today' : period === '7d' ? '7 Days' : period === '30d' ? '30 Days' : 'All Time'}</Button>
+                    ))}
+                  </div>
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Total cost</th><th className="px-4 py-3">Calls</th><th className="px-4 py-3">Most used feature</th><th className="px-4 py-3">Avg/day</th><th className="px-4 py-3">Actions</th></tr></thead>
+                      <tbody>{(costs.byUser.users || []).map((user: any) => <tr key={user.userId} className="border-t border-border/60 align-top"><td className="px-4 py-3"><div className="font-medium">{user.email ?? user.userId}</div><div className="text-xs text-content-secondary">{user.username || 'No username'}</div></td><td className="px-4 py-3"><Badge variant="secondary">{user.plan ?? 'UNKNOWN'}</Badge></td><td className="px-4 py-3">{formatCostDisplay(user.totalCost)}</td><td className="px-4 py-3">{formatLargeNumber(user.totalCalls)}</td><td className="px-4 py-3">{user.mostUsedFeature ?? '—'}</td><td className="px-4 py-3">{formatCostDisplay(user.avgCostPerDay)}</td><td className="px-4 py-3"><Button variant="warm-sand" onClick={() => void loadCostUserDetails(user.userId)}>View details</Button></td></tr>)}</tbody>
+                    </table>
+                  </div>
+                </ChartCard>
+
+                {costUserDetails?.user ? (
+                  <div className="grid gap-6 xl:grid-cols-2">
+                    <ChartCard title="Selected User Cost By Feature" subtitle={costUserDetails.user.email ?? costUserDetails.user.userId}>
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={Object.entries(costUserDetails.user.costByFeature || {}).map(([feature, cost]) => ({ feature, cost }))}>
+                            <CartesianGrid stroke={chartGridColor} vertical={false} />
+                            <XAxis dataKey="feature" stroke={chartAxisColor} angle={-20} textAnchor="end" height={80} />
+                            <YAxis stroke={chartAxisColor} tickFormatter={(value) => formatCostDisplay(value)} />
+                            <Tooltip formatter={tooltipCurrencyFormatter} />
+                            <Bar dataKey="cost" fill={chartPrimaryColor} radius={[8, 8, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </ChartCard>
+                    <ChartCard title="Selected User Daily Cost" subtitle="Last 30 days by feature/day">
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={(costUserDetails.daily?.points || []).reduce((acc: any[], item: any) => {
+                            const existing = acc.find((row) => row.date === item.date);
+                            if (existing) {
+                              existing.cost += item.cost;
+                            } else {
+                              acc.push({ date: item.date, cost: item.cost });
+                            }
+                            return acc;
+                          }, [])}>
+                            <CartesianGrid stroke={chartGridColor} vertical={false} />
+                            <XAxis dataKey="date" stroke={chartAxisColor} />
+                            <YAxis stroke={chartAxisColor} tickFormatter={(value) => formatCostDisplay(value)} />
+                            <Tooltip formatter={tooltipCurrencyFormatter} />
+                            <Line type="monotone" dataKey="cost" stroke={chartPrimaryColor} strokeWidth={3} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </ChartCard>
+                  </div>
+                ) : null}
+
+                <ChartCard title="Monthly Cost By User" subtitle="Last 3 months by user">
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th>{monthlyUserRows.months.map((month: string) => <th key={month} className="px-4 py-3">{month}</th>)}<th className="px-4 py-3">3-Month Total</th><th className="px-4 py-3">Avg/Month</th></tr></thead>
+                      <tbody>{monthlyUserRows.rows.map((row: any) => <tr key={row.key} className="border-t border-border/60 align-top"><td className="px-4 py-3"><div className="font-medium">{row.email ?? row.userId ?? row.key}</div><div className="text-xs text-content-secondary">{row.username || 'No username'}</div></td><td className="px-4 py-3"><Badge variant="secondary">{row.plan ?? 'UNKNOWN'}</Badge></td>{monthlyUserRows.months.map((month: string) => <td key={month} className="px-4 py-3">{formatCostDisplay(row.months[month] ?? 0)}</td>)}<td className="px-4 py-3">{formatCostDisplay(row.total)}</td><td className="px-4 py-3">{formatCostDisplay(row.avg)}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                </ChartCard>
+
+                <div>
+                  <Button variant="warm-sand" onClick={() => setRawCallsOpen((value) => !value)}>
+                    Debug: Raw API Calls
+                  </Button>
+                </div>
+
+                {rawCallsOpen ? (
+                  <ChartCard title="Raw Calls Debug Table" subtitle="Latest tracked Gemini API calls">
+                    <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">Timestamp</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Feature</th><th className="px-4 py-3">Model</th><th className="px-4 py-3">Input</th><th className="px-4 py-3">Output</th><th className="px-4 py-3">Cost</th><th className="px-4 py-3">Duration</th><th className="px-4 py-3">Success</th></tr></thead>
+                        <tbody>{(costs.rawCalls.calls || []).map((call: any) => <tr key={call.id} className="border-t border-border/60 align-top"><td className="px-4 py-3">{relativeTime(call.calledAt)}</td><td className="px-4 py-3">{call.maskedEmail ?? call.userId ?? 'CRON'}</td><td className="px-4 py-3">{call.feature}</td><td className="px-4 py-3">{call.model}</td><td className="px-4 py-3">{formatLargeNumber(call.inputTokens)}</td><td className="px-4 py-3">{formatLargeNumber(call.outputTokens)}</td><td className="px-4 py-3">{formatCostDisplay(call.totalCost)}</td><td className="px-4 py-3">{call.durationMs ?? '—'}ms</td><td className="px-4 py-3">{call.success ? <span className="inline-flex items-center gap-1 text-green-700"><TrendingUp className="h-4 w-4" />Yes</span> : <span className="inline-flex items-center gap-1 text-destructive"><TrendingDown className="h-4 w-4" />No</span>}</td></tr>)}</tbody>
+                      </table>
+                    </div>
+                  </ChartCard>
+                ) : null}
               </div>
             ) : null
           )}

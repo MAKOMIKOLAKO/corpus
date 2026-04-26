@@ -5,10 +5,6 @@ import { toEntrySource } from '@/lib/utils';
 import { saveEntryForUser } from './globalEntryService';
 import { callGemini, safeParseJson } from './research/geminiResearch';
 
-function getGeminiApiKey(): string | undefined {
-  return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-}
-
 function extractMeta(html: string) {
   const getTag = (pattern: RegExp) => {
     const match = html.match(pattern);
@@ -214,7 +210,10 @@ Body text: ${meta.bodyText}`;
   let geminiResult: any;
 
   try {
-    const text = await callGemini(promptText, "You are a web metadata extractor.", 0, true);
+    const text = await callGemini(promptText, "You are a web metadata extractor.", 0, true, {
+      feature: 'url_metadata_extraction',
+      userId,
+    });
     geminiResult = safeParseJson(text, fallback);
   } catch (err) {
     console.error('[queueProcessor] Gemini metadata extraction failed:', err);

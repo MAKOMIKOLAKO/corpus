@@ -14,13 +14,12 @@ import { callGemini } from '@/lib/research/geminiResearch'
 const ALLOWED_STYLES: CitationStyle[] = ['APA', 'MLA', 'CHICAGO']
 const ALLOWED_ORDERINGS: BibliographyOrdering[] = ['ALPHABETICAL', 'CHRONOLOGICAL', 'SELECTION']
 
-function getGeminiApiKey(): string {
-  return process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || ''
-}
-
-async function generateRelatedWorkParagraph(prompt: string): Promise<string | null> {
+async function generateRelatedWorkParagraph(prompt: string, userId: string): Promise<string | null> {
   try {
-    const text = await callGemini(prompt, "You are a research writing assistant. Write a formal related work paragraph.", 0.3, false);
+    const text = await callGemini(prompt, "You are a research writing assistant. Write a formal related work paragraph.", 0.3, false, {
+      feature: 'bibliography_related_work',
+      userId,
+    });
     return text.trim() || null;
   } catch (err) {
     console.error('[bibliography/generate] Related work generation failed:', err);
@@ -122,7 +121,7 @@ export async function POST(request: NextRequest) {
     let relatedWork: string | null = null
     if (includeRelatedWork) {
       const prompt = buildRelatedWorkPrompt(formatted.processedEntries)
-      relatedWork = await generateRelatedWorkParagraph(prompt)
+      relatedWork = await generateRelatedWorkParagraph(prompt, userId)
     }
 
     const missingFieldWarnings = formatted.citations

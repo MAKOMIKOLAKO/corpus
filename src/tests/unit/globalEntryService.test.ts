@@ -2,6 +2,8 @@ import { saveEntryForUser, removeEntryForUser } from '@/lib/globalEntryService'
 import { getDeduplicationKeys, findExistingGlobalEntry } from '@/lib/entryDedup'
 import { createMockPrisma, createTestGlobalEntry, createTestUserEntry } from '../utils/testFactories'
 
+type TransactionCallback = (tx: ReturnType<typeof createMockPrisma>) => Promise<unknown> | unknown
+
 // Mock the entryDedup module
 jest.mock('@/lib/entryDedup')
 const mockGetDeduplicationKeys = getDeduplicationKeys as jest.MockedFunction<typeof getDeduplicationKeys>
@@ -46,7 +48,7 @@ describe('globalEntryService', () => {
       mockPrisma.userEntry.create.mockResolvedValue(newUserEntry)
 
       // Mock the transaction
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.$transaction.mockImplementation(async (callback: TransactionCallback) => {
         return callback(mockPrisma)
       })
 
@@ -110,7 +112,7 @@ describe('globalEntryService', () => {
       mockPrisma.userEntry.findUnique.mockResolvedValue(null)
       mockPrisma.userEntry.create.mockResolvedValue(newUserEntry)
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.$transaction.mockImplementation(async (callback: TransactionCallback) => {
         return callback(mockPrisma)
       })
 
@@ -152,7 +154,7 @@ describe('globalEntryService', () => {
       mockFindExistingGlobalEntry.mockResolvedValue(existingGlobalEntry.id)
       mockPrisma.userEntry.findUnique.mockResolvedValue(existingUserEntry)
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.$transaction.mockImplementation(async (callback: TransactionCallback) => {
         return callback(mockPrisma)
       })
 
@@ -189,7 +191,7 @@ describe('globalEntryService', () => {
       mockPrisma.userEntry.findUnique.mockResolvedValue(null)
       mockPrisma.userEntry.create.mockResolvedValue(newUserEntry)
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.$transaction.mockImplementation(async (callback: TransactionCallback) => {
         return callback(mockPrisma)
       })
 
@@ -227,7 +229,7 @@ describe('globalEntryService', () => {
       mockPrisma.userEntry.create.mockResolvedValue(newUserEntry)
       mockPrisma.userEntryCollection.create.mockResolvedValue({} as any)
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.$transaction.mockImplementation(async (callback: TransactionCallback) => {
         return callback(mockPrisma)
       })
 

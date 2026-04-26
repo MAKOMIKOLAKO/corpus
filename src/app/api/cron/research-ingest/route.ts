@@ -276,7 +276,7 @@ async function embedUnprocessedPapers(): Promise<{
       await Promise.allSettled(
         chunk.map(async (paper) => {
           try {
-            const meta = await extractMetadata(paper.title, paper.abstract ?? '')
+            const meta = await extractMetadata(paper.title, paper.abstract ?? '', { userId: null })
             await prisma.candidatePaper.update({
               where: { id: paper.id },
               data: {

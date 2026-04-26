@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
             authors: paper.authors,
             abstract: paper.abstract,
             candidateMetadata: paper.candidateMetadata as PaperMetadata | null,
-          })
+          }, { userId: user.id })
 
           // Cache to CandidatePaper
           await prisma.candidatePaper.update({
