@@ -28,6 +28,16 @@ type GeminiApiCallRow = {
   } | null;
 };
 
+type GeminiApiCallRowWithUser = GeminiApiCallRow & {
+  user: {
+    id: string;
+    email: string | null;
+    username: string | null;
+    name: string | null;
+    plan: string;
+  } | null;
+};
+
 type DailyCostSnapshotRow = {
   id?: string;
   date: Date;
@@ -122,7 +132,9 @@ function normalizeNumericRecord(value: Prisma.JsonValue | null | undefined): Num
   return next;
 }
 
-async function findGeminiCalls(where: LooseWhere, includeUser = false) {
+function findGeminiCalls(where: LooseWhere, includeUser: true): Promise<GeminiApiCallRowWithUser[]>;
+function findGeminiCalls(where: LooseWhere, includeUser?: false): Promise<GeminiApiCallRow[]>;
+async function findGeminiCalls(where: LooseWhere, includeUser = false): Promise<GeminiApiCallRow[] | GeminiApiCallRowWithUser[]> {
   return withRetry(() =>
     prismaDynamic.geminiApiCall.findMany({
       where,
@@ -142,7 +154,7 @@ async function findGeminiCalls(where: LooseWhere, includeUser = false) {
           },
         }
         : {}),
-    })
+    }) as Promise<GeminiApiCallRow[] | GeminiApiCallRowWithUser[]>
   );
 }
 
