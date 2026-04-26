@@ -358,6 +358,16 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
 
   const savedDois = await getUserSavedDois(userId)
   const savedIds = await getUserSavedCandidateIds(userId)
+
+  // Get previous day's brief to exclude those papers
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayBrief = await prisma.dailyBrief.findUnique({
+    where: { userId_date: { userId, date: yesterday } },
+    select: { selectedPaperIds: true }
+  })
+  const previousDayPaperIds = new Set(yesterdayBrief?.selectedPaperIds || [])
+
   const vector = vectorLiteral(resolved.vector)
 
   const topK = await prisma.$queryRaw<TopKRow[]>(Prisma.sql`
@@ -380,6 +390,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     if (resolved.dismissed.has(r.id)) return false
     if (savedDois.has(r.doi ?? '')) return false
     if (savedIds.has(r.id)) return false
+    if (previousDayPaperIds.has(r.id)) return false
     return true
   })
 

@@ -10,7 +10,7 @@ import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, FlaskConical } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, FlaskConical, Shield } from "lucide-react";
 
 export function AppShell({
   children,
@@ -21,6 +21,8 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const isLanding = pathname === "/";
+  const sessionUser = session?.user as (Session["user"] & { isAdmin?: boolean }) | undefined;
+  const isAdmin = Boolean(sessionUser?.isAdmin);
   const [pendingCount, setPendingCount] = useState(0);
   const [emailVerified, setEmailVerified] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -218,6 +220,16 @@ export function AppShell({
                       <FlaskConical className="w-4 h-4" />
                       research
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className={`${desktopNavLinkClassName} ${pathname?.startsWith("/admin") ? "bg-red-500/15 text-red-300 shadow-[rgba(239,68,68,0.35)_0px_0px_0px_1px]" : "text-amber-300 hover:text-amber-200 hover:bg-amber-500/10"}`}
+                        aria-current={pathname?.startsWith("/admin") ? "page" : undefined}
+                      >
+                        <Shield className="w-4 h-4" />
+                        admin
+                      </Link>
+                    )}
                     <ThemeToggle />
                     <NotificationDropdown />
                     <div className="h-4 w-px shrink-0 bg-border mx-2" aria-hidden="true" />
@@ -293,6 +305,15 @@ export function AppShell({
                     <FlaskConical className="w-5 h-5" />
                     research
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className={`${mobileNavLinkClassName} ${pathname?.startsWith("/admin") ? "bg-red-500/15 text-red-300 shadow-[rgba(239,68,68,0.35)_0px_0px_0px_1px]" : "text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"}`}
+                    >
+                      <Shield className="w-5 h-5" />
+                      admin
+                    </Link>
+                  )}
                   <div onClick={() => setIsMenuOpen(false)}>
                     <NotificationDropdown />
                   </div>

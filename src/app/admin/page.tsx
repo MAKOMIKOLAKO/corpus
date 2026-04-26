@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import AdminLoginClient from "./AdminLoginClient";
+import { notFound } from "next/navigation";
+import AdminDashboardPageClient from "./AdminDashboardPageClient";
+import { requireAdminSession } from "@/lib/adminAuth";
 
 export const metadata: Metadata = {
   robots: {
@@ -8,6 +10,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AdminLoginPage() {
-  return <AdminLoginClient />;
+export default async function AdminPage() {
+  const session = await requireAdminSession();
+
+  if (!session?.user?.id) {
+    notFound();
+  }
+
+  console.log(`[ADMIN ACCESS] userId=${session.user.id} email=${session.user.email ?? 'unknown'} section=overview timestamp=${new Date().toISOString()}`);
+
+  return (
+    <AdminDashboardPageClient
+      sessionUser={{
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      }}
+    />
+  );
 }

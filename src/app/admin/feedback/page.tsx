@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AdminFeedbackClient from "./AdminFeedbackClient";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   robots: {
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminFeedbackPage() {
-  return <AdminFeedbackClient />;
+  redirect('/admin?section=feedback');
 }

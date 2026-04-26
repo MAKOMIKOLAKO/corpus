@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdminApiSession } from "@/lib/adminApi";
-import { getFeedbackMetrics } from "@/lib/adminMetrics";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminApiSession } from '@/lib/adminApi';
+import { getFeedbackMetrics } from '@/lib/adminMetrics';
 
 export async function GET(request: NextRequest) {
   const { response } = await requireAdminApiSession();
+
   if (response) {
     return response;
   }
@@ -20,10 +21,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    console.error('[admin/feedback] Failed to fetch feedback:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch feedback' },
-      { status: 500 }
-    );
+    console.error('[admin/metrics/feedback] Failed to load feedback metrics', error);
+    return NextResponse.json({ error: 'Failed to load feedback metrics' }, { status: 500 });
   }
 }
