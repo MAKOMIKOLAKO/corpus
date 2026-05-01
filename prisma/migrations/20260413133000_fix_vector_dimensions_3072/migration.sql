@@ -2,6 +2,8 @@
 -- Gemini embedding API returns 3072-dimensional vectors, but schema was set to 768
 -- Note: ivfflat indexes have a 2000-dimension limit, so we skip index recreation for now
 
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Step 1: Drop existing indexes that depend on the vector columns
 DROP INDEX IF EXISTS "CandidatePaper_embedding_idx";
 DROP INDEX IF EXISTS "DailyCluster_centroidEmbedding_idx";
