@@ -132,30 +132,56 @@ function normalizeNumericRecord(value: Prisma.JsonValue | null | undefined): Num
   return next;
 }
 
+function isMissingGeminiCostSchemaError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code ?? '') : '';
+  return (
+    code === 'P2021' ||
+    code === 'P2022' ||
+    /geminiapicall/i.test(message) ||
+    /dailycostsnapshot/i.test(message) ||
+    /table .* does not exist/i.test(message) ||
+    /column .* does not exist/i.test(message) ||
+    /has no property .*gemini/i.test(message)
+  );
+}
+
+function logMissingCostSchema(context: string, error: unknown) {
+  console.warn(`[geminiCost] ${context}: Gemini cost schema not available yet, returning empty dataset`, error);
+}
+
 function findGeminiCalls(where: LooseWhere, includeUser: true): Promise<GeminiApiCallRowWithUser[]>;
 function findGeminiCalls(where: LooseWhere, includeUser?: false): Promise<GeminiApiCallRow[]>;
 async function findGeminiCalls(where: LooseWhere, includeUser = false): Promise<GeminiApiCallRow[] | GeminiApiCallRowWithUser[]> {
-  return withRetry(() =>
-    prismaDynamic.geminiApiCall.findMany({
-      where,
-      orderBy: { calledAt: 'asc' },
-      ...(includeUser
-        ? {
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                username: true,
-                name: true,
-                plan: true,
+  try {
+    return await withRetry(() =>
+      prismaDynamic.geminiApiCall.findMany({
+        where,
+        orderBy: { calledAt: 'asc' },
+        ...(includeUser
+          ? {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  username: true,
+                  name: true,
+                  plan: true,
+                },
               },
             },
-          },
-        }
-        : {}),
-    }) as Promise<GeminiApiCallRow[] | GeminiApiCallRowWithUser[]>
-  );
+          }
+          : {}),
+      }) as Promise<GeminiApiCallRow[] | GeminiApiCallRowWithUser[]>
+    );
+  } catch (error) {
+    if (isMissingGeminiCostSchemaError(error)) {
+      logMissingCostSchema('findGeminiCalls', error);
+      return includeUser ? [] as GeminiApiCallRowWithUser[] : [] as GeminiApiCallRow[];
+    }
+    throw error;
+  }
 }
 
 function summarizeCalls(calls: GeminiApiCallRow[]) {
@@ -246,7 +272,16 @@ export async function upsertDailyCostSnapshot(date = new Date(), reportText?: st
 
 async function getDailySnapshotOrLive(date = new Date()) {
   const bucket = startOfUtcDay(date);
-  const existing = await withRetry(() => prismaDynamic.dailyCostSnapshot.findUnique({ where: { date: bucket } }));
+  let existing: DailyCostSnapshotRow | null = null;
+  try {
+    existing = await withRetry(() => prismaDynamic.dailyCostSnapshot.findUnique({ where: { date: bucket } }));
+  } catch (error) {
+    if (isMissingGeminiCostSchemaError(error)) {
+      logMissingCostSchema('getDailySnapshotOrLive.findUnique', error);
+    } else {
+      throw error;
+    }
+  }
   if (existing) {
     return {
       ...existing,
@@ -262,12 +297,21 @@ async function getDailySnapshotOrLive(date = new Date()) {
 async function getLastSnapshots(days: number) {
   const end = startOfUtcDay();
   const start = subDays(end, Math.max(0, days - 1));
-  const snapshots = await withRetry(() =>
-    prismaDynamic.dailyCostSnapshot.findMany({
-      where: { date: { gte: start, lte: end } },
-      orderBy: { date: 'asc' },
-    })
-  );
+  let snapshots: DailyCostSnapshotRow[] = [];
+  try {
+    snapshots = await withRetry(() =>
+      prismaDynamic.dailyCostSnapshot.findMany({
+        where: { date: { gte: start, lte: end } },
+        orderBy: { date: 'asc' },
+      })
+    );
+  } catch (error) {
+    if (isMissingGeminiCostSchemaError(error)) {
+      logMissingCostSchema('getLastSnapshots.findMany', error);
+      return [];
+    }
+    throw error;
+  }
   return snapshots.map((snapshot) => ({
     ...snapshot,
     costByFeature: normalizeNumericRecord(snapshot.costByFeature),
@@ -277,11 +321,21 @@ async function getLastSnapshots(days: number) {
 }
 
 export async function getCostOverview() {
-  const [today, last30Snapshots, allCalls, firstCall, overviewMetrics] = await Promise.all([
+  let firstCall: GeminiApiCallRow | null = null;
+  try {
+    firstCall = await withRetry(() => prismaDynamic.geminiApiCall.findFirst({ orderBy: { calledAt: 'asc' } }));
+  } catch (error) {
+    if (isMissingGeminiCostSchemaError(error)) {
+      logMissingCostSchema('getCostOverview.findFirst', error);
+    } else {
+      throw error;
+    }
+  }
+
+  const [today, last30Snapshots, allCalls, overviewMetrics] = await Promise.all([
     getDailySnapshotOrLive(new Date()),
     getLastSnapshots(30),
     findGeminiCalls({}, false),
-    withRetry(() => prismaDynamic.geminiApiCall.findFirst({ orderBy: { calledAt: 'asc' } })),
     getOverviewMetrics(),
   ]);
 
@@ -594,23 +648,33 @@ export async function getRawGeminiCalls(params: {
       ...(params.endDate ? { lte: new Date(params.endDate) } : {}),
     };
   }
-  const all = await withRetry(() =>
-    prismaDynamic.geminiApiCall.findMany({
-      where,
-      orderBy: { calledAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            username: true,
-            name: true,
-            plan: true,
+  let all: GeminiApiCallRowWithUser[] = [];
+  try {
+    all = await withRetry(() =>
+      prismaDynamic.geminiApiCall.findMany({
+        where,
+        orderBy: { calledAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+              name: true,
+              plan: true,
+            },
           },
         },
-      },
-    })
-  );
+      }) as Promise<GeminiApiCallRowWithUser[]>
+    );
+  } catch (error) {
+    if (isMissingGeminiCostSchemaError(error)) {
+      logMissingCostSchema('getRawGeminiCalls.findMany', error);
+      all = [];
+    } else {
+      throw error;
+    }
+  }
   const total = all.length;
   const calls = all.slice((page - 1) * limit, page * limit).map((call) => ({
     ...call,

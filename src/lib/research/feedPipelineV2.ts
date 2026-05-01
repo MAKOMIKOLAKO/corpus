@@ -107,6 +107,18 @@ async function getUserSavedCandidateIds(_userId: string): Promise<Set<string>> {
   return new Set<string>()
 }
 
+async function getPreviouslySurfacedPaperIds(userId: string, beforeDate: Date): Promise<Set<string>> {
+  const priorBriefs = await prisma.dailyBrief.findMany({
+    where: {
+      userId,
+      date: { lt: beforeDate },
+    },
+    select: { selectedPaperIds: true },
+  })
+
+  return new Set(priorBriefs.flatMap((brief) => brief.selectedPaperIds || []))
+}
+
 async function resolveInterestVector(
   userId: string,
   overrides?: FeedOverrides
@@ -294,6 +306,7 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
 export async function generateDailyBrief(userId: string, overrides?: FeedOverrides): Promise<DailyFeedResponse> {
   const today = todayUTC()
   const resolved = await resolveInterestVector(userId, overrides)
+  const previouslySurfacedPaperIds = await getPreviouslySurfacedPaperIds(userId, today)
 
   const candidateSetDateRows = await prisma.$queryRaw<CandidateSetDateRow[]>(Prisma.sql`
     SELECT "date"
@@ -312,9 +325,13 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
 
   if (!resolved.vector || resolved.vector.length === 0) {
     const fallbackRows = await loadFallbackRows(candidateSetDate)
-    const selected = selectDiverse(fallbackRows, resolved.preferred)
+    const filteredFallbackRows = fallbackRows.filter((row) => !previouslySurfacedPaperIds.has(row.id))
+    const selected = selectDiverse(filteredFallbackRows, resolved.preferred)
+    const whyExplanations: Record<string, string> = {}
     const papers: PaperSummaryObject[] = selected.map((r) => {
       const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
+      const why = 'Trending recent research while we learn your interests.'
+      whyExplanations[r.id] = why
       return {
         candidatePaperId: r.id,
         globalEntryId: null,
@@ -327,7 +344,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
         url: r.url,
         plainSummary: r.plainSummary ?? '',
         technicalSummary: r.technicalSummary ?? '',
-        whyExplanation: 'Trending recent research while we learn your interests.',
+        whyExplanation: why,
         noveltyTag: r.noveltyTag ?? 'New method',
         compositeScore: Math.max(0, 1 - Math.max(0, r.distance)),
         scoreBreakdown: {
@@ -343,6 +360,24 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
       }
     })
 
+    const brief = await prisma.dailyBrief.upsert({
+      where: { userId_date: { userId, date: today } },
+      create: {
+        userId,
+        date: today,
+        selectedPaperIds: papers.map((p) => p.candidatePaperId),
+        whyExplanations: whyExplanations as unknown as Prisma.InputJsonValue,
+        emergingTrendsParagraph: null,
+        generatedAt: new Date(),
+      },
+      update: {
+        selectedPaperIds: papers.map((p) => p.candidatePaperId),
+        whyExplanations: whyExplanations as unknown as Prisma.InputJsonValue,
+        emergingTrendsParagraph: null,
+        generatedAt: new Date(),
+      },
+    })
+
     return {
       date: today.toISOString().split('T')[0],
       userId,
@@ -351,22 +386,13 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
       emergingTrends: null,
       papers,
       clusters: [],
-      generatedAt: new Date().toISOString(),
+      generatedAt: brief.generatedAt.toISOString(),
       fromCache: false,
     }
   }
 
   const savedDois = await getUserSavedDois(userId)
   const savedIds = await getUserSavedCandidateIds(userId)
-
-  // Get previous day's brief to exclude those papers
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayBrief = await prisma.dailyBrief.findUnique({
-    where: { userId_date: { userId, date: yesterday } },
-    select: { selectedPaperIds: true }
-  })
-  const previousDayPaperIds = new Set(yesterdayBrief?.selectedPaperIds || [])
 
   const vector = vectorLiteral(resolved.vector)
 
@@ -390,7 +416,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     if (resolved.dismissed.has(r.id)) return false
     if (savedDois.has(r.doi ?? '')) return false
     if (savedIds.has(r.id)) return false
-    if (previousDayPaperIds.has(r.id)) return false
+    if (previouslySurfacedPaperIds.has(r.id)) return false
     return true
   })
 
