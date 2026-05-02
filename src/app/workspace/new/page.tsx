@@ -83,6 +83,10 @@ export default async function NewWorkspacePage({
 
     redirect(`/workspace/${created.id}`)
   } catch (error) {
+    // Don't catch NEXT_REDIRECT errors - they're how Next.js implements redirects
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
+      throw error
+    }
     console.error('Failed to create workspace session:', error)
     redirect('/research?tab=workspace')
   }
