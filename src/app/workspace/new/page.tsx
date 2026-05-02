@@ -1,7 +1,18 @@
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-import prisma from '@/lib/prisma'
+import { extractArxivId } from '@/lib/arxivFetcher'
+import {
+  candidatePaperToWorkspaceMetadata,
+  fetchArxivMetadata,
+  fetchCandidatePaperForWorkspace,
+  findOrCreateWorkspaceSession,
+  getArxivIdFromCandidatePaper,
+  hydrateWorkspaceSession,
+  isArxivCandidatePaper,
+  sessionResponseShape,
+  upsertCandidatePaperFromArxiv,
+} from '@/lib/workspaceServer'
 
 export default async function NewWorkspacePage({
   searchParams,
@@ -20,21 +31,57 @@ export default async function NewWorkspacePage({
   }
 
   try {
-    const body = candidatePaperId ? { candidatePaperId } : { arxivUrl }
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/workspace/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    let created
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Failed to create workspace session')
+    if (candidatePaperId) {
+      const paper = await fetchCandidatePaperForWorkspace(candidatePaperId)
+      if (!paper) {
+        redirect('/research?tab=workspace')
+      }
+
+      if (!isArxivCandidatePaper(paper)) {
+        redirect('/research?tab=workspace')
+      }
+
+      const arxivId = getArxivIdFromCandidatePaper(paper)
+      if (!arxivId) {
+        redirect('/research?tab=workspace')
+      }
+
+      created = await findOrCreateWorkspaceSession({
+        userId: session.user.id,
+        candidatePaper: paper,
+        ...candidatePaperToWorkspaceMetadata(paper, arxivId),
+      })
+
+      void hydrateWorkspaceSession(created.id)
+    } else {
+      const arxivId = extractArxivId(arxivUrl ?? '')
+      if (!arxivId) {
+        redirect('/research?tab=workspace')
+      }
+
+      const metadata = await fetchArxivMetadata(arxivId)
+      if (!metadata) {
+        redirect('/research?tab=workspace')
+      }
+
+      const candidatePaper = await upsertCandidatePaperFromArxiv(metadata)
+      created = await findOrCreateWorkspaceSession({
+        userId: session.user.id,
+        candidatePaper,
+        arxivId: metadata.arxivId,
+        arxivUrl: metadata.arxivUrl,
+        paperTitle: metadata.paperTitle,
+        paperAuthors: metadata.paperAuthors,
+        paperYear: metadata.paperYear,
+        paperAbstract: metadata.paperAbstract,
+      })
+
+      void hydrateWorkspaceSession(created.id)
     }
 
-    const workspaceSession = await response.json()
-    redirect(`/workspace/${workspaceSession.id}`)
+    redirect(`/workspace/${created.id}`)
   } catch (error) {
     console.error('Failed to create workspace session:', error)
     redirect('/research?tab=workspace')
