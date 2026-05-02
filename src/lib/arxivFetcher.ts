@@ -129,16 +129,17 @@ function extractTextFromHtmlDocument(html: string): string | null {
   })
 
   const content = normalizeWhitespace(blocks.join('\n\n'))
-  return content.length >= 400 ? content : null
+  return content.length >= 100 ? content : null
 }
 
 async function fetchHtmlText(url: string): Promise<{ text: string | null; error?: string }> {
   try {
     const response = await fetch(url, {
       headers: {
-        Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
-      signal: abortSignal(15000),
+      signal: abortSignal(30000),
     })
 
     if (!response.ok) {
@@ -185,20 +186,28 @@ export function extractArxivId(url: string): string | null {
 }
 
 export async function fetchArxivFullText(arxivId: string, abstractText?: string | null): Promise<{ text: string | null; source: FetchSource; error?: string }> {
-  const official = await fetchHtmlText(`https://arxiv.org/html/${arxivId}`)
-  if (official.text) {
-    return { text: official.text, source: 'html' }
-  }
-
+  // Try ar5iv first (more reliable HTML conversion)
   const ar5iv = await fetchHtmlText(`https://ar5iv.labs.arxiv.org/html/${arxivId}`)
   if (ar5iv.text) {
     return { text: ar5iv.text, source: 'html' }
   }
 
+  // Fallback to official arXiv HTML
+  const official = await fetchHtmlText(`https://arxiv.org/html/${arxivId}`)
+  if (official.text) {
+    return { text: official.text, source: 'html' }
+  }
+
+  // Log errors for debugging
+  console.error('[arxivFetcher] Failed to fetch full text for', arxivId, {
+    ar5ivError: ar5iv.error,
+    officialError: official.error,
+  })
+
   return {
     text: abstractText?.trim() ? abstractText.trim() : null,
     source: 'abstract_only',
-    error: 'Full text unavailable — showing abstract only',
+    error: `Full text unavailable (${ar5iv.error || official.error || 'unknown error'}) — showing abstract only`,
   }
 }
 
