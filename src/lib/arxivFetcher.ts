@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio'
 
-type FetchSource = 'html' | 'abstract_only'
+type FetchSource = 'html' | 'source' | 'abstract_only'
 
 export type ExtractedSection = {
   index: number
@@ -134,6 +134,7 @@ function extractTextFromHtmlDocument(html: string): string | null {
 
 async function fetchHtmlText(url: string): Promise<{ text: string | null; error?: string }> {
   try {
+    console.log('[fetchHtmlText] Fetching URL:', url)
     const response = await fetch(url, {
       headers: {
         'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
@@ -142,20 +143,25 @@ async function fetchHtmlText(url: string): Promise<{ text: string | null; error?
       signal: abortSignal(30000),
     })
 
+    console.log('[fetchHtmlText] Response status:', response.status, response.statusText)
     if (!response.ok) {
       return { text: null, error: `${response.status} ${response.statusText}` }
     }
 
     const contentType = response.headers.get('content-type') ?? ''
+    console.log('[fetchHtmlText] Content-Type:', contentType)
     if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
       return { text: null, error: 'Non-HTML response' }
     }
 
     const html = await response.text()
+    console.log('[fetchHtmlText] HTML length:', html.length)
     const text = extractTextFromHtmlDocument(html)
+    console.log('[fetchHtmlText] Extracted text length:', text?.length)
     return text ? { text } : { text: null, error: 'No readable content extracted' }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown fetch error'
+    console.error('[fetchHtmlText] Fetch error:', message)
     return { text: null, error: message }
   }
 }
@@ -186,16 +192,57 @@ export function extractArxivId(url: string): string | null {
 }
 
 export async function fetchArxivFullText(arxivId: string, abstractText?: string | null): Promise<{ text: string | null; source: FetchSource; error?: string }> {
+  console.log('[arxivFetcher] Fetching full text for arxivId:', arxivId)
+
   // Try ar5iv first (more reliable HTML conversion)
-  const ar5iv = await fetchHtmlText(`https://ar5iv.labs.arxiv.org/html/${arxivId}`)
+  const ar5ivUrl = `https://ar5iv.labs.arxiv.org/html/${arxivId}`
+  console.log('[arxivFetcher] Trying ar5iv:', ar5ivUrl)
+  const ar5iv = await fetchHtmlText(ar5ivUrl)
+  console.log('[arxivFetcher] ar5iv result:', { hasText: Boolean(ar5iv.text), error: ar5iv.error })
   if (ar5iv.text) {
     return { text: ar5iv.text, source: 'html' }
   }
 
-  // Fallback to official arXiv HTML
-  const official = await fetchHtmlText(`https://arxiv.org/html/${arxivId}`)
+  // Try official arXiv HTML
+  const officialUrl = `https://arxiv.org/html/${arxivId}`
+  console.log('[arxivFetcher] Trying official:', officialUrl)
+  const official = await fetchHtmlText(officialUrl)
+  console.log('[arxivFetcher] official result:', { hasText: Boolean(official.text), error: official.error })
   if (official.text) {
     return { text: official.text, source: 'html' }
+  }
+
+  // Try arXiv source (LaTeX) as last resort
+  try {
+    const sourceUrl = `https://arxiv.org/e-print/${arxivId}`
+    console.log('[arxivFetcher] Trying source:', sourceUrl)
+    const sourceResponse = await fetch(sourceUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal: abortSignal(30000),
+    })
+
+    if (sourceResponse.ok) {
+      const sourceText = await sourceResponse.text()
+      // Basic LaTeX cleanup - remove commands, keep text
+      const cleaned = sourceText
+        .replace(/\\[a-zA-Z]+(\[[^\]]*\])?(\{[^}]*\})?/g, ' ')
+        .replace(/\$[^$]*\$/g, ' [MATH] ')
+        .replace(/\\[{}%]/g, '')
+        .replace(/[{}%]/g, ' ')
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 20 && !line.startsWith('%') && !line.startsWith('\\'))
+        .join('\n\n')
+
+      if (cleaned.length >= 200) {
+        console.log('[arxivFetcher] Source extraction successful, length:', cleaned.length)
+        return { text: cleaned, source: 'source' }
+      }
+    }
+  } catch (error) {
+    console.error('[arxivFetcher] Source fetch failed:', error)
   }
 
   // Log errors for debugging
