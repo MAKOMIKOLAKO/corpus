@@ -16,11 +16,14 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    console.log('Onboarding page mounted, status:', status, 'session:', session);
+  }, [status, session]);
 
   // Redirect if already onboarded (hard nav ensures middleware sees the current JWT)
   useEffect(() => {
+    console.log('Checking redirect: status:', status, 'onboardingCompleted:', session?.user?.onboardingCompleted);
     if (status === 'authenticated' && session?.user?.onboardingCompleted) {
+      console.log('Redirecting to /research');
       window.location.href = '/research';
     }
   }, [status, session]);
@@ -59,9 +62,8 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      // Update session JWT - the useEffect will handle navigation once session reflects completion
-      await update();
-      setCompleting(false);
+      // Force page reload to ensure middleware sees the updated database state
+      window.location.href = '/research';
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
       setCompletionError(error instanceof Error ? error.message : 'Failed to complete onboarding');
