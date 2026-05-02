@@ -344,9 +344,24 @@ export function WorkspaceClient({
                   <div className="rounded-lg border border-dashed border-border p-6 text-center">
                     <AlertCircle className="w-8 h-8 text-content-tertiary mx-auto mb-3" />
                     <p className="text-sm text-content-secondary mb-1">Full text not available</p>
-                    <p className="text-xs text-content-tertiary">
+                    <p className="text-xs text-content-tertiary mb-3">
                       Only abstract is available for this paper
                     </p>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/workspace/session/${sessionId}/hydrate`, { method: 'POST' })
+                          if (response.ok) {
+                            window.location.reload()
+                          }
+                        } catch (error) {
+                          console.error('Failed to retry hydration:', error)
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                    >
+                      Retry fetching full text
+                    </button>
                   </div>
                 )}
               </div>
@@ -374,11 +389,10 @@ export function WorkspaceClient({
                   messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`rounded-lg px-4 py-3 ${
-                        msg.role === 'user'
+                      className={`rounded-lg px-4 py-3 ${msg.role === 'user'
                           ? 'bg-accent/10 text-accent-foreground ml-auto max-w-[90%]'
                           : 'bg-card text-content-secondary mr-auto max-w-[90%]'
-                      }`}
+                        }`}
                     >
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                     </div>
