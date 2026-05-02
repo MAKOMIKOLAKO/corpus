@@ -145,6 +145,22 @@ export default function LibraryPageClient({
                           : 'add your first entry to get started'
                         }
                       </p>
+                      {!(search || readingStatus || year) && (
+                        <div className="flex gap-3 justify-center mt-4">
+                          <Link
+                            href="/research"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:opacity-90 transition-opacity button-terracotta"
+                          >
+                            Discover papers
+                          </Link>
+                          <Link
+                            href="/feeds/discover"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-raised text-content-primary text-sm font-medium hover:bg-surface-sunken transition-colors"
+                          >
+                            Browse feeds
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

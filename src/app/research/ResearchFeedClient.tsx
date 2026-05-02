@@ -520,7 +520,15 @@ export function ResearchFeedClient({ userId, preferredCount }: ResearchFeedClien
 
             {state.status === 'empty' && (
               <div className="rounded-xl border border-border bg-card px-6 py-12 text-center whisper-shadow">
-                <p className="text-content-secondary text-[14px]">{state.message}</p>
+                <p className="text-content-secondary text-[14px] mb-4">
+                  Your personalized feed is being prepared. Check back in a few hours — we'll find papers matching your interests.
+                </p>
+                <a
+                  href="/feeds/discover"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:opacity-90 transition-opacity button-terracotta"
+                >
+                  Browse RSS feeds
+                </a>
               </div>
             )}
 

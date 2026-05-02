@@ -217,3 +217,59 @@ export const referenceRequestCreateSchema = z.object({
   ownerId: z.string().cuid(),
   message: textFieldSchema(280).optional().nullable(),
 });
+
+export const workspaceSessionCreateSchema = z
+  .object({
+    candidatePaperId: z.string().cuid().optional(),
+    arxivUrl: z.string().trim().min(1).max(2048).optional(),
+  })
+  .refine((value) => Boolean(value.candidatePaperId || value.arxivUrl), {
+    message: 'candidatePaperId or arxivUrl is required',
+  })
+  .strict();
+
+export const workspaceSummaryRequestSchema = z
+  .object({
+    summaryType: z.enum(['overview', 'section']),
+    sectionIndex: z.number().int().min(0).optional(),
+    regenerate: z.boolean().optional(),
+  })
+  .strict();
+
+export const workspaceAskSchema = z
+  .object({
+    question: z.string().trim().min(1, 'Question is required').max(500, 'Question must be 500 characters or fewer'),
+  })
+  .strict();
+
+export const workspaceMessageListSchema = z
+  .object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(50),
+  })
+  .strict();
+
+export const workspaceSessionListSchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(20).default(10),
+  })
+  .strict();
+
+export const onboardingCompleteSchema = z
+  .object({
+    selectedInterests: z
+      .array(z.string())
+      .min(1, "Select at least 1 interest")
+      .max(10, "Select at most 10 interests"),
+    selectedFeedIds: z.array(z.string()).default([]),
+  })
+  .strict();
+
+export const researchInterestsUpdateSchema = z
+  .object({
+    selectedInterests: z
+      .array(z.string())
+      .min(1, "Select at least 1 interest")
+      .max(10, "Select at most 10 interests"),
+  })
+  .strict();
