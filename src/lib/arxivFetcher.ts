@@ -1,7 +1,6 @@
 import * as cheerio from 'cheerio'
-import * as pdfParse from 'pdf-parse'
 
-type FetchSource = 'pdf' | 'source' | 'abstract_only'
+type FetchSource = 'source' | 'abstract_only'
 
 export type ExtractedSection = {
   index: number
@@ -195,35 +194,7 @@ export function extractArxivId(url: string): string | null {
 export async function fetchArxivFullText(arxivId: string, abstractText?: string | null): Promise<{ text: string | null; source: FetchSource; error?: string }> {
   console.log('[arxivFetcher] Fetching full text for arxivId:', arxivId)
 
-  // Try arXiv PDF directly (most reliable)
-  try {
-    const pdfUrl = `https://arxiv.org/pdf/${arxivId}.pdf`
-    console.log('[arxivFetcher] Trying PDF:', pdfUrl)
-    const pdfResponse = await fetch(pdfUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-      signal: abortSignal(60000),
-    })
-
-    if (pdfResponse.ok) {
-      const pdfBuffer = await pdfResponse.arrayBuffer()
-      console.log('[arxivFetcher] PDF fetched, size:', pdfBuffer.byteLength)
-
-      // Use pdf-parse to extract text
-      const data = await (pdfParse as any)(Buffer.from(pdfBuffer))
-      const text = data.text
-
-      if (text && text.length >= 500) {
-        console.log('[arxivFetcher] PDF text extraction successful, length:', text.length)
-        return { text, source: 'pdf' }
-      }
-    }
-  } catch (error) {
-    console.error('[arxivFetcher] PDF fetch failed:', error)
-  }
-
-  // Fallback to arXiv source (LaTeX)
+  // Try arXiv source (LaTeX) - works in Node.js
   try {
     const sourceUrl = `https://arxiv.org/e-print/${arxivId}`
     console.log('[arxivFetcher] Trying source:', sourceUrl)
@@ -231,20 +202,34 @@ export async function fetchArxivFullText(arxivId: string, abstractText?: string 
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
-      signal: abortSignal(30000),
+      signal: abortSignal(60000),
     })
 
     if (sourceResponse.ok) {
       const sourceText = await sourceResponse.text()
-      // Basic LaTeX cleanup - remove commands, keep text
+      console.log('[arxivFetcher] Source fetched, length:', sourceText.length)
+
+      // LaTeX cleanup - preserve equations, remove structural commands
       const cleaned = sourceText
-        .replace(/\\[a-zA-Z]+(\[[^\]]*\])?(\{[^}]*\})?/g, ' ')
-        .replace(/\$[^$]*\$/g, ' [MATH] ')
+        .replace(/\\[a-zA-Z]+(\[[^\]]*\])?(\{[^}]*\})?/g, (match) => {
+          // Preserve math-related commands
+          if (match.startsWith('\\frac') || match.startsWith('\\sqrt') || match.startsWith('\\sum') ||
+            match.startsWith('\\int') || match.startsWith('\\partial') || match.startsWith('\\infty') ||
+            match.startsWith('\\alpha') || match.startsWith('\\beta') || match.startsWith('\\gamma') ||
+            match.startsWith('\\delta') || match.startsWith('\\theta') || match.startsWith('\\lambda') ||
+            match.startsWith('\\mu') || match.startsWith('\\sigma') || match.startsWith('\\phi') ||
+            match.startsWith('\\psi') || match.startsWith('\\omega')) {
+            return match
+          }
+          return ' '
+        })
+        .replace(/\$\$([^$]+)\$\$/g, ' [EQUATION: $1] ') // Display math
+        .replace(/\$([^$]+)\$/g, ' [MATH: $1] ') // Inline math
         .replace(/\\[{}%]/g, '')
         .replace(/[{}%]/g, ' ')
         .split(/\n+/)
         .map((line) => line.trim())
-        .filter((line) => line.length > 20 && !line.startsWith('%') && !line.startsWith('\\'))
+        .filter((line) => line.length > 10 && !line.startsWith('%'))
         .join('\n\n')
 
       if (cleaned.length >= 200) {
