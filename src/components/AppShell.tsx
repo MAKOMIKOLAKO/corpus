@@ -21,6 +21,7 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const isLanding = pathname === "/";
+  const isOnboarding = pathname === "/onboarding";
   const sessionUser = session?.user as (Session["user"] & { isAdmin?: boolean }) | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
   const [pendingCount, setPendingCount] = useState(0);
@@ -97,9 +98,9 @@ export function AppShell({
 
   return (
     <>
-      {isLanding ? (
+      {isLanding || isOnboarding ? (
         <>
-          {session && !emailVerified && !bannerDismissed && (
+          {isLanding && session && !emailVerified && !bannerDismissed && (
             <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2.5 text-sm text-yellow-300 flex items-center justify-between gap-4 flex-wrap">
               <span>
                 Please verify your email address. Check your inbox or{" "}

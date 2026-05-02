@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Sparkles,
   Tag,
+  LayoutTemplate,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { PaperSummaryObject } from '@/lib/research/feedPipelineV2'
@@ -174,16 +175,28 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           Dismiss
         </button>
 
-        {/* Placeholder for reading assistant — Phase 2 */}
-        <Link
-          href={`/research/read/${paper.candidatePaperId}`}
-          id={`read-paper-${paper.candidatePaperId}`}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-primary hover:border-content-secondary transition-all"
-          aria-label="Open reading assistant for this paper"
-        >
-          <BookOpen size={13} />
-          Read
-        </Link>
+        {/* Open in Workspace for arXiv papers */}
+        {paper.isArxivEligible ? (
+          <Link
+            href={`/workspace/new?candidatePaperId=${paper.candidatePaperId}`}
+            id={`workspace-paper-${paper.candidatePaperId}`}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-[13px] font-medium text-accent hover:bg-accent/20 hover:border-accent/60 transition-all"
+            aria-label="Open this paper in the workspace"
+          >
+            <LayoutTemplate size={13} />
+            Open in Workspace
+          </Link>
+        ) : (
+          <Link
+            href={`/research/read/${paper.candidatePaperId}`}
+            id={`read-paper-${paper.candidatePaperId}`}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-primary hover:border-content-secondary transition-all"
+            aria-label="Open reading assistant for this paper"
+          >
+            <BookOpen size={13} />
+            Read
+          </Link>
+        )}
       </div>
     </motion.article>
   )

@@ -40,6 +40,8 @@ export interface PaperSummaryObject {
   clusterLabel: string
   alreadySaved: boolean
   openAccessUrl: string | null
+  arxivId: string | null
+  isArxivEligible: boolean
 }
 
 export interface ClusterObject {
@@ -70,6 +72,7 @@ type TopKRow = {
   candidateMetadata: unknown
   clusterId: number | null
   distance: number
+  arxivId: string | null
 }
 
 type CachedPaperRow = Omit<TopKRow, 'distance'>
@@ -201,6 +204,7 @@ async function loadFallbackRows(candidateSetDate: Date | null): Promise<TopKRow[
         SELECT
           cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
           cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId",
+          cp."arxivId",
           0.35::float AS distance
         FROM "CandidatePaper" cp
         INNER JOIN "DailyCandidateSetPaper" dcsp ON dcsp."candidatePaperId" = cp."id"
@@ -220,6 +224,7 @@ async function loadFallbackRows(candidateSetDate: Date | null): Promise<TopKRow[
     SELECT
       cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
       cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId",
+      cp."arxivId",
       0.35::float AS distance
     FROM "CandidatePaper" cp
     WHERE cp."embedding" IS NOT NULL
@@ -251,7 +256,7 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
   const rows = await prisma.$queryRaw<CachedPaperRow[]>(Prisma.sql`
     SELECT
       cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
-      cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId"
+      cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId", cp."arxivId"
     FROM "CandidatePaper" cp
     WHERE cp."id" = ANY(${ids}::text[])
   `)
@@ -265,7 +270,8 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
     .map((id) => rowMap.get(id))
     .filter((r): r is CachedPaperRow => !!r)
     .map((r) => {
-      const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
+      const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string; arxivId?: string }
+      const arxivId = r.arxivId || meta.arxivId || null
       return {
         candidatePaperId: r.id,
         globalEntryId: null,
@@ -285,6 +291,8 @@ export async function getDailyBriefCached(userId: string): Promise<DailyFeedResp
         clusterLabel: '',
         alreadySaved: savedDois.has(r.doi ?? '') || savedIds.has(r.id),
         openAccessUrl: meta.openAccessUrl ?? null,
+        arxivId,
+        isArxivEligible: Boolean(arxivId),
       }
     })
 
@@ -329,9 +337,10 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     const selected = selectDiverse(filteredFallbackRows, resolved.preferred)
     const whyExplanations: Record<string, string> = {}
     const papers: PaperSummaryObject[] = selected.map((r) => {
-      const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
+      const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string; arxivId?: string }
       const why = 'Trending recent research while we learn your interests.'
       whyExplanations[r.id] = why
+      const arxivId = r.arxivId || meta.arxivId || null
       return {
         candidatePaperId: r.id,
         globalEntryId: null,
@@ -357,6 +366,8 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
         clusterLabel: '',
         alreadySaved: false,
         openAccessUrl: meta.openAccessUrl ?? null,
+        arxivId,
+        isArxivEligible: Boolean(arxivId),
       }
     })
 
@@ -400,6 +411,7 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
     SELECT
       cp."id", cp."title", cp."authors", cp."publishedDate", cp."source", cp."doi", cp."url",
       cp."plainSummary", cp."technicalSummary", cp."noveltyTag", cp."candidateMetadata", cp."clusterId",
+      cp."arxivId",
       (cp."embedding" <=> ${vector}::vector) AS distance
     FROM "CandidatePaper" cp
     INNER JOIN "DailyCandidateSetPaper" dcsp ON dcsp."candidatePaperId" = cp."id"
@@ -424,9 +436,10 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
   const whyExplanations: Record<string, string> = {}
 
   const papers: PaperSummaryObject[] = selected.map((r) => {
-    const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string }
+    const meta = (r.candidateMetadata || {}) as { openAccessUrl?: string; arxivId?: string }
     const why = `Matched your ${resolved.mode} interests.`
     whyExplanations[r.id] = why
+    const arxivId = r.arxivId || meta.arxivId || null
     return {
       candidatePaperId: r.id,
       globalEntryId: null,
@@ -452,6 +465,8 @@ export async function generateDailyBrief(userId: string, overrides?: FeedOverrid
       clusterLabel: '',
       alreadySaved: false,
       openAccessUrl: meta.openAccessUrl ?? null,
+      arxivId,
+      isArxivEligible: Boolean(arxivId),
     }
   })
 

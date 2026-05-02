@@ -33,6 +33,8 @@ model User {
   bio                       String?
   emailVerified             DateTime?
   username                  String?                  @unique
+  onboardingCompleted       Boolean                  @default(false)
+  onboardingCompletedAt     DateTime?
   lastFeedViewedAt          DateTime?
   showSignals               Boolean                  @default(true)
   usernameBannerShown       Boolean                  @default(false)
@@ -68,6 +70,7 @@ model User {
   dailyPaperScores          DailyPaperScore[]
   dailyBriefs               DailyBrief[]
   readingSessions           PaperReadingSession[]
+  paperWorkspaceSessions   PaperWorkspaceSession[]
   geminiApiCalls            GeminiApiCall[]
 
   @@index([plan])
@@ -754,6 +757,7 @@ model CandidatePaper {
 
   dailyScores       DailyPaperScore[]
   readingSessions   PaperReadingSession[]
+  workspaceSessions PaperWorkspaceSession[]
   dailySetLinks     DailyCandidateSetPaper[]
   dailyClusterLinks DailyClusterPaper[]
 
@@ -896,5 +900,64 @@ model PaperReadingMessage {
   session PaperReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+  @@index([sessionId, createdAt])
+}
+
+model PaperWorkspaceSession {
+  id                 String   @id @default(cuid())
+  userId             String
+  candidatePaperId   String?
+  arxivId            String
+  arxivUrl           String
+  paperTitle         String
+  paperAuthors       String[]
+  paperYear          Int?
+  paperAbstract      String?  @db.Text
+  fullText           String?  @db.Text
+  fullTextFetchedAt  DateTime?
+  sections           Json?
+  sectionsExtractedAt DateTime?
+  createdAt          DateTime @default(now())
+  lastActivityAt     DateTime @default(now())
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidatePaper  CandidatePaper? @relation(fields: [candidatePaperId], references: [id], onDelete: SetNull)
+  summaries       SectionSummary[]
+  messages        WorkspaceMessage[]
+
+  @@unique([userId, arxivId])
+  @@index([userId, lastActivityAt])
+  @@index([userId, arxivId])
+}
+
+model SectionSummary {
+  id            String   @id @default(cuid())
+  sessionId      String
+  sectionIndex   Int
+  sectionHeading String
+  summaryType    String
+  content        String   @db.Text
+  inputTokens    Int
+  outputTokens   Int
+  generatedAt    DateTime @default(now())
+
+  session PaperWorkspaceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sectionIndex, summaryType])
+  @@index([sessionId])
+}
+
+model WorkspaceMessage {
+  id                       String   @id @default(cuid())
+  sessionId                String
+  role                     String
+  content                  String   @db.Text
+  referencedSectionIndices Int[]
+  inputTokens              Int?
+  outputTokens             Int?
+  createdAt                DateTime @default(now())
+
+  session PaperWorkspaceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   @@index([sessionId, createdAt])
 }

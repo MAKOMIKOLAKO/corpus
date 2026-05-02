@@ -1,0 +1,208 @@
+export interface ResearchInterest {
+  id: string;
+  label: string;
+  category: string;
+}
+
+export const INTEREST_CATEGORIES = [
+  "Artificial Intelligence & Machine Learning",
+  "Biomedical & Life Sciences",
+  "Physical Sciences",
+  "Computer Science & Engineering",
+  "Mathematics & Statistics",
+  "Social Sciences & Humanities",
+  "Engineering & Applied Sciences",
+  "Health & Medicine",
+] as const;
+
+export const RESEARCH_INTERESTS: ResearchInterest[] = [
+  // Artificial Intelligence & Machine Learning
+  { id: "machine-learning", label: "Machine Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "deep-learning", label: "Deep Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "neural-networks", label: "Neural Networks", category: "Artificial Intelligence & Machine Learning" },
+  { id: "natural-language-processing", label: "Natural Language Processing", category: "Artificial Intelligence & Machine Learning" },
+  { id: "computer-vision", label: "Computer Vision", category: "Artificial Intelligence & Machine Learning" },
+  { id: "reinforcement-learning", label: "Reinforcement Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "generative-ai", label: "Generative AI", category: "Artificial Intelligence & Machine Learning" },
+  { id: "large-language-models", label: "Large Language Models", category: "Artificial Intelligence & Machine Learning" },
+  { id: "transformer-architectures", label: "Transformer Architectures", category: "Artificial Intelligence & Machine Learning" },
+  { id: "federated-learning", label: "Federated Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "transfer-learning", label: "Transfer Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "graph-neural-networks", label: "Graph Neural Networks", category: "Artificial Intelligence & Machine Learning" },
+  { id: "explainable-ai", label: "Explainable AI", category: "Artificial Intelligence & Machine Learning" },
+  { id: "ai-safety", label: "AI Safety", category: "Artificial Intelligence & Machine Learning" },
+  { id: "robotics-and-ai", label: "Robotics and AI", category: "Artificial Intelligence & Machine Learning" },
+  { id: "autonomous-systems", label: "Autonomous Systems", category: "Artificial Intelligence & Machine Learning" },
+  { id: "speech-recognition", label: "Speech Recognition", category: "Artificial Intelligence & Machine Learning" },
+  { id: "multimodal-learning", label: "Multimodal Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "few-shot-learning", label: "Few-Shot Learning", category: "Artificial Intelligence & Machine Learning" },
+  { id: "meta-learning", label: "Meta-Learning", category: "Artificial Intelligence & Machine Learning" },
+
+  // Biomedical & Life Sciences
+  { id: "genomics", label: "Genomics", category: "Biomedical & Life Sciences" },
+  { id: "proteomics", label: "Proteomics", category: "Biomedical & Life Sciences" },
+  { id: "drug-discovery", label: "Drug Discovery", category: "Biomedical & Life Sciences" },
+  { id: "cancer-biology", label: "Cancer Biology", category: "Biomedical & Life Sciences" },
+  { id: "neuroscience", label: "Neuroscience", category: "Biomedical & Life Sciences" },
+  { id: "immunology", label: "Immunology", category: "Biomedical & Life Sciences" },
+  { id: "structural-biology", label: "Structural Biology", category: "Biomedical & Life Sciences" },
+  { id: "computational-biology", label: "Computational Biology", category: "Biomedical & Life Sciences" },
+  { id: "bioinformatics", label: "Bioinformatics", category: "Biomedical & Life Sciences" },
+  { id: "epigenetics", label: "Epigenetics", category: "Biomedical & Life Sciences" },
+  { id: "crispr-gene-editing", label: "CRISPR and Gene Editing", category: "Biomedical & Life Sciences" },
+  { id: "microbiome-research", label: "Microbiome Research", category: "Biomedical & Life Sciences" },
+  { id: "cell-biology", label: "Cell Biology", category: "Biomedical & Life Sciences" },
+  { id: "evolutionary-biology", label: "Evolutionary Biology", category: "Biomedical & Life Sciences" },
+  { id: "systems-biology", label: "Systems Biology", category: "Biomedical & Life Sciences" },
+  { id: "clinical-trials", label: "Clinical Trials", category: "Biomedical & Life Sciences" },
+  { id: "epidemiology", label: "Epidemiology", category: "Biomedical & Life Sciences" },
+  { id: "pharmacology", label: "Pharmacology", category: "Biomedical & Life Sciences" },
+  { id: "synthetic-biology", label: "Synthetic Biology", category: "Biomedical & Life Sciences" },
+  { id: "aging-longevity", label: "Aging and Longevity", category: "Biomedical & Life Sciences" },
+
+  // Physical Sciences
+  { id: "quantum-computing", label: "Quantum Computing", category: "Physical Sciences" },
+  { id: "quantum-mechanics", label: "Quantum Mechanics", category: "Physical Sciences" },
+  { id: "condensed-matter-physics", label: "Condensed Matter Physics", category: "Physical Sciences" },
+  { id: "astrophysics", label: "Astrophysics", category: "Physical Sciences" },
+  { id: "cosmology", label: "Cosmology", category: "Physical Sciences" },
+  { id: "particle-physics", label: "Particle Physics", category: "Physical Sciences" },
+  { id: "materials-science", label: "Materials Science", category: "Physical Sciences" },
+  { id: "nanotechnology", label: "Nanotechnology", category: "Physical Sciences" },
+  { id: "photonics", label: "Photonics", category: "Physical Sciences" },
+  { id: "plasma-physics", label: "Plasma Physics", category: "Physical Sciences" },
+  { id: "nuclear-physics", label: "Nuclear Physics", category: "Physical Sciences" },
+  { id: "climate-science", label: "Climate Science", category: "Physical Sciences" },
+  { id: "atmospheric-science", label: "Atmospheric Science", category: "Physical Sciences" },
+  { id: "geophysics", label: "Geophysics", category: "Physical Sciences" },
+  { id: "thermodynamics", label: "Thermodynamics", category: "Physical Sciences" },
+  { id: "fluid-dynamics", label: "Fluid Dynamics", category: "Physical Sciences" },
+  { id: "optics-lasers", label: "Optics and Lasers", category: "Physical Sciences" },
+  { id: "semiconductor-physics", label: "Semiconductor Physics", category: "Physical Sciences" },
+  { id: "high-energy-physics", label: "High Energy Physics", category: "Physical Sciences" },
+  { id: "space-exploration", label: "Space Exploration", category: "Physical Sciences" },
+
+  // Computer Science & Engineering
+  { id: "algorithms-data-structures", label: "Algorithms and Data Structures", category: "Computer Science & Engineering" },
+  { id: "distributed-systems", label: "Distributed Systems", category: "Computer Science & Engineering" },
+  { id: "computer-architecture", label: "Computer Architecture", category: "Computer Science & Engineering" },
+  { id: "operating-systems", label: "Operating Systems", category: "Computer Science & Engineering" },
+  { id: "cryptography", label: "Cryptography", category: "Computer Science & Engineering" },
+  { id: "cybersecurity", label: "Cybersecurity", category: "Computer Science & Engineering" },
+  { id: "human-computer-interaction", label: "Human-Computer Interaction", category: "Computer Science & Engineering" },
+  { id: "programming-languages", label: "Programming Languages", category: "Computer Science & Engineering" },
+  { id: "software-engineering", label: "Software Engineering", category: "Computer Science & Engineering" },
+  { id: "database-systems", label: "Database Systems", category: "Computer Science & Engineering" },
+  { id: "computer-networks", label: "Computer Networks", category: "Computer Science & Engineering" },
+  { id: "cloud-computing", label: "Cloud Computing", category: "Computer Science & Engineering" },
+  { id: "edge-computing", label: "Edge Computing", category: "Computer Science & Engineering" },
+  { id: "formal-methods-verification", label: "Formal Methods and Verification", category: "Computer Science & Engineering" },
+  { id: "compilers", label: "Compilers", category: "Computer Science & Engineering" },
+  { id: "embedded-systems", label: "Embedded Systems", category: "Computer Science & Engineering" },
+  { id: "internet-of-things", label: "Internet of Things", category: "Computer Science & Engineering" },
+  { id: "quantum-algorithms", label: "Quantum Algorithms", category: "Computer Science & Engineering" },
+  { id: "computer-graphics", label: "Computer Graphics", category: "Computer Science & Engineering" },
+  { id: "virtual-augmented-reality", label: "Virtual and Augmented Reality", category: "Computer Science & Engineering" },
+
+  // Mathematics & Statistics
+  { id: "pure-mathematics", label: "Pure Mathematics", category: "Mathematics & Statistics" },
+  { id: "applied-mathematics", label: "Applied Mathematics", category: "Mathematics & Statistics" },
+  { id: "statistics-probability", label: "Statistics and Probability", category: "Mathematics & Statistics" },
+  { id: "mathematical-optimization", label: "Mathematical Optimization", category: "Mathematics & Statistics" },
+  { id: "topology", label: "Topology", category: "Mathematics & Statistics" },
+  { id: "number-theory", label: "Number Theory", category: "Mathematics & Statistics" },
+  { id: "algebraic-geometry", label: "Algebraic Geometry", category: "Mathematics & Statistics" },
+  { id: "differential-equations", label: "Differential Equations", category: "Mathematics & Statistics" },
+  { id: "numerical-analysis", label: "Numerical Analysis", category: "Mathematics & Statistics" },
+  { id: "information-theory", label: "Information Theory", category: "Mathematics & Statistics" },
+  { id: "combinatorics", label: "Combinatorics", category: "Mathematics & Statistics" },
+  { id: "mathematical-logic", label: "Mathematical Logic", category: "Mathematics & Statistics" },
+  { id: "game-theory", label: "Game Theory", category: "Mathematics & Statistics" },
+  { id: "operations-research", label: "Operations Research", category: "Mathematics & Statistics" },
+  { id: "signal-processing", label: "Signal Processing", category: "Mathematics & Statistics" },
+  { id: "bayesian-methods", label: "Bayesian Methods", category: "Mathematics & Statistics" },
+  { id: "causal-inference", label: "Causal Inference", category: "Mathematics & Statistics" },
+  { id: "time-series-analysis", label: "Time Series Analysis", category: "Mathematics & Statistics" },
+  { id: "network-science", label: "Network Science", category: "Mathematics & Statistics" },
+  { id: "stochastic-processes", label: "Stochastic Processes", category: "Mathematics & Statistics" },
+
+  // Social Sciences & Humanities
+  { id: "political-science", label: "Political Science", category: "Social Sciences & Humanities" },
+  { id: "economics", label: "Economics", category: "Social Sciences & Humanities" },
+  { id: "behavioral-economics", label: "Behavioral Economics", category: "Social Sciences & Humanities" },
+  { id: "sociology", label: "Sociology", category: "Social Sciences & Humanities" },
+  { id: "psychology", label: "Psychology", category: "Social Sciences & Humanities" },
+  { id: "cognitive-science", label: "Cognitive Science", category: "Social Sciences & Humanities" },
+  { id: "organizational-behavior", label: "Organizational Behavior", category: "Social Sciences & Humanities" },
+  { id: "education-research", label: "Education Research", category: "Social Sciences & Humanities" },
+  { id: "linguistics", label: "Linguistics", category: "Social Sciences & Humanities" },
+  { id: "philosophy-of-science", label: "Philosophy of Science", category: "Social Sciences & Humanities" },
+  { id: "ethics-ai", label: "Ethics and AI", category: "Social Sciences & Humanities" },
+  { id: "science-policy", label: "Science Policy", category: "Social Sciences & Humanities" },
+  { id: "history-of-science", label: "History of Science", category: "Social Sciences & Humanities" },
+  { id: "anthropology", label: "Anthropology", category: "Social Sciences & Humanities" },
+  { id: "communication-studies", label: "Communication Studies", category: "Social Sciences & Humanities" },
+  { id: "public-health-policy", label: "Public Health Policy", category: "Social Sciences & Humanities" },
+  { id: "urban-studies", label: "Urban Studies", category: "Social Sciences & Humanities" },
+  { id: "environmental-policy", label: "Environmental Policy", category: "Social Sciences & Humanities" },
+  { id: "international-relations", label: "International Relations", category: "Social Sciences & Humanities" },
+  { id: "law-technology", label: "Law and Technology", category: "Social Sciences & Humanities" },
+
+  // Engineering & Applied Sciences
+  { id: "electrical-engineering", label: "Electrical Engineering", category: "Engineering & Applied Sciences" },
+  { id: "mechanical-engineering", label: "Mechanical Engineering", category: "Engineering & Applied Sciences" },
+  { id: "civil-engineering", label: "Civil Engineering", category: "Engineering & Applied Sciences" },
+  { id: "chemical-engineering", label: "Chemical Engineering", category: "Engineering & Applied Sciences" },
+  { id: "biomedical-engineering", label: "Biomedical Engineering", category: "Engineering & Applied Sciences" },
+  { id: "aerospace-engineering", label: "Aerospace Engineering", category: "Engineering & Applied Sciences" },
+  { id: "energy-systems", label: "Energy Systems", category: "Engineering & Applied Sciences" },
+  { id: "renewable-energy", label: "Renewable Energy", category: "Engineering & Applied Sciences" },
+  { id: "environmental-engineering", label: "Environmental Engineering", category: "Engineering & Applied Sciences" },
+  { id: "manufacturing-industry-4", label: "Manufacturing and Industry 4.0", category: "Engineering & Applied Sciences" },
+  { id: "autonomous-vehicles", label: "Autonomous Vehicles", category: "Engineering & Applied Sciences" },
+  { id: "sensor-technology", label: "Sensor Technology", category: "Engineering & Applied Sciences" },
+  { id: "medical-devices", label: "Medical Devices", category: "Engineering & Applied Sciences" },
+  { id: "agricultural-technology", label: "Agricultural Technology", category: "Engineering & Applied Sciences" },
+  { id: "food-science", label: "Food Science", category: "Engineering & Applied Sciences" },
+  { id: "water-resources", label: "Water Resources", category: "Engineering & Applied Sciences" },
+  { id: "structural-engineering", label: "Structural Engineering", category: "Engineering & Applied Sciences" },
+  { id: "control-systems", label: "Control Systems", category: "Engineering & Applied Sciences" },
+  { id: "signal-processing-eng", label: "Signal Processing", category: "Engineering & Applied Sciences" },
+  { id: "wireless-communications", label: "Wireless Communications", category: "Engineering & Applied Sciences" },
+
+  // Health & Medicine
+  { id: "cardiology", label: "Cardiology", category: "Health & Medicine" },
+  { id: "oncology", label: "Oncology", category: "Health & Medicine" },
+  { id: "neurology", label: "Neurology", category: "Health & Medicine" },
+  { id: "psychiatry", label: "Psychiatry", category: "Health & Medicine" },
+  { id: "infectious-disease", label: "Infectious Disease", category: "Health & Medicine" },
+  { id: "immunotherapy", label: "Immunotherapy", category: "Health & Medicine" },
+  { id: "precision-medicine", label: "Precision Medicine", category: "Health & Medicine" },
+  { id: "medical-imaging", label: "Medical Imaging", category: "Health & Medicine" },
+  { id: "global-health", label: "Global Health", category: "Health & Medicine" },
+  { id: "mental-health-research", label: "Mental Health Research", category: "Health & Medicine" },
+  { id: "pediatrics", label: "Pediatrics", category: "Health & Medicine" },
+  { id: "geriatrics", label: "Geriatrics", category: "Health & Medicine" },
+  { id: "surgery-interventions", label: "Surgery and Interventions", category: "Health & Medicine" },
+  { id: "telemedicine", label: "Telemedicine", category: "Health & Medicine" },
+  { id: "digital-health", label: "Digital Health", category: "Health & Medicine" },
+  { id: "wearable-health-tech", label: "Wearable Health Technology", category: "Health & Medicine" },
+  { id: "nutrition-science", label: "Nutrition Science", category: "Health & Medicine" },
+  { id: "sleep-research", label: "Sleep Research", category: "Health & Medicine" },
+  { id: "pain-management", label: "Pain Management", category: "Health & Medicine" },
+  { id: "rehabilitation-medicine", label: "Rehabilitation Medicine", category: "Health & Medicine" },
+];
+
+export function getInterestsByCategory(): Record<string, ResearchInterest[]> {
+  const grouped: Record<string, ResearchInterest[]> = {};
+  for (const category of INTEREST_CATEGORIES) {
+    grouped[category] = RESEARCH_INTERESTS.filter(
+      (interest) => interest.category === category
+    );
+  }
+  return grouped;
+}
+
+export function getInterestById(id: string): ResearchInterest | undefined {
+  return RESEARCH_INTERESTS.find((interest) => interest.id === id);
+}

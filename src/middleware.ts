@@ -15,6 +15,7 @@ const PUBLIC_PAGE_EXACT = new Set([
   "/privacy",
   "/forgot-password",
   "/setup-username",
+  "/onboarding",
   "/sitemap.xml",
   "/robots.txt",
 ]);
@@ -41,6 +42,7 @@ const RESERVED_ROOT_SEGMENTS = new Set([
   "entries",
   "account",
   "setup-username",
+  "onboarding",
   "forgot-password",
   "api",
   "c",
@@ -159,7 +161,8 @@ export default async function middleware(req: NextRequest) {
 
   if (isPublicPagePath(pathname)) {
     if ((pathname === "/login" || pathname === "/signup") && token) {
-      return NextResponse.redirect(new URL("/library", req.url));
+      const destination = token?.onboardingCompleted === false ? "/onboarding" : "/library";
+      return NextResponse.redirect(new URL(destination, req.url));
     }
     return NextResponse.next();
   }
@@ -178,6 +181,10 @@ export default async function middleware(req: NextRequest) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", req.url);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (token?.onboardingCompleted === false && pathname !== "/onboarding") {
+    return NextResponse.redirect(new URL("/onboarding", req.url));
   }
 
   return NextResponse.next();

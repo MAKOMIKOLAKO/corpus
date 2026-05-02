@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff } from 'lucide-react';
+import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff, FlaskConical } from 'lucide-react';
 import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
 import { useTheme } from '@/lib/theme';
+import { RESEARCH_INTERESTS, INTEREST_CATEGORIES, getInterestsByCategory } from '@/lib/researchInterests';
 
 export default function AccountPage() {
     const { data: session, update } = useSession();
@@ -35,6 +36,15 @@ export default function AccountPage() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    // Research Interests state
+    const [currentInterests, setCurrentInterests] = useState<string[]>([]);
+    const [editingInterests, setEditingInterests] = useState(false);
+    const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+    const [savingInterests, setSavingInterests] = useState(false);
+    const [interestsMsg, setInterestsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [interestsSearch, setInterestsSearch] = useState('');
+    const [interestsCategory, setInterestsCategory] = useState('All');
+
     // Institution verification state
     const [showVerificationModal, setShowVerificationModal] = useState(false);
     const [verificationEmail, setVerificationEmail] = useState('');
@@ -56,6 +66,7 @@ export default function AccountPage() {
     useEffect(() => {
         fetchSharedCollectionsCount();
         fetchProfile();
+        fetchResearchInterests();
     }, []);
 
     // Sync subscription state when returning from Stripe checkout/portal
@@ -118,6 +129,45 @@ export default function AccountPage() {
                 setShowSignals(data.showSignals !== false);
             }
         } catch { }
+    };
+
+    const fetchResearchInterests = async () => {
+        try {
+            const res = await fetch('/api/research/profile');
+            if (res.ok) {
+                const data = await res.json();
+                const domainWeights = data.domainWeights as Record<string, number> | null;
+                if (domainWeights) {
+                    const interestIds = Object.keys(domainWeights);
+                    setCurrentInterests(interestIds);
+                    setSelectedInterests(interestIds);
+                }
+            }
+        } catch { }
+    };
+
+    const handleSaveInterests = async () => {
+        setSavingInterests(true);
+        setInterestsMsg(null);
+        try {
+            const res = await fetch('/api/user/research-interests', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selectedInterests }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setCurrentInterests(selectedInterests);
+                setEditingInterests(false);
+                setInterestsMsg({ type: 'success', text: 'Research interests updated successfully.' });
+            } else {
+                setInterestsMsg({ type: 'error', text: data.error || 'Failed to update interests' });
+            }
+        } catch {
+            setInterestsMsg({ type: 'error', text: 'Failed to update interests' });
+        } finally {
+            setSavingInterests(false);
+        }
     };
 
     const handleSaveProfile = async (e: React.FormEvent) => {
@@ -487,6 +537,150 @@ export default function AccountPage() {
                                 <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
                                     {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                     {profileMsg.text}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Research Interests */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2"><FlaskConical className="w-5 h-5" /> Research Interests</span>
+                        {!editingInterests && (
+                            <button
+                                onClick={() => { setEditingInterests(true); setInterestsMsg(null); setSelectedInterests(currentInterests); }}
+                                className="inline-flex items-center gap-1 text-sm font-normal text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                            >
+                                <Edit2 className="w-4 h-4" /> Edit
+                            </button>
+                        )}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">These topics personalize your discovery feed and paper recommendations.</p>
+                </CardHeader>
+                <CardContent>
+                    {editingInterests ? (
+                        <div className="space-y-4">
+                            {/* Search */}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={interestsSearch}
+                                    onChange={(e) => setInterestsSearch(e.target.value)}
+                                    placeholder="Search topics..."
+                                    className="w-full px-3 py-2 rounded-lg border border-border bg-card text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring"
+                                />
+                            </div>
+
+                            {/* Category Tabs */}
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                <button
+                                    onClick={() => setInterestsCategory('All')}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${interestsCategory === 'All'
+                                            ? 'bg-accent text-accent-foreground'
+                                            : 'bg-surface-raised text-content-secondary hover:text-content-primary'
+                                        }`}
+                                >
+                                    All
+                                </button>
+                                {INTEREST_CATEGORIES.map((category) => (
+                                    <button
+                                        key={category}
+                                        onClick={() => setInterestsCategory(category)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${interestsCategory === category
+                                                ? 'bg-accent text-accent-foreground'
+                                                : 'bg-surface-raised text-content-secondary hover:text-content-primary'
+                                            }`}
+                                    >
+                                        {category}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Interest Chips */}
+                            <div className="flex flex-wrap gap-2">
+                                {(() => {
+                                    const interestsByCategory = getInterestsByCategory();
+                                    const filtered = interestsSearch
+                                        ? RESEARCH_INTERESTS.filter((i) =>
+                                            i.label.toLowerCase().includes(interestsSearch.toLowerCase())
+                                        )
+                                        : (interestsCategory === 'All'
+                                            ? RESEARCH_INTERESTS
+                                            : interestsByCategory[interestsCategory] || []);
+                                    return filtered.map((interest) => {
+                                        const isSelected = selectedInterests.includes(interest.id);
+                                        const isMaxed = selectedInterests.length >= 10 && !isSelected;
+                                        return (
+                                            <button
+                                                key={interest.id}
+                                                onClick={() => {
+                                                    if (isMaxed) return;
+                                                    if (isSelected) {
+                                                        setSelectedInterests(selectedInterests.filter((id) => id !== interest.id));
+                                                    } else {
+                                                        setSelectedInterests([...selectedInterests, interest.id]);
+                                                    }
+                                                }}
+                                                disabled={isMaxed}
+                                                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 ${isSelected
+                                                        ? 'bg-accent text-accent-foreground'
+                                                        : 'bg-surface-raised text-content-secondary hover:text-content-primary'
+                                                    } ${isMaxed ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                                            >
+                                                {isSelected && <Check className="inline w-3 h-3 mr-1" />}
+                                                {interest.label}
+                                            </button>
+                                        );
+                                    });
+                                })()}
+                            </div>
+
+                            <p className="text-xs text-content-tertiary">
+                                {selectedInterests.length} / 10 selected
+                                {selectedInterests.length === 10 && (
+                                    <span className="ml-1 text-accent">— maximum reached</span>
+                                )}
+                            </p>
+
+                            {interestsMsg && (
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${interestsMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                    {interestsMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                    {interestsMsg.text}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                <Button onClick={handleSaveInterests} disabled={savingInterests || selectedInterests.length === 0}>
+                                    {savingInterests ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Interests'}
+                                </Button>
+                                <Button variant="outline" onClick={() => { setEditingInterests(false); setSelectedInterests(currentInterests); setInterestsMsg(null); }}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {currentInterests.length === 0 ? (
+                                <p className="text-sm text-muted-foreground italic">No interests selected yet.</p>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {currentInterests.map((id) => {
+                                        const interest = RESEARCH_INTERESTS.find((i) => i.id === id);
+                                        return interest ? (
+                                            <span key={id} className="px-2.5 py-1 rounded-full text-xs font-medium bg-surface-raised text-content-secondary">
+                                                {interest.label}
+                                            </span>
+                                        ) : null;
+                                    })}
+                                </div>
+                            )}
+                            {interestsMsg && (
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${interestsMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                    {interestsMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                    {interestsMsg.text}
                                 </div>
                             )}
                         </div>
