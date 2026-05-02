@@ -31,6 +31,45 @@ function getUsage(prompt: string, systemPrompt: string, output: string) {
   return { inputTokens, outputTokens }
 }
 
+export async function generateStructuredSections(params: {
+  title: string
+  authors: string[]
+  abstract: string
+  fullText: string | null
+  userId: string
+}): Promise<{ content: string; inputTokens: number; outputTokens: number }> {
+  const systemPrompt = 'You are a research paper analyst. Your task is to produce a structured analysis of a research paper. Be precise, accurate, and grounded in what the paper actually states. Do not speculate beyond what is written. Use clear, direct language. Avoid filler phrases.'
+  const excerpt = params.fullText ? truncate(params.fullText, 8000) : null
+  const prompt = buildPromptBlocks([
+    'Analyze this research paper and provide a structured analysis with the following sections. Use markdown headers for each section.',
+    '## Aim\nWhat is the primary goal or objective of this research? What problem does it aim to solve? State this in 2-3 clear sentences.',
+    '## Methods\nDescribe the methodology, approach, or techniques used. What models, algorithms, or experimental setups were employed? Be specific but concise.',
+    '## Conclusion\nWhat are the main findings or conclusions of this research? What do the results show? Summarize the key takeaways.',
+    '## Limitations\nWhat are the acknowledged limitations or weaknesses of this research? What constraints or assumptions affect the validity of the results?',
+    '## Future Research Paths\nBased on the limitations and conclusions, what are promising directions for future work? What questions remain unanswered or what improvements could be made?',
+    '---',
+    `Title: ${params.title}`,
+    `Authors: ${params.authors.join(', ')}`,
+    params.abstract ? `Abstract: ${params.abstract}` : null,
+    excerpt ? `Full Text Excerpt:\n${excerpt}` : null,
+  ])
+
+  const content = await callGeminiClient({
+    model: 'gemini-1.5-flash',
+    systemPrompt,
+    prompt,
+    feature: 'paper_sections',
+    userId: params.userId,
+    temperature: 0.3,
+    maxOutputTokens: 2000,
+  })
+
+  const inputTokens = estimateTokens(`${systemPrompt}\n${prompt}`)
+  const outputTokens = estimateTokens(content)
+
+  return { content: normalizeOutput(content), inputTokens, outputTokens }
+}
+
 export async function generatePaperOverview(params: {
   title: string
   authors: string[]

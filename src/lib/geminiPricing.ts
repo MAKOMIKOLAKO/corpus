@@ -21,12 +21,13 @@ export const GEMINI_PRICING = {
   },
 } as const;
 
-export const FEATURE_LABELS = {
+export const FEATURE_LABELS: Record<string, string> = {
   keyword_extraction: 'Keyword Extraction',
   topic_assignment: 'Topic Assignment',
   cluster_labeling: 'Cluster Labeling',
   paper_summarization: 'Paper Summarization',
   paper_overview: 'Paper Overview',
+  paper_sections: 'Paper Sections',
   why_explanation: 'Why This Paper',
   relevance_check: 'Alert Relevance Check',
   emerging_trends: 'Emerging Trends',

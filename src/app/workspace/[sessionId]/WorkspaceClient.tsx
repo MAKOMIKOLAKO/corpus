@@ -280,59 +280,61 @@ export function WorkspaceClient({
 
                 {/* Sections */}
                 {sections && sections.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="flex-1 flex flex-col min-h-0">
                     <h2 className="text-lg font-medium text-content-primary mb-3">Sections</h2>
-                    {sections.map((section) => {
-                      const summary = getSummaryForSection(section.index)
-                      const isExpanded = expandedSections.has(section.index)
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                      {sections.map((section) => {
+                        const summary = getSummaryForSection(section.index)
+                        const isExpanded = expandedSections.has(section.index)
 
-                      return (
-                        <div key={section.index} className="rounded-lg border border-border bg-card overflow-hidden">
-                          <button
-                            onClick={() => {
-                              setActiveSection(section.index)
-                              toggleSection(section.index)
-                            }}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-sunken/30 transition-colors"
-                          >
-                            <span className="text-sm font-medium text-content-primary line-clamp-1 flex-1 text-left">
-                              {section.heading}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              {!summary && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleGenerateSectionSummary(section.index)
-                                  }}
-                                  disabled={isGenerating}
-                                  className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50"
-                                >
-                                  <Sparkles size={10} />
-                                </button>
-                              )}
-                              {isExpanded ? (
-                                <ChevronUp size={16} className="text-content-tertiary" />
-                              ) : (
-                                <ChevronDown size={16} className="text-content-tertiary" />
-                              )}
-                            </div>
-                          </button>
-                          {isExpanded && (
-                            <div className="border-t border-border p-4">
-                              {summary ? (
-                                <div className="text-sm text-content-secondary leading-relaxed mb-3">
-                                  {summary.content}
-                                </div>
-                              ) : null}
-                              <div className="text-sm text-content-tertiary leading-relaxed max-h-64 overflow-y-auto">
-                                {section.text}
+                        return (
+                          <div key={section.index} className="rounded-lg border border-border bg-card overflow-hidden">
+                            <button
+                              onClick={() => {
+                                setActiveSection(section.index)
+                                toggleSection(section.index)
+                              }}
+                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-sunken/30 transition-colors"
+                            >
+                              <span className="text-sm font-medium text-content-primary line-clamp-1 flex-1 text-left">
+                                {section.heading}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {!summary && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleGenerateSectionSummary(section.index)
+                                    }}
+                                    disabled={isGenerating}
+                                    className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50"
+                                  >
+                                    <Sparkles size={10} />
+                                  </button>
+                                )}
+                                {isExpanded ? (
+                                  <ChevronUp size={16} className="text-content-tertiary" />
+                                ) : (
+                                  <ChevronDown size={16} className="text-content-tertiary" />
+                                )}
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+                            </button>
+                            {isExpanded && (
+                              <div className="border-t border-border p-4">
+                                {summary ? (
+                                  <div className="text-sm text-content-secondary leading-relaxed mb-3">
+                                    {summary.content}
+                                  </div>
+                                ) : null}
+                                <div className="text-sm text-content-tertiary leading-relaxed max-h-64 overflow-y-auto">
+                                  {section.text}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 ) : hasFullText ? (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center">
@@ -390,8 +392,8 @@ export function WorkspaceClient({
                     <div
                       key={msg.id}
                       className={`rounded-lg px-4 py-3 ${msg.role === 'user'
-                          ? 'bg-accent/10 text-accent-foreground ml-auto max-w-[90%]'
-                          : 'bg-card text-content-secondary mr-auto max-w-[90%]'
+                        ? 'bg-accent/10 text-accent-foreground ml-auto max-w-[90%]'
+                        : 'bg-card text-content-secondary mr-auto max-w-[90%]'
                         }`}
                     >
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>

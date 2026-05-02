@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'
 import { extractArxivId, extractSections, fetchArxivFullText, type ExtractedSection } from '@/lib/arxivFetcher'
+import { generateStructuredSections } from '@/lib/workspaceSummaries'
 
 type CandidatePaperRecord = {
   id: string
@@ -231,7 +232,10 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
         id: true,
         arxivId: true,
         paperAbstract: true,
+        paperTitle: true,
+        paperAuthors: true,
         fullTextFetchedAt: true,
+        userId: true,
       },
     })
 
@@ -248,11 +252,38 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
       textLength: result.text?.length,
     })
 
-    const sections = result.text ? extractSections(result.text) : null
+    // Generate AI-structured sections instead of extracting from text
+    let sections = null
+    if (result.text) {
+      try {
+        const structuredContent = await generateStructuredSections({
+          title: session.paperTitle,
+          authors: session.paperAuthors,
+          abstract: session.paperAbstract || '',
+          fullText: result.text,
+          userId: session.userId,
+        })
 
-    console.log('[workspace] Extracted sections', {
-      sectionCount: sections?.length,
-    })
+        // Parse the markdown sections into ExtractedSection format
+        const sectionTexts = structuredContent.content.split(/##\s+/).filter(Boolean)
+        sections = sectionTexts.map((text, index) => {
+          const lines = text.split('\n')
+          const heading = lines[0]?.trim() || `Section ${index + 1}`
+          const content = lines.slice(1).join('\n').trim()
+          return {
+            index,
+            heading,
+            text: content,
+            wordCount: content.split(/\s+/).filter(Boolean).length,
+          }
+        })
+
+        console.log('[workspace] AI-generated sections', { sectionCount: sections.length })
+      } catch (error) {
+        console.error('[workspace] Failed to generate AI sections, falling back to extraction', error)
+        sections = result.text ? extractSections(result.text) : null
+      }
+    }
 
     await (prisma as any).paperWorkspaceSession.update({
       where: { id: session.id },
