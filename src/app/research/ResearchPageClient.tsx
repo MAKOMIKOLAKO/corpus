@@ -6,6 +6,7 @@ import { UpgradePrompt } from '@/components/UpgradePrompt'
 import { isPro } from '@/lib/plans'
 import type { Plan } from '@prisma/client'
 import { DiscoverTab } from '@/components/research/DiscoverTab'
+import { WorkspaceTab } from '@/components/research/WorkspaceTab'
 
 interface ResearchPageClientProps {
   userId: string
@@ -124,14 +125,7 @@ export function ResearchPageClient({
       {activeTab === 'discover' ? (
         <DiscoverTab userId={userId} preferredCount={preferredCount} />
       ) : (
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-border bg-card p-8 text-center whisper-shadow">
-            <h2 className="text-2xl font-serif font-medium text-content-primary">Workspace is coming soon</h2>
-            <p className="mt-3 text-content-secondary" style={{ lineHeight: 1.6 }}>
-              We&apos;re rebuilding the paper workspace experience. For now, use Discover and RSS while we finish the next version.
-            </p>
-          </div>
-        </div>
+        <WorkspaceTab userId={userId} />
       )}
     </div>
   )
