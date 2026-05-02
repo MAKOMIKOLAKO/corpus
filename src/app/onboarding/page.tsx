@@ -64,6 +64,8 @@ export default function OnboardingPage() {
 
       // Update session JWT to reflect the new onboardingCompleted status
       await update();
+      // Wait a moment for the new JWT token to be set in the cookie
+      await new Promise(resolve => setTimeout(resolve, 500));
       // Then navigate to research
       window.location.href = '/research';
     } catch (error) {

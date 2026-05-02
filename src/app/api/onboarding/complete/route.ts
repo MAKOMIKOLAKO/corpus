@@ -96,13 +96,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark onboarding as complete
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         onboardingCompleted: true,
         onboardingCompletedAt: new Date(),
       },
-    });
+      select: { onboardingCompleted: true, onboardingCompletedAt: true }
+    } as any);
+
+    console.log('[api/onboarding/complete] Updated user:', updatedUser);
 
     return NextResponse.json({ success: true });
   } catch (error) {

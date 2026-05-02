@@ -183,10 +183,31 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Don't block navigation to /research - let the server-side page handle onboarding check
-  // This avoids race conditions where JWT token is stale after onboarding completion
-  if (token?.onboardingCompleted === false && pathname !== "/onboarding" && pathname !== "/research" && !pathname.startsWith("/research/")) {
-    return NextResponse.redirect(new URL("/onboarding", req.url));
+  // Check onboarding status for protected routes
+  // Skip this check for public routes and API routes
+  if (token?.userId && !pathname.startsWith("/api") && !pathname.startsWith("/_next") && !pathname.startsWith("/auth") && pathname !== "/onboarding" && pathname !== "/research" && !pathname.startsWith("/research/")) {
+    // Fetch fresh onboarding status from database to avoid stale JWT token issues
+    try {
+      const prisma = (await import('./lib/prisma')).default;
+      const user = await prisma.user.findUnique({
+        where: { id: token.userId as string },
+        select: { onboardingCompleted: true }
+      } as any);
+
+      console.log('[middleware] onboarding check for user:', token.userId, 'onboardingCompleted:', user ? (user as any).onboardingCompleted : 'user not found');
+
+      if (user && !(user as any).onboardingCompleted) {
+        console.log('[middleware] redirecting to onboarding');
+        return NextResponse.redirect(new URL("/onboarding", req.url));
+      }
+    } catch (error) {
+      console.error('[middleware] database check failed, falling back to JWT:', error);
+      // If database check fails, fall back to JWT token check
+      if (token?.onboardingCompleted === false) {
+        console.log('[middleware] JWT says not onboarded, redirecting');
+        return NextResponse.redirect(new URL("/onboarding", req.url));
+      }
+    }
   }
 
   return NextResponse.next();
