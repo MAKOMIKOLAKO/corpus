@@ -59,10 +59,9 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      // Update session JWT, then hard-navigate so middleware reads the fresh cookie
+      // Update session JWT - the useEffect will handle navigation once session reflects completion
       await update();
-      window.location.href = '/research';
-      // Don't reset completing — we're navigating away
+      setCompleting(false);
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
       setCompletionError(error instanceof Error ? error.message : 'Failed to complete onboarding');
