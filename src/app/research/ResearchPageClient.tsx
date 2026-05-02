@@ -12,6 +12,7 @@ interface ResearchPageClientProps {
   plan: string
   preferredCount: number
   initialTab: string
+  justCompletedOnboarding?: boolean
 }
 
 export function ResearchPageClient({
@@ -19,6 +20,7 @@ export function ResearchPageClient({
   plan,
   preferredCount,
   initialTab,
+  justCompletedOnboarding = false,
 }: ResearchPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -62,6 +64,36 @@ export function ResearchPageClient({
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Post-onboarding Banner */}
+      {justCompletedOnboarding && (
+        <div className="border-b border-border bg-surface-raised">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="font-medium text-content-primary">Welcome to your personalized feed!</h3>
+                <p className="text-sm text-content-secondary mt-1">
+                  Papers matching your interests will appear here. Add some papers to your library or create a collection to get started.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <a
+                  href="/library"
+                  className="inline-flex items-center px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:opacity-90 transition-opacity button-terracotta"
+                >
+                  Add papers
+                </a>
+                <a
+                  href="/collections"
+                  className="inline-flex items-center px-4 py-2 rounded-lg bg-surface-sunken text-content-primary text-sm font-medium hover:bg-card transition-colors"
+                >
+                  Create collection
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tab Switcher */}
       <div className="border-b border-border bg-background ring-shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

@@ -259,7 +259,6 @@ export const onboardingCompleteSchema = z
   .object({
     selectedInterests: z
       .array(z.string())
-      .min(1, "Select at least 1 interest")
       .max(10, "Select at most 10 interests"),
     selectedFeedIds: z.array(z.string()).default([]),
   })
