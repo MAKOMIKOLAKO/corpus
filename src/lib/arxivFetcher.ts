@@ -194,10 +194,23 @@ export function extractArxivId(url: string): string | null {
 export async function fetchArxivFullText(arxivId: string, abstractText?: string | null): Promise<{ text: string | null; source: FetchSource; error?: string }> {
   console.log('[arxivFetcher] Fetching full text for arxivId:', arxivId)
 
-  // Try arXiv source (LaTeX) - works in Node.js
+  // Try ar5iv first (designed for programmatic HTML access)
   try {
-    const sourceUrl = `https://arxiv.org/e-print/${arxivId}`
-    console.log('[arxivFetcher] Trying source:', sourceUrl)
+    const ar5ivUrl = `https://ar5iv.labs.arxiv.org/html/${arxivId}`
+    console.log('[arxivFetcher] Trying ar5iv:', ar5ivUrl)
+    const ar5iv = await fetchHtmlText(ar5ivUrl)
+    console.log('[arxivFetcher] ar5iv result:', { hasText: Boolean(ar5iv.text), error: ar5iv.error })
+    if (ar5iv.text) {
+      return { text: ar5iv.text, source: 'source' }
+    }
+  } catch (error) {
+    console.error('[arxivFetcher] ar5iv fetch failed:', error)
+  }
+
+  // Try arXiv source from export.arxiv.org (programmatic access endpoint)
+  try {
+    const sourceUrl = `https://export.arxiv.org/e-print/${arxivId}`
+    console.log('[arxivFetcher] Trying export.arxiv.org source:', sourceUrl)
     const sourceResponse = await fetch(sourceUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
