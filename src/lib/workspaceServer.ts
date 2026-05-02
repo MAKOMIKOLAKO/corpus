@@ -237,8 +237,22 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
 
     if (!session || session.fullTextFetchedAt) return
 
+    console.log('[workspace] Hydrating session', sessionId, 'for arxivId', session.arxivId)
+
     const result = await fetchArxivFullText(session.arxivId, session.paperAbstract)
+
+    console.log('[workspace] Fetch result for', session.arxivId, {
+      source: result.source,
+      hasText: Boolean(result.text),
+      error: result.error,
+      textLength: result.text?.length,
+    })
+
     const sections = result.text ? extractSections(result.text) : null
+
+    console.log('[workspace] Extracted sections', {
+      sectionCount: sections?.length,
+    })
 
     await (prisma as any).paperWorkspaceSession.update({
       where: { id: session.id },
@@ -251,7 +265,7 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
       },
     })
   } catch (error) {
-    console.error('[workspace] Failed to hydrate workspace session', error)
+    console.error('[workspace] Failed to hydrate workspace session', sessionId, error)
   }
 }
 

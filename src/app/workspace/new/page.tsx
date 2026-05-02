@@ -54,7 +54,8 @@ export default async function NewWorkspacePage({
         ...candidatePaperToWorkspaceMetadata(paper, arxivId),
       })
 
-      void hydrateWorkspaceSession(created.id)
+      // Hydrate immediately and wait for it
+      await hydrateWorkspaceSession(created.id)
     } else {
       const arxivId = extractArxivId(arxivUrl ?? '')
       if (!arxivId) {
@@ -78,7 +79,8 @@ export default async function NewWorkspacePage({
         paperAbstract: metadata.paperAbstract,
       })
 
-      void hydrateWorkspaceSession(created.id)
+      // Hydrate immediately and wait for it
+      await hydrateWorkspaceSession(created.id)
     }
 
     redirect(`/workspace/${created.id}`)
