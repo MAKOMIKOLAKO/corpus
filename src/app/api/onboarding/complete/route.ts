@@ -5,7 +5,6 @@ import prisma from '@/lib/prisma';
 import { subscribeToDefaultFeed } from '@/lib/rssSubscriptions';
 import { onboardingCompleteSchema } from '@/lib/validation';
 import { RESEARCH_INTERESTS } from '@/lib/researchInterests';
-import { generateDailyBrief } from '@/lib/research/feedPipelineV2';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +23,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (user.onboardingCompleted) {
-      return NextResponse.json({ error: 'Onboarding already completed' }, { status: 400 });
+      // Idempotent: already completed, just return success so the client can navigate forward
+      return NextResponse.json({ success: true });
     }
 
     const body = await request.json();
@@ -103,16 +103,6 @@ export async function POST(request: NextRequest) {
         onboardingCompletedAt: new Date(),
       },
     });
-
-    // Trigger research feed generation if user selected interests
-    if (selectedInterests.length > 0) {
-      try {
-        await generateDailyBrief(user.id);
-      } catch (error) {
-        console.error('[api/onboarding/complete] Failed to generate research feed:', error);
-        // Don't fail onboarding if feed generation fails
-      }
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

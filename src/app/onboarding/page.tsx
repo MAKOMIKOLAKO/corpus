@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { RESEARCH_INTERESTS, INTEREST_CATEGORIES, getInterestsByCategory } from '@/lib/researchInterests';
 import { Check, X, Search, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 
 export default function OnboardingPage() {
   const { data: session, status, update } = useSession();
-  const router = useRouter();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
@@ -20,12 +18,12 @@ export default function OnboardingPage() {
     setMounted(true);
   }, []);
 
-  // Redirect if already onboarded
+  // Redirect if already onboarded (hard nav ensures middleware sees the current JWT)
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.onboardingCompleted) {
-      router.push('/research');
+      window.location.href = '/research';
     }
-  }, [status, session, router]);
+  }, [status, session]);
 
   const toggleInterest = (interestId: string) => {
     if (selectedInterests.includes(interestId)) {
@@ -61,14 +59,13 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      // Update session to refresh JWT with new onboarding status
+      // Update session JWT, then hard-navigate so middleware reads the fresh cookie
       await update();
-
-      router.push('/research');
+      window.location.href = '/research';
+      // Don't reset completing — we're navigating away
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
       setCompletionError(error instanceof Error ? error.message : 'Failed to complete onboarding');
-    } finally {
       setCompleting(false);
     }
   };
