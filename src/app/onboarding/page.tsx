@@ -62,7 +62,9 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      // Force page reload to ensure middleware sees the updated database state
+      // Update session JWT to reflect the new onboardingCompleted status
+      await update();
+      // Then navigate to research
       window.location.href = '/research';
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
