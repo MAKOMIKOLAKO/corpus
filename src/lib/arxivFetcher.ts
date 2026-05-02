@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio'
+import * as pdfParse from 'pdf-parse'
 
-type FetchSource = 'html' | 'source' | 'abstract_only'
+type FetchSource = 'pdf' | 'source' | 'abstract_only'
 
 export type ExtractedSection = {
   index: number
@@ -194,25 +195,35 @@ export function extractArxivId(url: string): string | null {
 export async function fetchArxivFullText(arxivId: string, abstractText?: string | null): Promise<{ text: string | null; source: FetchSource; error?: string }> {
   console.log('[arxivFetcher] Fetching full text for arxivId:', arxivId)
 
-  // Try ar5iv first (more reliable HTML conversion)
-  const ar5ivUrl = `https://ar5iv.labs.arxiv.org/html/${arxivId}`
-  console.log('[arxivFetcher] Trying ar5iv:', ar5ivUrl)
-  const ar5iv = await fetchHtmlText(ar5ivUrl)
-  console.log('[arxivFetcher] ar5iv result:', { hasText: Boolean(ar5iv.text), error: ar5iv.error })
-  if (ar5iv.text) {
-    return { text: ar5iv.text, source: 'html' }
+  // Try arXiv PDF directly (most reliable)
+  try {
+    const pdfUrl = `https://arxiv.org/pdf/${arxivId}.pdf`
+    console.log('[arxivFetcher] Trying PDF:', pdfUrl)
+    const pdfResponse = await fetch(pdfUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal: abortSignal(60000),
+    })
+
+    if (pdfResponse.ok) {
+      const pdfBuffer = await pdfResponse.arrayBuffer()
+      console.log('[arxivFetcher] PDF fetched, size:', pdfBuffer.byteLength)
+
+      // Use pdf-parse to extract text
+      const data = await (pdfParse as any)(Buffer.from(pdfBuffer))
+      const text = data.text
+
+      if (text && text.length >= 500) {
+        console.log('[arxivFetcher] PDF text extraction successful, length:', text.length)
+        return { text, source: 'pdf' }
+      }
+    }
+  } catch (error) {
+    console.error('[arxivFetcher] PDF fetch failed:', error)
   }
 
-  // Try official arXiv HTML
-  const officialUrl = `https://arxiv.org/html/${arxivId}`
-  console.log('[arxivFetcher] Trying official:', officialUrl)
-  const official = await fetchHtmlText(officialUrl)
-  console.log('[arxivFetcher] official result:', { hasText: Boolean(official.text), error: official.error })
-  if (official.text) {
-    return { text: official.text, source: 'html' }
-  }
-
-  // Try arXiv source (LaTeX) as last resort
+  // Fallback to arXiv source (LaTeX)
   try {
     const sourceUrl = `https://arxiv.org/e-print/${arxivId}`
     console.log('[arxivFetcher] Trying source:', sourceUrl)
@@ -245,16 +256,11 @@ export async function fetchArxivFullText(arxivId: string, abstractText?: string 
     console.error('[arxivFetcher] Source fetch failed:', error)
   }
 
-  // Log errors for debugging
-  console.error('[arxivFetcher] Failed to fetch full text for', arxivId, {
-    ar5ivError: ar5iv.error,
-    officialError: official.error,
-  })
-
+  console.error('[arxivFetcher] All methods failed for', arxivId)
   return {
     text: abstractText?.trim() ? abstractText.trim() : null,
     source: 'abstract_only',
-    error: `Full text unavailable (${ar5iv.error || official.error || 'unknown error'}) — showing abstract only`,
+    error: 'Full text unavailable — showing abstract only',
   }
 }
 
