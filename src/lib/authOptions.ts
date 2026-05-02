@@ -102,7 +102,7 @@ export const authOptions: NextAuthOptions = {
             create: {
               email,
               name: (profile?.name ?? token.name ?? null) as string | null,
-              username: `user_${Math.random().toString(36).substring(2, 10)}` // Random username
+              username: `user_${Math.random().toString(36).substring(2, 10)}`, // Random username
             },
             select: {
               id: true,
@@ -116,7 +116,7 @@ export const authOptions: NextAuthOptions = {
           (token as any).userId = dbUser.id;
           (token as any).plan = dbUser.plan || 'FREE';
           (token as any).username = dbUser.username ?? null;
-          (token as any).onboardingCompleted = dbUser.onboardingCompleted ?? false;
+          (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
           (token as any).entriesCount = dbUser.entriesCount || 0;
           (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
           (token as any).isAdmin = isAdminUser(dbUser.id);
@@ -127,8 +127,8 @@ export const authOptions: NextAuthOptions = {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: user.id },
             select: {
-              plan: true,
               username: true,
+              plan: true,
               emailVerified: true,
               onboardingCompleted: true,
               entriesCount: true,
@@ -139,7 +139,7 @@ export const authOptions: NextAuthOptions = {
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).emailVerified = dbUser.emailVerified;
-            (token as any).onboardingCompleted = dbUser.onboardingCompleted ?? false;
+            (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
             (token as any).entriesCount = dbUser.entriesCount || 0;
             (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
             (token as any).isAdmin = isAdminUser(user.id);
@@ -168,7 +168,7 @@ export const authOptions: NextAuthOptions = {
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).emailVerified = dbUser.emailVerified;
-            (token as any).onboardingCompleted = dbUser.onboardingCompleted ?? false;
+            (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
             (token as any).entriesCount = dbUser.entriesCount || 0;
             (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
             (token as any).isAdmin = isAdminUser((token as any).userId);
@@ -184,14 +184,16 @@ export const authOptions: NextAuthOptions = {
           const dbUser = await withRetry(() => prisma.user.findUnique({
             where: { id: (token as any).userId },
             select: {
+              id: true,
               plan: true,
               subscriptionStatus: true,
               subscriptionEndsAt: true,
+              username: true,
               onboardingCompleted: true,
               onboardingCompletedAt: true,
               entriesCount: true,
               personalCollectionsCount: true,
-              timezone: true // Include timezone in session
+              timezone: true
             }
           }));
 
@@ -217,8 +219,8 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).subscriptionEndsAt = dbUser.subscriptionEndsAt;
             (session.user as any).emailVerified = (token as any).emailVerified;
             (session.user as any).username = (token as any).username || null;
-            (session.user as any).onboardingCompleted = dbUser.onboardingCompleted ?? false;
-            (session.user as any).onboardingCompletedAt = dbUser.onboardingCompletedAt ?? null;
+            (session.user as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
+            (session.user as any).onboardingCompletedAt = (dbUser as any).onboardingCompletedAt ?? null;
             (session.user as any).entriesCount = dbUser.entriesCount || 0;
             (session.user as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
             (session.user as any).timezone = dbUser.timezone ?? 'UTC'; // Default to 'UTC' if timezone is not set
@@ -265,3 +267,4 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+

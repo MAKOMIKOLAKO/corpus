@@ -31,23 +31,28 @@ export default async function ResearchPage({
     select: {
       id: true,
       plan: true,
+      onboardingCompleted: true,
       onboardingCompletedAt: true,
       researchProfile: {
         select: { preferredDailyCount: true },
       },
     },
-  })
+  } as any)
 
   if (!user) {
     redirect('/auth/signin')
   }
 
-  const preferredCount = user.researchProfile?.preferredDailyCount ?? 5
+  if (!(user as any).onboardingCompleted) {
+    redirect('/onboarding')
+  }
+
+  const preferredCount = (user as any).researchProfile?.preferredDailyCount ?? 5
   const tab = searchParams.tab || 'discover'
 
   // Check if user just completed onboarding (within last 5 minutes)
-  const justCompletedOnboarding = user.onboardingCompletedAt &&
-    (Date.now() - new Date(user.onboardingCompletedAt).getTime()) < 5 * 60 * 1000
+  const justCompletedOnboarding = (user as any).onboardingCompletedAt &&
+    (Date.now() - new Date((user as any).onboardingCompletedAt).getTime()) < 5 * 60 * 1000
 
   return (
     <ResearchPageClient

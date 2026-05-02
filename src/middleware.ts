@@ -183,7 +183,9 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (token?.onboardingCompleted === false && pathname !== "/onboarding") {
+  // Don't block navigation to /research - let the server-side page handle onboarding check
+  // This avoids race conditions where JWT token is stale after onboarding completion
+  if (token?.onboardingCompleted === false && pathname !== "/onboarding" && pathname !== "/research" && !pathname.startsWith("/research/")) {
     return NextResponse.redirect(new URL("/onboarding", req.url));
   }
 
