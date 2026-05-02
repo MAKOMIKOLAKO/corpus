@@ -98,10 +98,12 @@ function extractTextFromHtmlDocument(html: string): string | null {
   const blocks: string[] = []
   let stopAtReferences = false
 
-  mainRoot.find('h1, h2, h3, h4, h5, h6, section, p, li, div.ltx_para').each((_, element) => {
+  // Process only direct children to avoid duplication from nested elements
+  mainRoot.children().each((_, element) => {
     if (stopAtReferences) return
 
     const tagName = element.tagName?.toLowerCase() ?? ''
+    const $element = $(element)
     const text = nodeText($, element)
     if (!text) return
 
@@ -115,16 +117,25 @@ function extractTextFromHtmlDocument(html: string): string | null {
     }
 
     if (tagName === 'section') {
-      const heading = nodeText($, $(element).children('h1, h2, h3, h4, h5, h6').first().get(0) ?? element)
+      const heading = $element.children('h1, h2, h3, h4, h5, h6').first().text()
       if (heading && isReferenceLikeHeading(heading)) {
         stopAtReferences = true
         return
       }
+      // Extract text from section children (paragraphs, lists)
+      $element.children('p, li, div.ltx_para').each((_, child) => {
+        const childText = nodeText($, child)
+        if (childText && childText.length >= 40) {
+          blocks.push(childText)
+        }
+      })
       return
     }
 
-    if (text.length >= 40) {
-      blocks.push(text)
+    if (tagName === 'p' || tagName === 'li' || $element.hasClass('ltx_para')) {
+      if (text.length >= 40) {
+        blocks.push(text)
+      }
     }
   })
 
