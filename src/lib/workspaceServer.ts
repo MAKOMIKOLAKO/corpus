@@ -224,7 +224,7 @@ export async function getWorkspaceSessionOrThrow(sessionId: string, userId: stri
   return session
 }
 
-export async function hydrateWorkspaceSession(sessionId: string): Promise<void> {
+export async function hydrateWorkspaceSession(sessionId: string, forceRegenerate: boolean = false): Promise<void> {
   try {
     const session = await (prisma as any).paperWorkspaceSession.findUnique({
       where: { id: sessionId },
@@ -239,14 +239,10 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
       },
     })
 
-    if (!session || session.fullTextFetchedAt) {
-      // If already hydrated, force re-hydration for AI sections
-      if (session && session.fullTextFetchedAt) {
-        console.log('[workspace] Session already hydrated, forcing re-hydration for AI sections')
-      } else {
-        return
-      }
-    }
+    if (!session) return
+
+    // Skip hydration if already hydrated, unless forceRegenerate is true
+    if (session.fullTextFetchedAt && !forceRegenerate) return
 
     console.log('[workspace] Hydrating session', sessionId, 'for arxivId', session.arxivId)
 
