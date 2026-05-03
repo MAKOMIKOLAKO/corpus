@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookmarkPlus,
+  Loader2,
   EyeOff,
   BookOpen,
   ExternalLink,
@@ -13,8 +14,9 @@ import {
   Tag,
   LayoutTemplate,
 } from 'lucide-react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { PaperSummaryObject } from '@/lib/research/feedPipelineV2'
+import { beginWorkspaceOpen } from '@/lib/workspaceOpenState'
 
 interface PaperCardProps {
   paper: PaperSummaryObject
@@ -34,11 +36,13 @@ const NOVELTY_COLORS: Record<string, string> = {
 }
 
 export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperCardProps) {
+  const router = useRouter()
   const [showTechnical, setShowTechnical] = useState(false)
   const [saving, setSaving] = useState(false)
   const [dismissing, setDismissing] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [saved, setSaved] = useState(paper.alreadySaved)
+  const [openingWorkspace, setOpeningWorkspace] = useState(false)
 
   if (dismissed) return null
 
@@ -68,10 +72,16 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
     }
   }
 
+  function handleOpenWorkspace() {
+    if (openingWorkspace) return
+    if (!beginWorkspaceOpen()) return
+    setOpeningWorkspace(true)
+    router.push(`/workspace/new?candidatePaperId=${paper.candidatePaperId}`)
+  }
+
   return (
     <motion.article
-      layout
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.2 }}
@@ -177,17 +187,19 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
 
         {/* Open in Workspace for arXiv papers */}
         {paper.isArxivEligible ? (
-          <Link
-            href={`/workspace/new?candidatePaperId=${paper.candidatePaperId}`}
+          <button
+            type="button"
+            onClick={handleOpenWorkspace}
+            disabled={openingWorkspace}
             id={`workspace-paper-${paper.candidatePaperId}`}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-[13px] font-medium text-accent hover:bg-accent/20 hover:border-accent/60 transition-all"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-[13px] font-medium text-accent hover:bg-accent/20 hover:border-accent/60 transition-all disabled:cursor-wait disabled:opacity-70"
             aria-label="Open this paper in the workspace"
           >
-            <LayoutTemplate size={13} />
-            Open in Workspace
-          </Link>
+            {openingWorkspace ? <Loader2 size={13} className="animate-spin" /> : <LayoutTemplate size={13} />}
+            {openingWorkspace ? 'Opening Workspace…' : 'Open in Workspace'}
+          </button>
         ) : (
-          <Link
+          <a
             href={`/research/read/${paper.candidatePaperId}`}
             id={`read-paper-${paper.candidatePaperId}`}
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-content-secondary hover:text-content-primary hover:border-content-secondary transition-all"
@@ -195,7 +207,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
           >
             <BookOpen size={13} />
             Read
-          </Link>
+          </a>
         )}
       </div>
     </motion.article>
