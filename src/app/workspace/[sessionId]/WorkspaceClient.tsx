@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, FileText, MessageSquare, Sparkles, ChevronDown, ChevronUp, Send, AlertCircle, ExternalLink } from 'lucide-react'
+import { Loader2, FileText, MessageSquare, Sparkles, ChevronDown, ChevronUp, Send, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -243,32 +243,6 @@ export function WorkspaceClient({
             {/* Left panel: Paper sections */}
             <div className="border-r border-border bg-card overflow-y-auto">
               <div className="p-4 sm:p-6">
-                {/* Overview */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-medium text-content-primary">Overview</h2>
-                    {!getOverview() && (
-                      <button
-                        onClick={handleGenerateOverview}
-                        disabled={isGenerating}
-                        className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50"
-                      >
-                        <Sparkles size={12} />
-                        Generate overview
-                      </button>
-                    )}
-                  </div>
-                  {getOverview() ? (
-                    <div className="rounded-lg border border-border bg-surface-sunken/50 p-4 text-sm text-content-secondary leading-relaxed">
-                      {getOverview()?.content}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-content-tertiary">
-                      Generate an AI overview of this paper
-                    </div>
-                  )}
-                </div>
-
                 {/* Paper metadata */}
                 <div className="mb-8 rounded-lg border border-border bg-surface-sunken/30 p-4">
                   <p className="text-sm text-content-secondary mb-2">
@@ -281,7 +255,25 @@ export function WorkspaceClient({
                 {/* Sections */}
                 {sections && sections.length > 0 ? (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <h2 className="text-lg font-medium text-content-primary mb-3">Sections</h2>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-lg font-medium text-content-primary">Sections</h2>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/workspace/session/${sessionId}/hydrate`, { method: 'POST' })
+                            if (response.ok) {
+                              window.location.reload()
+                            }
+                          } catch (error) {
+                            console.error('Failed to regenerate sections:', error)
+                          }
+                        }}
+                        className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                      >
+                        <RefreshCw size={12} />
+                        Regenerate
+                      </button>
+                    </div>
                     <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                       {sections.map((section) => {
                         const summary = getSummaryForSection(section.index)

@@ -239,7 +239,14 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
       },
     })
 
-    if (!session || session.fullTextFetchedAt) return
+    if (!session || session.fullTextFetchedAt) {
+      // If already hydrated, force re-hydration for AI sections
+      if (session && session.fullTextFetchedAt) {
+        console.log('[workspace] Session already hydrated, forcing re-hydration for AI sections')
+      } else {
+        return
+      }
+    }
 
     console.log('[workspace] Hydrating session', sessionId, 'for arxivId', session.arxivId)
 
@@ -256,6 +263,12 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
     let sections = null
     if (result.text) {
       try {
+        console.log('[workspace] Generating AI-structured sections...')
+        console.log('[workspace] Paper title:', session.paperTitle)
+        console.log('[workspace] Authors:', session.paperAuthors)
+        console.log('[workspace] Abstract length:', session.paperAbstract?.length)
+        console.log('[workspace] Full text length:', result.text.length)
+
         const structuredContent = await generateStructuredSections({
           title: session.paperTitle,
           authors: session.paperAuthors,
@@ -264,24 +277,31 @@ export async function hydrateWorkspaceSession(sessionId: string): Promise<void> 
           userId: session.userId,
         })
 
+        console.log('[workspace] AI-generated content (first 1000 chars):', structuredContent.content.substring(0, 1000))
+
         // Parse the markdown sections into ExtractedSection format
         const sectionTexts = structuredContent.content.split(/##\s+/).filter(Boolean)
+        console.log('[workspace] Split into', sectionTexts.length, 'sections')
+
         sections = sectionTexts.map((text, index) => {
           const lines = text.split('\n')
           const heading = lines[0]?.trim() || `Section ${index + 1}`
           const content = lines.slice(1).join('\n').trim()
-          return {
+          const section = {
             index,
             heading,
             text: content,
             wordCount: content.split(/\s+/).filter(Boolean).length,
           }
+          console.log('[workspace] Section', index, 'heading:', heading, 'wordCount:', section.wordCount)
+          return section
         })
 
-        console.log('[workspace] AI-generated sections', { sectionCount: sections.length })
+        console.log('[workspace] Final sections:', JSON.stringify(sections.slice(0, 2), null, 2))
       } catch (error) {
         console.error('[workspace] Failed to generate AI sections, falling back to extraction', error)
         sections = result.text ? extractSections(result.text) : null
+        console.log('[workspace] Fallback extraction resulted in', sections?.length, 'sections')
       }
     }
 
