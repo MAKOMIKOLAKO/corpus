@@ -55,7 +55,7 @@ export async function generateStructuredSections(params: {
   ])
 
   const content = await callGeminiClient({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     systemPrompt,
     prompt,
     feature: 'paper_sections',
