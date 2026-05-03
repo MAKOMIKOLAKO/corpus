@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Link as LinkIcon, Clock, BookOpen, AlertCircle } from 'lucide-react'
+import { Loader2, Link as LinkIcon, Clock, BookOpen, AlertCircle, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { beginWorkspaceOpen, clearWorkspaceOpen } from '@/lib/workspaceOpenState'
 
 interface WorkspaceSession {
   id: string
@@ -29,6 +33,8 @@ export function WorkspaceTab({ userId }: WorkspaceTabProps) {
   const [sessionsError, setSessionsError] = useState<string | null>(null)
 
   useEffect(() => {
+    clearWorkspaceOpen()
+
     const fetchSessions = async () => {
       setSessionsLoading(true)
       setSessionsError(null)
@@ -53,119 +59,115 @@ export function WorkspaceTab({ userId }: WorkspaceTabProps) {
   const handleOpenByArxiv = async () => {
     if (!arxivUrl.trim()) return
 
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/workspace/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ arxivUrl: arxivUrl.trim() }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create workspace session')
-      }
-
-      const session = await response.json()
-      toast.success('Workspace session created')
-      router.push(`/workspace/${session.id}`)
-    } catch (error) {
-      console.error('Failed to open arXiv paper:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to open paper')
-    } finally {
-      setIsLoading(false)
+    if (!beginWorkspaceOpen()) {
+      toast.info('A workspace is already opening')
+      return
     }
+
+    setIsLoading(true)
+    router.push(`/workspace/new?arxivUrl=${encodeURIComponent(arxivUrl.trim())}`)
   }
 
   return (
-    <div className="w-full py-6">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
-        <h2 className="text-2xl font-serif font-medium text-content-primary mb-2" style={{ lineHeight: 1.20 }}>
-          Paper Workspace
-        </h2>
-        <p className="text-content-secondary mb-8" style={{ lineHeight: 1.60 }}>
-          Open arXiv papers to generate section summaries and ask questions via AI
-        </p>
-
-        {/* Open by arXiv URL */}
-        <div className="mb-10 rounded-xl border border-border bg-card p-5 whisper-shadow">
-          <label className="block text-sm font-medium text-content-secondary mb-3">
-            Open arXiv paper by URL
-          </label>
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={arxivUrl}
-              onChange={(e) => setArxivUrl(e.target.value)}
-              placeholder="https://arxiv.org/abs/2301.00000"
-              disabled={isLoading}
-              className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-              onKeyDown={(e) => e.key === 'Enter' && handleOpenByArxiv()}
-            />
-            <button
-              onClick={handleOpenByArxiv}
-              disabled={!arxivUrl.trim() || isLoading}
-              className="px-5 py-2.5 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium button-terracotta flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Opening...
-                </>
-              ) : (
-                <>
-                  <LinkIcon className="w-4 h-4" />
-                  Open
-                </>
-              )}
-            </button>
-          </div>
-          <p className="mt-2 text-xs text-content-tertiary">
-            Only arXiv papers are supported in the workspace
+    <div className="w-full bg-background py-8 sm:py-10">
+      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 sm:px-6">
+        <div className="space-y-3">
+          <h2 className="font-serif text-[2rem] font-medium leading-[1.15] text-content-primary">
+            Paper Workspace
+          </h2>
+          <p className="max-w-2xl text-[15px] leading-relaxed text-content-secondary sm:text-base">
+            Open arXiv papers in a dedicated reading workspace with structured AI takeaways, recent session history, and grounded paper Q&amp;A.
           </p>
         </div>
 
-        {/* Recent sessions */}
-        <div>
-          <h3 className="text-lg font-medium text-content-primary mb-4">Recent sessions</h3>
+        <Card variant="ivory" className="rounded-2xl border border-border-cream shadow-none ring-shadow-warm">
+          <CardHeader className="px-6 pt-6">
+            <CardTitle>Open an arXiv paper</CardTitle>
+            <CardDescription>
+              Paste an arXiv URL to launch a protected loading flow before the workspace session is created.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input
+                type="text"
+                value={arxivUrl}
+                onChange={(e) => setArxivUrl(e.target.value)}
+                placeholder="https://arxiv.org/abs/2301.00000"
+                disabled={isLoading}
+                className="h-12 rounded-xl border-border bg-white px-4 text-content-primary placeholder:text-content-tertiary"
+                onKeyDown={(e) => e.key === 'Enter' && handleOpenByArxiv()}
+              />
+              <Button
+                onClick={handleOpenByArxiv}
+                disabled={!arxivUrl.trim() || isLoading}
+                variant="terracotta"
+                size="lg"
+                className="h-12 rounded-xl"
+              >
+                {isLoading ? <Loader2 className="animate-spin" /> : <LinkIcon />}
+                {isLoading ? 'Opening workspace…' : 'Open workspace'}
+              </Button>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-content-tertiary">
+              Only arXiv papers are supported right now.
+            </p>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h3 className="font-serif text-[1.6rem] font-medium leading-[1.2] text-content-primary">Recent sessions</h3>
+            <p className="text-sm leading-relaxed text-content-secondary">
+              Pick up where you left off without creating a new workspace session.
+            </p>
+          </div>
           {sessionsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-accent" />
-            </div>
+            <Card variant="ivory" className="rounded-2xl border border-border-cream py-12 shadow-none ring-shadow-warm">
+              <CardContent className="flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-accent" />
+              </CardContent>
+            </Card>
           ) : sessionsError ? (
-            <div className="rounded-xl border border-border bg-card p-8 text-center whisper-shadow">
-              <AlertCircle className="w-10 h-10 text-error mx-auto mb-3" />
-              <p className="text-content-secondary">{sessionsError}</p>
-            </div>
+            <Card variant="ivory" className="rounded-2xl border border-border-cream py-6 text-center shadow-none ring-shadow-warm">
+              <CardContent className="space-y-3">
+                <AlertCircle className="mx-auto h-10 w-10 text-error" />
+                <p className="text-content-secondary">{sessionsError}</p>
+              </CardContent>
+            </Card>
           ) : sessions.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-8 text-center whisper-shadow">
-              <BookOpen className="w-10 h-10 text-content-tertiary mx-auto mb-3" />
-              <p className="text-content-secondary mb-1">No workspace sessions yet</p>
-              <p className="text-sm text-content-tertiary">
-                Open an arXiv paper from your discovery feed or paste a URL above to get started
-              </p>
-            </div>
+            <Card variant="ivory" className="rounded-2xl border border-border-cream py-8 text-center shadow-none ring-shadow-warm">
+              <CardContent className="space-y-3">
+                <BookOpen className="mx-auto h-10 w-10 text-content-tertiary" />
+                <div className="space-y-1">
+                  <p className="text-content-secondary">No workspace sessions yet</p>
+                  <p className="text-sm leading-relaxed text-content-tertiary">
+                    Open an arXiv paper from Discover or paste a URL above to get started.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => (
                 <button
                   key={session.id}
                   onClick={() => router.push(`/workspace/${session.id}`)}
-                  className="w-full text-left rounded-xl border border-border bg-card p-4 hover:border-border-strong transition-colors whisper-shadow"
+                  className="w-full rounded-2xl border border-border-cream bg-ivory p-5 text-left transition-all hover:ring-shadow-warm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-[15px] font-medium text-content-primary line-clamp-2 mb-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <h4 className="font-serif text-xl font-medium leading-[1.2] text-content-primary line-clamp-2">
                         {session.paperTitle}
                       </h4>
-                      <p className="text-xs text-content-secondary">
+                      <p className="text-sm leading-relaxed text-content-secondary">
                         {session.paperAuthors.slice(0, 3).join(', ')}
                         {session.paperAuthors.length > 3 && ' et al.'}
                         {session.paperYear && ` · ${session.paperYear}`}
                       </p>
-                      <div className="mt-2 flex items-center gap-3 text-xs text-content-tertiary">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-content-tertiary">
                         <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                          <Clock className="h-3.5 w-3.5" />
                           {new Date(session.lastActivityAt).toLocaleDateString()}
                         </div>
                         {session.summaryCount > 0 && (
@@ -175,6 +177,9 @@ export function WorkspaceTab({ userId }: WorkspaceTabProps) {
                           <span>{session.messageCount} message{session.messageCount !== 1 ? 's' : ''}</span>
                         )}
                       </div>
+                    </div>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warm-sand text-charcoal-warm ring-shadow-warm">
+                      <ArrowRight className="h-4 w-4" />
                     </div>
                   </div>
                 </button>

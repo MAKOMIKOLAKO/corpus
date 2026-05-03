@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, FileText, MessageSquare, Sparkles, ChevronDown, ChevronUp, Send, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Textarea } from '@/components/ui/textarea'
+import { clearWorkspaceOpen } from '@/lib/workspaceOpenState'
 
 interface ExtractedSection {
   index: number
@@ -67,6 +68,8 @@ export function WorkspaceClient({
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set())
 
   useEffect(() => {
+    clearWorkspaceOpen()
+
     const loadSummaries = async () => {
       try {
         const response = await fetch(`/api/workspace/session/${sessionId}/summaries`)
@@ -199,26 +202,36 @@ export function WorkspaceClient({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      <div className="min-h-screen bg-background px-4 py-10 sm:px-6">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <div className="w-full rounded-[32px] border border-border-cream bg-ivory p-8 text-center ring-shadow-warm sm:p-12">
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-terracotta" />
+            <h1 className="font-serif text-[1.9rem] font-medium leading-[1.15] text-content-primary sm:text-[2.2rem]">
+              Loading your workspace
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-content-secondary sm:text-base">
+              Pulling together the paper, AI sections, and conversation history.
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card px-4 sm:px-6 py-4">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-border-cream bg-background px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => router.push('/research?tab=workspace')}
-              className="text-sm text-content-secondary hover:text-content-primary transition-colors"
+              className="inline-flex items-center rounded-lg px-2 py-1 text-sm text-content-secondary transition-colors hover:text-content-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               ← Back to workspace
             </button>
-            <div className="h-4 w-px bg-border" />
-            <h1 className="text-lg font-serif font-medium text-content-primary line-clamp-1 max-w-2xl">
+            <div className="h-4 w-px bg-border-cream" />
+            <h1 className="max-w-2xl line-clamp-1 font-serif text-[1.55rem] font-medium leading-[1.15] text-content-primary sm:text-[1.8rem]">
               {paperTitle}
             </h1>
           </div>
@@ -227,7 +240,7 @@ export function WorkspaceClient({
               href={arxivUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-content-secondary hover:text-accent transition-colors flex items-center gap-1"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-content-secondary transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ExternalLink size={14} />
               arXiv
@@ -237,26 +250,31 @@ export function WorkspaceClient({
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="max-w-[1600px] mx-auto h-full">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-full">
+      <main className="px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,1fr)]">
             {/* Left panel: Paper sections */}
-            <div className="border-r border-border bg-card overflow-y-auto">
-              <div className="p-4 sm:p-6">
+            <section className="overflow-hidden rounded-[28px] border border-border-cream bg-ivory ring-shadow-warm">
+              <div className="p-5 sm:p-7">
                 {/* Paper metadata */}
-                <div className="mb-8 rounded-lg border border-border bg-surface-sunken/30 p-4">
-                  <p className="text-sm text-content-secondary mb-2">
+                <div className="mb-8 rounded-2xl border border-border-cream bg-background/70 p-5 ring-shadow-warm">
+                  <p className="mb-2 text-sm leading-relaxed text-content-secondary">
                     <span className="font-medium">{paperAuthors.slice(0, 3).join(', ')}</span>
                     {paperAuthors.length > 3 && ' et al.'}
                   </p>
                   {paperYear && <p className="text-sm text-content-tertiary">{paperYear}</p>}
+                  {paperAbstract ? (
+                    <p className="mt-4 text-sm leading-relaxed text-content-secondary">
+                      {paperAbstract}
+                    </p>
+                  ) : null}
                 </div>
 
                 {/* Sections */}
                 {sections && sections.length > 0 ? (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <div className="flex items-center justify-between mb-3">
-                      <h2 className="text-lg font-medium text-content-primary">Sections</h2>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h2 className="font-serif text-[1.45rem] font-medium leading-[1.2] text-content-primary">Sections</h2>
                       <button
                         onClick={async () => {
                           try {
@@ -268,7 +286,7 @@ export function WorkspaceClient({
                             console.error('Failed to regenerate sections:', error)
                           }
                         }}
-                        className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-warm-sand px-3 py-2 text-xs font-medium text-charcoal-warm transition-all hover:ring-shadow-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <RefreshCw size={12} />
                         Regenerate
@@ -280,15 +298,15 @@ export function WorkspaceClient({
                         const isExpanded = expandedSections.has(section.index)
 
                         return (
-                          <div key={section.index} className="rounded-lg border border-border bg-card overflow-hidden">
+                          <div key={section.index} className="overflow-hidden rounded-2xl border border-border-cream bg-background/80 ring-shadow-warm">
                             <button
                               onClick={() => {
                                 setActiveSection(section.index)
                                 toggleSection(section.index)
                               }}
-                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-sunken/30 transition-colors"
+                              className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-warm-sand/35"
                             >
-                              <span className="text-sm font-medium text-content-primary line-clamp-1 flex-1 text-left">
+                              <span className="line-clamp-1 flex-1 font-serif text-[1.05rem] font-medium leading-[1.2] text-content-primary">
                                 {section.heading}
                               </span>
                               <div className="flex items-center gap-2">
@@ -299,7 +317,7 @@ export function WorkspaceClient({
                                       handleGenerateSectionSummary(section.index)
                                     }}
                                     disabled={isGenerating}
-                                    className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50"
+                                    className="inline-flex items-center gap-1 rounded-lg bg-terracotta/10 px-2.5 py-1.5 text-xs font-medium text-terracotta transition-colors hover:bg-terracotta/15 disabled:opacity-50"
                                   >
                                     <Sparkles size={10} />
                                   </button>
@@ -312,13 +330,13 @@ export function WorkspaceClient({
                               </div>
                             </button>
                             {isExpanded && (
-                              <div className="border-t border-border p-4">
+                              <div className="border-t border-border-cream p-4 sm:p-5">
                                 {summary ? (
-                                  <div className="text-sm text-content-secondary leading-relaxed mb-3">
+                                  <div className="mb-3 rounded-xl bg-terracotta/8 p-3 text-sm leading-relaxed text-content-secondary">
                                     {summary.content}
                                   </div>
                                 ) : null}
-                                <div className="text-sm text-content-tertiary leading-relaxed max-h-64 overflow-y-auto">
+                                <div className="max-h-64 overflow-y-auto text-sm leading-relaxed text-content-tertiary">
                                   {section.text}
                                 </div>
                               </div>
@@ -329,13 +347,13 @@ export function WorkspaceClient({
                     </div>
                   </div>
                 ) : hasFullText ? (
-                  <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                  <div className="rounded-2xl border border-dashed border-border-cream p-8 text-center">
                     <FileText className="w-8 h-8 text-content-tertiary mx-auto mb-3" />
                     <p className="text-sm text-content-secondary mb-1">Processing paper sections...</p>
                     <p className="text-xs text-content-tertiary">Sections will appear here shortly</p>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                  <div className="rounded-2xl border border-dashed border-border-cream p-8 text-center">
                     <AlertCircle className="w-8 h-8 text-content-tertiary mx-auto mb-3" />
                     <p className="text-sm text-content-secondary mb-1">Full text not available</p>
                     <p className="text-xs text-content-tertiary mb-3">
@@ -352,27 +370,27 @@ export function WorkspaceClient({
                           console.error('Failed to retry hydration:', error)
                         }
                       }}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                      className="inline-flex items-center rounded-lg bg-warm-sand px-3 py-2 text-xs font-medium text-charcoal-warm transition-all hover:ring-shadow-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       Retry fetching full text
                     </button>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
 
             {/* Right panel: Q&A */}
-            <div className="bg-surface-sunken/20 flex flex-col h-full">
-              <div className="border-b border-border bg-card px-4 py-3">
-                <h2 className="text-sm font-medium text-content-primary flex items-center gap-2">
+            <section className="flex min-h-[640px] flex-col overflow-hidden rounded-[28px] border border-border-cream bg-ivory ring-shadow-warm">
+              <div className="border-b border-border-cream bg-background/70 px-5 py-4 sm:px-6">
+                <h2 className="flex items-center gap-2 font-serif text-[1.35rem] font-medium leading-[1.2] text-content-primary">
                   <MessageSquare size={16} />
                   Ask about this paper
                 </h2>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
                 {messages.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="py-14 text-center">
                     <MessageSquare className="w-10 h-10 text-content-tertiary mx-auto mb-3" />
                     <p className="text-sm text-content-secondary mb-1">No questions yet</p>
                     <p className="text-xs text-content-tertiary">
@@ -383,12 +401,12 @@ export function WorkspaceClient({
                   messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`rounded-lg px-4 py-3 ${msg.role === 'user'
-                        ? 'bg-accent/10 text-accent-foreground ml-auto max-w-[90%]'
-                        : 'bg-card text-content-secondary mr-auto max-w-[90%]'
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user'
+                        ? 'ml-auto max-w-[90%] bg-terracotta text-white ring-shadow-warm'
+                        : 'mr-auto max-w-[90%] bg-background text-content-secondary ring-shadow-warm'
                         }`}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   ))
                 )}
@@ -400,8 +418,8 @@ export function WorkspaceClient({
                 )}
               </div>
 
-              <div className="border-t border-border bg-card p-4">
-                <div className="flex gap-2">
+              <div className="border-t border-border-cream bg-background/70 p-5 sm:p-6">
+                <div className="flex gap-3">
                   <Textarea
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
@@ -413,18 +431,18 @@ export function WorkspaceClient({
                     }}
                     placeholder="Ask a question about this paper..."
                     disabled={isGenerating}
-                    className="resize-none min-h-[60px] max-h-[120px]"
+                    className="min-h-[72px] max-h-[140px] resize-none rounded-2xl border-border bg-white px-4 py-3 text-content-primary placeholder:text-content-tertiary"
                   />
                   <button
                     onClick={handleAskQuestion}
                     disabled={!question.trim() || isGenerating}
-                    className="self-end px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="self-end rounded-xl bg-terracotta px-4 py-3 text-white shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px] transition-all hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Send size={16} />
                   </button>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </main>
