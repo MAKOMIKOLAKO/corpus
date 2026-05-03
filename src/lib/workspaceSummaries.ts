@@ -245,7 +245,7 @@ export async function generateQAResponse(params: {
     prompt,
     systemPrompt,
     temperature: 0.3,
-    maxOutputTokens: 800,
+    maxOutputTokens: 2000,
     feature: 'qa_response',
     userId: params.userId,
   })

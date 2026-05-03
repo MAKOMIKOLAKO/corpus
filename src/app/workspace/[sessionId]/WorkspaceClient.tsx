@@ -203,7 +203,7 @@ export function WorkspaceClient({
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background px-4 py-10 sm:px-6">
-        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
           <div className="w-full rounded-[32px] border border-border-cream bg-ivory p-8 text-center ring-shadow-warm sm:p-12">
             <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-terracotta" />
             <h1 className="font-serif text-[1.9rem] font-medium leading-[1.15] text-content-primary sm:text-[2.2rem]">
@@ -251,8 +251,8 @@ export function WorkspaceClient({
 
       {/* Main content */}
       <main className="px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,1fr)]">
+        <div className="mx-auto max-w-[1680px]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(360px,1fr)]">
             {/* Left panel: Paper sections */}
             <section className="overflow-hidden rounded-[28px] border border-border-cream bg-ivory ring-shadow-warm">
               <div className="p-5 sm:p-7">
