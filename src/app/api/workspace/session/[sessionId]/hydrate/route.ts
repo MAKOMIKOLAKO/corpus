@@ -18,7 +18,7 @@ export async function POST(
   }
 
   try {
-    await hydrateWorkspaceSession(params.sessionId)
+    await hydrateWorkspaceSession(params.sessionId, true) // Force regeneration
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[workspace-hydrate] Failed to hydrate session', error)
