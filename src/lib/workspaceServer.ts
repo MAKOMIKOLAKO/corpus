@@ -304,7 +304,7 @@ export async function hydrateWorkspaceSession(sessionId: string, forceRegenerate
     await (prisma as any).paperWorkspaceSession.update({
       where: { id: session.id },
       data: {
-        fullText: result.text,
+        fullText: result.text?.replace(/\0/g, ''), // Remove null bytes
         fullTextFetchedAt: new Date(),
         sections: sections,
         sectionsExtractedAt: sections ? new Date() : null,
