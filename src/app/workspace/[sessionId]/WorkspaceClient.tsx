@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, MessageSquare, Send, ChevronRight } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { clearWorkspaceOpen } from '@/lib/workspaceOpenState'
@@ -210,21 +209,6 @@ export function WorkspaceClient({
     ]
   })()
 
-  const sectionPrompts: Record<string, string> = {
-    Aim: 'What is the core aim of this paper? Explain the research goal in clear terms.',
-    Methods: 'What methods does this paper use? Summarize the methodology precisely.',
-    Conclusion: 'What conclusions does this paper reach? Summarize the main findings.',
-    Limitations: 'What limitations does this paper acknowledge or imply?',
-    'Future Research Paths': 'What future research directions follow from this paper?',
-  }
-
-  const suggestedQuestions = [
-    'What is the main contribution of this paper?',
-    'How would you explain the methodology to a graduate student?',
-    'What evidence supports the paper’s central claim?',
-    'What should I be skeptical about when reading this paper?',
-  ]
-
   const previewMessages = (() => {
     let assistantPreview: WorkspaceMessage | undefined
     let userPreview: WorkspaceMessage | undefined
@@ -250,7 +234,7 @@ export function WorkspaceClient({
       {
         id: 'preview-user',
         role: 'user' as const,
-        content: suggestedQuestions[0],
+        content: 'What is the main contribution of this paper?',
         referencedSectionIndices: [],
         createdAt: new Date().toISOString(),
       },
@@ -340,27 +324,32 @@ export function WorkspaceClient({
 
           <section className="overflow-hidden rounded-[28px] border border-border-cream bg-ivory ring-shadow-warm">
             <div className="border-b border-border-cream px-6 py-4 sm:px-8">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-content-tertiary">Section navigator</p>
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-content-tertiary">Paper sections</p>
             </div>
             <div>
-              {normalizedSections.map((section, index) => (
-                <button
-                  key={`${section.heading}-${section.index}`}
-                  onClick={() => submitQuestion(sectionPrompts[section.heading] ?? `Summarize the ${section.heading.toLowerCase()} section of this paper.`)}
-                  disabled={isGenerating || !hasFullText}
-                  className={`flex w-full items-center justify-between gap-4 px-6 py-4 text-left transition-colors hover:bg-warm-sand/35 disabled:cursor-not-allowed disabled:opacity-60 sm:px-8 ${index > 0 ? 'border-t border-border-cream' : ''}`}
-                >
-                  <div className="space-y-1">
+              {sections && sections.length > 0 ? (
+                sections.map((section, index) => (
+                  <div
+                    key={`${section.heading}-${section.index}`}
+                    className={`px-6 py-5 sm:px-8 ${index > 0 ? 'border-t border-border-cream' : ''}`}
+                  >
                     <p className="font-serif text-[1.2rem] font-medium leading-[1.2] text-content-primary">
                       {section.heading}
                     </p>
-                    <p className="text-sm leading-relaxed text-content-secondary">
-                      {hasFullText ? 'Tap to ask an AI question scoped to this section.' : 'Full paper sections are still being prepared.'}
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-content-secondary sm:text-[0.98rem]">
+                      {section.text}
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-content-tertiary" />
-                </button>
-              ))}
+                ))
+              ) : (
+                <div className="px-6 py-5 sm:px-8">
+                  <p className="text-sm leading-relaxed text-content-secondary">
+                    {hasFullText
+                      ? 'The LLM-generated paper sections are still being prepared.'
+                      : 'Full text is not available yet, so the paper sections could not be generated.'}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -382,30 +371,6 @@ export function WorkspaceClient({
                 >
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="space-y-4 rounded-[28px] border border-border-cream bg-ivory p-6 ring-shadow-warm sm:p-8">
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-content-tertiary">Suggested questions</p>
-              <p className="text-sm leading-relaxed text-content-secondary">
-                Start with a focused prompt tailored to this paper.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {suggestedQuestions.map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  type="button"
-                  variant="warm-sand"
-                  size="sm"
-                  disabled={isGenerating || !hasFullText}
-                  onClick={() => submitQuestion(suggestion)}
-                  className="rounded-full px-4 text-sm"
-                >
-                  {suggestion}
-                </Button>
               ))}
             </div>
           </section>
