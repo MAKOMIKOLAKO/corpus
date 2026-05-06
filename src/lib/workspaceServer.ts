@@ -257,7 +257,8 @@ export async function hydrateWorkspaceSession(sessionId: string, forceRegenerate
 
     // Generate AI-structured sections instead of extracting from text
     let sections = null
-    if (result.text) {
+    const hasFullSourceText = result.source === 'source' && Boolean(result.text)
+    if (hasFullSourceText && result.text) {
       try {
         console.log('[workspace] Generating AI-structured sections...')
         console.log('[workspace] Paper title:', session.paperTitle)
@@ -304,8 +305,8 @@ export async function hydrateWorkspaceSession(sessionId: string, forceRegenerate
     await (prisma as any).paperWorkspaceSession.update({
       where: { id: session.id },
       data: {
-        fullText: result.text?.replace(/\0/g, ''), // Remove null bytes
-        fullTextFetchedAt: new Date(),
+        fullText: hasFullSourceText && result.text ? result.text.replace(/\0/g, '') : null,
+        fullTextFetchedAt: hasFullSourceText ? new Date() : null,
         sections: sections,
         sectionsExtractedAt: sections ? new Date() : null,
         lastActivityAt: new Date(),

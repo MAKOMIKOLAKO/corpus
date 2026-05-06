@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ReadingStatus } from '@prisma/client';
 import { prisma } from '@/lib/prismaWithRetry';
 import { getCurrentUserId } from '@/lib/session';
-import { triggerQueueProcessing } from '@/lib/queueProcessor';
+import { recoverStaleQueueItems, triggerQueueProcessing } from '@/lib/queueProcessor';
 import { queueItemSchema } from '@/lib/validation';
 import { canAddEntry, getUserLimits } from '@/lib/plans';
 import { saveEntryForUser } from '@/lib/globalEntryService';
@@ -221,6 +221,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const recoveredCount = await recoverStaleQueueItems(userId);
+    if (recoveredCount > 0) {
+      triggerQueueProcessing(userId).catch(console.error);
+    }
+
     const items = await prisma.queueItem.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -233,6 +238,10 @@ export async function GET(request: NextRequest) {
     const pendingCount = await prisma.queueItem.count({
       where: { userId, status: 'PENDING' },
     });
+
+    if (pendingCount > 0 && processingCount === 0) {
+      triggerQueueProcessing(userId).catch(console.error);
+    }
 
     return NextResponse.json({
       items: items.map((item) => ({
