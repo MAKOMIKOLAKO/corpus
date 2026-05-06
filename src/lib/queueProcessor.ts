@@ -5,6 +5,8 @@ import { toEntrySource } from '@/lib/utils';
 import { saveEntryForUser } from './globalEntryService';
 import { callGemini, safeParseJson } from './research/geminiResearch';
 
+const STALE_QUEUE_PROCESSING_TIMEOUT_MS = 2 * 60 * 1000;
+
 function extractMeta(html: string) {
   const getTag = (pattern: RegExp) => {
     const match = html.match(pattern);
@@ -118,7 +120,52 @@ async function userCanCreateEntry(userId: string): Promise<{ ok: true } | { ok: 
   return { ok: true };
 }
 
+export async function recoverStaleQueueItems(userId: string): Promise<number> {
+  const cutoff = new Date(Date.now() - STALE_QUEUE_PROCESSING_TIMEOUT_MS);
+
+  const staleItems = await prisma.queueItem.findMany({
+    where: {
+      userId,
+      status: 'PROCESSING',
+      OR: [
+        { startedAt: { lte: cutoff } },
+        {
+          startedAt: null,
+          createdAt: { lte: cutoff },
+        },
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (staleItems.length === 0) {
+    return 0;
+  }
+
+  await prisma.queueItem.updateMany({
+    where: {
+      id: { in: staleItems.map((item) => item.id) },
+      status: 'PROCESSING',
+    },
+    data: {
+      status: 'FAILED',
+      errorMessage: 'Processing timed out. Please retry.',
+      completedAt: new Date(),
+    },
+  });
+
+  return staleItems.length;
+}
+
 export async function processUserQueue(userId: string): Promise<void> {
+  await recoverStaleQueueItems(userId);
+
+  const processingItem = await prisma.queueItem.findFirst({
+    where: { userId, status: 'PROCESSING' },
+  });
+
+  if (processingItem) return;
+
   const pendingItem = await prisma.queueItem.findFirst({
     where: {
       userId,
@@ -132,12 +179,6 @@ export async function processUserQueue(userId: string): Promise<void> {
   });
 
   if (!pendingItem) return;
-
-  const processingItem = await prisma.queueItem.findFirst({
-    where: { userId, status: 'PROCESSING' },
-  });
-
-  if (processingItem) return;
 
   const item = await prisma.queueItem.update({
     where: { id: pendingItem.id },

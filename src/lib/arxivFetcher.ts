@@ -98,44 +98,34 @@ function extractTextFromHtmlDocument(html: string): string | null {
   const blocks: string[] = []
   let stopAtReferences = false
 
-  // Process only direct children to avoid duplication from nested elements
-  mainRoot.children().each((_, element) => {
-    if (stopAtReferences) return
+  mainRoot.find('h1, h2, h3, h4, h5, h6, p, li, div.ltx_para').each((_, element) => {
+    if (stopAtReferences) return false
 
     const tagName = element.tagName?.toLowerCase() ?? ''
     const $element = $(element)
-    const text = nodeText($, element)
-    if (!text) return
 
     if (/^h[1-6]$/.test(tagName)) {
-      if (isReferenceLikeHeading(text)) {
+      const headingText = nodeText($, element)
+      if (!headingText) return
+      if (isReferenceLikeHeading(headingText)) {
         stopAtReferences = true
-        return
+        return false
       }
+      blocks.push(headingText)
+      return
+    }
+
+    if (tagName === 'div' && $element.hasClass('ltx_para') && $element.find('p, li, div.ltx_para').length > 0) {
+      return
+    }
+
+    if (tagName === 'li' && $element.children('li').length > 0) {
+      return
+    }
+
+    const text = nodeText($, element)
+    if (text.length >= 40) {
       blocks.push(text)
-      return
-    }
-
-    if (tagName === 'section') {
-      const heading = $element.children('h1, h2, h3, h4, h5, h6').first().text()
-      if (heading && isReferenceLikeHeading(heading)) {
-        stopAtReferences = true
-        return
-      }
-      // Extract text from section children (paragraphs, lists)
-      $element.children('p, li, div.ltx_para').each((_, child) => {
-        const childText = nodeText($, child)
-        if (childText && childText.length >= 40) {
-          blocks.push(childText)
-        }
-      })
-      return
-    }
-
-    if (tagName === 'p' || tagName === 'li' || $element.hasClass('ltx_para')) {
-      if (text.length >= 40) {
-        blocks.push(text)
-      }
     }
   })
 
@@ -216,6 +206,18 @@ export async function fetchArxivFullText(arxivId: string, abstractText?: string 
     }
   } catch (error) {
     console.error('[arxivFetcher] ar5iv fetch failed:', error)
+  }
+
+  try {
+    const arxivHtmlUrl = `https://arxiv.org/html/${arxivId}`
+    console.log('[arxivFetcher] Trying arxiv.org HTML:', arxivHtmlUrl)
+    const arxivHtml = await fetchHtmlText(arxivHtmlUrl)
+    console.log('[arxivFetcher] arxiv.org HTML result:', { hasText: Boolean(arxivHtml.text), error: arxivHtml.error })
+    if (arxivHtml.text) {
+      return { text: arxivHtml.text, source: 'source' }
+    }
+  } catch (error) {
+    console.error('[arxivFetcher] arxiv.org HTML fetch failed:', error)
   }
 
   // Try arXiv source from export.arxiv.org (programmatic access endpoint)
