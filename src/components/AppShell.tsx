@@ -8,9 +8,8 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, Shield } from "lucide-react";
+import { BookOpen, Folder, MessageSquare, Plus, Shield } from "lucide-react";
 
 export function AppShell({
   children,
@@ -24,7 +23,6 @@ export function AppShell({
   const isOnboarding = pathname === "/onboarding";
   const sessionUser = session?.user as (Session["user"] & { isAdmin?: boolean }) | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
-  const [pendingCount, setPendingCount] = useState(0);
   const [emailVerified, setEmailVerified] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -71,30 +69,6 @@ export function AppShell({
     }
   };
 
-  useEffect(() => {
-    if (!session) return;
-    const fetchPending = async () => {
-      try {
-        const [connRes, sharedRes] = await Promise.all([
-          fetch('/api/connections'),
-          fetch('/api/entries/shared')
-        ]);
-        let count = 0;
-        if (connRes.ok) {
-          const d = await connRes.json();
-          count += (d.pending_received || []).length;
-        }
-        if (sharedRes.ok) {
-          const d = await sharedRes.json();
-          count += (d.received || []).filter((e: any) => e.status === 'PENDING').length;
-        }
-        setPendingCount(count);
-      } catch { }
-    };
-    fetchPending();
-    const interval = setInterval(fetchPending, 60_000);
-    return () => clearInterval(interval);
-  }, [session]);
 
   return (
     <>
@@ -200,19 +174,6 @@ export function AppShell({
                       <Folder className="w-4 h-4" />
                       collections
                     </Link>
-                    <Link
-                      href="/connections"
-                      className={`${desktopNavLinkClassName} ${pathname === "/connections" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
-                      aria-current={pathname === "/connections" ? "page" : undefined}
-                    >
-                      <Users className="w-4 h-4" />
-                      connections
-                      {pendingCount > 0 && (
-                        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-terracotta text-white text-[10px] font-bold">
-                          {pendingCount > 9 ? '9+' : pendingCount}
-                        </span>
-                      )}
-                    </Link>
                     {isAdmin && (
                       <Link
                         href="/admin"
@@ -224,7 +185,6 @@ export function AppShell({
                       </Link>
                     )}
                     <ThemeToggle />
-                    <NotificationDropdown />
                     <div className="h-4 w-px shrink-0 bg-border mx-2" aria-hidden="true" />
                     <button
                       onClick={() => setShowFeedback(true)}
@@ -279,18 +239,6 @@ export function AppShell({
                     <Folder className="w-5 h-5" />
                     collections
                   </Link>
-                  <Link
-                    href="/connections"
-                    className={`${mobileNavLinkClassName} ${pathname === "/connections" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
-                  >
-                    <Users className="w-5 h-5" />
-                    connections
-                    {pendingCount > 0 && (
-                      <span className="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-terracotta text-white text-xs font-bold">
-                        {pendingCount > 9 ? '9+' : pendingCount}
-                      </span>
-                    )}
-                  </Link>
                   {isAdmin && (
                     <Link
                       href="/admin"
@@ -300,9 +248,6 @@ export function AppShell({
                       admin
                     </Link>
                   )}
-                  <div onClick={() => setIsMenuOpen(false)}>
-                    <NotificationDropdown />
-                  </div>
                   <div className="px-4 py-2">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12px] text-content-tertiary">Appearance</p>
                     <ThemeToggle />
