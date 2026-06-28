@@ -74,9 +74,9 @@ function CollectionRightPanel({ collectionId, collectionName }: { collectionId: 
     });
 
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f5f4ed' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f0ede4' }}>
             {/* Filter bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: '44px', borderBottom: '1px solid #f0eee6', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: '44px', borderBottom: '1px solid #e8e4d8', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     {STATUS_TABS.map((tab) => (
                         <button
@@ -85,7 +85,7 @@ function CollectionRightPanel({ collectionId, collectionName }: { collectionId: 
                             style={{
                                 padding: '4px 10px',
                                 fontSize: '13px',
-                                color: statusFilter === tab.value ? '#c96442' : '#5e5d59',
+                                color: statusFilter === tab.value ? '#c96442' : '#4a5e56',
                                 cursor: 'pointer',
                                 borderBottom: statusFilter === tab.value ? '2px solid #c96442' : '2px solid transparent',
                                 borderTop: 'none',
@@ -103,14 +103,14 @@ function CollectionRightPanel({ collectionId, collectionName }: { collectionId: 
             </div>
 
             {/* Count */}
-            <div style={{ padding: '6px 16px', fontSize: '12px', color: '#87867f', borderBottom: '1px solid #f0eee6', flexShrink: 0 }}>
+            <div style={{ padding: '6px 16px', fontSize: '12px', color: '#7a8e86', borderBottom: '1px solid #e8e4d8', flexShrink: 0 }}>
                 {loading ? 'loading…' : `${total} ${total === 1 ? 'entry' : 'entries'}`}
             </div>
 
             {/* Entries */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
                 {!loading && entries.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '48px 16px', color: '#87867f', fontSize: '13px' }}>
+                    <div style={{ textAlign: 'center', padding: '48px 16px', color: '#7a8e86', fontSize: '13px' }}>
                         {collectionId ? 'No entries in this collection yet.' : 'Select a collection to view entries.'}
                     </div>
                 ) : (
@@ -131,11 +131,11 @@ function CollectionRightPanel({ collectionId, collectionName }: { collectionId: 
                                     disabled={loading}
                                     style={{
                                         padding: '4px 16px',
-                                        border: '1px solid #f0eee6',
+                                        border: '1px solid #e8e4d8',
                                         borderRadius: '6px',
-                                        background: '#faf9f5',
+                                        background: '#f7f4ee',
                                         fontSize: '12px',
-                                        color: '#5e5d59',
+                                        color: '#4a5e56',
                                         cursor: 'pointer',
                                         fontFamily: 'system-ui, sans-serif',
                                     }}
@@ -415,14 +415,14 @@ export default function CollectionsPage() {
     };
 
     if (loading) {
-        return <div style={{ textAlign: 'center', padding: '48px', color: '#87867f', fontSize: '14px' }}>Loading collections…</div>;
+        return <div style={{ textAlign: 'center', padding: '48px', color: '#7a8e86', fontSize: '14px' }}>Loading collections…</div>;
     }
 
     const myCollections = collections.filter(c => !c.isDiscovery);
     const activeCollection = myCollections.find(c => c.id === activeCollectionId) ?? null;
 
     return (
-        <div style={{ background: '#f5f4ed', minHeight: '100%' }}>
+        <div style={{ background: '#f0ede4', minHeight: '100%' }}>
             {session?.user && !hasPaidFeature(session.user.plan || 'FREE', 'collections') && (
                 <UpgradeBanner
                     message="Create and share collections of entries with other users. Upgrade to Pro to unlock collections."
@@ -432,15 +432,15 @@ export default function CollectionsPage() {
 
             {/* Pending invites (compact, above layout) */}
             {invites.length > 0 && (
-                <div style={{ padding: '12px 20px', borderBottom: '1px solid #f0eee6', background: '#faf9f5' }}>
-                    <div style={{ fontSize: '11px', color: '#87867f', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                <div style={{ padding: '12px 20px', borderBottom: '1px solid #e8e4d8', background: '#f7f4ee' }}>
+                    <div style={{ fontSize: '11px', color: '#7a8e86', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
                         Pending Invites
                     </div>
                     {invites.map((invite) => (
-                        <div key={invite.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0eee6' }}>
+                        <div key={invite.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e8e4d8' }}>
                             <div>
-                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#141413' }}>{invite.collection.name}</span>
-                                <span style={{ fontSize: '12px', color: '#87867f', marginLeft: '8px' }}>from {invite.inviter.name || invite.inviter.email}</span>
+                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e2d27' }}>{invite.collection.name}</span>
+                                <span style={{ fontSize: '12px', color: '#7a8e86', marginLeft: '8px' }}>from {invite.inviter.name || invite.inviter.email}</span>
                             </div>
                             <div style={{ display: 'flex', gap: '6px' }}>
                                 <button
@@ -453,7 +453,7 @@ export default function CollectionsPage() {
                                 <button
                                     onClick={() => handleRespondToInvite(invite.id, 'decline')}
                                     disabled={respondingToInvite === invite.id}
-                                    style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', border: '1px solid #f0eee6', background: '#faf9f5', color: '#5e5d59', cursor: 'pointer' }}
+                                    style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', border: '1px solid #e8e4d8', background: '#f7f4ee', color: '#4a5e56', cursor: 'pointer' }}
                                 >
                                     Decline
                                 </button>
@@ -464,7 +464,7 @@ export default function CollectionsPage() {
             )}
 
             {/* Mobile: horizontal pill row (below md) */}
-            <div className="flex md:hidden" style={{ gap: '6px', padding: '8px 16px', overflowX: 'auto', borderBottom: '1px solid #f0eee6', background: '#f5f4ed', scrollbarWidth: 'none' }}>
+            <div className="flex md:hidden" style={{ gap: '6px', padding: '8px 16px', overflowX: 'auto', borderBottom: '1px solid #e8e4d8', background: '#f0ede4', scrollbarWidth: 'none' }}>
                 {myCollections.map((c) => (
                     <button
                         key={c.id}
@@ -475,9 +475,9 @@ export default function CollectionsPage() {
                             fontSize: '13px',
                             whiteSpace: 'nowrap',
                             cursor: 'pointer',
-                            border: activeCollectionId === c.id ? '1px solid #c96442' : '1px solid #f0eee6',
-                            background: activeCollectionId === c.id ? '#c96442' : '#faf9f5',
-                            color: activeCollectionId === c.id ? '#fff' : '#5e5d59',
+                            border: activeCollectionId === c.id ? '1px solid #c96442' : '1px solid #e8e4d8',
+                            background: activeCollectionId === c.id ? '#c96442' : '#f7f4ee',
+                            color: activeCollectionId === c.id ? '#fff' : '#4a5e56',
                             transition: 'all 100ms',
                             flexShrink: 0,
                         }}
@@ -496,7 +496,7 @@ export default function CollectionsPage() {
                         cursor: 'pointer',
                         border: '1px dashed #d0cec6',
                         background: 'none',
-                        color: '#87867f',
+                        color: '#7a8e86',
                         flexShrink: 0,
                     }}
                 >
@@ -507,8 +507,8 @@ export default function CollectionsPage() {
             {/* Desktop: two-panel layout */}
             <div className="hidden md:flex" style={{ height: 'calc(100vh - 140px)', overflow: 'hidden' }}>
                 {/* Left sidebar */}
-                <div className="hidden md:flex flex-col" style={{ width: '260px', flexShrink: 0, borderRight: '1px solid #f0eee6', overflowY: 'auto', background: '#f5f4ed', paddingTop: '12px' }}>
-                    <div style={{ padding: '0 16px 8px', fontSize: '11px', color: '#87867f', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <div className="hidden md:flex flex-col" style={{ width: '260px', flexShrink: 0, borderRight: '1px solid #e8e4d8', overflowY: 'auto', background: '#f0ede4', paddingTop: '12px' }}>
+                    <div style={{ padding: '0 16px 8px', fontSize: '11px', color: '#7a8e86', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Collections
                     </div>
 
@@ -525,9 +525,9 @@ export default function CollectionsPage() {
                                 position: 'relative',
                                 transition: 'background 100ms',
                                 fontSize: '14px',
-                                color: activeCollectionId === collection.id ? '#141413' : '#5e5d59',
+                                color: activeCollectionId === collection.id ? '#1e2d27' : '#4a5e56',
                                 gap: '8px',
-                                background: activeCollectionId === collection.id ? '#faf9f5' : 'transparent',
+                                background: activeCollectionId === collection.id ? '#f7f4ee' : 'transparent',
                             }}
                         >
                             {/* Active accent bar */}
@@ -538,7 +538,7 @@ export default function CollectionsPage() {
                                 {collection.name}
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                                <span style={{ fontSize: '11px', color: '#87867f', background: '#f0eee6', padding: '2px 7px', borderRadius: '10px' }}>
+                                <span style={{ fontSize: '11px', color: '#7a8e86', background: '#e8e4d8', padding: '2px 7px', borderRadius: '10px' }}>
                                     {collection.entryCount ?? collection._count.entries}
                                 </span>
                                 {collection.isOwner && (
@@ -548,16 +548,16 @@ export default function CollectionsPage() {
                                                 e.stopPropagation();
                                                 setShowDropdown(showDropdown === collection.id ? null : collection.id);
                                             }}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#87867f', padding: '2px 4px', fontSize: '14px', lineHeight: 1 }}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7a8e86', padding: '2px 4px', fontSize: '14px', lineHeight: 1 }}
                                         >
                                             ···
                                         </button>
                                         {showDropdown === collection.id && (
-                                            <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 50, background: '#faf9f5', border: '1px solid #f0eee6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: '140px' }}>
+                                            <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 50, background: '#f7f4ee', border: '1px solid #e8e4d8', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: '140px' }}>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setShowDropdown(null); openEditModal(collection); }}
-                                                    style={{ width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: '13px', color: '#141413', background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
-                                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                                    style={{ width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: '13px', color: '#1e2d27', background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#e8e4d8')}
                                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                                                 >
                                                     Edit
@@ -579,7 +579,7 @@ export default function CollectionsPage() {
                     ))}
 
                     {myCollections.length === 0 && (
-                        <div style={{ padding: '16px', fontSize: '13px', color: '#87867f' }}>
+                        <div style={{ padding: '16px', fontSize: '13px', color: '#7a8e86' }}>
                             No collections yet.
                         </div>
                     )}
@@ -588,7 +588,7 @@ export default function CollectionsPage() {
                         <button
                             onClick={() => setShowCreateModal(true)}
                             disabled={!session?.user || !hasPaidFeature(session.user.plan || 'FREE', 'collections')}
-                            className="w-full flex items-center justify-center text-sm text-[#5e5d59] border border-[#f0eee6] rounded-lg bg-transparent hover:bg-[#faf9f5] transition-colors duration-100 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center text-sm text-[#4a5e56] border border-[#e8e4d8] rounded-lg bg-transparent hover:bg-[#f7f4ee] transition-colors duration-100 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus className="w-3 h-3 mr-2" />
                             + New Collection

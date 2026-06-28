@@ -30,7 +30,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f5f4ed] dark:bg-[#141413] text-[#141413] dark:text-[#faf9f5] font-sans antialiased selection:bg-[#c96442]/20 dark:selection:bg-[#c96442]/30 selection:text-[#141413] dark:selection:text-[#faf9f5] transition-colors duration-300">
+    <div className="min-h-screen bg-[#f0ede4] dark:bg-[#1e2d27] text-[#1e2d27] dark:text-[#f0ede4] font-sans antialiased selection:bg-[#c96442]/20 dark:selection:bg-[#c96442]/30 selection:text-[#1e2d27] dark:selection:text-[#f0ede4] transition-colors duration-300">
       <SoftwareApplicationJsonLd />
       <WebSiteJsonLd />
       <OrganizationJsonLd />
@@ -44,28 +44,28 @@ export default function LandingPage() {
 
       {/* Header */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${navScrolled ? "bg-[#f5f4ed]/80 dark:bg-[#141413]/80 backdrop-blur-md border-b border-[#f0eee6] dark:border-[#30302e]" : "bg-transparent border-transparent"
+        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${navScrolled ? "bg-[#f0ede4]/80 dark:bg-[#1e2d27]/80 backdrop-blur-md border-b border-[#e8e4d8] dark:border-[#2d3d36]" : "bg-transparent border-transparent"
           }`}
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 relative z-10">
-          <Link href="/" className="text-[1.3rem] font-medium tracking-tight font-serif text-[#141413] dark:text-[#faf9f5] flex items-center gap-2 transition-colors">
+          <Link href="/" className="text-[1.3rem] font-medium tracking-tight font-serif text-[#1e2d27] dark:text-[#f0ede4] flex items-center gap-2 transition-colors">
             Corpus
           </Link>
           <div className="hidden items-center gap-4 md:flex">
             <ThemeToggle />
-            <Link href="/login" className="text-[15px] font-medium text-[#5e5d59] dark:text-[#b0aea5] transition-colors hover:text-[#141413] dark:hover:text-[#faf9f5]">
+            <Link href="/login" className="text-[15px] font-medium text-[#4a5e56] dark:text-[#b8c4be] transition-colors hover:text-[#1e2d27] dark:hover:text-[#f0ede4]">
               Sign In
             </Link>
             <Link
               href="/login"
-              className="rounded-[8px] px-4 py-2 text-[15px] font-medium text-[#4d4c48] dark:text-[#faf9f5] bg-[#e8e6dc] dark:bg-[#30302e] shadow-[0_0_0_1px_#d1cfc5] dark:shadow-[0_0_0_1px_#30302e] hover:shadow-[0_0_0_1px_#b0aea5] dark:hover:shadow-[0_0_0_1px_#4d4c48] transition-shadow duration-200"
+              className="rounded-[8px] px-4 py-2 text-[15px] font-medium text-[#2d3d36] dark:text-[#f0ede4] bg-[#e2ddd4] dark:bg-[#2d3d36] shadow-[0_0_0_1px_#ccc8bc] dark:shadow-[0_0_0_1px_#2d3d36] hover:shadow-[0_0_0_1px_#b8c4be] dark:hover:shadow-[0_0_0_1px_#2d3d36] transition-shadow duration-200"
             >
               Get Started
             </Link>
           </div>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#f0eee6] dark:border-[#30302e] text-[#5e5d59] dark:text-[#b0aea5] md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e8e4d8] dark:border-[#2d3d36] text-[#4a5e56] dark:text-[#b8c4be] md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,13 +74,13 @@ export default function LandingPage() {
           </button>
         </div>
         {mobileOpen && (
-          <div className="border-t border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed]/95 dark:bg-[#141413]/95 px-4 py-4 backdrop-blur-md md:hidden relative z-10 transition-colors">
+          <div className="border-t border-[#e8e4d8] dark:border-[#2d3d36] bg-[#f0ede4]/95 dark:bg-[#1e2d27]/95 px-4 py-4 backdrop-blur-md md:hidden relative z-10 transition-colors">
             <div className="flex flex-col gap-3">
               <div className="py-1">
                 <ThemeToggle />
               </div>
-              <Link href="/login" className="py-2 font-medium text-[#141413] dark:text-[#faf9f5] text-[15px]">Sign In</Link>
-              <Link href="/login" className="rounded-lg py-2 text-center font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442]">Get Started</Link>
+              <Link href="/login" className="py-2 font-medium text-[#1e2d27] dark:text-[#f0ede4] text-[15px]">Sign In</Link>
+              <Link href="/login" className="rounded-lg py-2 text-center font-medium text-[#f7f4ee] bg-[#c96442] shadow-[0_0_0_1px_#c96442]">Get Started</Link>
             </div>
           </div>
         )}
@@ -96,22 +96,22 @@ export default function LandingPage() {
               transition={{ duration: 0.4 }}
               className="max-w-2xl"
             >
-              <h1 className="text-[3.25rem] sm:text-[4rem] leading-[1.10] font-serif font-medium text-[#141413] dark:text-[#faf9f5] tracking-tight transition-colors">
+              <h1 className="text-[3.25rem] sm:text-[4rem] leading-[1.10] font-serif font-medium text-[#1e2d27] dark:text-[#f0ede4] tracking-tight transition-colors">
                 Your personal reading queue.
               </h1>
-              <p className="mt-6 text-[1.06rem] sm:text-[1.25rem] leading-[1.60] text-[#5e5d59] dark:text-[#b0aea5] transition-colors">
+              <p className="mt-6 text-[1.06rem] sm:text-[1.25rem] leading-[1.60] text-[#4a5e56] dark:text-[#b8c4be] transition-colors">
                 Add papers, articles, and books. Track what you&apos;ve read. Organize everything into collections.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4">
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757]"
+                  className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#f7f4ee] bg-[#c96442] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757]"
                 >
                   Get started
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#4d4c48] dark:text-[#b0aea5] bg-[#e8e6dc] dark:bg-[#30302e] shadow-[0_0_0_1px_#d1cfc5] dark:shadow-[0_0_0_1px_#30302e] transition hover:text-[#141413] dark:hover:text-[#faf9f5] hover:shadow-[0_0_0_1px_#b0aea5] dark:hover:shadow-[0_0_0_1px_#4d4c48]"
+                  className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#2d3d36] dark:text-[#b8c4be] bg-[#e2ddd4] dark:bg-[#2d3d36] shadow-[0_0_0_1px_#ccc8bc] dark:shadow-[0_0_0_1px_#2d3d36] transition hover:text-[#1e2d27] dark:hover:text-[#f0ede4] hover:shadow-[0_0_0_1px_#b8c4be] dark:hover:shadow-[0_0_0_1px_#2d3d36]"
                 >
                   Sign in
                 </Link>
@@ -121,7 +121,7 @@ export default function LandingPage() {
         </section>
 
         {/* 2. Feature Highlights */}
-        <section className="py-24 border-y border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed] dark:bg-[#141413] transition-colors">
+        <section className="py-24 border-y border-[#e8e4d8] dark:border-[#2d3d36] bg-[#f0ede4] dark:bg-[#1e2d27] transition-colors">
           <div className="mx-auto max-w-6xl px-4 grid gap-8 sm:grid-cols-2">
             {[
               { title: "Add anything", desc: "Paste a DOI, URL, or title. Corpus pulls the metadata automatically.", icon: <Plus className="w-5 h-5" /> },
@@ -133,24 +133,24 @@ export default function LandingPage() {
                 key={feature.title}
                 {...fadeUpParams}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5] dark:bg-[#141413] p-8 hover:bg-[#f0eee6] dark:hover:bg-[#30302e]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
+                className="rounded-[16px] border border-[#e8e4d8] dark:border-[#2d3d36] bg-[#f7f4ee] dark:bg-[#1e2d27] p-8 hover:bg-[#e8e4d8] dark:hover:bg-[#2d3d36]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
               >
-                <div className="w-10 h-10 rounded-[8px] bg-[#faf9f5] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center text-[#c96442] shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] mb-6 transition-colors">
+                <div className="w-10 h-10 rounded-[8px] bg-[#f7f4ee] dark:bg-[#1e2d27] border border-[#e8e4d8] dark:border-[#2d3d36] flex items-center justify-center text-[#c96442] shadow-[0_0_0_1px_#e8e4d8] dark:shadow-[0_0_0_1px_#2d3d36] mb-6 transition-colors">
                   {feature.icon}
                 </div>
-                <h3 className="text-[1.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] mb-3 transition-colors">{feature.title}</h3>
-                <p className="text-[16px] text-[#5e5d59] dark:text-[#b0aea5] leading-[1.60] transition-colors">{feature.desc}</p>
+                <h3 className="text-[1.3rem] font-serif font-medium text-[#1e2d27] dark:text-[#f0ede4] mb-3 transition-colors">{feature.title}</h3>
+                <p className="text-[16px] text-[#4a5e56] dark:text-[#b8c4be] leading-[1.60] transition-colors">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
         </section>
 
         {/* 3. Tagline Section */}
-        <section className="py-32 bg-[#faf9f5] dark:bg-[#141413] overflow-hidden transition-colors">
+        <section className="py-32 bg-[#f7f4ee] dark:bg-[#1e2d27] overflow-hidden transition-colors">
           <div className="mx-auto max-w-6xl px-4">
             <motion.div {...fadeUpParams} className="text-center">
-              <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] transition-colors">Read more. Forget less.</h2>
-              <p className="mt-6 text-[1.06rem] text-[#5e5d59] dark:text-[#b0aea5] transition-colors">
+              <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#1e2d27] dark:text-[#f0ede4] transition-colors">Read more. Forget less.</h2>
+              <p className="mt-6 text-[1.06rem] text-[#4a5e56] dark:text-[#b8c4be] transition-colors">
                 Corpus keeps your reading list organized so you can focus on the work.
               </p>
             </motion.div>
@@ -158,15 +158,15 @@ export default function LandingPage() {
         </section>
 
         {/* 4. Footer CTA */}
-        <section className="py-32 bg-[#f5f4ed] dark:bg-[#141413] text-center px-4 transition-colors">
+        <section className="py-32 bg-[#f0ede4] dark:bg-[#1e2d27] text-center px-4 transition-colors">
           <div className="mx-auto max-w-2xl">
             <motion.div {...fadeUpParams}>
-              <h2 className="text-[2.3rem] sm:text-[3.25rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] leading-[1.10] mb-10 transition-colors">
+              <h2 className="text-[2.3rem] sm:text-[3.25rem] font-serif font-medium text-[#1e2d27] dark:text-[#f0ede4] leading-[1.10] mb-10 transition-colors">
                 Start building your library.
               </h2>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center rounded-[12px] px-[24px] py-[16px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757] transition-colors"
+                className="inline-flex items-center justify-center rounded-[12px] px-[24px] py-[16px] text-[16px] font-medium text-[#f7f4ee] bg-[#c96442] shadow-[0_0_0_1px_#c96442] hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757] transition-colors"
               >
                 Get started free
               </Link>
@@ -176,14 +176,14 @@ export default function LandingPage() {
 
       </main>
 
-      <footer className="border-t border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed] dark:bg-[#141413] py-12 transition-colors">
+      <footer className="border-t border-[#e8e4d8] dark:border-[#2d3d36] bg-[#f0ede4] dark:bg-[#1e2d27] py-12 transition-colors">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:flex-row">
           <div className="flex flex-col items-center gap-2 sm:items-start text-center sm:text-left">
-            <span className="text-[1.06rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] transition-colors">Corpus</span>
-            <p className="text-[14px] font-sans text-[#87867f] dark:text-[#5e5d59] transition-colors">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
+            <span className="text-[1.06rem] font-serif font-medium text-[#1e2d27] dark:text-[#f0ede4] transition-colors">Corpus</span>
+            <p className="text-[14px] font-sans text-[#7a8e86] dark:text-[#4a5e56] transition-colors">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
           </div>
-          <div className="flex gap-8 text-[15px] font-sans text-[#5e5d59] dark:text-[#87867f] transition-colors">
-            <Link href="/pricing" className="transition hover:text-[#141413] dark:hover:text-[#faf9f5]">Pricing</Link>
+          <div className="flex gap-8 text-[15px] font-sans text-[#4a5e56] dark:text-[#7a8e86] transition-colors">
+            <Link href="/pricing" className="transition hover:text-[#1e2d27] dark:hover:text-[#f0ede4]">Pricing</Link>
           </div>
         </div>
       </footer>

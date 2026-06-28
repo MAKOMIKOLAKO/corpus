@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     maximumScale: 5,
   },
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f4ed' },
-    { media: '(prefers-color-scheme: dark)', color: '#141413' },
+    { media: '(prefers-color-scheme: light)', color: '#f0ede4' },
+    { media: '(prefers-color-scheme: dark)', color: '#1e2d27' },
   ],
   icons: {
     icon: [
