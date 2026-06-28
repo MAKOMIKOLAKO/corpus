@@ -107,10 +107,10 @@ export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProp
 
             {submitted ? (
               <div className="py-6 text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Send className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Send className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Thank you for your feedback!</h3>
+                <h3 className="text-lg font-serif font-medium mb-2">Thank you for your feedback!</h3>
                 <p className="text-muted-foreground">We appreciate your input and will use it to improve Corpus.</p>
               </div>
             ) : (

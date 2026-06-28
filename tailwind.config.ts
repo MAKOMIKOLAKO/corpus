@@ -11,7 +11,7 @@ const config: Config = {
         extend: {
             fontFamily: {
                 sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-                serif: ["Georgia", "serif"],
+                serif: ["var(--font-serif)", "Georgia", "serif"],
             },
             colors: {
                 // Claude Design System Colors

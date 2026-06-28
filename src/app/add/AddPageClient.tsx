@@ -323,7 +323,7 @@ export default function AddEntryPage() {
       className="mx-auto min-h-screen max-w-[720px] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-6 text-[var(--foreground)] theme-transition"
     >
       <header className="mb-8">
-        <h1 className="mb-6 font-serif text-3xl font-bold text-[var(--foreground)]">Add to Library</h1>
+        <h1 className="mb-6 font-serif text-3xl font-medium text-[var(--foreground)]">Add to Library</h1>
 
         {!selectedResult && !saveConfirmation && (
           <div className="flex flex-col sm:flex-row gap-2 rounded-xl border border-[var(--border)] bg-[var(--muted)]/50 p-2 sm:p-1">
@@ -556,11 +556,11 @@ function SearchResultCard({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 leading-tight font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)]">
+          <h3 className="line-clamp-2 leading-tight font-serif font-medium text-[var(--foreground)] group-hover:text-[var(--accent)]">
             {result.title}
           </h3>
           {result.openAccessUrl && (
-            <span className="shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+            <span className="shrink-0 rounded-sm border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium tracking-wider text-accent uppercase">
               Open Access
             </span>
           )}
@@ -613,7 +613,7 @@ function QueuePanel({
   return (
     <div className="space-y-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--foreground)]">
+        <h2 className="flex items-center gap-2 text-lg font-serif font-medium text-[var(--foreground)]">
           {heading}
           {activeCount > 0 && (
             <span
@@ -666,7 +666,7 @@ function QueuePanel({
                   </span>
                 </div>
                 {item.status === 'FAILED' && item.errorMessage && (
-                  <p className="truncate text-[11px] text-amber-600 dark:text-amber-500">
+                  <p className="truncate text-[11px] text-content-secondary">
                     {item.errorMessage}
                   </p>
                 )}
@@ -723,11 +723,11 @@ function RemoveConfirmButton({ onRemove }: { onRemove: () => void }) {
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Remove?</span>
+        <span className="text-[10px] font-medium text-[var(--muted-foreground)] uppercase">Remove?</span>
         <button
           type="button"
           onClick={onRemove}
-          className="rounded bg-red-500/10 px-2 py-1 text-xs font-bold text-red-600 dark:text-red-400"
+          className="rounded-md bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive"
         >
           Yes
         </button>
@@ -746,7 +746,7 @@ function RemoveConfirmButton({ onRemove }: { onRemove: () => void }) {
     <button
       type="button"
       onClick={() => setConfirming(true)}
-      className="p-1 text-[var(--muted-foreground)] transition-colors hover:text-red-500"
+      className="p-1 text-[var(--muted-foreground)] transition-colors hover:text-destructive"
       aria-label="Remove from queue"
     >
       <X className="h-4 w-4" />
@@ -875,29 +875,29 @@ function PreviewForm({
       </button>
 
       {error === 'LIMIT' && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600 dark:text-amber-400">
+        <div className="rounded-xl border border-border-strong bg-accent-muted p-4 text-sm text-content-primary">
           You&apos;ve reached the 100 entry limit on the free plan.{' '}
-          <Link href="/pricing" className="font-bold underline">
+          <Link href="/pricing" className="font-medium underline text-accent">
             Upgrade to Pro →
           </Link>
         </div>
       )}
 
       {error === 'EXISTS' && (
-        <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-600 dark:text-blue-400">
-          <CheckCircle2 className="h-5 w-5 shrink-0" />
+        <div className="flex items-center gap-3 rounded-xl border border-border-strong bg-surface-raised p-4 text-sm text-content-primary">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-accent" />
           <div className="flex-1">
-            <p className="font-semibold">Already in your library</p>
+            <p className="font-medium">Already in your library</p>
             <p className="opacity-80">This entry has already been saved.</p>
           </div>
-          <Link href="/library" className="text-xs font-bold whitespace-nowrap underline">
+          <Link href="/library" className="text-xs font-medium whitespace-nowrap underline text-accent">
             Open Library
           </Link>
         </div>
       )}
 
       {error && error !== 'LIMIT' && error !== 'EXISTS' && (
-        <div className="rounded-lg border border-red-500/10 bg-red-500/5 p-3 text-sm text-red-600 dark:text-red-400">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -1033,7 +1033,7 @@ function PreviewForm({
           type="button"
           onClick={handleSave}
           disabled={isSaving || !formData.title}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-content-inverse shadow-lg transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-medium text-content-inverse whisper-shadow transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
           style={{ backgroundColor: 'var(--accent)' }}
         >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
@@ -1057,10 +1057,10 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[11px] font-bold tracking-widest text-[var(--muted-foreground)] uppercase">
+      <div className="flex items-center justify-between text-[11px] font-medium tracking-widest text-[var(--muted-foreground)] uppercase">
         <label>
           {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
+          {required && <span className="ml-1 text-destructive">*</span>}
         </label>
         {hint && <span className="font-normal normal-case">{hint}</span>}
       </div>
@@ -1145,7 +1145,7 @@ function PostSavePanel({
       >
         <Check className="h-10 w-10" strokeWidth={2.5} />
       </div>
-      <h2 className="mb-2 font-serif text-2xl font-bold text-[var(--foreground)]">
+      <h2 className="mb-2 font-serif text-2xl font-medium text-[var(--foreground)]">
         Saved to your library
       </h2>
       <p className="mb-10 max-w-[400px] text-center text-[var(--muted-foreground)]">{confirmation.title}</p>

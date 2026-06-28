@@ -355,12 +355,12 @@ export default function AccountPage() {
         <div className="space-y-6 max-w-4xl [&_[data-slot=card]]:ring-0 [&_[data-slot=card]]:hover:ring-0 [&_[data-slot=card]]:border [&_[data-slot=card]]:border-border [&_[data-slot=card-header]]:px-6 [&_[data-slot=card-header]]:pt-6 [&_[data-slot=card-content]]:px-6 [&_[data-slot=card-content]]:pb-6">
             {/* Stripe return sync banner */}
             {isStripeReturn && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-accent/10 border border-border-strong rounded-lg p-4">
                     <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <CheckCircle className="w-5 h-5 text-accent" />
                         <div>
-                            <h3 className="font-medium text-green-800">Syncing your subscription...</h3>
-                            <p className="text-sm text-green-700">
+                            <h3 className="font-medium text-content-primary">Syncing your subscription...</h3>
+                            <p className="text-sm text-content-secondary">
                                 We&apos;re refreshing your billing status from Stripe.
                             </p>
                         </div>
@@ -369,7 +369,7 @@ export default function AccountPage() {
             )}
 
             <div>
-                <h1 className="text-2xl font-semibold tracking-tight">account settings</h1>
+                <h1 className="text-2xl font-serif font-medium tracking-tight">account settings</h1>
                 <p className="text-sm text-muted-foreground">manage your account and subscription.</p>
             </div>
 
@@ -489,7 +489,7 @@ export default function AccountPage() {
                                 </div>
                             </div>
                             {profileMsg && (
-                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-accent/10 text-content-primary border border-border-strong' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
                                     {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                     {profileMsg.text}
                                 </div>
@@ -534,7 +534,7 @@ export default function AccountPage() {
                                 </div>
                             </div>
                             {profileMsg && (
-                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${profileMsg.type === 'success' ? 'bg-accent/10 text-content-primary border border-border-strong' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
                                     {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                     {profileMsg.text}
                                 </div>
@@ -646,7 +646,7 @@ export default function AccountPage() {
                             </p>
 
                             {interestsMsg && (
-                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${interestsMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${interestsMsg.type === 'success' ? 'bg-accent/10 text-content-primary border border-border-strong' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
                                     {interestsMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                     {interestsMsg.text}
                                 </div>
@@ -678,7 +678,7 @@ export default function AccountPage() {
                                 </div>
                             )}
                             {interestsMsg && (
-                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${interestsMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${interestsMsg.type === 'success' ? 'bg-accent/10 text-content-primary border border-border-strong' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
                                     {interestsMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                     {interestsMsg.text}
                                 </div>
@@ -700,12 +700,12 @@ export default function AccountPage() {
                     <div className="space-y-4">
                         {/* Success banner after checkout return */}
                         {stripeReturnState === 'success' && session?.user?.plan === 'PRO' && (
-                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-green-800">
+                            <div className="p-4 bg-accent/10 border border-border-strong rounded-lg">
+                                <div className="flex items-center gap-2 text-accent">
                                     <CheckCircle className="w-5 h-5" />
-                                    <span className="font-medium">Welcome to Corpus Pro!</span>
+                                    <span className="font-medium text-content-primary">Welcome to Corpus Pro!</span>
                                 </div>
-                                <p className="text-green-700 text-sm mt-1">
+                                <p className="text-content-secondary text-sm mt-1">
                                     Your account has been upgraded successfully. You now have access to unlimited entries and all premium features.
                                 </p>
                             </div>
@@ -748,8 +748,8 @@ export default function AccountPage() {
 
                                 {/* Status-specific messages and actions */}
                                 {(session?.user as any)?.subscriptionStatus === 'canceling' && (
-                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-3">
-                                        <p className="text-amber-800 text-sm">
+                                    <div className="p-3 bg-accent-muted border border-border-strong rounded-lg mb-3">
+                                        <p className="text-content-primary text-sm">
                                             Your Pro subscription is canceled and will end on {new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}. You'll keep Pro access until then.
                                         </p>
                                         <Button size="sm" className="mt-2" onClick={() => window.location.href = '/pricing'}>
@@ -759,8 +759,8 @@ export default function AccountPage() {
                                 )}
 
                                 {(session?.user as any)?.subscriptionStatus === 'past_due' && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
-                                        <p className="text-red-800 text-sm">
+                                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg mb-3">
+                                        <p className="text-destructive text-sm">
                                             Your payment failed. Update your payment method to keep Pro access.
                                         </p>
                                         <Button
@@ -818,7 +818,7 @@ export default function AccountPage() {
 
                         {isLifetimePro && (
                             <div>
-                                <p className="text-sm text-green-600 font-medium">
+                                <p className="text-sm text-accent font-medium">
                                     Lifetime Pro — no billing required
                                 </p>
                                 <p className="text-sm text-muted-foreground">
@@ -869,8 +869,8 @@ export default function AccountPage() {
 
                     {message && (
                         <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${message.type === 'success'
-                            ? 'bg-green-50 text-green-800 border border-green-200'
-                            : 'bg-red-50 text-red-800 border border-red-200'
+                            ? 'bg-accent/10 text-content-primary border border-border-strong'
+                            : 'bg-destructive/10 text-destructive border border-destructive/20'
                             }`}>
                             {message.type === 'success' ? (
                                 <CheckCircle className="w-4 h-4" />
@@ -1103,8 +1103,8 @@ export default function AccountPage() {
 
                             {verificationMsg && (
                                 <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${verificationMsg.type === 'success'
-                                    ? 'bg-green-50 text-green-800 border border-green-200'
-                                    : 'bg-red-50 text-red-800 border border-red-200'
+                                    ? 'bg-accent/10 text-content-primary border border-border-strong'
+                                    : 'bg-destructive/10 text-destructive border border-destructive/20'
                                     }`}>
                                     {verificationMsg.type === 'success' ? (
                                         <CheckCircle className="w-4 h-4" />

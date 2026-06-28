@@ -92,7 +92,7 @@ export default function SignupForm() {
         </div>
 
         {(errorMessage || signupError) && (
-          <div className="text-sm font-medium text-red-500 bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
             {signupError || errorMessage}
           </div>
         )}

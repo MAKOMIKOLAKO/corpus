@@ -89,7 +89,7 @@ export default function PricingPage() {
       />
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">
+          <h1 className="text-4xl font-serif font-medium tracking-tight mb-4">
             Simple, transparent pricing
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -109,56 +109,56 @@ export default function PricingPage() {
             <CardContent className="space-y-6 flex-1 flex flex-col">
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>50 saved entries</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>1 personal collection</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>Join shared collections as viewer</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>Paper and book search</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>AI metadata extraction</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>Full text search</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>Chrome extension</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-accent" />
                   <span>Research connections and labs</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-400">Unlimited entries (grayed out)</span>
+                  <X className="w-5 h-5 text-content-tertiary" />
+                  <span className="text-content-tertiary">Unlimited entries (grayed out)</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-400">Unlimited collections (grayed out)</span>
+                  <X className="w-5 h-5 text-content-tertiary" />
+                  <span className="text-content-tertiary">Unlimited collections (grayed out)</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-400">Create shared collections (grayed out)</span>
+                  <X className="w-5 h-5 text-content-tertiary" />
+                  <span className="text-content-tertiary">Create shared collections (grayed out)</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-400">Batch entry actions (grayed out)</span>
+                  <X className="w-5 h-5 text-content-tertiary" />
+                  <span className="text-content-tertiary">Batch entry actions (grayed out)</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-400">Priority queue processing (grayed out)</span>
+                  <X className="w-5 h-5 text-content-tertiary" />
+                  <span className="text-content-tertiary">Priority queue processing (grayed out)</span>
                 </li>
               </ul>
               <div className="mt-auto">
@@ -209,35 +209,35 @@ export default function PricingPage() {
                 <p className="text-sm font-medium text-muted-foreground mb-4">Everything in Free, plus:</p>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Unlimited saved entries</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Everything in Free</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Unlimited personal collections</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Create shared collections with role-based permissions</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Contribute to shared collections</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Batch entry actions</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Priority queue processing</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-accent" />
                     <span>Early access to new features</span>
                   </li>
                 </ul>

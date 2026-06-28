@@ -223,7 +223,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 hover:bg-[var(--accent)] cursor-pointer transition-colors ${!notification.read ? 'bg-[var(--muted)]/20' : ''
+                    className={`p-3 hover:bg-warm-sand cursor-pointer transition-colors ${!notification.read ? 'bg-[var(--muted)]/20' : ''
                       }`}
                     onClick={() => handleNotificationClick(notification)}
                   >

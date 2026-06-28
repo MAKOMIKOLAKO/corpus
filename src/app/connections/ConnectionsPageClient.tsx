@@ -139,7 +139,7 @@ export default function ConnectionsPageClient() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">connections</h1>
+        <h1 className="text-2xl font-serif font-medium tracking-tight">connections</h1>
         <p className="text-sm text-[var(--muted-foreground)] mt-1">Find people, manage requests, and shared entries.</p>
       </div>
 
@@ -410,8 +410,8 @@ export default function ConnectionsPageClient() {
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     PENDING: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
-    ACCEPTED: 'text-green-600 bg-green-50 dark:bg-green-900/20',
-    DECLINED: 'text-red-500 bg-red-50 dark:bg-red-900/20',
+    ACCEPTED: 'text-accent bg-accent/10',
+    DECLINED: 'text-destructive bg-destructive/10',
   };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${map[status] || ''}`}>
@@ -460,7 +460,7 @@ function ConnectionActionButton({
     );
   }
   if (user.connectionStatus === 'ACCEPTED') {
-    return <span className="text-xs text-green-600 flex items-center gap-1"><UserCheck className="w-3 h-3" />Connected</span>;
+    return <span className="text-xs text-accent flex items-center gap-1"><UserCheck className="w-3 h-3" />Connected</span>;
   }
   return null;
 }
