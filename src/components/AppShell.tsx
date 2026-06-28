@@ -10,7 +10,7 @@ import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, BookOpen, Folder, MessageSquare, Plus, FlaskConical, Shield } from "lucide-react";
+import { Users, BookOpen, Folder, MessageSquare, Plus, Shield } from "lucide-react";
 
 export function AppShell({
   children,
@@ -213,14 +213,6 @@ export function AppShell({
                         </span>
                       )}
                     </Link>
-                    <Link
-                      href="/research"
-                      className={`${desktopNavLinkClassName} ${pathname?.startsWith("/research") ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
-                      aria-current={pathname?.startsWith("/research") ? "page" : undefined}
-                    >
-                      <FlaskConical className="w-4 h-4" />
-                      research
-                    </Link>
                     {isAdmin && (
                       <Link
                         href="/admin"
@@ -298,13 +290,6 @@ export function AppShell({
                         {pendingCount > 9 ? '9+' : pendingCount}
                       </span>
                     )}
-                  </Link>
-                  <Link
-                    href="/research"
-                    className={`${mobileNavLinkClassName} ${pathname?.startsWith("/research") ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
-                  >
-                    <FlaskConical className="w-5 h-5" />
-                    research
                   </Link>
                   {isAdmin && (
                     <Link
