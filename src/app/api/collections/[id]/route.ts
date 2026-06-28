@@ -6,15 +6,7 @@ import {
   canManageCollection,
   canViewCollection,
 } from '@/lib/collectionPermissions';
-import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
 import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsOptionsHeaders(),
-  });
-}
 
 export async function GET(
   request: NextRequest,
@@ -55,7 +47,7 @@ export async function GET(
     if (!collection) {
       return NextResponse.json(
         { error: 'Collection not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -63,13 +55,13 @@ export async function GET(
       if (!canViewCollection(userId, collection)) {
         return NextResponse.json(
           { error: 'Not found' },
-          { status: 404, headers: corsJsonHeaders() }
+          { status: 404 }
         );
       }
     } else if (!collection.isPublic) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401, headers: corsJsonHeaders() }
+        { status: 401 }
       );
     }
 
@@ -98,13 +90,12 @@ export async function GET(
 
     return NextResponse.json(
       { ...transformedCollection, activeAlertCount },
-      { headers: corsJsonHeaders() }
     );
   } catch (error) {
     console.error('[api/collections/[id] GET]', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }
@@ -147,18 +138,18 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(collection, { headers: corsJsonHeaders() });
+    return NextResponse.json(collection);
   } catch (error) {
     console.error('[api/collections/[id] PATCH]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
         { error: 'Database error. Please try again.' },
-        { status: 500, headers: corsJsonHeaders() }
+        { status: 500 }
       );
     }
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }
@@ -197,19 +188,18 @@ export async function DELETE(
 
     return NextResponse.json(
       { message: 'Collection deleted successfully' },
-      { headers: corsJsonHeaders() }
     );
   } catch (error) {
     console.error('[api/collections/[id] DELETE]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
         { error: 'Database error. Please try again.' },
-        { status: 500, headers: corsJsonHeaders() }
+        { status: 500 }
       );
     }
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }
