@@ -2,19 +2,19 @@ import { Plan } from '@prisma/client'
 
 export const PLAN_LIMITS = {
   FREE: {
-    maxEntries: 50,
-    maxFeeds: 1,
-    maxPersonalCollections: 1,
-    canCreateSharedCollections: false,
-    canContributeToSharedCollections: false,
+    maxEntries: Infinity,
+    maxFeeds: Infinity,
+    maxPersonalCollections: Infinity,
+    canCreateSharedCollections: true,
+    canContributeToSharedCollections: true,
     canViewSharedCollections: true,
-    queuePriority: 'standard',
-    batchActions: false,
-    advancedSearch: false,
-    bibliographyGeneration: false,
-    researchFeed: false,
-    readingAssistantFeed: false,
-    paperComparison: false,
+    queuePriority: 'priority',
+    batchActions: true,
+    advancedSearch: true,
+    bibliographyGeneration: true,
+    researchFeed: true,
+    readingAssistantFeed: true,
+    paperComparison: true,
   },
   PRO: {
     maxEntries: Infinity,
@@ -58,26 +58,12 @@ export function canAddEntry(
   plan: Plan,
   currentEntryCount: number
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (currentEntryCount >= limits.maxEntries) {
-    return {
-      allowed: false,
-      reason: 'entry_limit_reached'
-    }
-  }
   return { allowed: true }
 }
 
 export function canUseBibliographyGeneration(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (!limits.bibliographyGeneration) {
-    return {
-      allowed: false,
-      reason: 'bibliography_pro_only'
-    }
-  }
   return { allowed: true }
 }
 
@@ -85,13 +71,6 @@ export function canCreatePersonalCollection(
   plan: Plan,
   currentPersonalCollectionCount: number
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (currentPersonalCollectionCount >= limits.maxPersonalCollections) {
-    return {
-      allowed: false,
-      reason: 'personal_collection_limit_reached'
-    }
-  }
   return { allowed: true }
 }
 
@@ -99,70 +78,35 @@ export function canAddFeed(
   plan: Plan,
   currentFeedCount: number
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (currentFeedCount >= limits.maxFeeds) {
-    return {
-      allowed: false,
-      reason: 'feed_limit_reached'
-    }
-  }
   return { allowed: true }
 }
 
 export function canCreateSharedCollection(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (!limits.canCreateSharedCollections) {
-    return {
-      allowed: false,
-      reason: 'shared_collections_pro_only'
-    }
-  }
   return { allowed: true }
 }
 
 export function canContributeToSharedCollection(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (!limits.canContributeToSharedCollections) {
-    return {
-      allowed: false,
-      reason: 'contribution_pro_only'
-    }
-  }
   return { allowed: true }
 }
 
 export function canUseBatchActions(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (!limits.batchActions) {
-    return {
-      allowed: false,
-      reason: 'batch_actions_pro_only'
-    }
-  }
   return { allowed: true }
 }
 
 export function canUseAdvancedSearch(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  const limits = getUserLimits(plan)
-  if (!limits.advancedSearch) {
-    return {
-      allowed: false,
-      reason: 'advanced_search_pro_only'
-    }
-  }
   return { allowed: true }
 }
 
 export function isPro(plan: Plan): boolean {
-  return plan === 'PRO' || plan === 'LIFETIME_PRO'
+  return true
 }
 
 export function getUserPlan(user: { plan: Plan } | null): Plan {
@@ -170,26 +114,23 @@ export function getUserPlan(user: { plan: Plan } | null): Plan {
 }
 
 export function hasPaidFeature(plan: Plan, feature: string): boolean {
-  return isPro(plan)
+  return true
 }
 
 export function canUseResearchFeed(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  if (!isPro(plan)) return { allowed: false, reason: 'research_feed_pro_only' }
   return { allowed: true }
 }
 
 export function canUseReadingAssistantFeed(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  if (!isPro(plan)) return { allowed: false, reason: 'reading_assistant_pro_only' }
   return { allowed: true }
 }
 
 export function canUsePaperComparison(
   plan: Plan
 ): { allowed: boolean; reason?: string } {
-  if (!isPro(plan)) return { allowed: false, reason: 'paper_comparison_pro_only' }
   return { allowed: true }
 }
