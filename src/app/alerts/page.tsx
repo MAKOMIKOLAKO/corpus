@@ -1,13 +1,2 @@
 import { redirect } from 'next/navigation'
-import { Metadata } from 'next'
-
-export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
-export default function AlertsRedirectPage() {
-  redirect('/research?tab=discover')
-}
+export default function Page() { redirect('/library') }

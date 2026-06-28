@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { discoverFeed } from '@/lib/feedDetector';
@@ -11,6 +11,7 @@ import {
 
 // GET /api/feeds - List user's feeds
 export async function GET() {
+  if (process.env.FEATURE_RESEARCH_FEEDS !== 'enabled') return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
@@ -47,6 +48,7 @@ export async function GET() {
 
 // POST /api/feeds - Add a new feed
 export async function POST(request: NextRequest) {
+  if (process.env.FEATURE_RESEARCH_FEEDS !== 'enabled') return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
