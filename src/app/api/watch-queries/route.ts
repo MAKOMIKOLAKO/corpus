@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
@@ -15,6 +15,7 @@ const createWatchQuerySchema = z.object({
 });
 
 export async function GET() {
+  if (process.env.FEATURE_RESEARCH_FEEDS !== 'enabled') return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
@@ -61,6 +62,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (process.env.FEATURE_RESEARCH_FEEDS !== 'enabled') return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const startedAt = Date.now();
   try {
     const session = await getServerSession(authOptions);
