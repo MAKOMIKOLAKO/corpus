@@ -397,7 +397,8 @@ export default function EntryCard({
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                maxWidth: '440px',
+                                flex: 1,
+                                minWidth: 0,
                                 textDecoration: isCompleted ? 'line-through' : 'none',
                                 textDecorationColor: '#c0bfb9',
                             }}
@@ -405,7 +406,7 @@ export default function EntryCard({
                             {displayTitle}
                         </span>
                         {entry.authors && entry.authors.length > 0 && (
-                            <span style={{ color: '#87867f', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0 }}>
+                            <span style={{ color: '#87867f', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0, maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 — {entry.authors.slice(0, 3).join(', ')}{entry.authors.length > 3 ? ` +${entry.authors.length - 3}` : ''}
                             </span>
                         )}

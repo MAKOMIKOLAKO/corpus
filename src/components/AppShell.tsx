@@ -278,7 +278,7 @@ export function AppShell({
           </header>
           <main
             id="main-content"
-            className="max-w-4xl mx-auto px-4 py-6 sm:py-12"
+            className="max-w-5xl mx-auto px-4 py-6 sm:py-12"
             role="main"
             tabIndex={-1}
           >
