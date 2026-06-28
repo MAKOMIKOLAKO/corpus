@@ -952,7 +952,7 @@ function PreviewForm({
         </Field>
 
         {item.openAccessUrl && (
-          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+          <p className="text-xs text-emerald-600">
             Free full text available →{' '}
             <a
               href={item.openAccessUrl}

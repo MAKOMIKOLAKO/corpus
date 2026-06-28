@@ -589,8 +589,8 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
             </div>
 
             {activeQueryCount >= MAX_QUERIES_PER_USER && (
-              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900">
-                <p className="text-xs text-amber-900 dark:text-amber-200">
+              <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <p className="text-xs text-amber-900">
                   Maximum active alerts reached
                 </p>
               </div>

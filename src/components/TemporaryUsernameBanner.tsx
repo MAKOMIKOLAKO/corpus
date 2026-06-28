@@ -87,14 +87,14 @@ export default function TemporaryUsernameBanner() {
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 dark:border-blue-800">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <User className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+            <p className="text-sm text-blue-800">
               {hasNoUsername ? (
                 <span>
                   <span className="font-medium">Welcome to Corpus!</span> Personalize your profile by setting a unique username that others can use to find you.
@@ -119,7 +119,7 @@ export default function TemporaryUsernameBanner() {
             </Link>
             <button
               onClick={handleDismiss}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition-colors p-1"
+              className="text-blue-600 hover:text-blue-800 transition-colors p-1"
             >
               <X className="w-4 h-4" />
             </button>

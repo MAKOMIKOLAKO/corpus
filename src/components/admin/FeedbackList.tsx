@@ -105,7 +105,7 @@ export function FeedbackList({ dateRange }: FeedbackListProps) {
             className={`w-4 h-4 ${
               star <= rating
                 ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300 dark:text-gray-600'
+                : 'text-gray-300'
             }`}
           />
         ))}

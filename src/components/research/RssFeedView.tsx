@@ -129,7 +129,7 @@ const RSSEntryCard = React.memo(function RSSEntryCard({ entry }: { entry: RSSEnt
             onClick={handleAddToLibrary}
             disabled={isAdding || isAdded}
             className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border transition-all touch-manipulation ${isAdded
-              ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'
+              ? 'bg-green-50 border-green-200 text-green-700'
               : 'bg-background border-border hover:bg-muted hover:text-foreground'
               }`}
           >
@@ -373,7 +373,7 @@ export function RssFeedView({ userId }: RssFeedViewProps) {
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">{feed.domain}</p>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${feed.isDefault
-                        ? 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:bg-emerald-900/20'
+                        ? 'border-emerald-300 text-emerald-700 bg-emerald-50'
                         : 'border-border text-muted-foreground bg-background'
                         }`}>
                         {feed.isDefault ? 'Curated' : 'Custom'}
