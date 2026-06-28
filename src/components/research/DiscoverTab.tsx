@@ -1,3 +1,4 @@
+// HIDDEN — feature disabled, do not import
 'use client'
 
 import { useState } from 'react'

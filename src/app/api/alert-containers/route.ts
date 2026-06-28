@@ -1,8 +1,10 @@
 import { getCurrentUserId } from '@/lib/session';
 import prisma from '@/lib/prisma';
 import { timedJson } from '@/lib/serverTiming';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
+  if (process.env.FEATURE_RESEARCH_FEEDS !== 'enabled') return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const startedAt = Date.now();
   try {
     const userId = await getCurrentUserId();
