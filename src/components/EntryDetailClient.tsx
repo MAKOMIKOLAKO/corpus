@@ -337,7 +337,7 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                                         </div>
                                         <button
                                             onClick={() => handleRemoveFromCollection(collection.id)}
-                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm ml-2"
+                                            className="text-red-600 hover:text-red-700 text-sm ml-2"
                                         >
                                             Remove
                                         </button>

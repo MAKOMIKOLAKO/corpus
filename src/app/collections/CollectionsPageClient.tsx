@@ -688,7 +688,7 @@ export default function CollectionsPage() {
                             </div>
 
                             {formError && (
-                                <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+                                <p className="text-sm text-red-600">{formError}</p>
                             )}
 
                             <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -769,7 +769,7 @@ export default function CollectionsPage() {
                             </div>
 
                             {editFormError && (
-                                <p className="text-sm text-red-600 dark:text-red-400">{editFormError}</p>
+                                <p className="text-sm text-red-600">{editFormError}</p>
                             )}
 
                             <div className="flex flex-col sm:flex-row gap-2 pt-2">

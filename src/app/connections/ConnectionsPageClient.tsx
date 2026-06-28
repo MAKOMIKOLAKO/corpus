@@ -409,7 +409,7 @@ export default function ConnectionsPageClient() {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    PENDING: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
+    PENDING: 'text-yellow-600 bg-yellow-50',
     ACCEPTED: 'text-accent bg-accent/10',
     DECLINED: 'text-destructive bg-destructive/10',
   };

@@ -15,22 +15,22 @@
     /* Ivory */
     --card-foreground: #1e2d27;
     /* Deep Forest */
-    --popover: #ffffff;
-    /* Pure White */
+    --popover: #f7f4ee;
+    /* Ivory */
     --popover-foreground: #1e2d27;
     /* Deep Forest */
-    --primary: #1e2d27;
-    /* Deep Forest */
+    --primary: #c96442;
+    /* Terracotta */
     --primary-foreground: #f7f4ee;
     /* Ivory */
     --secondary: #e2ddd4;
     /* Warm Sand */
-    --secondary-foreground: #2d3d36;
-    /* Dark Text Warm */
+    --secondary-foreground: #1e2d27;
+    /* Deep Forest */
     --muted: #e8e4d8;
     /* Border Cream */
-    --muted-foreground: #7a8e86;
-    /* Stone Green */
+    --muted-foreground: #4a5e56;
+    /* Muted Forest */
     --accent: #c96442;
     /* Terracotta Brand */
     --accent-hover: #b55537;
@@ -41,6 +41,8 @@
     /* Ivory */
     --destructive: #b53333;
     /* Error Crimson */
+    --destructive-foreground: #f7f4ee;
+    /* Ivory */
     --border: #e8e4d8;
     /* Border Cream */
     --border-default: #e8e4d8;
@@ -49,10 +51,10 @@
     /* Parchment */
     --border-strong: #ddd8cc;
     /* Border Prominent */
-    --input: #e2ddd4;
-    /* Warm Sand */
-    --ring: #3898ec;
-    /* Focus Blue - only cool color */
+    --input: #e8e4d8;
+    /* Border Cream */
+    --ring: #c96442;
+    /* Terracotta Brand */
 
     --surface-base: #f0ede4;
     /* Parchment */
@@ -98,101 +100,23 @@
     /* Border Warm */
     --sidebar-ring: #c96442;
     /* Terracotta Brand */
-  }
 
-  .dark {
-    /* Natural Theme - Dark Mode */
-    --background: #1e2d27;
-    /* Deep Forest */
-    --foreground: #f0ede4;
-    /* Parchment */
-    --card: #2d3d36;
-    /* Dark Surface */
-    --card-foreground: #f0ede4;
-    /* Parchment */
-    --popover: #2d3d36;
-    /* Dark Surface */
-    --popover-foreground: #f0ede4;
-    /* Parchment */
-    --primary: #f0ede4;
-    /* Parchment */
-    --primary-foreground: #1e2d27;
-    /* Deep Forest */
-    --secondary: #2d3d36;
-    /* Dark Surface */
-    --secondary-foreground: #f0ede4;
-    /* Parchment */
-    --muted: #3d4f47;
-    /* Dark Warm */
-    --muted-foreground: #b8c4be;
-    /* Warm Silver */
-    --accent: #c96442;
-    /* Terracotta Brand */
-    --accent-hover: #d97757;
-    /* Coral Accent */
-    --accent-muted: rgba(201, 100, 66, 0.18);
-    /* Terracotta muted dark */
-    --accent-foreground: #f0ede4;
-    /* Parchment */
-    --destructive: #b53333;
-    /* Error Crimson */
-    --border: #3d4f47;
-    /* Dark Border */
-    --border-default: #3d4f47;
-    /* Dark Border */
-    --border-subtle: #2d3d36;
-    /* Dark Surface */
-    --border-strong: #3d4f47;
-    /* Dark Warm */
-    --input: #2d3d36;
-    /* Dark Surface */
-    --ring: #3898ec;
-    /* Focus Blue - only cool color */
-
-    --surface-base: #1e2d27;
-    /* Deep Forest */
-    --surface-raised: #2d3d36;
-    /* Dark Surface */
-    --surface-overlay: #2d3d36;
-    /* Dark Surface */
-    --surface-sunken: #1a2820;
-    /* Very Dark */
-
-    --content-primary: #f0ede4;
-    /* Parchment */
-    --content-secondary: #b8c4be;
-    /* Warm Silver */
+    /* Custom Natural Theme Variables */
+    --warm-sand: #e2ddd4;
+    --parchment: #f0ede4;
+    --ivory: #f7f4ee;
+    --near-black: #1e2d27;
+    --olive-gray: #4a5e56;
+    --stone-gray: #7a8e86;
+    --border-cream: #e8e4d8;
+    --dark-surface: #2d3d36;
+    --content-primary: #1e2d27;
+    --content-secondary: #4a5e56;
     --content-tertiary: #7a8e86;
-    /* Stone Green */
-    --content-inverse: #1e2d27;
-    /* Deep Forest */
-
-    --chart-1: #c96442;
-    /* Terracotta Brand */
-    --chart-2: #f0ede4;
-    /* Parchment */
-    --chart-3: #b8c4be;
-    /* Warm Silver */
-    --chart-4: #7a8e86;
-    /* Stone Green */
-    --chart-5: #4a5e56;
-    /* Muted Forest */
-    --sidebar: #2d3d36;
-    /* Dark Surface */
-    --sidebar-foreground: #f0ede4;
-    /* Parchment */
-    --sidebar-primary: #f0ede4;
-    /* Parchment */
-    --sidebar-primary-foreground: #1e2d27;
-    /* Deep Forest */
-    --sidebar-accent: #2d3d36;
-    /* Dark Surface */
-    --sidebar-accent-foreground: #f0ede4;
-    /* Parchment */
-    --sidebar-border: #3d4f47;
-    /* Dark Border */
-    --sidebar-ring: #c96442;
-    /* Terracotta Brand */
+    --surface-raised: #f7f4ee;
+    --surface-sunken: #e8e4d8;
+    --terracotta: #c96442;
+    --terracotta-hover: #b5572e;
   }
 
   .theme {

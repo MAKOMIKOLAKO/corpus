@@ -8,7 +8,6 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { BookOpen, Folder, MessageSquare, Plus, Shield } from "lucide-react";
 
 export function AppShell({
@@ -184,7 +183,6 @@ export function AppShell({
                         admin
                       </Link>
                     )}
-                    <ThemeToggle />
                     <div className="h-4 w-px shrink-0 bg-border mx-2" aria-hidden="true" />
                     <button
                       onClick={() => setShowFeedback(true)}
@@ -248,10 +246,6 @@ export function AppShell({
                       admin
                     </Link>
                   )}
-                  <div className="px-4 py-2">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12px] text-content-tertiary">Appearance</p>
-                    <ThemeToggle />
-                  </div>
                   <button
                     onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}
                     className="flex h-12 items-center gap-3 rounded-lg px-4 text-left text-[15px] font-sans font-medium text-content-secondary transition-colors hover:bg-warm-sand hover:text-content-primary"

@@ -7,7 +7,6 @@ import { authOptions } from "@/lib/authOptions";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { AppShell } from "@/components/AppShell";
 import { TimezoneSync } from "@/components/TimezoneSync";
-import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -24,10 +23,7 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 5,
   },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f0ede4' },
-    { media: '(prefers-color-scheme: dark)', color: '#1e2d27' },
-  ],
+  themeColor: '#f0ede4',
   icons: {
     icon: [
       { url: '/favicon.png', sizes: 'any' },
@@ -91,30 +87,6 @@ export const metadata: Metadata = {
   },
 }
 
-function ThemeBootstrapScript() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-          (function() {
-            try {
-              var theme = localStorage.getItem('corpus-theme');
-              if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.add('light');
-              }
-            } catch (e) {
-              document.documentElement.classList.add('light');
-            }
-          })();
-        `,
-      }}
-    />
-  );
-}
-
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -127,17 +99,14 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <ThemeBootstrapScript />
       </head>
-      <body className="antialiased min-h-screen bg-[var(--background)] text-[var(--foreground)] theme-transition">
-        <ThemeProvider>
-          <NextAuthProvider>
-            <AppShell session={session}>
-              <SkipToMainLink />
-              {children}
-            </AppShell>
-          </NextAuthProvider>
-        </ThemeProvider>
+      <body className="antialiased min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <NextAuthProvider>
+          <AppShell session={session}>
+            <SkipToMainLink />
+            {children}
+          </AppShell>
+        </NextAuthProvider>
         <Toaster />
       </body>
     </html>
