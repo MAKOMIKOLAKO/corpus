@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Loader2, Users, Check, X, Globe, Eye, Trash2, Crown, MoreHorizontal, Edit } from 'lucide-react';
+import { Plus, Loader2, X } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
+import { useLibrary } from '@/hooks/useLibrary';
+import EntryCard from '@/components/EntryCard';
 
 interface CollectionInvite {
     id: string;
@@ -46,7 +46,7 @@ interface Collection {
         username?: string | null;
     } | null;
     isDiscovery?: boolean;
-    metadata?: any; // Journal Club metadata
+    metadata?: any;
     entries?: Array<{
         entry: {
             id: string;
@@ -59,26 +59,94 @@ interface Collection {
     };
 }
 
-function sliceTitle(title: string, max = 140) {
-    return title.length > max ? `${title.slice(0, max - 3)}...` : title;
-}
+const STATUS_TABS = [
+    { label: 'All', value: '' },
+    { label: 'Unread', value: 'UNREAD' },
+    { label: 'In Progress', value: 'IN_PROGRESS' },
+    { label: 'Completed', value: 'COMPLETED' },
+];
 
-// Loading skeleton component
-function CollectionsLoading() {
+function CollectionRightPanel({ collectionId, collectionName }: { collectionId: string | null; collectionName: string }) {
+    const [statusFilter, setStatusFilter] = useState('');
+    const { entries, total, loading, hasMore, loadMore } = useLibrary({
+        collectionId: collectionId ?? undefined,
+        readingStatus: statusFilter || undefined,
+    });
+
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                    <CardHeader>
-                        <div className="h-5 bg-[var(--muted)] rounded w-3/4"></div>
-                        <div className="h-4 bg-[var(--muted)] rounded w-1/2"></div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-4 bg-[var(--muted)] rounded w-full mb-2"></div>
-                        <div className="h-4 bg-[var(--muted)] rounded w-2/3"></div>
-                    </CardContent>
-                </Card>
-            ))}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f5f4ed' }}>
+            {/* Filter bar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: '44px', borderBottom: '1px solid #f0eee6', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {STATUS_TABS.map((tab) => (
+                        <button
+                            key={tab.value}
+                            onClick={() => setStatusFilter(tab.value)}
+                            style={{
+                                padding: '4px 10px',
+                                fontSize: '13px',
+                                color: statusFilter === tab.value ? '#c96442' : '#5e5d59',
+                                cursor: 'pointer',
+                                borderBottom: statusFilter === tab.value ? '2px solid #c96442' : '2px solid transparent',
+                                borderTop: 'none',
+                                borderLeft: 'none',
+                                borderRight: 'none',
+                                background: 'none',
+                                fontFamily: 'system-ui, sans-serif',
+                                transition: 'color 100ms, border-color 100ms',
+                            }}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Count */}
+            <div style={{ padding: '6px 16px', fontSize: '12px', color: '#87867f', borderBottom: '1px solid #f0eee6', flexShrink: 0 }}>
+                {loading ? 'loading…' : `${total} ${total === 1 ? 'entry' : 'entries'}`}
+            </div>
+
+            {/* Entries */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                {!loading && entries.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '48px 16px', color: '#87867f', fontSize: '13px' }}>
+                        {collectionId ? 'No entries in this collection yet.' : 'Select a collection to view entries.'}
+                    </div>
+                ) : (
+                    <>
+                        {entries.map((entry) => (
+                            <EntryCard
+                                key={entry.id}
+                                entry={entry}
+                                scrollPositionKey={`collection-${collectionId}`}
+                                fromPath="/collections"
+                                hideCollectionPill
+                            />
+                        ))}
+                        {hasMore && (
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}>
+                                <button
+                                    onClick={loadMore}
+                                    disabled={loading}
+                                    style={{
+                                        padding: '4px 16px',
+                                        border: '1px solid #f0eee6',
+                                        borderRadius: '6px',
+                                        background: '#faf9f5',
+                                        fontSize: '12px',
+                                        color: '#5e5d59',
+                                        cursor: 'pointer',
+                                        fontFamily: 'system-ui, sans-serif',
+                                    }}
+                                >
+                                    Load more
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
@@ -100,6 +168,7 @@ export default function CollectionsPage() {
     const [updating, setUpdating] = useState(false);
     const [editFormError, setEditFormError] = useState<string | null>(null);
     const [editTouched, setEditTouched] = useState<{ name: boolean; description: boolean }>({ name: false, description: false });
+    const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
     const apiKey = useApiKey();
     const { data: session } = useSession();
     const router = useRouter();
@@ -139,7 +208,6 @@ export default function CollectionsPage() {
             });
             if (response.ok) {
                 const data = await response.json();
-                // Transform userEntryCollections to entries format for UI compatibility
                 const transformCollection = (c: any) => ({
                     ...c,
                     entries: c.userEntryCollections?.map((uec: any) => ({
@@ -157,6 +225,11 @@ export default function CollectionsPage() {
                 ];
                 if (isCancelled?.()) return;
                 setCollections(collectionsWithOwnership);
+                // Auto-select first collection
+                if (collectionsWithOwnership.length > 0 && !activeCollectionId) {
+                    const firstMine = collectionsWithOwnership.filter((c: any) => !c.isDiscovery)[0];
+                    if (firstMine) setActiveCollectionId(firstMine.id);
+                }
             }
         } catch (error) {
             if (isCancelled?.()) return;
@@ -223,10 +296,8 @@ export default function CollectionsPage() {
             const data = await response.json().catch(() => ({}));
 
             if (response.ok && data?.id) {
-                // Reset and navigate to the newly created collection
                 setNewCollection({ name: '', description: '' });
                 setShowCreateModal(false);
-                // Optimistically update list
                 fetchCollections();
                 router.push(`/collections/${data.id}`);
             } else {
@@ -251,7 +322,6 @@ export default function CollectionsPage() {
             });
 
             if (response.ok) {
-                // Refresh both collections and invites
                 await Promise.all([fetchCollections(), fetchInvites()]);
             } else {
                 const data = await response.json();
@@ -278,8 +348,8 @@ export default function CollectionsPage() {
             });
 
             if (response.ok) {
-                // Remove from local state
                 setCollections(prev => prev.filter(c => c.id !== collectionId));
+                if (activeCollectionId === collectionId) setActiveCollectionId(null);
             } else {
                 const data = await response.json();
                 alert(data?.error || 'Failed to delete collection');
@@ -317,7 +387,6 @@ export default function CollectionsPage() {
             const data = await response.json().catch(() => ({}));
 
             if (response.ok && data?.id) {
-                // Reset and refresh
                 setEditingName('');
                 setEditingDescription('');
                 setShowEditModal(false);
@@ -345,18 +414,15 @@ export default function CollectionsPage() {
         setShowDropdown(null);
     };
 
-
     if (loading) {
-        return <div className="text-center py-12">Loading collections...</div>;
+        return <div style={{ textAlign: 'center', padding: '48px', color: '#87867f', fontSize: '14px' }}>Loading collections…</div>;
     }
 
-    // Separate collections into different categories
     const myCollections = collections.filter(c => !c.isDiscovery);
-    const discoveryCollections = collections.filter(c => c.isDiscovery);
+    const activeCollection = myCollections.find(c => c.id === activeCollectionId) ?? null;
 
     return (
-        <div className="space-y-6">
-            {/* Upgrade Banner for Collections Feature */}
+        <div style={{ background: '#f5f4ed', minHeight: '100%' }}>
             {session?.user && !hasPaidFeature(session.user.plan || 'FREE', 'collections') && (
                 <UpgradeBanner
                     message="Create and share collections of entries with other users. Upgrade to Pro to unlock collections."
@@ -364,303 +430,144 @@ export default function CollectionsPage() {
                 />
             )}
 
-            {/* Create Collection Button */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h1 className="text-2xl font-serif font-medium">Collections</h1>
-                <Button
+            {/* Pending invites (compact, above layout) */}
+            {invites.length > 0 && (
+                <div style={{ padding: '12px 20px', borderBottom: '1px solid #f0eee6', background: '#faf9f5' }}>
+                    <div style={{ fontSize: '11px', color: '#87867f', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                        Pending Invites
+                    </div>
+                    {invites.map((invite) => (
+                        <div key={invite.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0eee6' }}>
+                            <div>
+                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#141413' }}>{invite.collection.name}</span>
+                                <span style={{ fontSize: '12px', color: '#87867f', marginLeft: '8px' }}>from {invite.inviter.name || invite.inviter.email}</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                                <button
+                                    onClick={() => handleRespondToInvite(invite.id, 'accept')}
+                                    disabled={respondingToInvite === invite.id}
+                                    style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', border: '1px solid #c96442', background: '#c96442', color: '#fff', cursor: 'pointer' }}
+                                >
+                                    Accept
+                                </button>
+                                <button
+                                    onClick={() => handleRespondToInvite(invite.id, 'decline')}
+                                    disabled={respondingToInvite === invite.id}
+                                    style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', border: '1px solid #f0eee6', background: '#faf9f5', color: '#5e5d59', cursor: 'pointer' }}
+                                >
+                                    Decline
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Mobile: horizontal pill row (below md) */}
+            <div className="md:hidden" style={{ display: 'flex', gap: '6px', padding: '8px 16px', overflowX: 'auto', borderBottom: '1px solid #f0eee6', background: '#f5f4ed', scrollbarWidth: 'none' }}>
+                {myCollections.map((c) => (
+                    <button
+                        key={c.id}
+                        onClick={() => setActiveCollectionId(c.id)}
+                        style={{
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '13px',
+                            whiteSpace: 'nowrap',
+                            cursor: 'pointer',
+                            border: activeCollectionId === c.id ? '1px solid #c96442' : '1px solid #f0eee6',
+                            background: activeCollectionId === c.id ? '#c96442' : '#faf9f5',
+                            color: activeCollectionId === c.id ? '#fff' : '#5e5d59',
+                            transition: 'all 100ms',
+                            flexShrink: 0,
+                        }}
+                    >
+                        {c.name} <span style={{ opacity: 0.7, fontSize: '11px' }}>{c.entryCount ?? c._count.entries}</span>
+                    </button>
+                ))}
+                <button
                     onClick={() => setShowCreateModal(true)}
                     disabled={!session?.user || !hasPaidFeature(session.user.plan || 'FREE', 'collections')}
-                    className="w-full sm:w-auto touch-manipulation h-11 sm:h-9"
+                    style={{
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                        border: '1px dashed #d0cec6',
+                        background: 'none',
+                        color: '#87867f',
+                        flexShrink: 0,
+                    }}
                 >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Collection
-                </Button>
+                    + New
+                </button>
             </div>
 
-            {/* Pending Collection Invites */}
-            {invites.length > 0 && (
-                <div>
-                    <h2 className="text-lg font-semibold mb-4">Pending Invites</h2>
-                    <div className="space-y-3">
-                        {invites.map((invite) => (
-                            <Card key={invite.id} className="p-4">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <h3 className="font-medium text-lg">{invite.collection.name}</h3>
-                                        {invite.collection.description && (
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                {invite.collection.description}
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-muted-foreground mt-2">
-                                            Invited by {invite.inviter.name || invite.inviter.email}
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2 ml-4">
-                                        <Button
-                                            size="sm"
-                                            onClick={() => handleRespondToInvite(invite.id, 'accept')}
-                                            disabled={respondingToInvite === invite.id}
-                                        >
-                                            {respondingToInvite === invite.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                'Accept'
-                                            )}
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => handleRespondToInvite(invite.id, 'decline')}
-                                            disabled={respondingToInvite === invite.id}
-                                        >
-                                            {respondingToInvite === invite.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                'Decline'
-                                            )}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
+            {/* Desktop: two-panel layout */}
+            <div className="hidden md:flex" style={{ height: 'calc(100vh - 140px)', overflow: 'hidden' }}>
+                {/* Left sidebar */}
+                <div style={{ width: '260px', flexShrink: 0, borderRight: '1px solid #f0eee6', overflowY: 'auto', background: '#f5f4ed', display: 'flex', flexDirection: 'column', paddingTop: '12px' }}>
+                    <div style={{ padding: '0 16px 8px', fontSize: '11px', color: '#87867f', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        Collections
                     </div>
-                </div>
-            )}
 
-            {/* Discovery Collections */}
-            {discoveryCollections.length > 0 && (
-                <div>
-                    <h2 className="text-lg font-semibold mb-4">Discovery</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        {discoveryCollections.map((collection) => (
-                            <div key={collection.id} className="relative">
-                                <Link href={`/collections/${collection.id}`}>
-                                    <Card className="h-full cursor-pointer rounded-[12px] border border-slate-300/80 bg-gradient-to-b from-[var(--card)] to-[var(--muted)]/25 ring-0 transition-all duration-200 hover:border-slate-400/90 hover:shadow-[0_0_0_3px_rgba(148,163,184,0.18)] dark:border-slate-700 dark:hover:border-slate-500 dark:hover:shadow-[0_0_0_3px_rgba(100,116,139,0.28)]">
-                                        <CardHeader className="pb-4 pt-5">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1 min-w-0">
-                                                    <CardTitle className="text-xl text-balance break-words">{collection.name}</CardTitle>
-                                                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                        <Globe className="h-3.5 w-3.5" />
-                                                        <span>{collection.user?.name || collection.user?.username || 'Unknown'}</span>
-                                                    </p>
-                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                        <Badge variant="secondary" className="text-xs">Discovery</Badge>
-                                                        {collection.isPublic && (
-                                                            <Badge variant="outline" className="text-xs">Public</Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {collection.publicDescription && (
-                                                <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
-                                                    {collection.publicDescription}
-                                                </p>
-                                            )}
-                                            <div className="mt-3 space-y-1 rounded-md border border-[var(--border)] bg-[var(--muted)]/20 p-2">
-                                                {collection.entries && collection.entries.length > 0 ? (
-                                                    <>
-                                                        {collection.entries.slice(0, 2).map((item) => (
-                                                            <p
-                                                                key={item.entry.id}
-                                                                className="text-xs text-muted-foreground"
-                                                                title={item.entry.title}
-                                                            >
-                                                                • {sliceTitle(item.entry.title)}
-                                                            </p>
-                                                        ))}
-                                                        {(collection.entryCount ?? collection._count.entries) > 2 && (
-                                                            <p className="text-xs text-muted-foreground italic">
-                                                                +{(collection.entryCount ?? collection._count.entries) - 2} more
-                                                            </p>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <p className="text-xs text-muted-foreground italic">No entries yet</p>
-                                                )}
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-4 pb-5">
-                                            <div className="flex items-center text-sm text-muted-foreground">
-                                                <div className="flex flex-wrap items-center gap-4">
-                                                    <div className="flex items-center gap-1">
-                                                        <FileText className="w-4 h-4" />
-                                                        <span className="font-medium">{collection.entryCount ?? collection._count.entries}</span>
-                                                        <span>{(collection.entryCount ?? collection._count.entries) === 1 ? 'entry' : 'entries'}</span>
-                                                    </div>
-                                                    {collection.publicViewCount !== undefined && (
-                                                        <div className="flex items-center gap-1">
-                                                            <Eye className="w-4 h-4" />
-                                                            <span className="font-medium">{collection.publicViewCount}</span>
-                                                            <span>views</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Collections */}
-            {myCollections.length > 0 && (
-                <div>
-                    <h2 className="text-lg font-semibold mb-4">Collections</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        {myCollections.map((collection) => (
-                            <div key={collection.id} className="relative">
-                                <Link href={`/collections/${collection.id}`}>
-                                    <Card className="h-full cursor-pointer rounded-[12px] border border-slate-300/80 bg-gradient-to-b from-[var(--card)] to-[var(--muted)]/25 ring-0 transition-all duration-200 hover:border-slate-400/90 hover:shadow-[0_0_0_3px_rgba(148,163,184,0.18)] dark:border-slate-700 dark:hover:border-slate-500 dark:hover:shadow-[0_0_0_3px_rgba(100,116,139,0.28)]">
-                                        <CardHeader className="pb-4 pt-5">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1 min-w-0">
-                                                    <CardTitle className="text-xl text-balance break-words">{collection.name}</CardTitle>
-                                                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                        <Crown className="h-3.5 w-3.5" />
-                                                        <span>{collection.user?.name || collection.user?.username || 'Unknown owner'}</span>
-                                                    </p>
-                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                        {collection.isOwner && (
-                                                            <Badge variant="default" className="text-xs">Owner</Badge>
-                                                        )}
-                                                        {!collection.isOwner && collection.userRole === 'ADMIN' && (
-                                                            <Badge variant="default" className="text-xs">Admin</Badge>
-                                                        )}
-                                                        {!collection.isOwner && collection.userRole === 'CONTRIBUTOR' && (
-                                                            <Badge variant="outline" className="text-xs">Contributor</Badge>
-                                                        )}
-                                                        {!collection.isOwner && collection.userRole === 'VIEWER' && (
-                                                            <Badge variant="outline" className="text-xs">Member</Badge>
-                                                        )}
-                                                        {collection.isOwner && collection._count?.members && collection._count.members > 0 && (
-                                                            <Badge variant="secondary" className="text-xs">Shared</Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {collection.description && (
-                                                <p className="text-sm text-muted-foreground line-clamp-3 mt-3 leading-relaxed">
-                                                    {collection.description}
-                                                </p>
-                                            )}
-                                            <div className="mt-3 space-y-1 rounded-md border border-[var(--border)] bg-[var(--muted)]/20 p-2">
-                                                {collection.entries && collection.entries.length > 0 ? (
-                                                    <>
-                                                        {collection.entries.slice(0, 2).map((item) => (
-                                                            <p
-                                                                key={item.entry.id}
-                                                                className="text-xs text-muted-foreground"
-                                                                title={item.entry.title}
-                                                            >
-                                                                • {sliceTitle(item.entry.title)}
-                                                            </p>
-                                                        ))}
-                                                        {(collection.entryCount ?? collection._count.entries) > 2 && (
-                                                            <p className="text-xs text-muted-foreground italic">
-                                                                +{(collection.entryCount ?? collection._count.entries) - 2} more
-                                                            </p>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <p className="text-xs text-muted-foreground italic">No entries yet</p>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                router.push('/add');
-                                                            }}
-                                                            className="pointer-events-none inline-flex items-center gap-1 rounded-md border border-slate-300/80 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 opacity-0 transition-all duration-200 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                                                        >
-                                                            <Plus className="h-3 w-3" />
-                                                            <span>Add</span>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-4 pb-5">
-                                            <div className="flex items-center text-sm text-muted-foreground">
-                                                <div className="flex flex-wrap items-center gap-4">
-                                                    <div className="flex items-center gap-1">
-                                                        <FileText className="w-4 h-4" />
-                                                        <span className="font-medium">{collection.entryCount ?? collection._count.entries}</span>
-                                                        <span>{(collection.entryCount ?? collection._count.entries) === 1 ? 'entry' : 'entries'}</span>
-                                                    </div>
-                                                    {collection.isPublic && (
-                                                        <div className="flex items-center gap-1">
-                                                            <Eye className="w-4 h-4" />
-                                                            <span className="font-medium">{collection.publicViewCount || 0}</span>
-                                                            <span>views</span>
-                                                        </div>
-                                                    )}
-                                                    {(collection.memberCount ?? collection._count.members) !== undefined && (collection.memberCount ?? collection._count.members ?? 0) > 0 && (
-                                                        <div className="flex items-center gap-1">
-                                                            <Users className="w-4 h-4" />
-                                                            <span className="font-medium">{(collection.memberCount ?? collection._count.members ?? 0) + 1}</span>
-                                                            <span>{((collection.memberCount ?? collection._count.members ?? 0) + 1) === 1 ? 'member' : 'members'}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
+                    {myCollections.map((collection) => (
+                        <div
+                            key={collection.id}
+                            onClick={() => setActiveCollectionId(collection.id)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 16px',
+                                cursor: 'pointer',
+                                position: 'relative',
+                                transition: 'background 100ms',
+                                fontSize: '14px',
+                                color: activeCollectionId === collection.id ? '#141413' : '#5e5d59',
+                                gap: '8px',
+                                background: activeCollectionId === collection.id ? '#faf9f5' : 'transparent',
+                            }}
+                        >
+                            {/* Active accent bar */}
+                            {activeCollectionId === collection.id && (
+                                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: '#c96442' }} />
+                            )}
+                            <span style={{ fontFamily: 'system-ui, sans-serif', fontWeight: activeCollectionId === collection.id ? 500 : 400 }}>
+                                {collection.name}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                <span style={{ fontSize: '11px', color: '#87867f', background: '#f0eee6', padding: '2px 7px', borderRadius: '10px' }}>
+                                    {collection.entryCount ?? collection._count.entries}
+                                </span>
                                 {collection.isOwner && (
-                                    <div className="absolute top-2 right-2" data-collection-menu="true">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
+                                    <div data-collection-menu="true" style={{ position: 'relative' }}>
+                                        <button
                                             onClick={(e) => {
-                                                e.preventDefault();
                                                 e.stopPropagation();
                                                 setShowDropdown(showDropdown === collection.id ? null : collection.id);
                                             }}
-                                            className="h-8 w-8 p-0 bg-background/80 backdrop-blur-sm hover:bg-background"
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#87867f', padding: '2px 4px', fontSize: '14px', lineHeight: 1 }}
                                         >
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </Button>
+                                            ···
+                                        </button>
                                         {showDropdown === collection.id && (
-                                            <div className="absolute top-full right-0 mt-1 w-40 bg-popover border border-border rounded-md shadow-lg z-50">
+                                            <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 50, background: '#faf9f5', border: '1px solid #f0eee6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: '140px' }}>
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setShowDropdown(null);
-                                                        router.push(`/collections/${collection.id}?tab=entries`);
-                                                    }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                    onClick={(e) => { e.stopPropagation(); setShowDropdown(null); openEditModal(collection); }}
+                                                    style={{ width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: '13px', color: '#141413', background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                                                 >
-                                                    <FileText className="w-4 h-4" />
-                                                    Bibliography
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        openEditModal(collection);
-                                                    }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                                                >
-                                                    <Edit className="w-4 h-4" />
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setShowDropdown(null);
-                                                        handleDeleteCollection(collection.id, collection.name);
-                                                    }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                                                    onClick={(e) => { e.stopPropagation(); setShowDropdown(null); handleDeleteCollection(collection.id, collection.name); }}
+                                                    style={{ width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: '13px', color: '#c96442', background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#fdf0eb')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
                                                     Delete
                                                 </button>
                                             </div>
@@ -668,10 +575,77 @@ export default function CollectionsPage() {
                                     </div>
                                 )}
                             </div>
-                        ))}
+                        </div>
+                    ))}
+
+                    {myCollections.length === 0 && (
+                        <div style={{ padding: '16px', fontSize: '13px', color: '#87867f' }}>
+                            No collections yet.
+                        </div>
+                    )}
+
+                    <div style={{ marginTop: 'auto', padding: '12px 16px 0' }}>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            disabled={!session?.user || !hasPaidFeature(session.user.plan || 'FREE', 'collections')}
+                            style={{
+                                width: '100%',
+                                height: '32px',
+                                border: '1px dashed #d0cec6',
+                                borderRadius: '6px',
+                                background: 'none',
+                                color: '#87867f',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                fontFamily: 'system-ui, sans-serif',
+                                transition: 'all 100ms',
+                            }}
+                        >
+                            + New Collection
+                        </button>
                     </div>
                 </div>
-            )}
+
+                {/* Right panel */}
+                <CollectionRightPanel
+                    collectionId={activeCollectionId}
+                    collectionName={activeCollection?.name ?? ''}
+                />
+            </div>
+
+            {/* Mobile: entry list below pills */}
+            <div className="md:hidden">
+                <CollectionRightPanel
+                    collectionId={activeCollectionId}
+                    collectionName={activeCollection?.name ?? ''}
+                />
+            </div>
+
+            {/* FAB */}
+            <Link
+                href="/add"
+                style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: '#c96442',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(201,100,66,0.35)',
+                    zIndex: 50,
+                    textDecoration: 'none',
+                }}
+                title="Add entry"
+            >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <line x1="10" y1="4" x2="10" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="4" y1="10" x2="16" y2="10" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+            </Link>
 
             {/* Create Collection Modal */}
             {showCreateModal && (
@@ -692,20 +666,15 @@ export default function CollectionsPage() {
                                     value={newCollection.name}
                                     onChange={(e) => setNewCollection({ ...newCollection, name: e.target.value })}
                                     onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
-                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-destructive' : 'border-[var(--border)]'
-                                        }`}
+                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-destructive' : 'border-[var(--border)]'}`}
                                     placeholder="Enter collection name"
                                     aria-invalid={touched.name && (nameTooShort || nameTooLong)}
                                 />
                                 {touched.name && nameTooShort && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        Name must be at least {NAME_MIN} characters
-                                    </p>
+                                    <p className="mt-1 text-xs text-red-600">Name must be at least {NAME_MIN} characters</p>
                                 )}
                                 {touched.name && nameTooLong && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        Name must be {NAME_MAX} characters or less
-                                    </p>
+                                    <p className="mt-1 text-xs text-red-600">Name must be {NAME_MAX} characters or less</p>
                                 )}
                             </div>
 
@@ -715,8 +684,7 @@ export default function CollectionsPage() {
                                     value={newCollection.description}
                                     onChange={(e) => setNewCollection({ ...newCollection, description: e.target.value })}
                                     onBlur={() => setTouched(prev => ({ ...prev, description: true }))}
-                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(touched.description && descTooLong) ? 'border-destructive' : ''
-                                        }`}
+                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(touched.description && descTooLong) ? 'border-destructive' : ''}`}
                                     rows={3}
                                     placeholder="Enter collection description"
                                     aria-invalid={touched.description && descTooLong}
@@ -779,20 +747,15 @@ export default function CollectionsPage() {
                                     value={editingName}
                                     onChange={(e) => setEditingName(e.target.value)}
                                     onBlur={() => setEditTouched(prev => ({ ...prev, name: true }))}
-                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(editTouched.name && (editNameTooShort || editNameTooLong)) ? 'border-destructive' : 'border-[var(--border)]'
-                                        }`}
+                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(editTouched.name && (editNameTooShort || editNameTooLong)) ? 'border-destructive' : 'border-[var(--border)]'}`}
                                     placeholder="Enter collection name"
                                     aria-invalid={editTouched.name && (editNameTooShort || editNameTooLong)}
                                 />
                                 {editTouched.name && editNameTooShort && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        Name must be at least {NAME_MIN} characters
-                                    </p>
+                                    <p className="mt-1 text-xs text-red-600">Name must be at least {NAME_MIN} characters</p>
                                 )}
                                 {editTouched.name && editNameTooLong && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        Name must be {NAME_MAX} characters or less
-                                    </p>
+                                    <p className="mt-1 text-xs text-red-600">Name must be {NAME_MAX} characters or less</p>
                                 )}
                             </div>
 
@@ -802,8 +765,7 @@ export default function CollectionsPage() {
                                     value={editingDescription}
                                     onChange={(e) => setEditingDescription(e.target.value)}
                                     onBlur={() => setEditTouched(prev => ({ ...prev, description: true }))}
-                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(editTouched.description && editDescTooLong) ? 'border-destructive' : ''
-                                        }`}
+                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(editTouched.description && editDescTooLong) ? 'border-destructive' : ''}`}
                                     rows={3}
                                     placeholder="Enter collection description"
                                     aria-invalid={editTouched.description && editDescTooLong}
@@ -843,22 +805,6 @@ export default function CollectionsPage() {
                                 </Button>
                             </div>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Empty State */}
-            {myCollections.length === 0 && (
-                <div className="text-center py-12">
-                    <div className="max-w-md mx-auto">
-                        <h3 className="text-lg font-medium mb-2">No collections yet</h3>
-                        <p className="text-muted-foreground mb-4">
-                            Create your first collection to start organizing your entries.
-                        </p>
-                        <Button onClick={() => setShowCreateModal(true)}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Create Collection
-                        </Button>
                     </div>
                 </div>
             )}
