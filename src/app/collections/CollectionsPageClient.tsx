@@ -464,7 +464,7 @@ export default function CollectionsPage() {
             )}
 
             {/* Mobile: horizontal pill row (below md) */}
-            <div className="md:hidden" style={{ display: 'flex', gap: '6px', padding: '8px 16px', overflowX: 'auto', borderBottom: '1px solid #f0eee6', background: '#f5f4ed', scrollbarWidth: 'none' }}>
+            <div className="flex md:hidden" style={{ gap: '6px', padding: '8px 16px', overflowX: 'auto', borderBottom: '1px solid #f0eee6', background: '#f5f4ed', scrollbarWidth: 'none' }}>
                 {myCollections.map((c) => (
                     <button
                         key={c.id}
@@ -507,7 +507,7 @@ export default function CollectionsPage() {
             {/* Desktop: two-panel layout */}
             <div className="hidden md:flex" style={{ height: 'calc(100vh - 140px)', overflow: 'hidden' }}>
                 {/* Left sidebar */}
-                <div style={{ width: '260px', flexShrink: 0, borderRight: '1px solid #f0eee6', overflowY: 'auto', background: '#f5f4ed', display: 'flex', flexDirection: 'column', paddingTop: '12px' }}>
+                <div className="hidden md:flex flex-col" style={{ width: '260px', flexShrink: 0, borderRight: '1px solid #f0eee6', overflowY: 'auto', background: '#f5f4ed', paddingTop: '12px' }}>
                     <div style={{ padding: '0 16px 8px', fontSize: '11px', color: '#87867f', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Collections
                     </div>
@@ -588,19 +588,9 @@ export default function CollectionsPage() {
                         <button
                             onClick={() => setShowCreateModal(true)}
                             disabled={!session?.user || !hasPaidFeature(session.user.plan || 'FREE', 'collections')}
-                            style={{
-                                width: '100%',
-                                height: '32px',
-                                border: '1px dashed #d0cec6',
-                                borderRadius: '6px',
-                                background: 'none',
-                                color: '#87867f',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                fontFamily: 'system-ui, sans-serif',
-                                transition: 'all 100ms',
-                            }}
+                            className="w-full flex items-center justify-center text-sm text-[#5e5d59] border border-[#f0eee6] rounded-lg bg-transparent hover:bg-[#faf9f5] transition-colors duration-100 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
+                            <Plus className="w-3 h-3 mr-2" />
                             + New Collection
                         </button>
                     </div>

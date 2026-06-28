@@ -25,7 +25,7 @@ const formatDate = (date: string | Date) => {
 function TypeIcon({ entry }: { entry: FlatEntry }) {
     if (entry.isbn) {
         return (
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#87867f' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: 'var(--muted-foreground)' }}>
                 <rect x="1" y="2" width="8" height="10" rx="1" stroke="currentColor" strokeWidth="1.2" />
                 <path d="M9 3h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9" stroke="currentColor" strokeWidth="1.2" />
             </svg>
@@ -33,7 +33,7 @@ function TypeIcon({ entry }: { entry: FlatEntry }) {
     }
     if (entry.doi) {
         return (
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#87867f' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: 'var(--muted-foreground)' }}>
                 <rect x="2" y="1" width="10" height="12" rx="1" stroke="currentColor" strokeWidth="1.2" />
                 <line x1="4" y1="4.5" x2="10" y2="4.5" stroke="currentColor" strokeWidth="1" />
                 <line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" strokeWidth="1" />
@@ -42,7 +42,7 @@ function TypeIcon({ entry }: { entry: FlatEntry }) {
         );
     }
     return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#87867f' }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: 'var(--muted-foreground)' }}>
             <path d="M2 2h10v9H2z" stroke="currentColor" strokeWidth="1.2" />
             <path d="M2 2l2 2h8" stroke="currentColor" strokeWidth="1" />
         </svg>
@@ -343,13 +343,13 @@ export default function EntryCard({
     };
 
     const isCompleted = currentStatus === 'COMPLETED';
-    const titleColor = isCompleted ? '#87867f' : '#141413';
+    const titleColor = isCompleted ? 'var(--muted-foreground)' : 'var(--foreground)';
 
     return (
         <>
             <div
                 ref={cardRef}
-                className={`relative group flex items-center gap-[10px] border-b border-[#f0eee6] cursor-pointer transition-[background,border-color] duration-[120ms] hover:bg-[#faf9f5] hover:border-b-transparent md:h-11 md:flex-nowrap min-h-[44px] flex-wrap py-2 md:py-0 px-4 ${selectionMode?.isSelected ? 'bg-[#faf9f5]' : ''}`}
+                className={`relative group flex items-center gap-[10px] border-b border-border cursor-pointer transition-[background,border-color] duration-[120ms] hover:bg-card hover:border-b-transparent md:h-11 md:flex-nowrap min-h-[44px] flex-wrap py-2 md:py-0 px-4 ${selectionMode?.isSelected ? 'bg-card' : ''}`}
             >
                 {/* Accent bar */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#c96442] opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms]" />
@@ -406,12 +406,12 @@ export default function EntryCard({
                             {displayTitle}
                         </span>
                         {entry.authors && entry.authors.length > 0 && (
-                            <span style={{ color: '#87867f', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0, maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ color: 'var(--muted-foreground)', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0, maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 — {entry.authors.slice(0, 3).join(', ')}{entry.authors.length > 3 ? ` +${entry.authors.length - 3}` : ''}
                             </span>
                         )}
                         {entry.year && (
-                            <span style={{ color: '#87867f', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '6px', flexShrink: 0 }}>
+                            <span style={{ color: 'var(--muted-foreground)', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '6px', flexShrink: 0 }}>
                                 {entry.year}
                             </span>
                         )}
@@ -435,7 +435,7 @@ export default function EntryCard({
                             {displayTitle}
                         </div>
                         {(entry.authors?.length > 0 || entry.year) && (
-                            <div style={{ fontSize: '12px', color: '#87867f', marginTop: '1px' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: '1px' }}>
                                 {entry.authors?.length > 0
                                     ? `${entry.authors.slice(0, 2).join(', ')}${entry.authors.length > 2 ? ' et al.' : ''}`
                                     : ''}
@@ -464,18 +464,18 @@ export default function EntryCard({
                                     {isUpdating ? '…' : 'In Progress'}
                                 </span>
                             ) : currentStatus === 'COMPLETED' ? (
-                                <span style={{ border: '1px solid #e8e6de', color: '#87867f', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: '#f0eee6', display: 'inline-block' }}>
+                                <span style={{ border: '1px solid var(--border-strong)', color: 'var(--muted-foreground)', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: 'var(--warm-sand)', display: 'inline-block' }}>
                                     {isUpdating ? '…' : 'Completed'}
                                 </span>
                             ) : (
-                                <span style={{ color: '#87867f', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: '#f0eee6', border: '1px solid #e8e6de', display: 'inline-block' }}>
+                                <span style={{ color: 'var(--muted-foreground)', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: 'var(--warm-sand)', border: '1px solid var(--border-strong)', display: 'inline-block' }}>
                                     {isUpdating ? '…' : 'Unread'}
                                 </span>
                             )}
                         </button>
 
                         {isOpen && (
-                            <div className="absolute top-full right-0 mt-1 z-[60] border border-[#f0eee6] rounded-lg shadow-xl min-w-[120px]" style={{ background: '#faf9f5' }}>
+                            <div className="absolute top-full right-0 mt-1 z-[60] border border-border rounded-lg shadow-xl min-w-[120px] bg-card">
                                 {readingStatuses.map((status) => (
                                     <button
                                         key={status.value}
@@ -484,15 +484,14 @@ export default function EntryCard({
                                             e.stopPropagation();
                                             handleStatusChange(status.value as FlatEntry['readingStatus']);
                                         }}
-                                        className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-lg ${status.value === currentStatus ? 'font-medium' : ''}`}
-                                        style={{ color: '#141413' }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                        className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-lg text-foreground ${status.value === currentStatus ? 'font-medium' : ''}`}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--warm-sand)')}
                                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                     >
                                         {status.label}
                                     </button>
                                 ))}
-                                <div className="border-t border-[#f0eee6]">
+                                <div className="border-t border-border">
                                     <button
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -524,28 +523,27 @@ export default function EntryCard({
                                 className="focus:outline-none"
                                 disabled={isUpdatingCollection}
                             >
-                                <span style={{ border: '1px solid #f0eee6', color: '#87867f', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: '#faf9f5', display: 'inline-block' }}>
+                                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', display: 'inline-block' }} className="border border-border text-muted-foreground bg-card">
                                     {isUpdatingCollection ? '…' : currentCollectionName.toLowerCase()}
                                 </span>
                             </button>
 
                             {isCollectionOpen && (
-                                <div className="absolute top-full right-0 mt-1 z-[60] border border-[#f0eee6] rounded-lg shadow-xl min-w-[160px]" style={{ background: '#faf9f5' }}>
+                                <div className="absolute top-full right-0 mt-1 z-[60] border border-border rounded-lg shadow-xl min-w-[160px] bg-card">
                                     <button
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
                                             handleCollectionChange(null);
                                         }}
-                                        className={`w-full text-left px-3 py-2 text-sm rounded-lg ${currentCollectionId === null ? 'font-medium' : ''}`}
-                                        style={{ color: '#141413' }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                        className={`w-full text-left px-3 py-2 text-sm rounded-lg text-foreground ${currentCollectionId === null ? 'font-medium' : ''}`}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--warm-sand)')}
                                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                     >
                                         no collection
                                     </button>
                                     {collections.length === 0 ? (
-                                        <div className="w-full text-left px-3 py-2 text-sm" style={{ color: '#87867f' }}>
+                                        <div className="w-full text-left px-3 py-2 text-sm text-muted-foreground">
                                             No collections
                                         </div>
                                     ) : (
@@ -557,9 +555,8 @@ export default function EntryCard({
                                                     e.stopPropagation();
                                                     handleCollectionChange(c.id);
                                                 }}
-                                                className={`w-full text-left px-3 py-2 text-sm rounded-lg ${c.id === currentCollectionId ? 'font-medium' : ''}`}
-                                                style={{ color: '#141413' }}
-                                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                                className={`w-full text-left px-3 py-2 text-sm rounded-lg text-foreground ${c.id === currentCollectionId ? 'font-medium' : ''}`}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--warm-sand)')}
                                                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                             >
                                                 {c.name}
