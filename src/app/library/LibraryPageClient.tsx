@@ -109,9 +109,9 @@ export default function LibraryPageClient({
       onBatchDelete={removeEntries}
     >
       {({ isSelectionMode, selectedIds, toggleSelection }) => (
-        <div style={{ background: '#f5f4ed', minHeight: '100%' }}>
+        <div style={{ background: '#f0ede4', minHeight: '100%' }}>
           {/* Sticky filter bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: '44px', borderBottom: '1px solid #f0eee6', background: '#f5f4ed', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: '44px', borderBottom: '1px solid #e8e4d8', background: '#f0ede4', flexShrink: 0 }}>
             {/* Status tabs */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               {STATUS_TABS.map((tab) => (
@@ -121,7 +121,7 @@ export default function LibraryPageClient({
                   style={{
                     padding: '4px 10px',
                     fontSize: '13px',
-                    color: currentStatus === tab.value ? '#c96442' : '#5e5d59',
+                    color: currentStatus === tab.value ? '#c96442' : '#4a5e56',
                     cursor: 'pointer',
                     borderBottom: currentStatus === tab.value ? '2px solid #c96442' : '2px solid transparent',
                     borderTop: 'none',
@@ -147,12 +147,12 @@ export default function LibraryPageClient({
                 style={{
                   height: '30px',
                   padding: '0 10px',
-                  border: '1px solid #f0eee6',
+                  border: '1px solid #e8e4d8',
                   borderRadius: '6px',
-                  background: '#faf9f5',
+                  background: '#f7f4ee',
                   fontSize: '13px',
                   fontFamily: 'Georgia, serif',
-                  color: '#141413',
+                  color: '#1e2d27',
                   outline: 'none',
                   width: '160px',
                 }}
@@ -161,7 +161,7 @@ export default function LibraryPageClient({
                   e.currentTarget.style.boxShadow = '0 0 0 2px rgba(201,100,66,0.12)';
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = '#f0eee6';
+                  e.currentTarget.style.borderColor = '#e8e4d8';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               />
@@ -171,12 +171,12 @@ export default function LibraryPageClient({
                 style={{
                   height: '30px',
                   padding: '0 8px',
-                  border: '1px solid #f0eee6',
+                  border: '1px solid #e8e4d8',
                   borderRadius: '6px',
-                  background: '#faf9f5',
+                  background: '#f7f4ee',
                   fontSize: '12px',
                   fontFamily: 'system-ui, sans-serif',
-                  color: '#5e5d59',
+                  color: '#4a5e56',
                   outline: 'none',
                   cursor: 'pointer',
                 }}
@@ -189,7 +189,7 @@ export default function LibraryPageClient({
           </div>
 
           {/* Entry count row */}
-          <div style={{ padding: '6px 20px', fontSize: '12px', color: '#87867f', borderBottom: '1px solid #f0eee6', background: '#f5f4ed', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '6px 20px', fontSize: '12px', color: '#7a8e86', borderBottom: '1px solid #e8e4d8', background: '#f0ede4', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>
               {loading ? 'loading…' : total === 0 ? 'no entries found' : `${total} ${total === 1 ? 'entry' : 'entries'}`}
             </span>
@@ -206,8 +206,8 @@ export default function LibraryPageClient({
           {/* Entry list */}
           <Suspense>
             {!loading && entries.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '64px 20px', color: '#87867f' }}>
-                <div style={{ fontFamily: 'Georgia, serif', fontSize: '16px', marginBottom: '8px', color: '#141413' }}>
+              <div style={{ textAlign: 'center', padding: '64px 20px', color: '#7a8e86' }}>
+                <div style={{ fontFamily: 'Georgia, serif', fontSize: '16px', marginBottom: '8px', color: '#1e2d27' }}>
                   no entries found
                 </div>
                 <p style={{ fontSize: '13px' }}>
@@ -242,11 +242,11 @@ export default function LibraryPageClient({
                       disabled={loading}
                       style={{
                         padding: '6px 20px',
-                        border: '1px solid #f0eee6',
+                        border: '1px solid #e8e4d8',
                         borderRadius: '6px',
-                        background: '#faf9f5',
+                        background: '#f7f4ee',
                         fontSize: '13px',
-                        color: '#5e5d59',
+                        color: '#4a5e56',
                         cursor: loading ? 'default' : 'pointer',
                         fontFamily: 'system-ui, sans-serif',
                       }}

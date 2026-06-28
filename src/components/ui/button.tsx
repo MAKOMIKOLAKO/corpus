@@ -18,7 +18,7 @@ const buttonVariants = cva(
         "white-surface":
           "bg-white text-anthropic-black hover:bg-warm-sand/50 shadow-sm",
         "dark-charcoal":
-          "bg-[#30302e] text-ivory hover:bg-[#4d4c48] ring-shadow",
+          "bg-[#2d3d36] text-ivory hover:bg-[#2d3d36]/80 ring-shadow",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
