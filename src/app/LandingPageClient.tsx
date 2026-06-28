@@ -37,7 +37,7 @@ function FeedEntry({ title, journal, time, isNew = false }: { title: string, jou
   return (
     <motion.div
       variants={staggerItem}
-      className="flex flex-col gap-2 p-4 rounded-xl border border-[#f0eee6] dark:border-[#30302e] bg-white/50 dark:bg-[#30302e]/30 shadow-sm"
+      className="flex flex-col gap-2 p-4 rounded-xl border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5]/50 dark:bg-[#30302e]/30 shadow-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-sans text-[15px] leading-snug font-medium text-[#141413] dark:text-[#faf9f5]">
@@ -222,7 +222,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.3, delay: i * 0.1 }}
                   className="flex flex-col"
                 >
-                  <div className="w-12 h-12 rounded-[8px] bg-white dark:bg-[#30302e]/50 border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center mb-6 shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] transition-colors">
+                  <div className="w-12 h-12 rounded-[8px] bg-[#faf9f5] dark:bg-[#30302e]/50 border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center mb-6 shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] transition-colors">
                     {item.icon}
                   </div>
                   <h3 className="text-[1.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] mb-2 transition-colors">{item.title}</h3>
@@ -241,7 +241,7 @@ export default function LandingPage() {
 
             <motion.div
               {...fadeUpParams}
-              className="relative rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-white dark:bg-[#30302e]/10 p-8 sm:p-16 overflow-hidden shadow-[rgba(0,0,0,0.05)_0px_4px_24px] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] transition-colors"
+              className="relative rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5] dark:bg-[#30302e]/10 p-8 sm:p-16 overflow-hidden shadow-[rgba(0,0,0,0.05)_0px_4px_24px] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] transition-colors"
             >
               {/* Animated Loop Highlight */}
               <motion.div
@@ -290,7 +290,7 @@ export default function LandingPage() {
                 key={feature.title}
                 {...fadeUpParams}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-white dark:bg-[#141413] p-8 hover:bg-[#faf9f5] dark:hover:bg-[#30302e]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
+                className="rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5] dark:bg-[#141413] p-8 hover:bg-[#f0eee6] dark:hover:bg-[#30302e]/20 transition duration-300 shadow-[rgba(0,0,0,0.05)_0px_4px_24px]"
               >
                 <div className="w-10 h-10 rounded-[8px] bg-[#faf9f5] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center text-[#c96442] shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] mb-6 transition-colors">
                   {feature.icon}

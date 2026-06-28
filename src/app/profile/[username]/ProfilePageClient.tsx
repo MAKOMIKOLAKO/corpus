@@ -170,11 +170,11 @@ export default function ProfilePageClient({
       <div className="glass-card rounded-xl border border-[var(--border)] p-6 space-y-4">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-3xl sm:text-2xl font-semibold shrink-0">
+            <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-3xl sm:text-2xl font-medium shrink-0">
               {((profile.name || profile.username || '?')[0]).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-xl font-semibold truncate">{profile.name || profile.username}</h1>
+              <h1 className="text-2xl sm:text-xl font-serif font-medium truncate">{profile.name || profile.username}</h1>
               {profile.isBetaTester && (
                 <Badge variant="default" className="mt-1 w-fit">Beta Tester</Badge>
               )}
@@ -238,7 +238,7 @@ export default function ProfilePageClient({
               )}
               {profile.connectionStatus === 'ACCEPTED' && (
                 <div className="flex items-center justify-between sm:justify-end gap-2 p-2 sm:p-0 border sm:border-0 rounded-lg">
-                  <span className="inline-flex items-center gap-1.5 text-sm text-green-600">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-accent">
                     <UserCheck className="w-4 h-4" /> Connected
                   </span>
                   <button
