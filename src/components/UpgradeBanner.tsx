@@ -10,6 +10,7 @@ interface UpgradeBannerProps {
 }
 
 export default function UpgradeBanner({ message, ctaText = 'Upgrade to Pro' }: UpgradeBannerProps) {
+  return null;
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {

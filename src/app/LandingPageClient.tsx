@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, Database, Sparkles, Save, Repeat, BookOpen, Layers, CheckCircle } from "lucide-react";
+import { Plus, BookOpen, Layers, GraduationCap } from "lucide-react";
 import SoftwareApplicationJsonLd from "@/components/SoftwareApplicationJsonLd";
 import WebSiteJsonLd from "@/components/WebSiteJsonLd";
 import OrganizationJsonLd from "@/components/OrganizationJsonLd";
@@ -17,42 +17,6 @@ const fadeUpParams = {
   viewport: { once: true, margin: "-50px" },
   transition: { duration: 0.3 }
 };
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const staggerItem = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
-
-function FeedEntry({ title, journal, time, isNew = false }: { title: string, journal: string, time: string, isNew?: boolean }) {
-  return (
-    <motion.div
-      variants={staggerItem}
-      className="flex flex-col gap-2 p-4 rounded-xl border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5]/50 dark:bg-[#30302e]/30 shadow-sm"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-sans text-[15px] leading-snug font-medium text-[#141413] dark:text-[#faf9f5]">
-          {title}
-        </h3>
-        {isNew && <span className="shrink-0 text-[10px] uppercase font-medium bg-[#c96442]/10 dark:bg-[#c96442]/20 text-[#c96442] px-1.5 py-0.5 rounded-[4px] tracking-wide">New</span>}
-      </div>
-      <div className="flex items-center gap-3 text-[12px] text-[#5e5d59] dark:text-[#b0aea5]">
-        <span>{journal}</span>
-        <span>•</span>
-        <span>{time}</span>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false);
@@ -125,166 +89,45 @@ export default function LandingPage() {
       <main className="relative z-10">
         {/* 1. Hero Section */}
         <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-24 pb-16">
-          <div className="mx-auto grid max-w-6xl gap-16 px-4 lg:grid-cols-2 lg:items-center lg:gap-12">
-
-            {/* Left: Copy */}
+          <div className="mx-auto max-w-6xl px-4 flex flex-col items-center text-center">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="max-w-xl"
+              className="max-w-2xl"
             >
               <h1 className="text-[3.25rem] sm:text-[4rem] leading-[1.10] font-serif font-medium text-[#141413] dark:text-[#faf9f5] tracking-tight transition-colors">
-                Your research feed.<br /> Automated.
+                Your personal reading queue.
               </h1>
               <p className="mt-6 text-[1.06rem] sm:text-[1.25rem] leading-[1.60] text-[#5e5d59] dark:text-[#b0aea5] transition-colors">
-                Stop searching for papers. New research appears automatically—summarized, deduplicated, and ready to save. No noise, just the insights you need.
+                Add papers, articles, and books. Track what you&apos;ve read. Organize everything into collections.
               </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4">
                 <Link
                   href="/login"
                   className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#faf9f5] bg-[#c96442] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757]"
                 >
-                  Get your feed
+                  Get started
                 </Link>
                 <Link
                   href="/login"
                   className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#4d4c48] dark:text-[#b0aea5] bg-[#e8e6dc] dark:bg-[#30302e] shadow-[0_0_0_1px_#d1cfc5] dark:shadow-[0_0_0_1px_#30302e] transition hover:text-[#141413] dark:hover:text-[#faf9f5] hover:shadow-[0_0_0_1px_#b0aea5] dark:hover:shadow-[0_0_0_1px_#4d4c48]"
                 >
-                  Start tracking research
+                  Sign in
                 </Link>
               </div>
             </motion.div>
-
-            {/* Right: Animated Feed Visual */}
-            <div className="relative mt-12 lg:mt-0">
-              <div className="absolute -inset-4 bg-gradient-to-tr from-[#faf9f5]/0 via-[#f0eee6]/80 dark:from-[#30302e]/0 dark:via-[#30302e]/30 dark:to-[#30302e]/0 rounded-3xl blur-2xl transition-colors" />
-              <div className="relative rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5] dark:bg-[#141413] shadow-[rgba(0,0,0,0.05)_0px_4px_24px] overflow-hidden transition-colors">
-                <div className="border-b border-[#f0eee6] dark:border-[#30302e] p-4 flex items-center justify-between transition-colors">
-                  <div className="flex gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#d1cfc5] dark:bg-[#30302e] transition-colors" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#d1cfc5] dark:bg-[#30302e] transition-colors" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#d1cfc5] dark:bg-[#30302e] transition-colors" />
-                  </div>
-                  <span className="text-[12px] font-medium text-[#87867f]">Incoming Research</span>
-                </div>
-
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="show"
-                  className="p-4 space-y-3 bg-[#faf9f5] dark:bg-[#141413] transition-colors"
-                >
-                  <FeedEntry
-                    title="Attention Is All You Need: A Retrospective Analysis"
-                    journal="Nature Communications"
-                    time="10 mins ago"
-                    isNew={true}
-                  />
-                  <FeedEntry
-                    title="Emergent Abilities of Large Language Models in Scientific Reasoning"
-                    journal="arXiv cs.AI"
-                    time="1 hour ago"
-                    isNew={true}
-                  />
-                  <FeedEntry
-                    title="Optimization Dynamics in Neural Network Training"
-                    journal="JMLR"
-                    time="3 hours ago"
-                  />
-                  <FeedEntry
-                    title="Scaling Laws for Autoregressive Generative Modeling"
-                    journal="arXiv cs.LG"
-                    time="Yesterday"
-                  />
-                </motion.div>
-
-                {/* Fade out bottom */}
-                <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[#faf9f5] dark:from-[#141413] to-transparent pointer-events-none transition-colors" />
-              </div>
-            </div>
-
           </div>
         </section>
 
-        {/* 2. "How it works" */}
-        <section className="py-24 border-y border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed] dark:bg-[#141413] transition-colors">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="grid gap-12 sm:grid-cols-3">
-              {[
-                { step: "01", title: "Add topics or sources", icon: <Plus className="w-5 h-5 text-[#c96442]" /> },
-                { step: "02", title: "We track and update your feed", icon: <Database className="w-5 h-5 text-[#c96442]" /> },
-                { step: "03", title: "Read, summarize, and save", icon: <BookOpen className="w-5 h-5 text-[#c96442]" /> },
-              ].map((item, i) => (
-                <motion.div
-                  key={item.step}
-                  {...fadeUpParams}
-                  transition={{ duration: 0.3, delay: i * 0.1 }}
-                  className="flex flex-col"
-                >
-                  <div className="w-12 h-12 rounded-[8px] bg-[#faf9f5] dark:bg-[#30302e]/50 border border-[#f0eee6] dark:border-[#30302e] flex items-center justify-center mb-6 shadow-[0_0_0_1px_#f0eee6] dark:shadow-[0_0_0_1px_#30302e] transition-colors">
-                    {item.icon}
-                  </div>
-                  <h3 className="text-[1.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] mb-2 transition-colors">{item.title}</h3>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Core Loop Visualization */}
-        <section className="py-32 bg-[#faf9f5] dark:bg-[#141413] overflow-hidden transition-colors">
-          <div className="mx-auto max-w-6xl px-4">
-            <motion.div {...fadeUpParams} className="text-center mb-16">
-              <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] transition-colors">This keeps working without you.</h2>
-            </motion.div>
-
-            <motion.div
-              {...fadeUpParams}
-              className="relative rounded-[16px] border border-[#f0eee6] dark:border-[#30302e] bg-[#faf9f5] dark:bg-[#30302e]/10 p-8 sm:p-16 overflow-hidden shadow-[rgba(0,0,0,0.05)_0px_4px_24px] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] transition-colors"
-            >
-              {/* Animated Loop Highlight */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] rounded-full border border-[#c96442]/10 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(201,100,66,0)_0%,rgba(201,100,66,0.1)_50%,rgba(201,100,66,0)_100%)] pointer-events-none opacity-50"
-              />
-
-              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4">
-                {[
-                  { label: "INPUT", icon: <Plus className="w-5 h-5" /> },
-                  { label: "FEED", icon: <Database className="w-5 h-5" /> },
-                  { label: "SUMMARY", icon: <Sparkles className="w-5 h-5" /> },
-                  { label: "SAVE", icon: <Save className="w-5 h-5" /> },
-                  { label: "REPEAT", icon: <Repeat className="w-5 h-5" /> },
-                ].map((stage, i, arr) => (
-                  <div key={stage.label} className="flex flex-col md:flex-row items-center gap-8 md:gap-4 flex-1 justify-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-[#f5f4ed] dark:bg-[#141413] border border-[#f0eee6] dark:border-[#30302e] text-[#5e5d59] dark:text-[#b0aea5] flex items-center justify-center shadow-[rgba(0,0,0,0.05)_0px_4px_24px] transition-colors">
-                        {stage.icon}
-                      </div>
-                      <span className="text-[12px] font-sans font-medium text-[#87867f] tracking-widest uppercase transition-colors">{stage.label}</span>
-                    </div>
-                    {i < arr.length - 1 && (
-                      <div className="flex justify-center items-center text-[#d1cfc5] dark:text-[#30302e] h-8 md:h-auto transition-colors">
-                        <ArrowRight className="w-5 h-5 rotate-90 md:rotate-0" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 4. Feature Highlights */}
+        {/* 2. Feature Highlights */}
         <section className="py-24 border-y border-[#f0eee6] dark:border-[#30302e] bg-[#f5f4ed] dark:bg-[#141413] transition-colors">
           <div className="mx-auto max-w-6xl px-4 grid gap-8 sm:grid-cols-2">
             {[
-              { title: "Automated research feed", desc: "Your sources are polled continuously. Papers arrive without you searching.", icon: <Repeat className="w-5 h-5" /> },
-              { title: "AI summaries", desc: "Every paper is instantly summarized. Skim hours of research in minutes.", icon: <Sparkles className="w-5 h-5" /> },
-              { title: "Deduplication", desc: "No repeated content. We merge preprints and published versions.", icon: <CheckCircle className="w-5 h-5" /> },
-              { title: "Collections", desc: "Save papers to custom collections. Organize your thinking seamlessly.", icon: <Layers className="w-5 h-5" /> },
+              { title: "Add anything", desc: "Paste a DOI, URL, or title. Corpus pulls the metadata automatically.", icon: <Plus className="w-5 h-5" /> },
+              { title: "Track your reading", desc: "Mark entries as Unread, In Progress, or Completed. See your queue at a glance.", icon: <BookOpen className="w-5 h-5" /> },
+              { title: "Organize into collections", desc: "Group papers and articles into named collections. Find anything instantly.", icon: <Layers className="w-5 h-5" /> },
+              { title: "Built for researchers", desc: "Designed for students and academics who read a lot and need to stay organized.", icon: <GraduationCap className="w-5 h-5" /> },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -302,15 +145,24 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 5. Context & Final CTA */}
+        {/* 3. Tagline Section */}
+        <section className="py-32 bg-[#faf9f5] dark:bg-[#141413] overflow-hidden transition-colors">
+          <div className="mx-auto max-w-6xl px-4">
+            <motion.div {...fadeUpParams} className="text-center">
+              <h2 className="text-[2rem] sm:text-[2.3rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] transition-colors">Read more. Forget less.</h2>
+              <p className="mt-6 text-[1.06rem] text-[#5e5d59] dark:text-[#b0aea5] transition-colors">
+                Corpus keeps your reading list organized so you can focus on the work.
+              </p>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* 4. Footer CTA */}
         <section className="py-32 bg-[#f5f4ed] dark:bg-[#141413] text-center px-4 transition-colors">
           <div className="mx-auto max-w-2xl">
             <motion.div {...fadeUpParams}>
-              <p className="text-[12px] font-sans text-[#87867f] uppercase tracking-[0.12em] font-medium mb-6 transition-colors">
-                Built by students. Used for tracking technical content.
-              </p>
               <h2 className="text-[2.3rem] sm:text-[3.25rem] font-serif font-medium text-[#141413] dark:text-[#faf9f5] leading-[1.10] mb-10 transition-colors">
-                Set it once.<br />It keeps updating.
+                Start building your library.
               </h2>
               <Link
                 href="/login"
@@ -331,7 +183,6 @@ export default function LandingPage() {
             <p className="text-[14px] font-sans text-[#87867f] dark:text-[#5e5d59] transition-colors">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
           </div>
           <div className="flex gap-8 text-[15px] font-sans text-[#5e5d59] dark:text-[#87867f] transition-colors">
-            <Link href="/privacy" className="transition hover:text-[#141413] dark:hover:text-[#faf9f5]">Privacy</Link>
             <Link href="/pricing" className="transition hover:text-[#141413] dark:hover:text-[#faf9f5]">Pricing</Link>
           </div>
         </div>
