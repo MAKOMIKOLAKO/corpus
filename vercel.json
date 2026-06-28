@@ -1,5 +1,4 @@
 {
-  "_crons_note": "Cron jobs below are defined here for reference. To disable individual crons without editing this file, use the Vercel dashboard: Project > Settings > Cron Jobs. Do NOT delete entries here — manage them at the dashboard level.",
   "functions": {
     "pages/api/**/*.js": {
       "maxDuration": 30
