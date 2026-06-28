@@ -5,9 +5,9 @@ export const revalidate = 86400; // Revalidate every day (pricing changes infreq
 
 export const metadata: Metadata = {
   title: 'Pricing | Corpus',
-  description: 'Choose the plan that fits your needs. Start free and upgrade as you grow.',
+  description: 'Corpus is free while in beta. All features are available to everyone — no credit card required.',
   alternates: {
-    canonical: 'https://usecorpus.app/pricing',
+    canonical: 'https://www.usecorpus.app/pricing',
   },
   robots: {
     index: true,

@@ -22,6 +22,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   reason,
   variant = 'inline',
 }) => {
+  return null;
   const getContent = () => {
     switch (reason) {
       case 'entry_limit_reached':

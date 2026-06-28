@@ -13,12 +13,12 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://usecorpus.app'),
+  metadataBase: new URL('https://www.usecorpus.app'),
   title: {
-    default: 'Corpus — Collaborative Research Platform for Academics',
+    default: 'Corpus — Personal Reading Queue for Researchers',
     template: '%s | Corpus'
   },
-  description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
+  description: 'Corpus is a personal reading queue for researchers and students. Add papers, articles, and books. Track your reading status. Organize everything into collections.',
   viewport: {
     width: 'device-width',
     initialScale: 1,
@@ -39,65 +39,44 @@ export const metadata: Metadata = {
     ],
   },
   keywords: [
-    'knowledge management',
-    'personal knowledge base',
-    'research paper organizer',
-    'academic reading list',
-    'DOI lookup tool',
-    'research management tool',
-    'Zotero alternative',
-    'Mendeley alternative',
-    'Readwise alternative',
-    'read it later app',
-    'research notes app',
-    'knowledge graph tool',
-    'citation manager',
+    'reading list',
+    'research papers',
     'paper organizer',
-    'academic tool',
-    'research workflow',
-    'personal library app',
+    'academic reading',
+    'DOI lookup',
+    'personal library',
+    'reading tracker',
+    'research management',
     'article organizer',
     'bookmark manager for researchers',
-    'PKM tool',
-    'personal knowledge management',
-    'save research papers',
-    'organize articles',
-    'knowledge base software',
-    'research reading tracker',
-    'collaborative research',
-    'citation generator',
-    'academic reference manager',
-    'arXiv'
   ],
-  authors: [{ name: 'Corpus', url: 'https://usecorpus.app' }],
+  authors: [{ name: 'Corpus', url: 'https://www.usecorpus.app' }],
   creator: 'Corpus',
   category: 'productivity',
-  // Google Search Console verification: Add verification code here when available
-  // verification: { google: 'YOUR_VERIFICATION_CODE' },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: '/',
+    url: 'https://www.usecorpus.app',
     siteName: 'Corpus',
-    title: 'Corpus — Collaborative Research Platform for Academics',
-    description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
+    title: 'Corpus — Personal Reading Queue for Researchers',
+    description: 'Corpus is a personal reading queue for researchers and students. Add papers, articles, and books. Track your reading status. Organize everything into collections.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Corpus — Collaborative Research Platform'
+        alt: 'Corpus — Personal Reading Queue for Researchers'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Corpus — Collaborative Research Platform for Academics',
-    description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
+    title: 'Corpus — Personal Reading Queue for Researchers',
+    description: 'Corpus is a personal reading queue for researchers and students. Add papers, articles, and books. Track your reading status. Organize everything into collections.',
     images: ['/og-image.png'],
   },
   alternates: {
-    canonical: 'https://usecorpus.app',
+    canonical: 'https://www.usecorpus.app',
   },
   robots: {
     index: true,
