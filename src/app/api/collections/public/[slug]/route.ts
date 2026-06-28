@@ -152,7 +152,7 @@ export async function POST(
 
     // Trigger embedding generation asynchronously
     try {
-      fetch(`${process.env.NEXTAUTH_URL}/api/entries/${newEntry.id}/generate-embedding`, {
+      fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/entries/${newEntry.id}/generate-embedding`, {
         method: 'POST'
       }).catch(err => console.error('Failed to generate embedding:', err));
     } catch (error) {
