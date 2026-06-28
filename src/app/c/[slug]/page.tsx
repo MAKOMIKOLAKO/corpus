@@ -11,7 +11,8 @@ export const revalidate = 3600; // Revalidate every hour (collections can be upd
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/collections/public/${params.slug}`, {
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/collections/public/${params.slug}`, {
       cache: 'no-store'
     });
 
@@ -63,8 +64,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PublicCollectionPage({ params }: PageProps) {
-  // Fetch the collection data
-  const response = await fetch(`${process.env.NEXTAUTH_URL}/api/collections/public/${params.slug}`, {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const response = await fetch(`${baseUrl}/api/collections/public/${params.slug}`, {
     cache: 'no-store'
   });
 
