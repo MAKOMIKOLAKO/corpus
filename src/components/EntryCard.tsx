@@ -5,17 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { saveScrollPositionForKey } from '@/hooks/useScrollPosition';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { CardTitle } from '@/components/ui/card';
-import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2, Brain } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import ShareEntryModal from '@/components/ShareEntryModal';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useTimezone } from '@/hooks/useTimezone';
 import { FlatEntry } from '@/types/entry';
-
 
 const readingStatuses = [
     { value: 'UNREAD', label: 'Unread' },
@@ -23,20 +18,37 @@ const readingStatuses = [
     { value: 'COMPLETED', label: 'Completed' },
 ];
 
-const statusVariant = (status: string) => {
-    switch (status) {
-        case 'COMPLETED':
-            return 'success';
-        case 'IN_PROGRESS':
-            return 'default';
-        default: return 'secondary';
-    }
-};
-
 const formatDate = (date: string | Date) => {
     const timezone = useTimezone();
     return formatRelativeTime(date, timezone);
 };
+
+function TypeIcon({ entry }: { entry: FlatEntry }) {
+    if (entry.isbn) {
+        return (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#87867f' }}>
+                <rect x="1" y="2" width="8" height="10" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M9 3h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
+        );
+    }
+    if (entry.doi) {
+        return (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#87867f' }}>
+                <rect x="2" y="1" width="10" height="12" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <line x1="4" y1="4.5" x2="10" y2="4.5" stroke="currentColor" strokeWidth="1" />
+                <line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" strokeWidth="1" />
+                <line x1="4" y1="9.5" x2="8" y2="9.5" stroke="currentColor" strokeWidth="1" />
+            </svg>
+        );
+    }
+    return (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#87867f' }}>
+            <path d="M2 2h10v9H2z" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M2 2l2 2h8" stroke="currentColor" strokeWidth="1" />
+        </svg>
+    );
+}
 
 export default function EntryCard({
     entry,
@@ -44,19 +56,18 @@ export default function EntryCard({
     fromPath,
     onDelete,
     selectionMode,
+    hideCollectionPill,
 }: {
     entry: FlatEntry;
-    /** Session key for scroll restore (must match useScrollPosition on that page, e.g. `collection-${id}`). */
     scrollPositionKey?: string;
-    /** Optional path to include in the from query parameter for back navigation */
     fromPath?: string;
-    /** Optional callback for removing this entry from parent-managed state after successful delete */
     onDelete?: (userEntryId: string) => void;
     selectionMode?: {
         enabled: boolean;
         isSelected: boolean;
         onToggle: (id: string) => void;
     };
+    hideCollectionPill?: boolean;
 }) {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
@@ -99,7 +110,6 @@ export default function EntryCard({
                 const data = await response.json();
 
                 if (!cancelled && data) {
-                    // Handle the API response structure: { owned: [...], member: [...] }
                     const allCollections = [];
 
                     if (Array.isArray(data.owned)) {
@@ -133,7 +143,6 @@ export default function EntryCard({
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
 
-            // Check if click is outside all dropdown containers
             const outsideCollection = !collectionDropdownRef.current?.contains(target);
             const outsideStatus = !statusDropdownRef.current?.contains(target);
 
@@ -336,286 +345,236 @@ export default function EntryCard({
         }
     };
 
+    const isCompleted = currentStatus === 'COMPLETED';
+    const titleColor = isCompleted ? '#87867f' : '#141413';
+
     return (
         <>
             <div
-                className="relative h-full"
                 ref={cardRef}
-                onClick={(e) => {
-                    if (selectionMode?.enabled) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        selectionMode.onToggle(entry.id);
-                    }
-                }}
+                className={`relative group flex items-center gap-[10px] border-b border-[#f0eee6] cursor-pointer transition-[background,border-color] duration-[120ms] hover:bg-[#faf9f5] hover:border-b-transparent md:h-11 md:flex-nowrap min-h-[44px] flex-wrap py-2 md:py-0 px-4 ${selectionMode?.isSelected ? 'bg-[#faf9f5]' : ''}`}
             >
+                {/* Accent bar */}
+                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#c96442] opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms]" />
+
+                {/* Selection checkbox */}
                 {selectionMode?.enabled && (
-                    <div className="absolute top-4 left-4 z-[40]">
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectionMode.isSelected ? 'bg-accent border-accent' : 'bg-background border-border group-hover:border-accent/50'}`}>
-                            {selectionMode.isSelected && <Check className="w-4 h-4 text-accent-foreground" />}
+                    <div
+                        className="shrink-0 z-10"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            selectionMode.onToggle(entry.id);
+                        }}
+                    >
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${selectionMode.isSelected ? 'bg-[#c96442] border-[#c96442]' : 'border-[#d0cec6]'}`}>
+                            {selectionMode.isSelected && <Check className="w-3 h-3 text-white" />}
                         </div>
                     </div>
                 )}
+
+                {/* Link: icon + title area */}
                 <Link
                     href={selectionMode?.enabled ? '#' : `/entries/${entry.id}${fromPath ? `?from=${fromPath}` : ''}`}
                     scroll={false}
                     onClick={(e) => {
                         if (selectionMode?.enabled) {
                             e.preventDefault();
+                            selectionMode.onToggle(entry.id);
                         } else {
                             saveScrollPositionForKey(scrollPositionKey);
                         }
                     }}
-                    className={selectionMode?.enabled ? 'cursor-default' : ''}
+                    className="flex flex-1 min-w-0 items-center gap-[10px]"
                 >
-                    <Card className={`group h-full border border-border bg-card transition-all duration-200 overflow-visible interactive-card ${selectionMode?.isSelected ? 'ring-2 ring-accent border-accent' : ''} ${selectionMode?.enabled ? 'pl-8' : ''}`}>
-                        <CardContent className="p-6 overflow-visible">
-                            <div className="space-y-4">
-                                {/* Header with title, tags, and metadata */}
-                                <div className="space-y-3">
-                                    <div className="relative">
-                                        <CardTitle
-                                            className="font-serif text-lg font-medium leading-tight text-content-primary group-hover:text-content-primary transition-colors line-clamp-2 cursor-pointer"
-                                            onMouseEnter={() => setIsTitleHovered(true)}
-                                            onMouseLeave={() => setIsTitleHovered(false)}
-                                        >
-                                            {displayTitle}
-                                        </CardTitle>
+                    <TypeIcon entry={entry} />
 
-                                        {/* Custom tooltip for full title */}
-                                        {isTitleHovered && entry.title.length > 50 && (
-                                            <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-surface-raised border border-border rounded-lg shadow-lg z-[70] max-w-sm">
-                                                <div className="text-sm font-medium text-content-primary leading-relaxed font-serif">
-                                                    {entry.title}
-                                                </div>
-                                                <div className="absolute bottom-0 left-4 transform translate-y-full">
-                                                    <div className="w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-surface-raised"></div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                    {/* Desktop: baseline inline */}
+                    <div className="hidden md:flex items-baseline flex-1 min-w-0">
+                        <span
+                            style={{
+                                fontFamily: 'Georgia, serif',
+                                fontSize: '15px',
+                                fontWeight: 500,
+                                color: titleColor,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: '440px',
+                                textDecoration: isCompleted ? 'line-through' : 'none',
+                                textDecorationColor: '#c0bfb9',
+                            }}
+                        >
+                            {displayTitle}
+                        </span>
+                        {entry.authors && entry.authors.length > 0 && (
+                            <span style={{ color: '#87867f', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0 }}>
+                                — {entry.authors.slice(0, 3).join(', ')}{entry.authors.length > 3 ? ` +${entry.authors.length - 3}` : ''}
+                            </span>
+                        )}
+                        {entry.year && (
+                            <span style={{ color: '#87867f', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '6px', flexShrink: 0 }}>
+                                {entry.year}
+                            </span>
+                        )}
+                    </div>
 
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {entry.source && entry.source === 'SMART_ALERT' && (
-                                            <Badge variant="success" className="text-[10px] py-0 px-2 h-6 whitespace-nowrap">
-                                                <Brain className="h-2.5 w-2.5 mr-1" />
-                                                Smart Alert
-                                            </Badge>
-                                        )}
-                                    </div>
+                    {/* Mobile: stacked */}
+                    <div className="md:hidden flex-1 min-w-0">
+                        <div
+                            style={{
+                                fontFamily: 'Georgia, serif',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: titleColor,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textDecoration: isCompleted ? 'line-through' : 'none',
+                                textDecorationColor: '#c0bfb9',
+                            }}
+                        >
+                            {displayTitle}
+                        </div>
+                        {(entry.authors?.length > 0 || entry.year) && (
+                            <div style={{ fontSize: '12px', color: '#87867f', marginTop: '1px' }}>
+                                {entry.authors?.length > 0
+                                    ? `${entry.authors.slice(0, 2).join(', ')}${entry.authors.length > 2 ? ' et al.' : ''}`
+                                    : ''}
+                                {entry.authors?.length > 0 && entry.year ? ' · ' : ''}
+                                {entry.year ?? ''}
+                            </div>
+                        )}
+                    </div>
+                </Link>
 
-                                    <div className="flex items-center gap-2 text-sm text-content-secondary h-5">
-                                        {entry.authors && entry.authors.length > 0 && (
-                                            <span className="truncate">
-                                                {entry.authors.slice(0, 3).join(', ')}
-                                                {entry.authors.length > 3 && ` +${entry.authors.length - 3}`}
-                                            </span>
-                                        )}
-                                        {entry.authors && entry.authors.length > 0 && entry.year && (
-                                            <span className="text-border/50">•</span>
-                                        )}
-                                        {entry.year && (
-                                            <span>{entry.year}</span>
-                                        )}
-                                    </div>
-                                </div>
+                {/* Pills area */}
+                <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                    {/* Status pill + dropdown */}
+                    <div className="relative" ref={statusDropdownRef}>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsOpen(!isOpen);
+                            }}
+                            className="focus:outline-none"
+                            disabled={isUpdating}
+                        >
+                            {currentStatus === 'IN_PROGRESS' ? (
+                                <span style={{ background: '#fdf0eb', color: '#c96442', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 500, whiteSpace: 'nowrap', display: 'inline-block' }}>
+                                    {isUpdating ? '…' : 'In Progress'}
+                                </span>
+                            ) : currentStatus === 'COMPLETED' ? (
+                                <span style={{ border: '1px solid #e8e6de', color: '#87867f', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: '#f0eee6', display: 'inline-block' }}>
+                                    {isUpdating ? '…' : 'Completed'}
+                                </span>
+                            ) : (
+                                <span style={{ color: '#87867f', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: '#f0eee6', border: '1px solid #e8e6de', display: 'inline-block' }}>
+                                    {isUpdating ? '…' : 'Unread'}
+                                </span>
+                            )}
+                        </button>
 
-                                {/* Tags section - properly aligned */}
-                                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2">
-                                    {/* Collection Dropdown */}
-                                    <div className="relative min-w-0" ref={collectionDropdownRef}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                setIsCollectionOpen(!isCollectionOpen);
-                                            }}
-                                            className="h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-sm font-medium px-4 sm:px-2 py-1 border transition-colors border-border bg-background text-foreground hover:bg-muted touch-manipulation"
-                                            disabled={isUpdatingCollection}
-                                        >
-                                            <span className="truncate">{isUpdatingCollection ? '...' : currentCollectionName.toLowerCase()}</span>
-                                            <ChevronDown className="w-4 h-4 sm:w-3 sm:h-3" />
-                                        </button>
-
-                                        {isCollectionOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-raised border border-border rounded-lg shadow-xl min-w-[160px]">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        handleCollectionChange(null);
-                                                    }}
-                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-warm-sand transition-colors rounded-lg ${currentCollectionId === null ? 'bg-warm-sand font-medium' : ''
-                                                        }`}
-                                                >
-                                                    no collection
-                                                </button>
-                                                {collections.length === 0 ? (
-                                                    <div className="w-full text-left px-3 py-2 text-sm text-content-tertiary">
-                                                        No collections
-                                                    </div>
-                                                ) : (
-                                                    collections.map((c) => (
-                                                        <button
-                                                            key={c.id}
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                handleCollectionChange(c.id);
-                                                            }}
-                                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-warm-sand transition-colors rounded-lg ${c.id === currentCollectionId ? 'bg-warm-sand font-medium' : ''
-                                                                }`}
-                                                        >
-                                                            {c.name}
-                                                        </button>
-                                                    ))
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Reading Status Dropdown */}
-                                    <div className="relative min-w-0" ref={statusDropdownRef}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                setIsOpen(!isOpen);
-                                            }}
-                                            className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-lg font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
-                                                ? 'border-accent bg-accent/10 text-accent hover:bg-accent/20'
-                                                : statusVariant(currentStatus) === 'default'
-                                                    ? 'border-border bg-surface-raised text-content-primary hover:bg-warm-sand'
-                                                    : 'border-border bg-secondary text-content-secondary hover:bg-secondary/80'
-                                                }`}
-                                            disabled={isUpdating}
-                                        >
-                                            <span className="truncate">{isUpdating ? '...' : readingStatuses.find(s => s.value === currentStatus)?.label?.toLowerCase()}</span>
-                                            <ChevronDown className="w-4 h-4 sm:w-3 sm:h-3" />
-                                        </button>
-
-                                        {isOpen && (
-                                            <div className="absolute top-full left-0 mt-1 z-[60] bg-surface-raised border border-border rounded-lg shadow-xl min-w-[120px]">
-                                                {readingStatuses.map((status) => (
-                                                    <button
-                                                        key={status.value}
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            handleStatusChange(status.value as FlatEntry['readingStatus']);
-                                                        }}
-                                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-warm-sand transition-colors rounded-lg ${status.value === currentStatus ? 'bg-warm-sand font-medium' : ''
-                                                            }`}
-                                                    >
-                                                        {status.label}
-                                                    </button>
-                                                ))}
-                                                <div className="border-t border-border-default">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            handleDelete();
-                                                        }}
-                                                        className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 dark:text-destructive/80 transition-colors flex items-center gap-2 rounded-lg touch-manipulation"
-                                                    >
-                                                        <Trash2 className="w-3 h-3" />
-                                                        delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Footer with date info and paper links */}
-                                <div className="pt-4 border-t border-border/50">
-                                    <div className="flex flex-col gap-2">
-                                        {/* Paper links section */}
-                                        {(entry.url || entry.metadata?.openAccessUrl || entry.doi) && (
-                                            <div className="flex flex-wrap items-center gap-2 text-xs">
-                                                {entry.metadata?.openAccessUrl && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 px-2 text-accent hover:text-accent/80 hover:bg-accent/10 touch-manipulation"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            if (entry.metadata?.openAccessUrl) {
-                                                                window.open(entry.metadata.openAccessUrl, '_blank', 'noopener,noreferrer');
-                                                            }
-                                                        }}
-                                                    >
-                                                        Free PDF
-                                                        <ExternalLink className="w-3 h-3 ml-1" />
-                                                    </Button>
-                                                )}
-                                                {entry.url && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 px-2 text-content-secondary hover:text-content-primary touch-manipulation"
-                                                        onClick={handleOpenUrl}
-                                                    >
-                                                        View Source
-                                                        <ExternalLink className="w-3 h-3 ml-1" />
-                                                    </Button>
-                                                )}
-                                                {entry.doi && (
-                                                    <div className="flex items-center gap-1 text-content-secondary">
-                                                        <span className="text-xs">DOI: {entry.doi}</span>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-5 w-5 p-0 text-content-secondary hover:text-content-primary touch-manipulation"
-                                                            onClick={handleCopyDoi}
-                                                        >
-                                                            {didCopyDoi ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Date and action buttons */}
-                                        <div className="flex items-center justify-between text-[10px] text-content-tertiary">
-                                            <span>added {formatDate(entry.createdAt)}</span>
-                                            <div className="flex items-center gap-1 sm:gap-2">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
-                                                    onClick={handleShare}
-                                                >
-                                                    <Share className="w-5 h-5 sm:w-3 sm:h-3" />
-                                                </Button>
-                                                {entry.url && !entry.metadata?.openAccessUrl && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-content-tertiary hover:text-content-secondary touch-manipulation"
-                                                        onClick={handleCopyUrl}
-                                                    >
-                                                        {didCopyUrl ? <Check className="w-5 h-5 sm:w-3 sm:h-3" /> : <Copy className="w-5 h-5 sm:w-3 sm:h-3" />}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
+                        {isOpen && (
+                            <div className="absolute top-full right-0 mt-1 z-[60] border border-[#f0eee6] rounded-lg shadow-xl min-w-[120px]" style={{ background: '#faf9f5' }}>
+                                {readingStatuses.map((status) => (
+                                    <button
+                                        key={status.value}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleStatusChange(status.value as FlatEntry['readingStatus']);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-lg ${status.value === currentStatus ? 'font-medium' : ''}`}
+                                        style={{ color: '#141413' }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                        {status.label}
+                                    </button>
+                                ))}
+                                <div className="border-t border-[#f0eee6]">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDelete();
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-lg touch-manipulation"
+                                        style={{ color: '#c96442' }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#fdf0eb')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                        delete
+                                    </button>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </Link>
+                        )}
+                    </div>
+
+                    {/* Collection pill + dropdown (hidden on mobile) */}
+                    {!hideCollectionPill && (
+                        <div className="relative hidden md:block" ref={collectionDropdownRef}>
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsCollectionOpen(!isCollectionOpen);
+                                }}
+                                className="focus:outline-none"
+                                disabled={isUpdatingCollection}
+                            >
+                                <span style={{ border: '1px solid #f0eee6', color: '#87867f', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', background: '#faf9f5', display: 'inline-block' }}>
+                                    {isUpdatingCollection ? '…' : currentCollectionName.toLowerCase()}
+                                </span>
+                            </button>
+
+                            {isCollectionOpen && (
+                                <div className="absolute top-full right-0 mt-1 z-[60] border border-[#f0eee6] rounded-lg shadow-xl min-w-[160px]" style={{ background: '#faf9f5' }}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleCollectionChange(null);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-sm rounded-lg ${currentCollectionId === null ? 'font-medium' : ''}`}
+                                        style={{ color: '#141413' }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                        no collection
+                                    </button>
+                                    {collections.length === 0 ? (
+                                        <div className="w-full text-left px-3 py-2 text-sm" style={{ color: '#87867f' }}>
+                                            No collections
+                                        </div>
+                                    ) : (
+                                        collections.map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleCollectionChange(c.id);
+                                                }}
+                                                className={`w-full text-left px-3 py-2 text-sm rounded-lg ${c.id === currentCollectionId ? 'font-medium' : ''}`}
+                                                style={{ color: '#141413' }}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f0eee6')}
+                                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                            >
+                                                {c.name}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Share Modal */}
             <ShareEntryModal
                 isOpen={showShareModal}
                 onClose={() => setShowShareModal(false)}
