@@ -111,6 +111,12 @@ export default async function middleware(req: NextRequest) {
     token = (await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
+      // Explicitly derive secureCookie so the correct cookie name
+      // (__Secure-next-auth.session-token vs next-auth.session-token) is used
+      // even when NEXTAUTH_URL is missing or mis-configured.
+      secureCookie:
+        process.env.NEXTAUTH_URL?.startsWith("https://") ??
+        process.env.NODE_ENV === "production",
     })) as { userId?: string; sub?: string } | any;
   } catch (error) {
     if (error instanceof URIError) {
@@ -183,30 +189,22 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Check onboarding status for protected routes
-  // Skip this check for public routes and API routes
-  if (token?.userId && !pathname.startsWith("/api") && !pathname.startsWith("/_next") && !pathname.startsWith("/auth") && pathname !== "/onboarding" && pathname !== "/research" && !pathname.startsWith("/research/")) {
-    // Fetch fresh onboarding status from database to avoid stale JWT token issues
-    try {
-      const prisma = (await import('./lib/prisma')).default;
-      const user = await prisma.user.findUnique({
-        where: { id: token.userId as string },
-        select: { onboardingCompleted: true }
-      } as any);
-
-      console.log('[middleware] onboarding check for user:', token.userId, 'onboardingCompleted:', user ? (user as any).onboardingCompleted : 'user not found');
-
-      if (user && !(user as any).onboardingCompleted) {
-        console.log('[middleware] redirecting to onboarding');
-        return NextResponse.redirect(new URL("/onboarding", req.url));
-      }
-    } catch (error) {
-      console.error('[middleware] database check failed, falling back to JWT:', error);
-      // If database check fails, fall back to JWT token check
-      if (token?.onboardingCompleted === false) {
-        console.log('[middleware] JWT says not onboarded, redirecting');
-        return NextResponse.redirect(new URL("/onboarding", req.url));
-      }
+  // Check onboarding status for protected routes using JWT data.
+  // Prisma cannot be imported here because middleware runs on the Edge Runtime
+  // which does not support Node.js native modules. The JWT callback already
+  // writes onboardingCompleted from the database on every sign-in and on
+  // trigger=update, so the JWT value is authoritative enough for routing.
+  if (
+    token?.userId &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/_next") &&
+    !pathname.startsWith("/auth") &&
+    pathname !== "/onboarding" &&
+    pathname !== "/research" &&
+    !pathname.startsWith("/research/")
+  ) {
+    if (token?.onboardingCompleted === false) {
+      return NextResponse.redirect(new URL("/onboarding", req.url));
     }
   }
 

@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { saveScrollPositionForKey } from '@/hooks/useScrollPosition';
 import { Check, Trash2 } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
-import ShareEntryModal from '@/components/ShareEntryModal';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useTimezone } from '@/hooks/useTimezone';
 import { FlatEntry } from '@/types/entry';
@@ -82,7 +81,6 @@ export default function EntryCard({
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
     const [didCopyDoi, setDidCopyDoi] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
     const apiKey = useApiKey();
 
     const [assignedCollectionIds, setAssignedCollectionIds] = useState<string[]>(
@@ -264,7 +262,6 @@ export default function EntryCard({
     const handleShare = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setShowShareModal(true);
     };
 
     const removeFromAllCollections = async () => {
@@ -575,16 +572,6 @@ export default function EntryCard({
                 </div>
             </div>
 
-            <ShareEntryModal
-                isOpen={showShareModal}
-                onClose={() => setShowShareModal(false)}
-                entry={{
-                    id: entry.id,
-                    title: entry.title,
-                    authors: entry.authors,
-                    url: entry.url,
-                }}
-            />
         </>
     );
 }

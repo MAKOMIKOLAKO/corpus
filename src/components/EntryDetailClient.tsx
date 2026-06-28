@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Share2, Brain } from 'lucide-react';
+import { ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Brain } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useEntry } from '@/hooks/useEntry';
-import ShareEntryModal from '@/components/ShareEntryModal';
 import SingleEntryCitationModal from '@/components/SingleEntryCitationModal';
 
 const formatDate = (dateString: string) => {
@@ -42,8 +41,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
     const [selectedCollection, setSelectedCollection] = useState('');
     const [isAddingToCollection, setIsAddingToCollection] = useState(false);
 
-    // Share state
-    const [showShareModal, setShowShareModal] = useState(false);
     const [showCitationModal, setShowCitationModal] = useState(false);
 
     const apiKey = useApiKey();
@@ -198,9 +195,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                     <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
                         <button onClick={() => setShowCitationModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Cite this entry">
                             <FileText className="w-5 h-5 sm:w-4 sm:h-4" />
-                        </button>
-                        <button onClick={() => setShowShareModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Share Entry">
-                            <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
                         </button>
                         <button onClick={handleDelete} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors touch-manipulation" title="Remove Entry">
                             <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -379,20 +373,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                         </button>
                     </div>
                 </div>
-
-                {/* Share Modal */}
-                {showShareModal && entry && (
-                    <ShareEntryModal
-                        isOpen={showShareModal}
-                        onClose={() => setShowShareModal(false)}
-                        entry={{
-                            id: entry.id,
-                            title: entry.title,
-                            authors: entry.authors,
-                            url: entry.url
-                        }}
-                    />
-                )}
 
                 {showCitationModal && entry && (
                     <SingleEntryCitationModal
