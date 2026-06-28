@@ -9,9 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardTitle } from '@/components/ui/card';
-import { Check, ChevronDown, Copy, ExternalLink, Share, Trash2, Brain } from 'lucide-react';
+import { Check, ChevronDown, Copy, ExternalLink, Trash2, Brain } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
-import ShareEntryModal from '@/components/ShareEntryModal';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useTimezone } from '@/hooks/useTimezone';
 import { FlatEntry } from '@/types/entry';
@@ -71,7 +70,6 @@ export default function EntryCard({
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
     const [didCopyDoi, setDidCopyDoi] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
     const apiKey = useApiKey();
 
     const [assignedCollectionIds, setAssignedCollectionIds] = useState<string[]>(
@@ -252,12 +250,6 @@ export default function EntryCard({
         }
     };
 
-    const handleShare = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowShareModal(true);
-    };
-
     const removeFromAllCollections = async () => {
         const ids = Array.from(new Set(assignedCollectionIds));
         await Promise.all(
@@ -337,11 +329,10 @@ export default function EntryCard({
     };
 
     return (
-        <>
-            <div
-                className="relative h-full"
-                ref={cardRef}
-                onClick={(e) => {
+        <div
+            className="relative h-full"
+            ref={cardRef}
+            onClick={(e) => {
                     if (selectionMode?.enabled) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -585,15 +576,6 @@ export default function EntryCard({
                                         <div className="flex items-center justify-between text-[10px] text-content-tertiary">
                                             <span>added {formatDate(entry.createdAt)}</span>
                                             <div className="flex items-center gap-1 sm:gap-2">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-10 w-10 sm:h-6 sm:w-auto px-2 text-muted-foreground hover:text-foreground touch-manipulation"
-                                                    onClick={handleShare}
-                                                >
-                                                    <Share className="w-5 h-5 sm:w-3 sm:h-3" />
-                                                </Button>
                                                 {entry.url && !entry.metadata?.openAccessUrl && (
                                                     <Button
                                                         type="button"
@@ -614,18 +596,5 @@ export default function EntryCard({
                     </Card>
                 </Link>
             </div>
-
-            {/* Share Modal */}
-            <ShareEntryModal
-                isOpen={showShareModal}
-                onClose={() => setShowShareModal(false)}
-                entry={{
-                    id: entry.id,
-                    title: entry.title,
-                    authors: entry.authors,
-                    url: entry.url,
-                }}
-            />
-        </>
     );
 }
