@@ -1,3 +1,4 @@
+// HIDDEN — only used by disabled features
 import { PrismaClient } from '@prisma/client';
 
 type FeedSeed = {

@@ -1,3 +1,4 @@
+// HIDDEN — only used by disabled features
 let workspaceOpenInFlight = false
 
 export function beginWorkspaceOpen(): boolean {

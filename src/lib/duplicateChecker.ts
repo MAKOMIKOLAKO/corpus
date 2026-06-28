@@ -1,3 +1,4 @@
+// HIDDEN — only used by disabled features
 interface DuplicateCheckRequest {
     url?: string;
     doi?: string;
