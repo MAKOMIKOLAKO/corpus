@@ -1,18 +1,2 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
-import { redirect } from 'next/navigation';
-import ConnectionsPageClient from './ConnectionsPageClient';
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
-export default async function ConnectionsPage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect('/login');
-  return <ConnectionsPageClient />;
-}
+import { redirect } from 'next/navigation'
+export default function Page() { redirect('/library') }

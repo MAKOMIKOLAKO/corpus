@@ -10,14 +10,12 @@ import {
   Clock,
   ArrowLeft,
   X,
-  Share2,
   ExternalLink,
   ChevronDown,
   Check,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ShareEntryModal from '@/components/ShareEntryModal';
 import { useApiKey } from '@/hooks/useApiKey';
 
 type Tab = 'PAPER' | 'BOOK' | 'URL';
@@ -1083,7 +1081,6 @@ function PostSavePanel({
   const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [collectionMsg, setCollectionMsg] = useState<string | null>(null);
-  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1185,14 +1182,6 @@ function PostSavePanel({
 
         <button
           type="button"
-          onClick={() => setShareOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-4 sm:py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)] touch-manipulation"
-        >
-          Share <Share2 className="h-4 w-4" />
-        </button>
-
-        <button
-          type="button"
           onClick={onViewEntry}
           className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-4 sm:py-2.5 text-sm font-medium text-content-inverse shadow-sm transition-all hover:opacity-90 touch-manipulation"
           style={{ backgroundColor: 'var(--accent)' }}
@@ -1200,17 +1189,6 @@ function PostSavePanel({
           View Entry <ExternalLink className="h-4 w-4" />
         </button>
       </div>
-
-      <ShareEntryModal
-        isOpen={shareOpen}
-        onClose={() => setShareOpen(false)}
-        entry={{
-          id: confirmation.id,
-          title: confirmation.title,
-          authors: confirmation.authors,
-          url: confirmation.url ?? undefined,
-        }}
-      />
 
       <button
         type="button"
