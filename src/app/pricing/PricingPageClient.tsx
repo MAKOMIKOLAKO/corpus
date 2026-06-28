@@ -58,7 +58,7 @@ export default function PricingPage() {
         faqs={[
           {
             question: "What's included in the free plan?",
-            answer: "The free plan includes 50 saved entries, 1 personal collection, paper and book search, AI metadata extraction, full text search, and the Chrome extension."
+            answer: "The free plan includes 50 saved entries, 1 personal collection, paper and book search, AI metadata extraction, and full text search."
           },
           {
             question: "What's the difference between monthly and annual billing?",
@@ -132,11 +132,7 @@ export default function PricingPage() {
                   <Check className="w-5 h-5 text-green-600" />
                   <span>Full text search</span>
                 </li>
-                <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
-                  <span>Chrome extension</span>
-                </li>
-                <li className="flex items-center gap-3">
+<li className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600" />
                   <span>Research connections and labs</span>
                 </li>

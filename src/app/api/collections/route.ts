@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUserId } from '@/lib/session';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
-import { corsOptionsHeaders } from '@/lib/corsHeaders';
 import { canCreateSharedCollection, canCreatePersonalCollection } from '@/lib/plans';
 import { timedJson } from '@/lib/serverTiming';
 
@@ -21,13 +20,6 @@ function normalizeCollectionSummary(collection: any) {
         entryCount: collection._count?.userEntryCollections ?? previewEntries.length,
         memberCount: collection.members?.length ?? collection._count?.members ?? 0,
     };
-}
-
-export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 200,
-        headers: corsOptionsHeaders(),
-    });
 }
 
 export async function GET() {

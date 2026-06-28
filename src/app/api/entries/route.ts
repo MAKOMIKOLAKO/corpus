@@ -4,7 +4,6 @@ import { getCurrentUserId } from '@/lib/session';
 import { prisma } from '@/lib/prismaWithRetry';
 import { entryCreateSchema } from '@/lib/validation';
 import { canAddEntry } from '@/lib/plans';
-import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
 import { userEntryWithGlobal, flattenUserEntry, buildSearchWhere } from '@/lib/entryQueries';
 import { saveEntryForUser } from '@/lib/globalEntryService';
 type ReadingStatus = 'UNREAD' | 'READING' | 'READ' | 'DROPPED';
@@ -23,13 +22,6 @@ function normalizeContentType(value: string | undefined) {
   return CONTENT_TYPE_VALUES.includes(value as (typeof CONTENT_TYPE_VALUES)[number])
     ? (value as (typeof CONTENT_TYPE_VALUES)[number])
     : 'OTHER';
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsOptionsHeaders(),
-  });
 }
 
 export async function GET(request: NextRequest) {
@@ -86,14 +78,12 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
       hasMore: skip + limit < total
-    }, {
-      headers: corsJsonHeaders(),
     });
   } catch (error) {
     console.error('[api/entries GET]', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }
