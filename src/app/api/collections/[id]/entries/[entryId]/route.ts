@@ -3,15 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import { canManageCollection } from '@/lib/collectionPermissions';
-import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
 import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsOptionsHeaders(),
-  });
-}
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +14,7 @@ export async function POST(
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401, headers: corsJsonHeaders() }
+        { status: 401 }
       );
     }
 
@@ -41,7 +33,7 @@ export async function POST(
     if (!userEntry) {
       return NextResponse.json(
         { error: 'Entry not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -54,7 +46,7 @@ export async function POST(
     if (!collection) {
       return NextResponse.json(
         { error: 'Collection not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -63,7 +55,7 @@ export async function POST(
     if (!canAdd) {
       return NextResponse.json(
         { error: 'Not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -103,9 +95,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json(entryCollection, {
-      headers: corsJsonHeaders()
-    });
+    return NextResponse.json(entryCollection);
 
   } catch (error: unknown) {
     console.error('[api/collections/[id]/entries/[entryId] POST]', error);
@@ -113,17 +103,17 @@ export async function POST(
       if (error.code === 'P2002') {
         return NextResponse.json(
           { error: 'Entry already in collection' },
-          { status: 409, headers: corsJsonHeaders() }
+          { status: 409 }
         );
       }
       return NextResponse.json(
         { error: 'Database error. Please try again.' },
-        { status: 500, headers: corsJsonHeaders() }
+        { status: 500 }
       );
     }
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }
@@ -137,7 +127,7 @@ export async function DELETE(
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401, headers: corsJsonHeaders() }
+        { status: 401 }
       );
     }
 
@@ -149,7 +139,7 @@ export async function DELETE(
     if (!userEntry) {
       return NextResponse.json(
         { error: 'Not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -169,7 +159,7 @@ export async function DELETE(
     if (!link) {
       return NextResponse.json(
         { error: 'Not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -180,7 +170,7 @@ export async function DELETE(
     if (!canRemove) {
       return NextResponse.json(
         { error: 'Not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -195,19 +185,18 @@ export async function DELETE(
 
     return NextResponse.json(
       { message: 'Entry removed from collection successfully' },
-      { headers: corsJsonHeaders() }
     );
   } catch (error: unknown) {
     console.error('[api/collections/[id]/entries/[entryId] DELETE]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
         { error: 'Database error. Please try again.' },
-        { status: 500, headers: corsJsonHeaders() }
+        { status: 500 }
       );
     }
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }

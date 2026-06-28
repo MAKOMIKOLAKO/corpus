@@ -3,15 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import { canAddEntries } from '@/lib/collectionPermissions';
-import { corsJsonHeaders, corsOptionsHeaders } from '@/lib/corsHeaders';
 import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsOptionsHeaders(),
-  });
-}
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +14,7 @@ export async function POST(
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401, headers: corsJsonHeaders() }
+        { status: 401 }
       );
     }
 
@@ -50,7 +42,7 @@ export async function POST(
     if (!userEntryId) {
       return NextResponse.json(
         { error: 'userEntryId is required' },
-        { status: 400, headers: corsJsonHeaders() }
+        { status: 400 }
       );
     }
 
@@ -62,14 +54,14 @@ export async function POST(
     if (!collection) {
       return NextResponse.json(
         { error: 'Not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
     if (!canAddEntries(userId, collection, collection.members)) {
       return NextResponse.json(
         { error: 'Not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -81,7 +73,7 @@ export async function POST(
     if (!userEntry) {
       return NextResponse.json(
         { error: 'Entry not found' },
-        { status: 404, headers: corsJsonHeaders() }
+        { status: 404 }
       );
     }
 
@@ -130,7 +122,6 @@ export async function POST(
 
     return NextResponse.json(flattenUserEntry(link.userEntry), {
       status: 201,
-      headers: corsJsonHeaders(),
     });
   } catch (error: unknown) {
     console.error('[api/collections/[id]/entries POST]', error);
@@ -138,17 +129,17 @@ export async function POST(
       if (error.code === 'P2002') {
         return NextResponse.json(
           { error: 'A record with that value already exists.' },
-          { status: 409, headers: corsJsonHeaders() }
+          { status: 409 }
         );
       }
       return NextResponse.json(
         { error: 'Database error. Please try again.' },
-        { status: 500, headers: corsJsonHeaders() }
+        { status: 500 }
       );
     }
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500, headers: corsJsonHeaders() }
+      { status: 500 }
     );
   }
 }
