@@ -160,10 +160,10 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         return (
             <div className="max-w-4xl mx-auto p-8">
                 <div className="animate-pulse space-y-4">
-                    <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-                    <div className="h-12 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    <div className="h-64 bg-gray-200 rounded"></div>
+                    <div className="h-8 bg-muted rounded w-1/4"></div>
+                    <div className="h-12 bg-muted rounded w-3/4"></div>
+                    <div className="h-4 bg-muted rounded w-1/2"></div>
+                    <div className="h-64 bg-muted rounded"></div>
                 </div>
             </div>
         );
@@ -194,7 +194,7 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
             </button>
 
             <div className="space-y-8">
-                <div className="glass-card rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)]">
+                <div className="rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)] bg-card">
                     <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
                         <button onClick={() => setShowCitationModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Cite this entry">
                             <FileText className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -211,9 +211,9 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                         <select
                             value={entry.readingStatus}
                             onChange={(e) => handleStatusChange(e.target.value)}
-                            className={`px-2.5 py-1 rounded border-0 cursor-pointer ${entry.readingStatus === 'COMPLETED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
-                                entry.readingStatus === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                                    'bg-gray-500/10 text-gray-600 dark:text-gray-400'
+                            className={`px-2.5 py-1 rounded-lg border-0 cursor-pointer ${entry.readingStatus === 'COMPLETED' ? 'bg-accent/10 text-accent' :
+                                entry.readingStatus === 'IN_PROGRESS' ? 'bg-surface-sunken text-content-primary' :
+                                    'bg-muted text-content-secondary'
                                 }`}
                         >
                             <option value="UNREAD">Unread</option>
@@ -224,7 +224,7 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                         </select>
                     </div>
 
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)] mb-2 pr-32 sm:pr-16">{entry.title}</h1>
+                    <h1 className="text-2xl sm:text-3xl font-serif font-medium leading-tight text-[var(--foreground)] mb-2 pr-32 sm:pr-16">{entry.title}</h1>
 
                     {/* Global Entry Context */}
                     <div className="flex items-center gap-2 text-sm text-content-tertiary mb-4">
@@ -300,14 +300,14 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
 
                     {/* Smart Alert Notice */}
                     {entry.addedVia === 'SMART_ALERT' && (
-                        <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
+                        <div className="mb-6 p-4 rounded-lg bg-accent-muted border border-border-strong">
                             <div className="flex items-start gap-3">
-                                <Brain className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                                <Brain className="w-5 h-5 text-accent mt-0.5" />
                                 <div className="flex-1">
-                                    <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
+                                    <p className="text-sm text-content-primary font-medium mb-1">
                                         This paper was automatically added by a Smart Alert
                                     </p>
-                                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                                    <p className="text-xs text-content-secondary">
                                         Corpus found this paper based on your research interests and added it to your library.
                                     </p>
                                 </div>
@@ -317,15 +317,15 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
 
                     {entry.abstract && (
                         <div className="mb-6">
-                            <h3 className="font-semibold text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-2">Abstract</h3>
+                            <h3 className="font-medium text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-2">Abstract</h3>
                             <p className="text-[var(--foreground)] leading-relaxed text-sm md:text-base opacity-90">{entry.abstract}</p>
                         </div>
                     )}
 
                 </div>
 
-                <div className="glass-card rounded-2xl p-6 md:p-8 border border-[var(--border)]">
-                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <div className="rounded-2xl p-6 md:p-8 border border-[var(--border)] bg-card">
+                    <h3 className="text-xl font-serif font-medium mb-6 flex items-center gap-2">
                         Collections
                         <span className="bg-[var(--muted)] text-[var(--muted-foreground)] text-xs px-2 py-0.5 rounded-full font-medium">{entryCollections?.length || 0}</span>
                     </h3>

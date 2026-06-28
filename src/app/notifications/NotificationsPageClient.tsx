@@ -150,9 +150,9 @@ export default function NotificationsPageClient() {
   const getNotificationColor = useCallback((type: string) => {
     switch (type) {
       case 'SMART_ALERT':
-        return 'bg-blue-500';
+        return 'bg-accent';
       default:
-        return 'bg-gray-500';
+        return 'bg-content-tertiary';
     }
   }, []);
 
@@ -172,7 +172,7 @@ export default function NotificationsPageClient() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Notifications</h1>
+          <h1 className="text-3xl font-serif font-medium mb-2">Notifications</h1>
           <p className="text-muted-foreground">
             Stay updated with your research discoveries and platform updates
           </p>
@@ -211,7 +211,7 @@ export default function NotificationsPageClient() {
           <Card>
             <CardContent className="py-8 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
+              <h3 className="text-lg font-serif font-medium mb-2">No notifications yet</h3>
               <p className="text-muted-foreground mb-4">
                 You'll see notifications here as new research activity and platform updates arrive.
               </p>
@@ -221,7 +221,7 @@ export default function NotificationsPageClient() {
           notifications.map((notification) => (
             <Card
               key={notification.id}
-              className={`transition-colors ${!notification.read ? 'bg-muted/50 border-l-4 border-l-blue-500' : ''}`}
+              className={`transition-colors ${!notification.read ? 'bg-muted/50 border-l-4 border-l-accent' : ''}`}
             >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">

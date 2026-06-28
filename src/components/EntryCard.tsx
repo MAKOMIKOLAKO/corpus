@@ -483,7 +483,7 @@ export default function EntryCard({
                                                 setIsOpen(!isOpen);
                                             }}
                                             className={`h-11 sm:h-6 w-full inline-flex items-center justify-between gap-2 text-[10px] tracking-wider rounded-lg font-medium px-4 sm:px-2 py-1 border transition-colors touch-manipulation ${statusVariant(currentStatus) === 'success'
-                                                ? 'border-green-600 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-400 dark:bg-green-950 dark:text-green-400 dark:hover:bg-green-900'
+                                                ? 'border-accent bg-accent/10 text-accent hover:bg-accent/20'
                                                 : statusVariant(currentStatus) === 'default'
                                                     ? 'border-border bg-surface-raised text-content-primary hover:bg-warm-sand'
                                                     : 'border-border bg-secondary text-content-secondary hover:bg-secondary/80'
@@ -539,7 +539,7 @@ export default function EntryCard({
                                                         type="button"
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 px-2 text-green-700 hover:text-green-800 hover:bg-green-50 dark:hover:bg-green-950 dark:text-green-400 touch-manipulation"
+                                                        className="h-6 px-2 text-accent hover:text-accent/80 hover:bg-accent/10 touch-manipulation"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
