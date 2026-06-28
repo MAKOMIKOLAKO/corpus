@@ -1,3 +1,4 @@
+// HIDDEN — only used by disabled features
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { normalizeTitle } from '@/lib/alerts';
