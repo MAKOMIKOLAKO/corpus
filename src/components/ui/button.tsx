@@ -16,7 +16,7 @@ const buttonVariants = cva(
         "terracotta":
           "bg-terracotta text-white hover:bg-terracotta-hover shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_1px] hover:shadow-[var(--terracotta)_0px_0px_0px_0px,var(--terracotta)_0px_0px_0px_2px]",
         "white-surface":
-          "bg-white text-anthropic-black hover:bg-warm-sand/50 shadow-sm",
+          "bg-card text-anthropic-black hover:bg-warm-sand/50 shadow-sm",
         "dark-charcoal":
           "bg-[#2d3d36] text-ivory hover:bg-[#2d3d36]/80 ring-shadow",
         outline:

@@ -96,7 +96,7 @@ export function WorkspaceTab({ userId }: WorkspaceTabProps) {
                 onChange={(e) => setArxivUrl(e.target.value)}
                 placeholder="https://arxiv.org/abs/2301.00000"
                 disabled={isLoading}
-                className="h-12 rounded-xl border-border bg-white px-4 text-content-primary placeholder:text-content-tertiary"
+                className="h-12 rounded-xl border-border bg-card px-4 text-content-primary placeholder:text-content-tertiary"
                 onKeyDown={(e) => e.key === 'Enter' && handleOpenByArxiv()}
               />
               <Button
