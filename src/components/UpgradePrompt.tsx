@@ -113,35 +113,35 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
 
   const content = getContent();
   const modalContent = (
-    <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-6 shadow-sm dark:border-amber-900/30 dark:from-amber-900/10 dark:to-orange-900/5">
+    <div className="relative overflow-hidden rounded-xl border border-border-strong bg-card p-6 whisper-shadow">
       {/* Decorative sparkles */}
-      <div className="absolute -right-4 -top-4 text-amber-200/50 dark:text-amber-700/20">
+      <div className="absolute -right-4 -top-4 text-border-strong/40">
         <Sparkles size={120} />
       </div>
 
       <div className="relative z-10 flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
           <Crown size={24} />
         </div>
 
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+          <h3 className="text-lg font-serif font-medium text-content-primary">
             {content.title}
           </h3>
-          <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+          <p className="mt-1 text-sm text-content-secondary">
             {content.description}
           </p>
           <div className="mt-4 flex items-center gap-3">
             <Link
               href={content.href}
-              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-content-inverse transition-all hover:bg-amber-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:bg-amber-700 dark:hover:bg-amber-600"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             >
               {content.cta}
             </Link>
             {onClose && (
               <button
                 onClick={onClose}
-                className="text-sm font-medium text-amber-700 transition-colors hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200"
+                className="text-sm font-medium text-content-secondary transition-colors hover:text-content-primary"
               >
                 Maybe later
               </button>
@@ -152,7 +152,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         {onClose && (
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-amber-400 hover:bg-amber-100/50 hover:text-amber-600 dark:hover:bg-amber-900/30"
+            className="rounded-full p-1 text-content-tertiary hover:bg-muted hover:text-content-secondary"
           >
             <X size={20} />
           </button>

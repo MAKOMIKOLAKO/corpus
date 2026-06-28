@@ -386,11 +386,11 @@ export default function CollectionDetailPage() {
 
     const getRoleBadgeColor = (role: string) => {
         switch (role) {
-            case 'OWNER': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 border-purple-200 dark:border-purple-700';
-            case 'ADMIN': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 border-red-200 dark:border-red-700';
-            case 'CONTRIBUTOR': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-700';
-            case 'VIEWER': return 'bg-gray-100 text-content-primary dark:bg-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700';
-            default: return 'bg-gray-100 text-content-primary dark:bg-gray-800 dark:text-gray-100';
+            case 'OWNER': return 'bg-accent/15 text-accent border-accent/30';
+            case 'ADMIN': return 'bg-destructive/10 text-destructive border-destructive/20';
+            case 'CONTRIBUTOR': return 'bg-surface-sunken text-content-primary border-border-strong';
+            case 'VIEWER': return 'bg-muted text-content-secondary border-border';
+            default: return 'bg-muted text-content-secondary';
         }
     };
 
@@ -667,7 +667,7 @@ export default function CollectionDetailPage() {
                                 size="sm"
                                 onClick={handleDeleteCollection}
                                 disabled={deletingCollection}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                             >
                                 {deletingCollection ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -718,7 +718,7 @@ export default function CollectionDetailPage() {
                                     }`}
                             >
                                 <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-ivory transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'
                                         }`}
                                 />
                             </button>
@@ -799,7 +799,7 @@ export default function CollectionDetailPage() {
             {/* Invite Modal */}
             {showInviteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-                    <div className="bg-white border rounded-lg shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-card border border-border rounded-lg whisper-shadow p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium">Invite Member</h3>
                             <Button variant="ghost" size="sm" onClick={() => setShowInviteModal(false)}>
@@ -912,7 +912,7 @@ export default function CollectionDetailPage() {
                                     </SelectContent>
                                 </Select>
                                 {inviteRole === 'ADMIN' && (
-                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                    <p className="text-xs text-content-secondary mt-1">
                                         Admin role requires both users to have Pro accounts
                                     </p>
                                 )}
@@ -923,7 +923,7 @@ export default function CollectionDetailPage() {
                             )}
 
                             {inviteSuccess && (
-                                <p className="text-sm text-green-600 dark:text-green-400">{inviteSuccess}</p>
+                                <p className="text-sm text-accent">{inviteSuccess}</p>
                             )}
 
                             <div className="flex gap-2">
@@ -955,7 +955,7 @@ export default function CollectionDetailPage() {
                             key={tab.id}
                             onClick={() => handleTabChange(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
-                                ? 'bg-blue-600 text-content-inverse dark:bg-blue-600 dark:text-content-inverse'
+                                ? 'bg-accent text-accent-foreground'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
                         >

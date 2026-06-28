@@ -105,7 +105,7 @@ export default function LoginForm() {
         {errorMessage && (
           <div
             id="error-message"
-            className="text-sm font-medium text-red-500 bg-red-50 border border-red-200 rounded-md p-3"
+            className="text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3"
             role="alert"
             aria-live="polite"
           >

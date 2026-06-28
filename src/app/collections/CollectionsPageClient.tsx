@@ -366,7 +366,7 @@ export default function CollectionsPage() {
 
             {/* Create Collection Button */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h1 className="text-2xl font-bold">Collections</h1>
+                <h1 className="text-2xl font-serif font-medium">Collections</h1>
                 <Button
                     onClick={() => setShowCreateModal(true)}
                     disabled={!session?.user || !hasPaidFeature(session.user.plan || 'FREE', 'collections')}
@@ -692,7 +692,7 @@ export default function CollectionsPage() {
                                     value={newCollection.name}
                                     onChange={(e) => setNewCollection({ ...newCollection, name: e.target.value })}
                                     onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
-                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-red-500' : 'border-[var(--border)]'
+                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(touched.name && (nameTooShort || nameTooLong)) ? 'border-destructive' : 'border-[var(--border)]'
                                         }`}
                                     placeholder="Enter collection name"
                                     aria-invalid={touched.name && (nameTooShort || nameTooLong)}
@@ -715,7 +715,7 @@ export default function CollectionsPage() {
                                     value={newCollection.description}
                                     onChange={(e) => setNewCollection({ ...newCollection, description: e.target.value })}
                                     onBlur={() => setTouched(prev => ({ ...prev, description: true }))}
-                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(touched.description && descTooLong) ? 'border-red-500' : ''
+                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(touched.description && descTooLong) ? 'border-destructive' : ''
                                         }`}
                                     rows={3}
                                     placeholder="Enter collection description"
@@ -779,7 +779,7 @@ export default function CollectionsPage() {
                                     value={editingName}
                                     onChange={(e) => setEditingName(e.target.value)}
                                     onBlur={() => setEditTouched(prev => ({ ...prev, name: true }))}
-                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(editTouched.name && (editNameTooShort || editNameTooLong)) ? 'border-red-500' : 'border-[var(--border)]'
+                                    className={`w-full px-3 py-3 sm:py-2 border rounded-md bg-[var(--background)] touch-manipulation ${(editTouched.name && (editNameTooShort || editNameTooLong)) ? 'border-destructive' : 'border-[var(--border)]'
                                         }`}
                                     placeholder="Enter collection name"
                                     aria-invalid={editTouched.name && (editNameTooShort || editNameTooLong)}
@@ -802,7 +802,7 @@ export default function CollectionsPage() {
                                     value={editingDescription}
                                     onChange={(e) => setEditingDescription(e.target.value)}
                                     onBlur={() => setEditTouched(prev => ({ ...prev, description: true }))}
-                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(editTouched.description && editDescTooLong) ? 'border-red-500' : ''
+                                    className={`w-full px-3 py-2 border rounded-md bg-background resize-none ${(editTouched.description && editDescTooLong) ? 'border-destructive' : ''
                                         }`}
                                     rows={3}
                                     placeholder="Enter collection description"
