@@ -351,7 +351,7 @@ export default function FeedClient({
       case 'COLLECTION_CREATED': return <Folder size={18} className="text-green-500" />;
       case 'COLLECTION_MEMBER_JOINED': return <UserPlus size={18} className="text-purple-500" />;
       case 'ENTRY_SHARED': return <Share2 size={18} className="text-orange-500" />;
-      default: return <Sparkles size={18} className="text-gray-400" />;
+      default: return <Sparkles size={18} className="text-[var(--content-tertiary)]" />;
     }
   }, []);
 

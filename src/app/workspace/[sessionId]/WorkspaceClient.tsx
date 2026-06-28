@@ -388,7 +388,7 @@ export function WorkspaceClient({
                 }}
                 placeholder="Ask a question about this paper…"
                 disabled={isGenerating}
-                className="min-h-[72px] rounded-2xl border-border bg-white px-4 py-3 text-content-primary placeholder:text-content-tertiary"
+                className="min-h-[72px] rounded-2xl border-border bg-card px-4 py-3 text-content-primary placeholder:text-content-tertiary"
               />
               <button
                 onClick={handleAskQuestion}

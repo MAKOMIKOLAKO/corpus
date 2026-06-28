@@ -192,7 +192,7 @@ export default function AdminFeedbackPage() {
                             key={star}
                             className={`w-3 h-3 ${star <= (item.rating || 0)
                                 ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
+                                : "text-[var(--content-tertiary)]"
                               }`}
                           />
                         ))}

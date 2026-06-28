@@ -42,8 +42,8 @@ export function MetricsChart({
 
   if (type === 'line') {
     return (
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+      <div className="bg-card shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-foreground mb-4">{title}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -70,8 +70,8 @@ export function MetricsChart({
 
   if (type === 'pie') {
     return (
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+      <div className="bg-card shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-foreground mb-4">{title}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -97,8 +97,8 @@ export function MetricsChart({
 
   if (type === 'bar') {
     return (
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+      <div className="bg-card shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-foreground mb-4">{title}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />

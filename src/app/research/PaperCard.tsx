@@ -31,7 +31,7 @@ const NOVELTY_COLORS: Record<string, string> = {
   'State-of-the-art result': 'bg-violet-900/40 text-violet-300 border border-violet-700/40',
   'Survey': 'bg-amber-900/40 text-amber-300 border border-amber-700/40',
   'Theoretical': 'bg-rose-900/40 text-rose-300 border border-rose-700/40',
-  'Replication': 'bg-gray-800/60 text-gray-400 border border-gray-600/40',
+  'Replication': 'bg-muted/60 text-[var(--content-tertiary)] border border-border/40',
   'Interdisciplinary': 'bg-orange-900/40 text-orange-300 border border-orange-700/40',
 }
 
@@ -48,7 +48,7 @@ export function PaperCard({ paper, onSave, onDismiss, highlightCluster }: PaperC
 
   const authorStr = paper.authors.slice(0, 3).join(', ') + (paper.authors.length > 3 ? ' et al.' : '')
   const year = paper.year ?? (paper.publishedDate ? new Date(paper.publishedDate).getFullYear() : null)
-  const noveltyColor = NOVELTY_COLORS[paper.noveltyTag] ?? 'bg-gray-800/60 text-gray-400 border border-gray-600/40'
+  const noveltyColor = NOVELTY_COLORS[paper.noveltyTag] ?? 'bg-muted/60 text-[var(--content-tertiary)] border border-border/40'
 
   async function handleSave() {
     if (saved || saving) return
