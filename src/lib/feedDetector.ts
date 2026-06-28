@@ -1,3 +1,4 @@
+// HIDDEN — only used by disabled features
 import { parseFeed, ParsedFeed } from './rssParser';
 import { discoverFeedUrl, extractDomain } from './urlUtils';
 

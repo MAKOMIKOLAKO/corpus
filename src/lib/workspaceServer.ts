@@ -1,3 +1,4 @@
+// HIDDEN — only used by disabled features
 import prisma from '@/lib/prisma'
 import { extractArxivId, extractSections, fetchArxivFullText, type ExtractedSection } from '@/lib/arxivFetcher'
 import { generateStructuredSections } from '@/lib/workspaceSummaries'
