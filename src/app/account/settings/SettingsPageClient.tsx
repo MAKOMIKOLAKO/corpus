@@ -3,30 +3,20 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Gift, Loader2, CheckCircle, XCircle, CreditCard, Users, User, Edit2, Check, X, Eye, EyeOff, FlaskConical } from 'lucide-react';
-import { getUserPlan, PLAN_LIMITS } from '@/lib/plans';
+import { Loader2, CheckCircle, XCircle, User, Edit2, Check, X, Eye, EyeOff, FlaskConical, Shield, AlertTriangle, Mail } from 'lucide-react';
 import { RESEARCH_INTERESTS, INTEREST_CATEGORIES, getInterestsByCategory } from '@/lib/researchInterests';
 
 export default function AccountPage() {
-    const { data: session, update } = useSession();
+    const { data: session } = useSession();
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [promoCode, setPromoCode] = useState('');
-    const [redeeming, setRedeeming] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [portalLoading, setPortalLoading] = useState(false);
-    const [subscriptionSyncing, setSubscriptionSyncing] = useState(false);
-    const [sharedCollectionsCount, setSharedCollectionsCount] = useState(0);
-    const [loadingCollections, setLoadingCollections] = useState(true);
 
     // Profile state
-    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; name: string | null; institution?: any } | null>(null);
+    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; name: string | null; institution?: any; emailVerified?: boolean } | null>(null);
     const [editingProfile, setEditingProfile] = useState(false);
     const [profileUsername, setProfileUsername] = useState('');
     const [profileBio, setProfileBio] = useState('');
@@ -52,58 +42,31 @@ export default function AccountPage() {
     const [sendingCode, setSendingCode] = useState(false);
     const [showCodeInput, setShowCodeInput] = useState(false);
     const [verificationMsg, setVerificationMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const userPlan = getUserPlan(session?.user ? {
-        ...session.user,
-        plan: session.user.plan as "FREE" | "PRO" | "LIFETIME_PRO"
-    } : null);
-    const stripeReturnState = searchParams?.get('stripe');
-    const isStripeReturn = stripeReturnState === 'success' || stripeReturnState === 'portal';
-    const isLifetimePro = session?.user?.plan === 'LIFETIME_PRO';
+
+    // Security state
+    const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+    const [passwordResetMsg, setPasswordResetMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Danger zone state
+    const [deletingAccount, setDeletingAccount] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteMsg, setDeleteMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     useEffect(() => {
-        fetchSharedCollectionsCount();
         fetchProfile();
         fetchResearchInterests();
     }, []);
 
-    // Sync subscription state when returning from Stripe checkout/portal
-    useEffect(() => {
-        if (!isStripeReturn || subscriptionSyncing) {
-            return;
-        }
-
-        const syncStripeSubscription = async () => {
-            setSubscriptionSyncing(true);
-            try {
-                await fetch('/api/stripe/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                await update();
-                router.replace('/account/settings');
-                router.refresh();
-            } catch (error) {
-                console.error('Error syncing subscription state:', error);
-            } finally {
-                setSubscriptionSyncing(false);
-            }
-        };
-
-        syncStripeSubscription();
-    }, [isStripeReturn, router, subscriptionSyncing, update]);
-
-    // Handle hash navigation
+    // Handle hash navigation to username
     useEffect(() => {
         if (window.location.hash === '#username' && profile) {
-            // Scroll to the username section
             const element = document.getElementById('username');
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Auto-open edit mode for better UX
                 setTimeout(() => {
                     setEditingProfile(true);
                     setProfileMsg(null);
-                    // Focus on username input
                     const input = document.getElementById('settingsUsername') as HTMLInputElement;
                     if (input) {
                         input.focus();
@@ -192,83 +155,6 @@ export default function AccountPage() {
         }
     };
 
-    const fetchSharedCollectionsCount = async () => {
-        try {
-            const response = await fetch('/api/collections');
-            if (response.ok) {
-                const collections = await response.json();
-                const sharedCount = collections.filter((c: any) => c.isOwner && c._count?.members > 0).length;
-                setSharedCollectionsCount(sharedCount);
-            }
-        } catch (error) {
-            console.error('Error fetching collections:', error);
-        } finally {
-            setLoadingCollections(false);
-        }
-    };
-
-    const handleRedeemPromo = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!promoCode.trim()) return;
-
-        setRedeeming(true);
-        setMessage(null);
-
-        try {
-            const response = await fetch('/api/promo', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ code: promoCode.trim().toUpperCase() }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                setMessage({
-                    type: 'success',
-                    text: 'You now have lifetime Pro access!'
-                });
-                setPromoCode('');
-                // Refresh the session to update the plan
-                window.location.reload();
-            } else {
-                setMessage({
-                    type: 'error',
-                    text: data.error || 'Invalid promo code'
-                });
-            }
-        } catch (error) {
-            setMessage({
-                type: 'error',
-                text: 'Failed to redeem promo code'
-            });
-        } finally {
-            setRedeeming(false);
-        }
-    };
-
-    const handleManageSubscription = async () => {
-        setPortalLoading(true);
-        try {
-            const response = await fetch('/api/stripe/portal', {
-                method: 'POST',
-            });
-
-            const data = await response.json();
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                console.error('Failed to create portal session');
-                setPortalLoading(false);
-            }
-        } catch (error) {
-            console.error('Error creating portal session:', error);
-            setPortalLoading(false);
-        }
-    };
-
     const handleSendVerificationCode = async () => {
         if (!verificationEmail.trim()) return;
 
@@ -284,11 +170,11 @@ export default function AccountPage() {
             const data = await response.json();
             if (response.ok) {
                 setVerificationMsg({ type: 'success', text: `Verification code sent to ${verificationEmail}` });
-                setShowCodeInput(true); // Show the code input field
+                setShowCodeInput(true);
             } else {
                 setVerificationMsg({ type: 'error', text: data.error || 'Failed to send verification code' });
             }
-        } catch (error) {
+        } catch {
             setVerificationMsg({ type: 'error', text: 'Failed to send verification code' });
         } finally {
             setSendingCode(false);
@@ -314,67 +200,76 @@ export default function AccountPage() {
                 setVerificationEmail('');
                 setVerificationCode('');
                 setShowCodeInput(false);
-                fetchProfile(); // Refresh profile data
+                fetchProfile();
             } else {
                 setVerificationMsg({ type: 'error', text: data.error || 'Invalid verification code' });
             }
-        } catch (error) {
+        } catch {
             setVerificationMsg({ type: 'error', text: 'Failed to verify code' });
         } finally {
             setVerifying(false);
         }
     };
 
-    const getPlanBadgeVariant = (plan: string) => {
-        switch (plan) {
-            case 'PRO':
-            case 'LIFETIME_PRO':
-                return 'default';
-            case 'FREE':
-            default:
-                return 'secondary';
+    const handlePasswordReset = async () => {
+        if (!session?.user?.email) return;
+        setSendingPasswordReset(true);
+        setPasswordResetMsg(null);
+        try {
+            const res = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: session.user.email }),
+            });
+            if (res.ok) {
+                setPasswordResetMsg({ type: 'success', text: 'Password reset email sent. Check your inbox.' });
+            } else {
+                const data = await res.json();
+                setPasswordResetMsg({ type: 'error', text: data.error || 'Failed to send reset email' });
+            }
+        } catch {
+            setPasswordResetMsg({ type: 'error', text: 'Failed to send reset email' });
+        } finally {
+            setSendingPasswordReset(false);
         }
     };
 
-    const getPlanDisplay = (plan: string) => {
-        switch (plan) {
-            case 'PRO':
-                return 'Pro';
-            case 'LIFETIME_PRO':
-                return 'Lifetime Pro';
-            case 'FREE':
-            default:
-                return 'Free';
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmText !== 'delete my account') return;
+        setDeletingAccount(true);
+        setDeleteMsg(null);
+        try {
+            const res = await fetch('/api/user/profile', { method: 'DELETE' });
+            if (res.ok) {
+                router.push('/');
+            } else {
+                const data = await res.json();
+                setDeleteMsg({ type: 'error', text: data.error || 'Failed to delete account' });
+                setDeletingAccount(false);
+            }
+        } catch {
+            setDeleteMsg({ type: 'error', text: 'Failed to delete account' });
+            setDeletingAccount(false);
         }
     };
 
     return (
         <div className="space-y-6 max-w-4xl [&_[data-slot=card]]:ring-0 [&_[data-slot=card]]:hover:ring-0 [&_[data-slot=card]]:border [&_[data-slot=card]]:border-border [&_[data-slot=card-header]]:px-6 [&_[data-slot=card-header]]:pt-6 [&_[data-slot=card-content]]:px-6 [&_[data-slot=card-content]]:pb-6">
-            {/* Stripe return sync banner */}
-            {isStripeReturn && (
-                <div className="bg-accent/10 border border-border-strong rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-accent" />
-                        <div>
-                            <h3 className="font-medium text-content-primary">Syncing your subscription...</h3>
-                            <p className="text-sm text-content-secondary">
-                                We&apos;re refreshing your billing status from Stripe.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div>
                 <h1 className="text-2xl font-serif font-medium tracking-tight">account settings</h1>
-                <p className="text-sm text-muted-foreground">manage your account and subscription.</p>
+                <p className="text-sm text-muted-foreground">manage your account.</p>
             </div>
+
+            {/* Beta notice */}
+            <p className="text-sm text-muted-foreground">
+                Corpus is free during beta. All features are available to everyone.
+            </p>
 
             {/* Profile */}
             <Card id="username">
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                        <span className="flex items-center gap-2"><User className="w-5 h-5" /> Profile</span>
+                        <span className="flex items-center gap-2 font-serif font-medium text-lg text-foreground"><User className="w-5 h-5" /> Profile</span>
                         {!editingProfile && (
                             <button
                                 onClick={() => { setEditingProfile(true); setProfileMsg(null); }}
@@ -509,7 +404,7 @@ export default function AccountPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                        <span className="flex items-center gap-2"><FlaskConical className="w-5 h-5" /> Research Interests</span>
+                        <span className="flex items-center gap-2 font-serif font-medium text-lg text-foreground"><FlaskConical className="w-5 h-5" /> Research Interests</span>
                         {!editingInterests && (
                             <button
                                 onClick={() => { setEditingInterests(true); setInterestsMsg(null); setSelectedInterests(currentInterests); }}
@@ -524,7 +419,6 @@ export default function AccountPage() {
                 <CardContent>
                     {editingInterests ? (
                         <div className="space-y-4">
-                            {/* Search */}
                             <div className="relative">
                                 <input
                                     type="text"
@@ -535,7 +429,6 @@ export default function AccountPage() {
                                 />
                             </div>
 
-                            {/* Category Tabs */}
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                 <button
                                     onClick={() => setInterestsCategory('All')}
@@ -560,7 +453,6 @@ export default function AccountPage() {
                                 ))}
                             </div>
 
-                            {/* Interest Chips */}
                             <div className="flex flex-wrap gap-2">
                                 {(() => {
                                     const interestsByCategory = getInterestsByCategory();
@@ -649,311 +541,111 @@ export default function AccountPage() {
                 </CardContent>
             </Card>
 
-            {/* Account Information */}
+            {/* Account */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5" />
-                        Account & Billing
+                    <CardTitle className="flex items-center gap-2 font-serif font-medium text-lg text-foreground">
+                        <Mail className="w-5 h-5" /> Account
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-4">
-                        {/* Success banner after checkout return */}
-                        {stripeReturnState === 'success' && session?.user?.plan === 'PRO' && (
-                            <div className="p-4 bg-accent/10 border border-border-strong rounded-lg">
-                                <div className="flex items-center gap-2 text-accent">
-                                    <CheckCircle className="w-5 h-5" />
-                                    <span className="font-medium text-content-primary">Welcome to Corpus Pro!</span>
-                                </div>
-                                <p className="text-content-secondary text-sm mt-1">
-                                    Your account has been upgraded successfully. You now have access to unlimited entries and all premium features.
-                                </p>
-                            </div>
-                        )}
+                    <div className="space-y-3">
                         <div>
                             <Label className="text-sm font-medium text-muted-foreground">Email</Label>
-                            <p className="text-sm">{session?.user?.email}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-sm">{session?.user?.email}</p>
+                                {(session?.user as any)?.emailVerified ? (
+                                    <span className="flex items-center gap-1 text-xs text-accent">
+                                        <CheckCircle className="w-3 h-3" /> Verified
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <XCircle className="w-3 h-3" /> Not verified
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Name</Label>
-                            <p className="text-sm">{session?.user?.name || 'Not set'}</p>
-                        </div>
-                        <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Current Plan</Label>
-                            <div className="mt-1">
-                                <Badge variant={getPlanBadgeVariant(userPlan)}>
-                                    {getPlanDisplay(userPlan)}
-                                </Badge>
-                            </div>
-                        </div>
-
-                        {userPlan === 'PRO' && (
-                            <div>
-                                <div className="mb-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Label className="text-sm font-medium text-muted-foreground">Subscription Status</Label>
-                                        <Badge variant={(session?.user as any)?.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
-                                            {(session?.user as any)?.subscriptionStatus || 'Unknown'}
-                                        </Badge>
-                                    </div>
-                                    {(session?.user as any)?.subscriptionEndsAt && (
-                                        <p className="text-xs text-muted-foreground">
-                                            {(session?.user as any)?.subscriptionStatus === 'canceling'
-                                                ? `Ends on ${new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}`
-                                                : `Next billing date: ${new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}`
-                                            }
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Status-specific messages and actions */}
-                                {(session?.user as any)?.subscriptionStatus === 'canceling' && (
-                                    <div className="p-3 bg-accent-muted border border-border-strong rounded-lg mb-3">
-                                        <p className="text-content-primary text-sm">
-                                            Your Pro subscription is canceled and will end on {new Date((session?.user as any).subscriptionEndsAt).toLocaleDateString()}. You'll keep Pro access until then.
-                                        </p>
-                                        <Button size="sm" className="mt-2" onClick={() => window.location.href = '/pricing'}>
-                                            Resubscribe
-                                        </Button>
-                                    </div>
-                                )}
-
-                                {(session?.user as any)?.subscriptionStatus === 'past_due' && (
-                                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg mb-3">
-                                        <p className="text-destructive text-sm">
-                                            Your payment failed. Update your payment method to keep Pro access.
-                                        </p>
-                                        <Button
-                                            size="sm"
-                                            className="mt-2"
-                                            onClick={handleManageSubscription}
-                                            disabled={portalLoading}
-                                        >
-                                            {portalLoading ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    Loading...
-                                                </>
-                                            ) : (
-                                                'Update Payment Method'
-                                            )}
-                                        </Button>
-                                    </div>
-                                )}
-
-                                {(session?.user as any)?.subscriptionStatus === 'active' && (
-                                    <p className="text-sm text-muted-foreground mb-3">
-                                        Manage your subscription, update payment methods, or cancel your plan.
-                                    </p>
-                                )}
-
-                                {(session?.user as any)?.subscriptionStatus !== 'canceling' && (session?.user as any)?.subscriptionStatus !== 'past_due' && (
-                                    <Button
-                                        onClick={handleManageSubscription}
-                                        disabled={portalLoading}
-                                    >
-                                        {portalLoading ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Loading...
-                                            </>
-                                        ) : (
-                                            'Manage Subscription'
-                                        )}
-                                    </Button>
-                                )}
-                            </div>
-                        )}
-
-                        {userPlan === 'FREE' && (
-                            <div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    Upgrade to Pro to unlock unlimited entries and premium features.
-                                </p>
-                                <Button>
-                                    <a href="/pricing">Upgrade to Pro</a>
-                                </Button>
-                            </div>
-                        )}
-
-                        {isLifetimePro && (
-                            <div>
-                                <p className="text-sm text-accent font-medium">
-                                    Lifetime Pro — no billing required
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    You have lifetime access to all Pro features.
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Promo Code Redemption */}
+            {/* Security */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Gift className="w-5 h-5" />
-                        Promo Code Redemption
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleRedeemPromo} className="space-y-4">
-                        <div>
-                            <Label htmlFor="promoCode">Promo Code</Label>
-                            <Input
-                                id="promoCode"
-                                type="text"
-                                placeholder="Enter promo code"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                disabled={redeeming}
-                                className="uppercase"
-                            />
-                        </div>
-                        <Button type="submit" disabled={redeeming || !promoCode.trim()}>
-                            {redeeming ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Redeeming...
-                                </>
-                            ) : (
-                                <>
-                                    <Gift className="w-4 h-4 mr-2" />
-                                    Redeem Code
-                                </>
-                            )}
-                        </Button>
-                    </form>
-
-                    {message && (
-                        <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${message.type === 'success'
-                            ? 'bg-accent/10 text-content-primary border border-border-strong'
-                            : 'bg-destructive/10 text-destructive border border-destructive/20'
-                            }`}>
-                            {message.type === 'success' ? (
-                                <CheckCircle className="w-4 h-4" />
-                            ) : (
-                                <XCircle className="w-4 h-4" />
-                            )}
-                            <span className="text-sm">{message.text}</span>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Shared Collections */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5" />
-                        Shared Collections
+                    <CardTitle className="flex items-center gap-2 font-serif font-medium text-lg text-foreground">
+                        <Shield className="w-5 h-5" /> Security
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {loadingCollections ? (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Loading...
+                        <div>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                Send a password reset link to your email address.
+                            </p>
+                            <Button variant="outline" onClick={handlePasswordReset} disabled={sendingPasswordReset}>
+                                {sendingPasswordReset ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Sending…
+                                    </>
+                                ) : (
+                                    'Send password reset email'
+                                )}
+                            </Button>
+                        </div>
+                        {passwordResetMsg && (
+                            <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${passwordResetMsg.type === 'success' ? 'bg-accent/10 text-content-primary border border-border-strong' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
+                                {passwordResetMsg.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                {passwordResetMsg.text}
                             </div>
-                        ) : (
-                            <>
-                                <div>
-                                    <Label className="text-sm font-medium text-muted-foreground">Shared Collections Usage</Label>
-                                    <div className="mt-2">
-                                        {userPlan === 'FREE' ? (
-                                            <>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-medium">
-                                                        Shared collections not available on free plan
-                                                    </span>
-                                                    <Badge variant="secondary">
-                                                        Upgrade Required
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground mt-2">
-                                                    Upgrade to Pro to create unlimited shared collections with role-based permissions.
-                                                </p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm font-medium">
-                                                        {sharedCollectionsCount} shared {sharedCollectionsCount === 1 ? 'collection' : 'collections'}
-                                                    </span>
-                                                    <Badge variant="default">Unlimited</Badge>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground mt-2">
-                                                    Pro users can share unlimited collections with other Corpus users.
-                                                </p>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="pt-3 border-t border-border">
-                                    <h4 className="text-sm font-medium mb-2">Sharing Permissions</h4>
-                                    <div className="space-y-1 text-sm text-muted-foreground">
-                                        <p>• <strong>Viewer:</strong> Can view entries in the collection</p>
-                                        <p>• <strong>Contributor:</strong> Can add and remove entries</p>
-                                        <p>• <strong>Admin:</strong> Can manage members and settings (Pro only)</p>
-                                    </div>
-                                </div>
-                            </>
                         )}
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Plan Information */}
-            <Card>
+            {/* Danger Zone */}
+            <Card className="border-destructive/40">
                 <CardHeader>
-                    <CardTitle>Plan Information</CardTitle>
+                    <CardTitle className="flex items-center gap-2 font-serif font-medium text-lg text-destructive">
+                        <AlertTriangle className="w-5 h-5" /> Danger Zone
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-6">
-                        <div>
-                            <h4 className="font-medium mb-2">Current Plan Benefits</h4>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Entry Limit</span>
-                                    <span className="font-medium">
-                                        {userPlan === 'FREE' ? '100 entries' : 'Unlimited'}
-                                    </span>
+                    <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                        {!showDeleteConfirm ? (
+                            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                                Delete account
+                            </Button>
+                        ) : (
+                            <div className="space-y-3 border border-destructive/30 rounded-lg p-4 bg-destructive/5">
+                                <p className="text-sm font-medium">Type <span className="font-mono">delete my account</span> to confirm:</p>
+                                <Input
+                                    value={deleteConfirmText}
+                                    onChange={e => setDeleteConfirmText(e.target.value)}
+                                    placeholder="delete my account"
+                                    className="border-destructive/40 focus-visible:ring-destructive"
+                                />
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="destructive"
+                                        disabled={deleteConfirmText !== 'delete my account' || deletingAccount}
+                                        onClick={handleDeleteAccount}
+                                    >
+                                        {deletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm deletion'}
+                                    </Button>
+                                    <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteMsg(null); }}>
+                                        Cancel
+                                    </Button>
                                 </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Collections</span>
-                                    <span className="font-medium">
-                                        {userPlan === 'FREE' ? 'Available' : 'Available'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Shared Collections</span>
-                                    <span className="font-medium">
-                                        {userPlan === 'FREE' ? 'Up to 3' : 'Unlimited'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Knowledge Graph</span>
-                                    <span className="font-medium">
-                                        {userPlan === 'FREE' ? 'Not available' : 'Available'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {userPlan === 'FREE' && (
-                            <div>
-                                <h4 className="font-medium mb-2">Upgrade to Pro</h4>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    Get unlimited entries, collections, shared collections, and the knowledge graph visualization.
-                                </p>
-                                <Button>
-                                    <a href="/pricing">Upgrade to Pro</a>
-                                </Button>
+                                {deleteMsg && (
+                                    <div className="p-3 rounded-lg flex items-center gap-2 text-sm bg-destructive/10 text-destructive border border-destructive/20">
+                                        <XCircle className="w-4 h-4" />
+                                        {deleteMsg.text}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1081,30 +773,4 @@ export default function AccountPage() {
             )}
         </div>
     );
-}
-
-function getPlanBadgeVariant(plan: string): "default" | "secondary" | "destructive" | "outline" {
-    switch (plan) {
-        case 'LIFETIME_PRO':
-            return 'default';
-        case 'PRO':
-            return 'default';
-        case 'FREE':
-            return 'secondary';
-        default:
-            return 'secondary';
-    }
-}
-
-function getPlanDisplay(plan: string): string {
-    switch (plan) {
-        case 'LIFETIME_PRO':
-            return 'Lifetime Premium';
-        case 'PRO':
-            return 'Pro';
-        case 'FREE':
-            return 'Free';
-        default:
-            return 'Unknown';
-    }
 }
