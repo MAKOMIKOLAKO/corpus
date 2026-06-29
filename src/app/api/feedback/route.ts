@@ -11,6 +11,7 @@ const feedbackSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  return NextResponse.json({ error: 'Not found' }, { status: 404 });
   try {
     const session = await getServerSession(authOptions);
 
