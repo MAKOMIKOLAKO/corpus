@@ -8,7 +8,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { BookOpen, Folder, MessageSquare, Plus, Shield } from "lucide-react";
+import { BookOpen, Compass, Folder, MessageSquare, Plus, Shield } from "lucide-react";
 
 export function AppShell({
   children,
@@ -173,6 +173,14 @@ export function AppShell({
                       <Folder className="w-4 h-4" />
                       collections
                     </Link>
+                    <Link
+                      href="/discover"
+                      className={`${desktopNavLinkClassName} ${pathname === "/discover" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
+                      aria-current={pathname === "/discover" ? "page" : undefined}
+                    >
+                      <Compass className="w-4 h-4" />
+                      discover
+                    </Link>
                     {isAdmin && (
                       <Link
                         href="/admin"
@@ -236,6 +244,13 @@ export function AppShell({
                   >
                     <Folder className="w-5 h-5" />
                     collections
+                  </Link>
+                  <Link
+                    href="/discover"
+                    className={`${mobileNavLinkClassName} ${pathname === "/discover" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
+                  >
+                    <Compass className="w-5 h-5" />
+                    discover
                   </Link>
                   {isAdmin && (
                     <Link
