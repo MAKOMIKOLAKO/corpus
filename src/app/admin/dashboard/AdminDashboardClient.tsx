@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                 setIsLoading(true);
                 setTimeout(() => checkAuthAndFetchMetrics(), 0);
               }}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className="bg-secondary hover:bg-muted text-foreground px-4 py-2 rounded-md text-sm font-medium"
             >
               Clear
             </button>
