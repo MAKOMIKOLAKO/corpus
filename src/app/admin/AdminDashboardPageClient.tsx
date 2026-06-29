@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCost } from '@/lib/geminiPricing';
 import { cn } from '@/lib/utils';
 
-type SectionKey = 'overview' | 'growth' | 'users' | 'features' | 'engagement' | 'revenue' | 'costs' | 'logins' | 'feedback';
+type SectionKey = 'overview' | 'growth' | 'users' | 'features' | 'engagement' | 'revenue' | 'costs' | 'logins';
 
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: 'overview', label: 'Overview' },
@@ -38,7 +38,6 @@ const sections: Array<{ key: SectionKey; label: string }> = [
   { key: 'revenue', label: 'Revenue' },
   { key: 'costs', label: 'Costs' },
   { key: 'logins', label: 'Logins' },
-  { key: 'feedback', label: 'Feedback' },
 ];
 
 const chartPalette = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
@@ -165,8 +164,6 @@ export default function AdminDashboardPageClient({
           nextData.costs = { overview, byFeature, byUser, byDay, byMonth, rawCalls };
         } else if (activeSection === 'logins') {
           nextData.logins = await fetchJson(`/api/admin/metrics/logins?t=${timestamp}`);
-        } else if (activeSection === 'feedback') {
-          nextData.feedback = await fetchJson(`/api/admin/metrics/feedback?page=1&limit=25&t=${timestamp}`);
         }
 
         if (!cancelled) {
@@ -401,9 +398,6 @@ export default function AdminDashboardPageClient({
                   </ChartCard>
                   <ChartCard title="Recent Pro Conversions">
                     <div className="space-y-3 text-sm">{overview.recentProConversions.map((user: any) => <div key={user.id} className="flex items-center justify-between border-b border-border/60 pb-2"><div>{user.email}</div><div className="text-content-secondary">{relativeTime(user.convertedAt)}</div></div>)}</div>
-                  </ChartCard>
-                  <ChartCard title="Recent Feedback">
-                    <div className="space-y-3 text-sm">{overview.recentFeedback.map((item: any) => <div key={item.id} className="border-b border-border/60 pb-2"><div>{item.message}</div><div className="mt-1 text-xs text-content-secondary">{relativeTime(item.createdAt)}</div></div>)}</div>
                   </ChartCard>
                 </div>
               </div>
@@ -661,23 +655,6 @@ export default function AdminDashboardPageClient({
                   <Card><CardHeader><CardDescription>Active last 30 days</CardDescription><CardTitle>{data.logins.activeLast30d}</CardTitle></CardHeader></Card>
                 </div>
                 <ChartCard title="Daily Active Users"><div className="h-72"><ResponsiveContainer><LineChart data={data.logins.daily}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Bar dataKey="uniqueActiveUsers" fill={chartSecondaryColor} radius={[8, 8, 0, 0]} /><Line dataKey="uniqueActiveUsers" stroke={chartPrimaryColor} strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div></ChartCard>
-              </div>
-            ) : null
-          )}
-
-          {activeSection === 'feedback' && (
-            loading && !data.feedback ? <LoadingState /> : data.feedback ? (
-              <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-4">
-                  <Card><CardHeader><CardDescription>Total feedback</CardDescription><CardTitle>{data.feedback.aggregates.total}</CardTitle></CardHeader></Card>
-                  <Card><CardHeader><CardDescription>This week</CardDescription><CardTitle>{data.feedback.aggregates.thisWeek}</CardTitle></CardHeader></Card>
-                  <Card><CardHeader><CardDescription>This month</CardDescription><CardTitle>{data.feedback.aggregates.thisMonth}</CardTitle></CardHeader></Card>
-                  <Card><CardHeader><CardDescription>Authenticated</CardDescription><CardTitle>{data.feedback.aggregates.authenticated}</CardTitle></CardHeader></Card>
-                </div>
-                <ChartCard title="Feedback Volume"><div className="h-72"><ResponsiveContainer><BarChart data={data.feedback.aggregates.submissionsPerDay}><CartesianGrid stroke={chartGridColor} vertical={false} /><XAxis dataKey="date" stroke={chartAxisColor} /><YAxis stroke={chartAxisColor} /><Tooltip /><Bar dataKey="value" fill={chartPrimaryColor} radius={[8, 8, 0, 0]} /></BarChart></ResponsiveContainer></div></ChartCard>
-                <div className="overflow-hidden rounded-2xl border border-border bg-card ring-1 ring-foreground/10">
-                  <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-content-secondary"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Feedback</th></tr></thead><tbody>{data.feedback.items.map((item: any) => <tr key={item.id} className="border-t border-border/60"><td className="px-4 py-3">{relativeTime(item.createdAt)}</td><td className="px-4 py-3">{item.user?.email || item.anonymousEmail || 'Anonymous'}</td><td className="px-4 py-3">{item.user?.plan || 'Anonymous'}</td><td className="px-4 py-3">{item.content}</td></tr>)}</tbody></table>
-                </div>
               </div>
             ) : null
           )}

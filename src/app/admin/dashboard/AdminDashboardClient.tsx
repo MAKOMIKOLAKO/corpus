@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { MetricsChart } from '@/components/admin/MetricsChart';
-import { FeedbackList } from '@/components/admin/FeedbackList';
 
 interface Metrics {
   userOnboarding: {
@@ -37,7 +36,6 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'metrics' | 'feedback'>('metrics');
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: '',
@@ -169,29 +167,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="border-t border-border">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('metrics')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'metrics'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-[var(--border-strong)]'
-                  }`}
-              >
-                Metrics
-              </button>
-              <button
-                onClick={() => setActiveTab('feedback')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'feedback'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-[var(--border-strong)]'
-                  }`}
-              >
-                Feedback
-              </button>
-            </nav>
-          </div>
         </div>
       </div>
 
@@ -232,8 +207,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'metrics' ? (
+        <>
           <>
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -412,9 +386,7 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
-        ) : (
-          <FeedbackList dateRange={dateRange} />
-        )}
+        </>
       </div>
     </div >
   );

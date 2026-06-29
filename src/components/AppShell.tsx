@@ -7,8 +7,7 @@ import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
-import { FeedbackModal } from "@/components/FeedbackModal";
-import { BookOpen, Folder, MessageSquare, Plus, Shield } from "lucide-react";
+import { BookOpen, Folder, Plus, Shield } from "lucide-react";
 
 export function AppShell({
   children,
@@ -26,7 +25,6 @@ export function AppShell({
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const desktopNavLinkClassName =
     "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[15px] font-sans font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
@@ -183,14 +181,6 @@ export function AppShell({
                         admin
                       </Link>
                     )}
-                    <div className="h-4 w-px shrink-0 bg-border mx-2" aria-hidden="true" />
-                    <button
-                      onClick={() => setShowFeedback(true)}
-                      className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[15px] font-sans font-medium leading-none text-content-secondary transition-colors hover:text-content-primary hover:bg-warm-sand focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      feedback
-                    </button>
                     <AccountHoverMenu
                       displayName={session.user?.name || session.user?.email || "Account"}
                     />
@@ -246,13 +236,6 @@ export function AppShell({
                       admin
                     </Link>
                   )}
-                  <button
-                    onClick={() => { setShowFeedback(true); setIsMenuOpen(false); }}
-                    className="flex h-12 items-center gap-3 rounded-lg px-4 text-left text-[15px] font-sans font-medium text-content-secondary transition-colors hover:bg-warm-sand hover:text-content-primary"
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                    feedback
-                  </button>
                   <div className="my-2 h-px bg-border" />
                   <div className="px-4 py-2">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12px] text-content-tertiary">Account</p>
@@ -280,11 +263,6 @@ export function AppShell({
           </main>
         </>
       )}
-      <FeedbackModal
-        trigger={null}
-        open={showFeedback}
-        onOpenChange={setShowFeedback}
-      />
     </>
   );
 }
