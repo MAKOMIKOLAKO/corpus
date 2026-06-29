@@ -937,7 +937,6 @@ function PreviewForm({
             <option value="UNREAD">Unread</option>
             <option value="READING">Reading</option>
             <option value="READ">Completed</option>
-            <option value="DROPPED">Dropped</option>
           </select>
         </Field>
 

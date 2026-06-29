@@ -211,10 +211,8 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                                 }`}
                         >
                             <option value="UNREAD">Unread</option>
-                            <option value="BACKLOG">Backlog</option>
                             <option value="IN_PROGRESS">In Progress</option>
                             <option value="COMPLETED">Completed</option>
-                            <option value="DROPPED">Dropped</option>
                         </select>
                     </div>
 
