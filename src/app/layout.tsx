@@ -19,15 +19,6 @@ export const metadata: Metadata = {
     template: '%s | Corpus'
   },
   description: 'Corpus automatically tracks new research papers from your favorite journals. Get a daily feed with summaries so you never miss important research in your field.',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f4ed' },
-    { media: '(prefers-color-scheme: dark)', color: '#141413' },
-  ],
   icons: {
     icon: [
       { url: '/favicon.png', sizes: 'any' },
@@ -68,7 +59,6 @@ export const metadata: Metadata = {
     'citation generator',
     'academic reference manager',
     'arXiv'
-  ],
   authors: [{ name: 'Corpus', url: 'https://usecorpus.app' }],
   creator: 'Corpus',
   category: 'productivity',
@@ -110,6 +100,13 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+}
+
+export const viewport = {
+  themeColor: '#f0ede4',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 function ThemeBootstrapScript() {
