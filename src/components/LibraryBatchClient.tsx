@@ -8,8 +8,7 @@ import {
   Square,
   MoreHorizontal,
   FolderPlus,
-  CircleDot,
-  AlertCircle
+  CircleDot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Plan } from '@prisma/client';
@@ -41,12 +40,6 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
   const [upgradeReason, setUpgradeReason] = useState<'batch_actions_pro_only' | 'bibliography_pro_only'>('batch_actions_pro_only');
   const [showBibliographyDialog, setShowBibliographyDialog] = useState(false);
   const [visibleEntriesCount, setVisibleEntriesCount] = useState(Math.max(user.entriesCount, 0));
-
-  const maxEntries = user.plan === 'FREE' ? 50 : Infinity;
-  const usagePercentage = user.plan === 'FREE'
-    ? Math.min(Math.max((visibleEntriesCount / maxEntries) * 100, 0), 100)
-    : 0;
-  const isNearLimit = user.plan === 'FREE' && visibleEntriesCount >= 40;
 
   useEffect(() => {
     setVisibleEntriesCount(Math.max(user.entriesCount, 0));
@@ -140,32 +133,8 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
 
   return (
     <div className="space-y-6" id="library-bibliography-actions">
-      {/* Usage Indicator & Batch Controls */}
+      {/* Batch Controls */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-muted/20 border border-border/50 rounded-xl p-4">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center justify-between text-xs font-medium">
-            <span className="flex items-center gap-1.5">
-              <CircleDot size={14} className={isNearLimit ? "text-orange-500" : "text-primary"} />
-              Library Usage
-            </span>
-            <span className={isNearLimit ? "text-orange-600 font-bold" : "text-muted-foreground"}>
-              {visibleEntriesCount} / {user.plan === 'FREE' ? '50' : '∞'} entries
-            </span>
-          </div>
-          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-            <div
-              className={`h-full transition-all duration-500 ${isNearLimit ? 'bg-orange-500' : 'bg-primary'}`}
-              style={{ width: `${usagePercentage}%` }}
-            />
-          </div>
-          {isNearLimit && (
-            <p className="text-[10px] text-orange-600 flex items-center gap-1">
-              <AlertCircle size={10} />
-              Approaching limit. Upgrade for unlimited storage.
-            </p>
-          )}
-        </div>
-
         <div className="flex items-center gap-2">
           {isSelectionMode ? (
             <>
