@@ -16,6 +16,7 @@ interface FeedbackModalProps {
 }
 
 export function FeedbackModal({ trigger, open, onOpenChange }: FeedbackModalProps) {
+  return null;
   const [isOpen, setIsOpen] = useState(open || false);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
