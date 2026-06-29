@@ -18,12 +18,6 @@ export const metadata: Metadata = {
     template: '%s | Corpus'
   },
   description: 'Corpus is a personal reading queue for researchers and students. Add papers, articles, and books. Track your reading status. Organize everything into collections.',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
-  themeColor: '#f0ede4',
   icons: {
     icon: [
       { url: '/favicon.png', sizes: 'any' },
@@ -85,6 +79,13 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+}
+
+export const viewport = {
+  themeColor: '#f0ede4',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 export default async function RootLayout({
