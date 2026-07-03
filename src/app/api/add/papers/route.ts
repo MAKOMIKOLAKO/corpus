@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUserId } from '@/lib/session';
+import { prisma } from '@/lib/prismaWithRetry';
+import { canAddEntry } from '@/lib/plans';
+import { saveEntryForUser } from '@/lib/globalEntryService';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,5 +78,60 @@ export async function GET(request: NextRequest) {
     }
     console.error('Paper search error:', error);
     return NextResponse.json({ error: 'Failed to search papers' }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { arxivId, title, authors, abstract, year, url, pdfUrl } = body || {};
+
+    if (!title || typeof title !== 'string') {
+      return NextResponse.json({ error: 'title is required' }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true, entriesCount: true },
+    });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const { allowed, reason } = canAddEntry(user.plan, user.entriesCount);
+    if (!allowed) {
+      return NextResponse.json({ error: reason, limit: 50, current: user.entriesCount }, { status: 403 });
+    }
+
+    const result = await saveEntryForUser(
+      userId,
+      {
+        title,
+        authors: Array.isArray(authors) ? authors : [],
+        year: year ? parseInt(String(year), 10) : null,
+        abstract: abstract || null,
+        source: 'arXiv',
+        url: url || pdfUrl || null,
+        doi: null,
+        isbn: [],
+        rawContentType: 'PAPER',
+        metadata: { arxivId: arxivId || null, pdfUrl: pdfUrl || null },
+      },
+      { readingStatus: 'UNREAD', addedVia: 'discover' }
+    );
+
+    return NextResponse.json({
+      entryId: result.userEntryId,
+      globalEntryId: result.globalEntryId,
+      isDuplicate: result.isDuplicate,
+    });
+  } catch (error: unknown) {
+    console.error('Paper add error:', error);
+    return NextResponse.json({ error: 'Failed to save paper' }, { status: 500 });
   }
 }
