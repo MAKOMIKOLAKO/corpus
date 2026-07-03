@@ -28,15 +28,21 @@ type FetchStatus = "idle" | "loading" | "success" | "error";
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 min-h-[44px] px-4 border-b border-[#e8e4d8]">
-      <div className="w-4 h-4 rounded bg-[#f0ede4] animate-pulse shrink-0" />
-      <div className="flex-1 min-w-0 space-y-1.5 py-2">
-        <div className="h-3.5 w-2/3 rounded bg-[#f0ede4] animate-pulse" />
-        <div className="h-3 w-1/3 rounded bg-[#f0ede4] animate-pulse" />
+    <div className="flex items-start gap-3 min-h-[100px] py-4 border-b border-[#e8e4d8]">
+      <div className="w-4 h-4 rounded bg-[#e8e4d8] animate-pulse shrink-0 mt-1" />
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="h-[14px] w-4/5 rounded bg-[#e8e4d8] animate-pulse" />
+        <div className="h-[10px] w-3/5 rounded bg-[#e8e4d8] animate-pulse" />
+        <div className="h-[10px] w-full rounded bg-[#e8e4d8] animate-pulse" />
       </div>
-      <div className="h-6 w-16 rounded-full bg-[#f0ede4] animate-pulse shrink-0" />
+      <div className="h-7 w-16 rounded-full bg-[#e8e4d8] animate-pulse shrink-0" />
     </div>
   );
+}
+
+function truncate(text: string, max: number) {
+  if (text.length <= max) return text;
+  return text.slice(0, max).trimEnd() + "…";
 }
 
 export default function DiscoverPageClient() {
@@ -227,46 +233,76 @@ export default function DiscoverPageClient() {
             )}
 
             {status === "success" &&
-              papers.map((paper) => {
+              papers.map((paper, i) => {
                 const isSaving = savingId === paper.arxivId;
+                const isLast = i === papers.length - 1;
+                const authorsText = paper.authors.join(", ");
                 return (
                   <div
                     key={paper.arxivId}
                     onClick={() => window.open(paper.url, "_blank", "noopener,noreferrer")}
-                    className={`group flex items-center gap-3 min-h-[44px] px-4 border-b border-[#e8e4d8] cursor-pointer transition-colors hover:bg-[#f7f4ee] relative ${
-                      isSaving ? "opacity-60 pointer-events-none" : ""
-                    }`}
+                    className={`group flex items-start gap-3 py-4 cursor-pointer transition-colors hover:bg-[#f7f4ee] relative ${
+                      isLast ? "" : "border-b border-[#e8e4d8]"
+                    } ${isSaving ? "opacity-60 pointer-events-none" : ""}`}
                   >
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#c96442] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <FileText className="w-4 h-4 text-[#7a8e86] shrink-0" />
-                    <div className="flex-1 min-w-0 flex items-baseline gap-2 py-2">
+                    <FileText className="w-4 h-4 text-[#7a8e86] shrink-0 mt-1" />
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
                       <span
-                        className="truncate"
                         style={{
                           fontFamily: "Georgia, serif",
                           fontSize: "15px",
+                          fontWeight: 500,
                           color: "#1e2d27",
+                          lineHeight: 1.3,
                         }}
                       >
                         {paper.title}
                       </span>
-                      <span className="shrink-0 truncate max-w-[300px] text-[13px] text-[#7a8e86]">
-                        {paper.authors.slice(0, 3).join(", ")}
-                        {paper.authors.length > 3 ? " et al." : ""}
-                        {paper.year ? ` · ${paper.year}` : ""}
+                      {authorsText && (
+                        <span
+                          className="font-sans text-[13px] text-[#7a8e86]"
+                          style={{ lineHeight: 1.4 }}
+                        >
+                          {truncate(authorsText, 120)}
+                        </span>
+                      )}
+                      {paper.abstract && (
+                        <span
+                          className="font-sans text-[13px] italic text-[#4a5e56]"
+                          style={{ lineHeight: 1.6 }}
+                        >
+                          {truncate(paper.abstract, 200)}
+                        </span>
+                      )}
+                      <span className="font-sans text-[12px] text-[#7a8e86] flex items-center flex-wrap gap-x-1.5 gap-y-1">
+                        {[paper.year || null, paper.arxivId ? `arXiv:${paper.arxivId}` : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        {paper.categories.slice(0, 2).map((cat) => (
+                          <span
+                            key={cat}
+                            className="rounded-full bg-[#e8e4d8] px-2 py-0.5 text-[11px] text-[#4a5e56]"
+                          >
+                            {cat}
+                          </span>
+                        ))}
                       </span>
                     </div>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="shrink-0 self-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {isSaving ? (
                         <Loader2 className="w-4 h-4 animate-spin text-[#c96442]" />
                       ) : paper.alreadySaved ? (
-                        <span className="rounded-full bg-[#e8e4d8] text-[#4a5e56] text-[12px] px-3 py-1">
+                        <span className="rounded-full bg-[#e8e4d8] text-[#4a5e56] text-sm px-4 py-1.5">
                           Saved
                         </span>
                       ) : (
                         <button
                           onClick={() => handleSave(paper)}
-                          className="rounded-full bg-[#c96442] text-[#f7f4ee] text-[12px] px-3 py-1"
+                          className="rounded-full bg-[#c96442] text-[#f7f4ee] text-sm px-4 py-1.5 shrink-0"
                         >
                           Add
                         </button>
