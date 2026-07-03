@@ -24,7 +24,7 @@ const STOPWORDS = new Set([
   'such', 'each', 'other', 'within', 'across', 'among', 'via', 'per', 'non',
 ])
 
-const ARXIV_API_BASE = 'http://export.arxiv.org/api/query'
+const ARXIV_API_BASE = 'https://export.arxiv.org/api/query'
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 export function extractKeywords(texts: string[]): string[] {
