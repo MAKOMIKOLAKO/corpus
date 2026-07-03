@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Trash2, ChevronLeft, Calendar, FileText, Globe, BookOpen, Brain } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useEntry } from '@/hooks/useEntry';
 import SingleEntryCitationModal from '@/components/SingleEntryCitationModal';
@@ -30,18 +30,22 @@ const formatDate = (dateString: string) => {
     }
 };
 
+type EntryCollection = { collectionId: string; name: string; addedAt: string };
+
 export default function EntryDetailClient({ userEntryId }: { userEntryId: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { entry, loading, error, updateReadingStatus, deleteEntry } = useEntry(userEntryId);
 
     // Collections state
-    const [entryCollections, setEntryCollections] = useState([]);
-    const [availableCollections, setAvailableCollections] = useState([]);
+    const [entryCollections, setEntryCollections] = useState<EntryCollection[]>([]);
+    const [availableCollections, setAvailableCollections] = useState<Array<{ id: string; name: string }>>([]);
     const [selectedCollection, setSelectedCollection] = useState('');
     const [isAddingToCollection, setIsAddingToCollection] = useState(false);
 
     const [showCitationModal, setShowCitationModal] = useState(false);
+    const [toast, setToast] = useState<string | null>(null);
+    const [didCopyDoi, setDidCopyDoi] = useState(false);
 
     const apiKey = useApiKey();
 
@@ -50,6 +54,17 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         window.scrollTo(0, 0);
     }, []);
 
+    // Keep the displayed collection pills in sync with the entry's own collection membership
+    useEffect(() => {
+        if (entry) setEntryCollections(entry.collections || []);
+    }, [entry]);
+
+    useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), 2200);
+        return () => clearTimeout(t);
+    }, [toast]);
+
     const handleBack = () => {
         if (!searchParams) {
             router.back();
@@ -57,11 +72,9 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         }
         const from = searchParams.get('from');
         if (from) {
-            // If we have a 'from' parameter, navigate back to that page
             router.push(from);
         } else {
-            // Otherwise use browser back
-            router.back();
+            router.push('/library');
         }
     };
 
@@ -77,7 +90,49 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         }
     };
 
+    const handleCopyDoi = async () => {
+        const doi = entry?.doi?.trim();
+        if (!doi) return;
+
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(doi);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = doi;
+                el.setAttribute('readonly', '');
+                el.style.position = 'absolute';
+                el.style.left = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            setDidCopyDoi(true);
+            setToast('DOI copied to clipboard');
+            window.setTimeout(() => setDidCopyDoi(false), 1200);
+        } catch {
+            // ignore
+        }
+    };
+
     // Collections handlers
+    const fetchCollections = async () => {
+        try {
+            const collectionsResponse = await fetch('/api/collections');
+            if (collectionsResponse.ok) {
+                const allCollections = await collectionsResponse.json();
+                setAvailableCollections(allCollections);
+            }
+        } catch (error) {
+            console.error('Error fetching collections:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCollections();
+    }, []);
+
     const handleAddToCollection = async () => {
         if (!selectedCollection) return;
 
@@ -93,8 +148,11 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
             });
 
             if (response.ok) {
+                const added = availableCollections.find((c) => c.id === selectedCollection);
+                if (added) {
+                    setEntryCollections((prev) => [...prev, { collectionId: added.id, name: added.name, addedAt: new Date().toISOString() }]);
+                }
                 setSelectedCollection('');
-                fetchCollections();
             } else {
                 const error = await response.json();
                 alert(`Failed to add to collection: ${error.error}`);
@@ -119,7 +177,7 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
             });
 
             if (response.ok) {
-                fetchCollections();
+                setEntryCollections((prev) => prev.filter((c) => c.collectionId !== collectionId));
             } else {
                 const error = await response.json();
                 alert(`Failed to remove from collection: ${error.error}`);
@@ -130,28 +188,9 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         }
     };
 
-    const fetchCollections = async () => {
-        try {
-            // Get all collections
-            const collectionsResponse = await fetch('/api/collections');
-            if (collectionsResponse.ok) {
-                const allCollections = await collectionsResponse.json();
-                setAvailableCollections(allCollections);
-            }
-
-            // Get entry's collections (this would need a new API endpoint or modify existing one)
-            // For now, we'll simulate this
-            setEntryCollections([]);
-        } catch (error) {
-            console.error('Error fetching collections:', error);
-        }
+    const handleStatusChange = (newStatus: string) => {
+        updateReadingStatus(newStatus);
     };
-
-    useEffect(() => {
-        fetchCollections();
-    }, []);
-
-    // Notes functionality removed - using collections instead
 
     if (loading) {
         return (
@@ -172,7 +211,7 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                 <div className="text-center">
                     <h1 className="text-2xl font-semibold mb-4">Entry not found</h1>
                     <p className="text-muted-foreground mb-4">This entry is no longer in your library.</p>
-                    <button onClick={() => router.push('/library')} className="text-primary hover:underline">
+                    <button onClick={() => router.push('/library')} className="text-accent hover:underline">
                         Back to Library
                     </button>
                 </div>
@@ -180,183 +219,169 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         );
     }
 
-    const handleStatusChange = (newStatus: string) => {
-        updateReadingStatus(newStatus);
-    };
+    const metaItems = [
+        { label: 'Added', node: <span className="text-[13px] text-muted-foreground truncate">{formatDate(entry.createdAt)}</span> },
+        entry.year
+            ? { label: 'Year', node: <span className="text-[13px] text-muted-foreground truncate">{entry.year}</span> }
+            : null,
+        entry.doi
+            ? {
+                  label: 'DOI',
+                  node: (
+                      <button
+                          onClick={handleCopyDoi}
+                          title="Click to copy"
+                          className="text-[13px] text-accent hover:opacity-75 transition-opacity truncate text-left"
+                      >
+                          {didCopyDoi ? 'Copied!' : entry.doi}
+                      </button>
+                  ),
+              }
+            : null,
+        entry.url
+            ? {
+                  label: 'Source',
+                  node: (
+                      <a
+                          href={entry.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[13px] text-accent hover:opacity-75 transition-opacity truncate"
+                      >
+                          View Source →
+                      </a>
+                  ),
+              }
+            : null,
+    ].filter(Boolean) as { label: string; node: React.ReactNode }[];
+
+    const statusPillClass =
+        entry.readingStatus === 'COMPLETED'
+            ? 'bg-muted text-[#7a8e86] line-through'
+            : entry.readingStatus === 'IN_PROGRESS'
+              ? 'bg-transparent text-accent font-medium'
+              : 'bg-muted text-[#7a8e86]';
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <button onClick={handleBack} className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1">
-                <ChevronLeft className="w-4 h-4" /> Back
-            </button>
+            {toast && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-card text-[13px] px-4 py-2 rounded-lg z-50 shadow-lg">
+                    {toast}
+                </div>
+            )}
 
-            <div className="space-y-8">
-                <div className="rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden border border-[var(--border)] bg-card">
-                    <div className="absolute top-0 right-0 p-4 flex gap-1 sm:gap-2">
-                        <button onClick={() => setShowCitationModal(true)} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-md transition-colors touch-manipulation" title="Cite this entry">
-                            <FileText className="w-5 h-5 sm:w-4 sm:h-4" />
-                        </button>
-                        <button onClick={handleDelete} className="h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors touch-manipulation" title="Remove Entry">
-                            <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
-                        </button>
-                    </div>
+            <div className="max-w-[720px] mx-auto">
+                <div className="flex items-center justify-between mb-8">
+                    <button onClick={handleBack} className="inline-flex items-center gap-1.5 text-[13px] text-[#7a8e86] hover:text-foreground transition-colors">
+                        <ChevronLeft className="w-4 h-4" /> Library
+                    </button>
 
-                    <div className="flex gap-2 items-center mb-4 text-xs font-semibold tracking-wider">
-                        <select
-                            value={entry.readingStatus}
-                            onChange={(e) => handleStatusChange(e.target.value)}
-                            className={`px-2.5 py-1 rounded-lg border-0 cursor-pointer ${entry.readingStatus === 'COMPLETED' ? 'bg-accent/10 text-accent' :
-                                entry.readingStatus === 'IN_PROGRESS' ? 'bg-surface-sunken text-content-primary' :
-                                    'bg-muted text-content-secondary'
-                                }`}
-                        >
-                            <option value="UNREAD">Unread</option>
-                            <option value="IN_PROGRESS">In Progress</option>
-                            <option value="COMPLETED">Completed</option>
-                        </select>
-                    </div>
-
-                    <h1 className="text-2xl sm:text-3xl font-serif font-medium leading-tight text-[var(--foreground)] mb-2 pr-32 sm:pr-16">{entry.title}</h1>
-
-                    {/* Global Entry Context */}
-                    <div className="flex items-center gap-2 text-sm text-content-tertiary mb-4">
-                        <span>{entry.saveCount} {entry.saveCount === 1 ? 'person has' : 'people have'} saved this</span>
-                        {entry.doi && (
-                            <span>· DOI: {entry.doi}</span>
-                        )}
-                    </div>
-
-                    <p className="text-base sm:text-lg text-[var(--muted-foreground)] mb-6 font-medium">
-                        {entry.authors.join(', ')}
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-[var(--muted)]/30 p-4 rounded-xl border border-[var(--border)]/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-[var(--muted-foreground)] uppercase">added</span>
-                                <span className="font-medium text-sm">{formatDate(entry.createdAt)}</span>
-                            </div>
-                        </div>
-                        {entry.year && (
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                    <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">year</span>
-                                    <span className="font-medium text-sm">{entry.year}</span>
-                                </div>
-                            </div>
-                        )}
-                        {entry.source && (
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                    <BookOpen className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">Source</span>
-                                    <span className="font-medium text-sm line-clamp-1">{entry.source}</span>
-                                </div>
-                            </div>
-                        )}
-                        {entry.doi && (
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                    <FileText className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">DOI</span>
-                                    <a href={`https://doi.org/${entry.doi}`} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-[var(--primary)] hover:underline flex items-center gap-1 line-clamp-1">
-                                        {entry.doi}
-                                    </a>
-                                </div>
-                            </div>
-                        )}
-                        {entry.url && (
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center border border-[var(--border)]">
-                                    <Globe className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-[var(--muted-foreground)] uppercase">Link</span>
-                                    <a href={entry.url} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-[var(--primary)] hover:underline flex items-center gap-1 line-clamp-1">
-                                        Open URL <ExternalLink className="w-3 h-3" />
-                                    </a>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Smart Alert Notice */}
-                    {entry.addedVia === 'SMART_ALERT' && (
-                        <div className="mb-6 p-4 rounded-lg bg-accent-muted border border-border-strong">
-                            <div className="flex items-start gap-3">
-                                <Brain className="w-5 h-5 text-accent mt-0.5" />
-                                <div className="flex-1">
-                                    <p className="text-sm text-content-primary font-medium mb-1">
-                                        This paper was automatically added by a Smart Alert
-                                    </p>
-                                    <p className="text-xs text-content-secondary">
-                                        Corpus found this paper based on your research interests and added it to your library.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {entry.abstract && (
-                        <div className="mb-6">
-                            <h3 className="font-medium text-sm uppercase tracking-wider text-[var(--muted-foreground)] mb-2">Abstract</h3>
-                            <p className="text-[var(--foreground)] leading-relaxed text-sm md:text-base opacity-90">{entry.abstract}</p>
-                        </div>
-                    )}
-
+                    <select
+                        value={entry.readingStatus}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        className={`text-xs px-2.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none text-center ${statusPillClass}`}
+                    >
+                        <option value="UNREAD">Unread</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
                 </div>
 
-                <div className="rounded-2xl p-6 md:p-8 border border-[var(--border)] bg-card">
-                    <h3 className="text-xl font-serif font-medium mb-6 flex items-center gap-2">
-                        Collections
-                        <span className="bg-[var(--muted)] text-[var(--muted-foreground)] text-xs px-2 py-0.5 rounded-full font-medium">{entryCollections?.length || 0}</span>
-                    </h3>
+                <h1
+                    className={`font-serif text-[32px] font-medium leading-[1.20] text-foreground mb-3.5 ${entry.readingStatus === 'COMPLETED' ? 'line-through decoration-1' : ''}`}
+                >
+                    {entry.title}
+                </h1>
 
-                    <div className="space-y-4 mb-6">
-                        {Array.isArray(entryCollections) && entryCollections.length > 0 ? (
-                            entryCollections.map((collection: any) => {
-                                return (
-                                    <div key={collection.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
-                                        <div className="flex-1">
-                                            <h4 className="font-medium text-sm mb-1">{collection.name}</h4>
-                                            {collection.description && (
-                                                <p className="text-xs text-[var(--muted-foreground)] mb-2">{collection.description}</p>
-                                            )}
-                                        </div>
-                                        <button
-                                            onClick={() => handleRemoveFromCollection(collection.id)}
-                                            className="text-red-600 hover:text-red-700 text-sm ml-2"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <div className="text-center py-8 text-[var(--muted-foreground)] text-sm italic">
-                                Not in any collections yet.
+                <p className="text-[15px] leading-[1.60] text-muted-foreground mb-1.5">{entry.authors.join(', ')}</p>
+
+                {entry.source && (
+                    <p className="text-[13px] text-[#7a8e86] italic mb-9">
+                        {entry.source}
+                        {entry.year ? `, ${entry.year}` : ''}
+                    </p>
+                )}
+                {!entry.source && <div className="mb-9" />}
+
+                {/* Metadata strip — desktop/tablet row */}
+                <div className="hidden sm:flex items-stretch bg-card border border-border rounded-lg overflow-hidden mb-10">
+                    {metaItems.map((item, i) => (
+                        <Fragment key={item.label}>
+                            {i > 0 && <div className="w-px bg-border" />}
+                            <div className="flex flex-col gap-0.5 px-4 py-2.5 flex-1 min-w-0">
+                                <span className="text-[10px] uppercase tracking-[0.05em] text-[#7a8e86]">{item.label}</span>
+                                {item.node}
                             </div>
-                        )}
-                    </div>
+                        </Fragment>
+                    ))}
+                </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {/* Metadata strip — mobile 2x2 grid */}
+                <div className="grid grid-cols-2 sm:hidden bg-card border border-border rounded-lg overflow-hidden mb-10">
+                    {metaItems.map((item, i) => {
+                        const total = metaItems.length;
+                        const isRightCol = i % 2 === 0 && i + 1 < total;
+                        const isLastRow = i >= total - (total % 2 === 0 ? 2 : 1);
+                        return (
+                            <div
+                                key={item.label}
+                                className={`flex flex-col gap-0.5 px-3.5 py-2.5 ${isRightCol ? 'border-r border-border' : ''} ${!isLastRow ? 'border-b border-border' : ''}`}
+                            >
+                                <span className="text-[10px] uppercase tracking-[0.05em] text-[#7a8e86]">{item.label}</span>
+                                {item.node}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Abstract */}
+                <div className="mb-12">
+                    <div className="text-[10px] uppercase tracking-[0.5px] text-[#7a8e86] mb-4">Abstract</div>
+                    {entry.abstract ? (
+                        <p className="font-serif text-base leading-[1.70] text-foreground" style={{ textWrap: 'pretty' as any }}>
+                            {entry.abstract}
+                        </p>
+                    ) : (
+                        <p className="font-serif text-base leading-[1.70] text-[#7a8e86] italic">No abstract available.</p>
+                    )}
+                </div>
+
+                {/* Collections */}
+                <div className="bg-card border border-border rounded-xl p-6 mb-10">
+                    <div className="font-serif text-xl font-medium text-foreground mb-4">Collections</div>
+
+                    {entryCollections.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mb-5">
+                            {entryCollections.map((collection) => (
+                                <span
+                                    key={collection.collectionId}
+                                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full border border-accent bg-background text-[13px] text-muted-foreground"
+                                >
+                                    {collection.name}
+                                    <button
+                                        onClick={() => handleRemoveFromCollection(collection.collectionId)}
+                                        title="Remove"
+                                        className="text-accent hover:opacity-60 transition-opacity leading-none px-0.5"
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-[#7a8e86] italic mb-5">Not in any collections yet.</p>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
                         <select
                             value={selectedCollection}
                             onChange={(e) => setSelectedCollection(e.target.value)}
-                            className="flex-1 px-3 py-3 sm:py-2 bg-[var(--background)] border border-[var(--border)] rounded-md text-sm focus:outline-none focus:border-[var(--primary)] touch-manipulation"
+                            className="flex-1 h-9 px-2.5 border border-border rounded-lg bg-card text-[13px] text-muted-foreground focus:outline-none focus:border-accent"
                         >
-                            <option value="">Select a collection...</option>
-                            {Array.isArray(availableCollections) && availableCollections.map((collection: any) => (
+                            <option value="" disabled>
+                                Add to a collection...
+                            </option>
+                            {availableCollections.map((collection) => (
                                 <option key={collection.id} value={collection.id}>
                                     {collection.name}
                                 </option>
@@ -365,32 +390,51 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                         <button
                             onClick={handleAddToCollection}
                             disabled={!selectedCollection || isAddingToCollection}
-                            className="bg-[var(--accent)] text-[var(--accent-foreground)] px-4 py-3 sm:py-2 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity w-full sm:w-auto touch-manipulation"
+                            className="h-9 px-4 bg-accent text-accent-foreground rounded-lg text-[13px] hover:opacity-90 disabled:opacity-50 transition-opacity whitespace-nowrap"
                         >
                             {isAddingToCollection ? 'Adding...' : 'Add to Collection'}
                         </button>
                     </div>
                 </div>
 
-                {showCitationModal && entry && (
-                    <SingleEntryCitationModal
-                        isOpen={showCitationModal}
-                        onClose={() => setShowCitationModal(false)}
-                        entry={{
-                            id: entry.id,
-                            title: entry.title,
-                            authors: entry.authors,
-                            year: entry.year,
-                            source: entry.source,
-                            url: entry.url,
-                            doi: entry.doi,
-                            abstract: entry.abstract,
-                            isbn: entry.isbn,
-                            metadata: entry.metadata,
-                        }}
-                    />
-                )}
+                {/* Actions */}
+                <div className="flex items-center gap-3 pb-12 text-[13px]">
+                    <button onClick={handleDelete} className="text-[#7a8e86] hover:text-red-600 transition-colors">
+                        Delete entry
+                    </button>
+                    <span className="text-border">·</span>
+                    <button onClick={() => setShowCitationModal(true)} className="text-[#7a8e86] hover:text-foreground transition-colors">
+                        Copy citation
+                    </button>
+                    {entry.readingStatus !== 'COMPLETED' && (
+                        <>
+                            <span className="text-border">·</span>
+                            <button onClick={() => handleStatusChange('COMPLETED')} className="text-[#7a8e86] hover:text-accent transition-colors">
+                                Mark as completed
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
+
+            {showCitationModal && entry && (
+                <SingleEntryCitationModal
+                    isOpen={showCitationModal}
+                    onClose={() => setShowCitationModal(false)}
+                    entry={{
+                        id: entry.id,
+                        title: entry.title,
+                        authors: entry.authors,
+                        year: entry.year,
+                        source: entry.source,
+                        url: entry.url,
+                        doi: entry.doi,
+                        abstract: entry.abstract,
+                        isbn: entry.isbn,
+                        metadata: entry.metadata,
+                    }}
+                />
+            )}
         </div>
     );
 }
