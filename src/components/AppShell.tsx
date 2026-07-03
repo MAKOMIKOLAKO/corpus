@@ -164,20 +164,20 @@ export function AppShell({
                       library
                     </Link>
                     <Link
-                      href="/collections"
-                      className={`${desktopNavLinkClassName} ${pathname === "/collections" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
-                      aria-current={pathname === "/collections" ? "page" : undefined}
-                    >
-                      <Folder className="w-4 h-4" />
-                      collections
-                    </Link>
-                    <Link
                       href="/discover"
                       className={`${desktopNavLinkClassName} ${pathname === "/discover" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
                       aria-current={pathname === "/discover" ? "page" : undefined}
                     >
                       <Compass className="w-4 h-4" />
                       discover
+                    </Link>
+                    <Link
+                      href="/collections"
+                      className={`${desktopNavLinkClassName} ${pathname === "/collections" ? desktopNavLinkActiveClassName : desktopNavLinkInactiveClassName}`}
+                      aria-current={pathname === "/collections" ? "page" : undefined}
+                    >
+                      <Folder className="w-4 h-4" />
+                      collections
                     </Link>
                     {isAdmin && (
                       <Link
@@ -229,18 +229,18 @@ export function AppShell({
                     library
                   </Link>
                   <Link
-                    href="/collections"
-                    className={`${mobileNavLinkClassName} ${pathname === "/collections" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
-                  >
-                    <Folder className="w-5 h-5" />
-                    collections
-                  </Link>
-                  <Link
                     href="/discover"
                     className={`${mobileNavLinkClassName} ${pathname === "/discover" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
                   >
                     <Compass className="w-5 h-5" />
                     discover
+                  </Link>
+                  <Link
+                    href="/collections"
+                    className={`${mobileNavLinkClassName} ${pathname === "/collections" ? desktopNavLinkActiveClassName : "text-content-secondary hover:bg-warm-sand hover:text-content-primary"}`}
+                  >
+                    <Folder className="w-5 h-5" />
+                    collections
                   </Link>
                   {isAdmin && (
                     <Link

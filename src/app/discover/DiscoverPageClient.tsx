@@ -1,296 +1,284 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, Compass, ExternalLink, Loader2, Plus, Check } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { FileText, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-interface Paper {
-  id: string;
+interface ArxivPaper {
+  arxivId: string;
   title: string;
   authors: string[];
+  abstract: string;
   year: number;
   venue: string;
-  abstract: string;
-  openAccess: boolean;
-  citationCount: number;
-  doi?: string;
+  url: string;
+  pdfUrl: string;
+  categories: string[];
+  publishedDate: string;
+  alreadySaved: boolean;
 }
 
-const MOCK_PAPERS: Paper[] = [
-  {
-    id: "p1",
-    title: "Attention Is All You Need",
-    authors: ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit"],
-    year: 2017,
-    venue: "NeurIPS",
-    abstract:
-      "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms.",
-    openAccess: true,
-    citationCount: 98412,
-    doi: "10.48550/arXiv.1706.03762",
-  },
-  {
-    id: "p2",
-    title: "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
-    authors: ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"],
-    year: 2019,
-    venue: "NAACL",
-    abstract:
-      "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models, BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers.",
-    openAccess: true,
-    citationCount: 62301,
-    doi: "10.18653/v1/N19-1423",
-  },
-  {
-    id: "p3",
-    title: "ImageNet Large Scale Visual Recognition Challenge",
-    authors: ["Olga Russakovsky", "Jia Deng", "Hao Su", "Jonathan Krause"],
-    year: 2015,
-    venue: "International Journal of Computer Vision",
-    abstract:
-      "The ImageNet Large Scale Visual Recognition Challenge is a benchmark in object category classification and detection on hundreds of object categories and millions of images. The challenge has been run annually from 2010 to present, attracting participation from more than fifty institutions.",
-    openAccess: false,
-    citationCount: 44218,
-    doi: "10.1007/s11263-015-0816-y",
-  },
-  {
-    id: "p4",
-    title: "Deep Residual Learning for Image Recognition",
-    authors: ["Kaiming He", "Xiangyu Zhang", "Shaoqing Ren", "Jian Sun"],
-    year: 2016,
-    venue: "CVPR",
-    abstract:
-      "We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously. We explicitly reformulate the layers as learning residual functions with reference to the layer inputs, instead of learning unreferenced functions.",
-    openAccess: true,
-    citationCount: 175631,
-    doi: "10.1109/CVPR.2016.90",
-  },
-  {
-    id: "p5",
-    title: "Generative Adversarial Networks",
-    authors: ["Ian Goodfellow", "Jean Pouget-Abadie", "Mehdi Mirza", "Bing Xu"],
-    year: 2014,
-    venue: "NeurIPS",
-    abstract:
-      "We propose a new framework for estimating generative models via an adversarial process, in which we simultaneously train two models: a generative model G that captures the data distribution, and a discriminative model D that estimates the probability that a sample came from the training data rather than G.",
-    openAccess: true,
-    citationCount: 59803,
-    doi: "10.48550/arXiv.1406.2661",
-  },
-  {
-    id: "p6",
-    title: "Language Models are Few-Shot Learners",
-    authors: ["Tom Brown", "Benjamin Mann", "Nick Ryder", "Melanie Subbiah"],
-    year: 2020,
-    venue: "NeurIPS",
-    abstract:
-      "We demonstrate that scaling language models greatly improves task-agnostic, few-shot performance, sometimes even reaching competitiveness with prior state-of-the-art fine-tuning approaches. GPT-3, an autoregressive language model with 175 billion parameters, achieves strong performance on many NLP datasets.",
-    openAccess: true,
-    citationCount: 31205,
-    doi: "10.48550/arXiv.2005.14165",
-  },
-  {
-    id: "p7",
-    title: "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
-    authors: ["Patrick Lewis", "Ethan Perez", "Aleksandra Piktus", "Fabio Petroni"],
-    year: 2020,
-    venue: "NeurIPS",
-    abstract:
-      "Large pre-trained language models have been shown to store factual knowledge in their parameters. We explore a general-purpose fine-tuning recipe for retrieval-augmented generation (RAG) — models which combine pre-trained parametric and non-parametric memory for language generation.",
-    openAccess: true,
-    citationCount: 8912,
-    doi: "10.48550/arXiv.2005.11401",
-  },
-  {
-    id: "p8",
-    title: "Constitutional AI: Harmlessness from AI Feedback",
-    authors: ["Yuntao Bai", "Saurav Kadavath", "Sandipan Kundu", "Amanda Askell"],
-    year: 2022,
-    venue: "arXiv",
-    abstract:
-      "As AI systems become more capable, we would like to enlist their help to supervise other AIs. We experiment with methods for training a harmless AI assistant through self-improvement, without any human labels identifying harmful outputs. The only human oversight is provided through a list of rules or principles, and so we refer to the method as Constitutional AI.",
-    openAccess: true,
-    citationCount: 2341,
-    doi: "10.48550/arXiv.2212.08073",
-  },
-  {
-    id: "p9",
-    title: "Scaling Laws for Neural Language Models",
-    authors: ["Jared Kaplan", "Sam McCandlish", "Tom Henighan", "Tom Brown"],
-    year: 2020,
-    venue: "arXiv",
-    abstract:
-      "We study empirical scaling laws for language model performance on the cross-entropy loss. The loss scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude.",
-    openAccess: true,
-    citationCount: 5432,
-    doi: "10.48550/arXiv.2001.08361",
-  },
-  {
-    id: "p10",
-    title: "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
-    authors: ["Jason Wei", "Xuezhi Wang", "Dale Schuurmans", "Maarten Bosma"],
-    year: 2022,
-    venue: "NeurIPS",
-    abstract:
-      "We explore how generating a chain of thought — a series of intermediate reasoning steps — significantly improves the ability of large language models to perform complex reasoning. In particular, we show how such reasoning abilities emerge naturally in sufficiently large language models via a simple method called chain-of-thought prompting.",
-    openAccess: true,
-    citationCount: 7891,
-    doi: "10.48550/arXiv.2201.11903",
-  },
-];
-
-type SaveState = "idle" | "saving" | "saved" | "error";
-
-function formatCitations(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
+interface Collection {
+  id: string;
+  name: string;
+  entryCount: number;
 }
 
-function PaperCard({ paper }: { paper: Paper }) {
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [expanded, setExpanded] = useState(false);
+type FetchStatus = "idle" | "loading" | "success" | "error";
 
-  const handleSave = async () => {
-    if (saveState !== "idle") return;
-    setSaveState("saving");
-    try {
-      const res = await fetch("/api/queue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inputType: "PAPER",
-          title: paper.title,
-          authors: paper.authors.join(", "),
-          year: String(paper.year),
-          source: paper.venue,
-          doi: paper.doi ?? "",
-          abstract: paper.abstract,
-          openAccessUrl: paper.doi ? `https://doi.org/${paper.doi}` : "",
-          notes: "",
-          readingStatus: "TO_READ",
-        }),
-      });
-      if (res.ok || res.status === 409) {
-        setSaveState("saved");
-      } else {
-        setSaveState("error");
-        setTimeout(() => setSaveState("idle"), 2000);
-      }
-    } catch {
-      setSaveState("error");
-      setTimeout(() => setSaveState("idle"), 2000);
-    }
-  };
-
+function SkeletonRow() {
   return (
-    <article
-      className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-[15px] font-semibold leading-snug text-[var(--foreground)] line-clamp-2">
-            {paper.title}
-          </h3>
-          <p className="mt-1 text-[13px] text-[var(--content-secondary)] truncate">
-            {paper.authors.slice(0, 3).join(", ")}
-            {paper.authors.length > 3 && " et al."}
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saveState !== "idle"}
-          aria-label={saveState === "saved" ? "Saved" : "Save to Library"}
-          className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
-            saveState === "saved"
-              ? "bg-[var(--accent-muted)] text-[var(--accent)] cursor-default"
-              : saveState === "error"
-              ? "bg-red-500/10 text-red-500 cursor-default"
-              : "bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] disabled:opacity-60"
-          }`}
-        >
-          {saveState === "saving" ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : saveState === "saved" ? (
-            <Check className="w-3.5 h-3.5" />
-          ) : (
-            <Plus className="w-3.5 h-3.5" />
-          )}
-          {saveState === "saved" ? "Saved" : saveState === "error" ? "Error" : "Save"}
-        </button>
+    <div className="flex items-center gap-3 min-h-[44px] px-4 border-b border-[#e8e4d8]">
+      <div className="w-4 h-4 rounded bg-[#f0ede4] animate-pulse shrink-0" />
+      <div className="flex-1 min-w-0 space-y-1.5 py-2">
+        <div className="h-3.5 w-2/3 rounded bg-[#f0ede4] animate-pulse" />
+        <div className="h-3 w-1/3 rounded bg-[#f0ede4] animate-pulse" />
       </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-[12px]">
-        <span className="px-2 py-0.5 rounded-md bg-[var(--surface-sunken)] text-[var(--content-secondary)] font-medium">
-          {paper.venue}
-        </span>
-        <span className="text-[var(--content-tertiary)]">{paper.year}</span>
-        <span className="text-[var(--border-strong)]">·</span>
-        <span className="text-[var(--content-tertiary)]">
-          {formatCitations(paper.citationCount)} citations
-        </span>
-        {paper.openAccess && (
-          <>
-            <span className="text-[var(--border-strong)]">·</span>
-            <span className="text-emerald-600 font-medium">Open Access</span>
-          </>
-        )}
-      </div>
-
-      <p
-        className={`text-[13px] leading-relaxed text-[var(--content-secondary)] ${
-          expanded ? "" : "line-clamp-3"
-        }`}
-      >
-        {paper.abstract}
-      </p>
-
-      <div className="flex items-center gap-3 mt-1">
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="text-[12px] text-[var(--accent)] hover:underline focus:outline-none"
-        >
-          {expanded ? "Show less" : "Read more"}
-        </button>
-        {paper.doi && (
-          <a
-            href={`https://doi.org/${paper.doi}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[12px] text-[var(--content-tertiary)] hover:text-[var(--content-secondary)] transition-colors"
-          >
-            <ExternalLink className="w-3 h-3" />
-            DOI
-          </a>
-        )}
-      </div>
-    </article>
+      <div className="h-6 w-16 rounded-full bg-[#f0ede4] animate-pulse shrink-0" />
+    </div>
   );
 }
 
 export default function DiscoverPageClient() {
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [papers, setPapers] = useState<ArxivPaper[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [status, setStatus] = useState<FetchStatus>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+
+  const fetchRecommendations = useCallback(async (collectionId: string) => {
+    setStatus("loading");
+    setError(null);
+    try {
+      const res = await fetch(`/api/discover?collectionId=${encodeURIComponent(collectionId)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Could not fetch recommendations. Try again.");
+      }
+      setPapers(data.papers ?? []);
+      setKeywords(data.keywords ?? []);
+      setStatus("success");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not fetch recommendations. Try again.");
+      setStatus("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/collections");
+        const data = await res.json();
+        const owned = data.owned ?? [];
+        const member = data.member ?? [];
+        const all: Collection[] = [...owned, ...member].map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          entryCount: c.entryCount ?? 0,
+        }));
+        if (cancelled) return;
+        setCollections(all);
+        setCollectionsLoaded(true);
+        if (all.length > 0) {
+          setSelectedCollectionId(all[0].id);
+          if (all[0].entryCount >= 2) {
+            fetchRecommendations(all[0].id);
+          }
+        }
+      } catch {
+        if (!cancelled) setCollectionsLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchRecommendations]);
+
+  const handleSelectCollection = (id: string) => {
+    if (id === selectedCollectionId) return;
+    setSelectedCollectionId(id);
+    const collection = collections.find((c) => c.id === id);
+    if (collection && collection.entryCount >= 2) {
+      fetchRecommendations(id);
+    } else {
+      setStatus("idle");
+      setPapers([]);
+      setKeywords([]);
+    }
+  };
+
+  const handleSave = async (paper: ArxivPaper) => {
+    if (savingId) return;
+    setSavingId(paper.arxivId);
+    try {
+      const res = await fetch("/api/add/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          arxivId: paper.arxivId,
+          title: paper.title,
+          authors: paper.authors,
+          abstract: paper.abstract,
+          year: paper.year,
+          url: paper.url,
+          pdfUrl: paper.pdfUrl,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to save paper");
+      }
+      setPapers((prev) =>
+        prev.map((p) => (p.arxivId === paper.arxivId ? { ...p, alreadySaved: true } : p))
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save paper");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const selectedCollection = collections.find((c) => c.id === selectedCollectionId) || null;
+
   return (
-    <div className="space-y-8">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <Compass className="w-5 h-5 text-[var(--accent)]" />
-          <h1 className="text-2xl font-serif font-medium text-[var(--foreground)]">Discover</h1>
-        </div>
-        <p className="text-[14px] text-[var(--content-secondary)]">
-          Recommended papers based on your library. Save any to start reading.
+    <div className="max-w-[800px] mx-auto">
+      <div className="mb-6">
+        <h1
+          style={{
+            fontFamily: "Georgia, serif",
+            fontSize: "32px",
+            fontWeight: 500,
+            color: "#1e2d27",
+          }}
+        >
+          Discover
+        </h1>
+        <p className="mt-1 text-[15px] font-sans text-[#4a5e56]">
+          Papers recommended based on your collection
         </p>
       </div>
 
-      <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[13px] text-[var(--content-tertiary)]">
-        <BookOpen className="w-4 h-4 shrink-0" />
-        <span>
-          Showing curated recommendations — personalized discovery coming soon.
-        </span>
-      </div>
+      {collectionsLoaded && collections.length === 0 ? (
+        <p className="text-[14px] text-[#4a5e56] py-8 text-center">
+          Create a collection first to get recommendations.
+        </p>
+      ) : (
+        <>
+          <div className="mb-2 text-[13px] text-[#7a8e86]">Based on</div>
+          <div
+            className="flex gap-2 pb-3 overflow-x-auto"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {collections.map((c) => {
+              const active = c.id === selectedCollectionId;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectCollection(c.id)}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-sans transition-colors ${
+                    active
+                      ? "bg-[#c96442] text-[#f7f4ee]"
+                      : "bg-[#f7f4ee] border border-[#e8e4d8] text-[#1e2d27]"
+                  }`}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-        {MOCK_PAPERS.map((paper) => (
-          <PaperCard key={paper.id} paper={paper} />
-        ))}
-      </div>
+          {keywords.length > 0 && (
+            <div className="mb-4 text-[12px] text-[#7a8e86]">
+              Showing results for: {keywords.join(" · ")}
+            </div>
+          )}
+
+          {selectedCollection && selectedCollection.entryCount < 2 ? (
+            <p className="text-[14px] text-[#4a5e56] py-8 text-center">
+              Add at least 2 papers to this collection to get recommendations.
+            </p>
+          ) : (
+          <div className="border-t border-[#e8e4d8]">
+            {status === "loading" &&
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+
+            {status === "error" && (
+              <div className="py-8 text-center">
+                <p className="text-[14px] text-[#4a5e56] mb-3">
+                  {error || "Could not fetch recommendations. Try again."}
+                </p>
+                <button
+                  onClick={() => selectedCollectionId && fetchRecommendations(selectedCollectionId)}
+                  className="rounded-full bg-[#c96442] text-[#f7f4ee] text-[13px] px-4 py-1.5"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {status === "success" && papers.length === 0 && (
+              <p className="text-[14px] text-[#4a5e56] py-8 text-center">
+                No new papers found. Try a different collection.
+              </p>
+            )}
+
+            {status === "success" &&
+              papers.map((paper) => {
+                const isSaving = savingId === paper.arxivId;
+                return (
+                  <div
+                    key={paper.arxivId}
+                    onClick={() => window.open(paper.url, "_blank", "noopener,noreferrer")}
+                    className={`group flex items-center gap-3 min-h-[44px] px-4 border-b border-[#e8e4d8] cursor-pointer transition-colors hover:bg-[#f7f4ee] relative ${
+                      isSaving ? "opacity-60 pointer-events-none" : ""
+                    }`}
+                  >
+                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#c96442] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <FileText className="w-4 h-4 text-[#7a8e86] shrink-0" />
+                    <div className="flex-1 min-w-0 flex items-baseline gap-2 py-2">
+                      <span
+                        className="truncate"
+                        style={{
+                          fontFamily: "Georgia, serif",
+                          fontSize: "15px",
+                          color: "#1e2d27",
+                        }}
+                      >
+                        {paper.title}
+                      </span>
+                      <span className="shrink-0 truncate max-w-[300px] text-[13px] text-[#7a8e86]">
+                        {paper.authors.slice(0, 3).join(", ")}
+                        {paper.authors.length > 3 ? " et al." : ""}
+                        {paper.year ? ` · ${paper.year}` : ""}
+                      </span>
+                    </div>
+                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#c96442]" />
+                      ) : paper.alreadySaved ? (
+                        <span className="rounded-full bg-[#e8e4d8] text-[#4a5e56] text-[12px] px-3 py-1">
+                          Saved
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSave(paper)}
+                          className="rounded-full bg-[#c96442] text-[#f7f4ee] text-[12px] px-3 py-1"
+                        >
+                          Add
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
