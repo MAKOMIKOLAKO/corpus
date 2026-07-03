@@ -121,8 +121,12 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         try {
             const collectionsResponse = await fetch('/api/collections');
             if (collectionsResponse.ok) {
-                const allCollections = await collectionsResponse.json();
-                setAvailableCollections(allCollections);
+                const data = await collectionsResponse.json();
+                const flat = [
+                    ...(Array.isArray(data.owned) ? data.owned : []),
+                    ...(Array.isArray(data.member) ? data.member : []),
+                ];
+                setAvailableCollections(flat);
             }
         } catch (error) {
             console.error('Error fetching collections:', error);
