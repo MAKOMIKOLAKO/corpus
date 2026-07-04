@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { saveScrollPositionForKey } from '@/hooks/useScrollPosition';
 import { Check, Trash2 } from 'lucide-react';
-import { useApiKey } from '@/hooks/useApiKey';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useTimezone } from '@/hooks/useTimezone';
 import { FlatEntry } from '@/types/entry';
@@ -81,7 +80,6 @@ export default function EntryCard({
     const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
     const [didCopyUrl, setDidCopyUrl] = useState(false);
     const [didCopyDoi, setDidCopyDoi] = useState(false);
-    const apiKey = useApiKey();
 
     const [assignedCollectionIds, setAssignedCollectionIds] = useState<string[]>(
         (entry.collections ?? []).map((c) => c.collectionId)
@@ -130,11 +128,11 @@ export default function EntryCard({
             }
         };
 
-        if (apiKey) fetchCollections();
+        fetchCollections();
         return () => {
             cancelled = true;
         };
-    }, [apiKey]);
+    }, []);
 
     // Close dropdowns when clicking outside
     useEffect(() => {

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2, X } from 'lucide-react';
-import { useApiKey } from '@/hooks/useApiKey';
 import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
@@ -169,7 +168,6 @@ export default function CollectionsPage() {
     const [editFormError, setEditFormError] = useState<string | null>(null);
     const [editTouched, setEditTouched] = useState<{ name: boolean; description: boolean }>({ name: false, description: false });
     const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
-    const apiKey = useApiKey();
     const { data: session } = useSession();
     const router = useRouter();
 
@@ -203,9 +201,7 @@ export default function CollectionsPage() {
 
     const fetchCollections = useCallback(async (isCancelled?: () => boolean) => {
         try {
-            const response = await fetch('/api/collections', {
-                headers: { 'x-api-key': apiKey },
-            });
+            const response = await fetch('/api/collections');
             if (response.ok) {
                 const data = await response.json();
                 const transformCollection = (c: any) => ({
@@ -238,7 +234,7 @@ export default function CollectionsPage() {
             if (isCancelled?.()) return;
             setLoading(false);
         }
-    }, [apiKey]);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -285,7 +281,6 @@ export default function CollectionsPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
                 },
                 body: JSON.stringify({
                     name: newCollection.name.trim().slice(0, NAME_MAX),
@@ -344,7 +339,6 @@ export default function CollectionsPage() {
         try {
             const response = await fetch(`/api/collections/${collectionId}`, {
                 method: 'DELETE',
-                headers: { 'x-api-key': apiKey },
             });
 
             if (response.ok) {
@@ -376,7 +370,6 @@ export default function CollectionsPage() {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
                 },
                 body: JSON.stringify({
                     name: editingName.trim().slice(0, NAME_MAX),

@@ -178,7 +178,6 @@ All secrets must come from environment variables — never hardcode.
 |---|---|
 | `NEXT_PUBLIC_APP_URL` | Public app URL |
 | `CORS_ORIGIN` | Override CORS Allow-Origin header (optional) |
-| `KEY` | Legacy `x-api-key` header for some internal routes |
 | `CRON_SECRET` | Bearer token required by all `/api/cron/*` routes |
 
 ### Rate Limiting (optional)
