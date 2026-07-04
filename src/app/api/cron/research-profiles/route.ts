@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { recomputeUserProfile, shouldRecompute } from '@/lib/research/interestProfile'
-
-const CRON_SECRET = process.env.CRON_SECRET
-
-function isCronAuthorized(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization')
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
-    return true
-  }
-  return Boolean(request.headers.get('x-vercel-cron'))
-}
+import { verifyCronAuth } from '@/lib/verifyCronAuth'
 
 async function runProfileRecomputation(): Promise<{
   processed: number
@@ -64,10 +55,8 @@ async function runProfileRecomputation(): Promise<{
 }
 
 export async function GET(request: NextRequest) {
-  if (!isCronAuthorized(request)) {
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!verifyCronAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {

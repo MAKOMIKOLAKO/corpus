@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       })
     } catch (dbErr: any) {
       console.error('[read-api] Database query error:', dbErr)
-      return NextResponse.json({ error: 'Database query failed', details: dbErr?.message }, { status: 500 })
+      return NextResponse.json({ error: 'Database query failed' }, { status: 500 })
     }
 
     // 2. If not, initialize it
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
 
           return NextResponse.json({ error: fetchErr.message }, { status: 500 })
         }
-        return NextResponse.json({ error: 'Failed to fetch paper content', details: fetchErr?.message }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to fetch paper content' }, { status: 500 })
       }
 
       let sections
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
         sections = await sectionPaper(rawText)
       } catch (sectionErr: any) {
         console.error('[read-api] Section paper error:', sectionErr)
-        return NextResponse.json({ error: 'Failed to section paper', details: sectionErr?.message }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to section paper' }, { status: 500 })
       }
 
       try {
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
         })
       } catch (createErr: any) {
         console.error('[read-api] Create session error:', createErr)
-        return NextResponse.json({ error: 'Failed to create session', details: createErr?.message }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
       }
     }
 
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
     console.error('[read-api] Unexpected error:', err)
     console.error('[read-api] Error message:', err?.message)
     console.error('[read-api] Error stack:', err?.stack)
-    return NextResponse.json({ error: 'Failed to initialize session', details: err?.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to initialize session' }, { status: 500 })
   }
 }
 

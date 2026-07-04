@@ -98,9 +98,8 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[research-feed-simple] Error:', error)
-    return NextResponse.json({ 
-      error: 'Simple feed failed', 
-      details: error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({
+      error: 'Simple feed failed'
     }, { status: 500 })
   }
 }

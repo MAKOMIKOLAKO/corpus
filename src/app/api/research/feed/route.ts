@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const stack = err instanceof Error ? err.stack : undefined
     console.error('[research-feed] Unhandled route error:', { message, stack })
     return NextResponse.json(
-      { error: 'Research feed failed', details: message },
+      { error: 'Research feed failed' },
       { status: 500 }
     )
   }

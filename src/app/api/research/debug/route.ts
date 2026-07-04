@@ -136,9 +136,8 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[research-debug] Error:', error)
-    return NextResponse.json({ 
-      error: 'Debug query failed', 
-      details: error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({
+      error: 'Debug query failed'
     }, { status: 500 })
   }
 }

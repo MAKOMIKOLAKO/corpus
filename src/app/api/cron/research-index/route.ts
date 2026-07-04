@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildDailyResearchIndex } from '@/lib/research/dailyResearchIndex'
-
-const CRON_SECRET = process.env.CRON_SECRET
-
-function isCronAuthorized(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization')
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
-    return true
-  }
-  return Boolean(request.headers.get('x-vercel-cron'))
-}
+import { verifyCronAuth } from '@/lib/verifyCronAuth'
 
 export async function GET(request: NextRequest) {
-  if (!isCronAuthorized(request)) {
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!verifyCronAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
