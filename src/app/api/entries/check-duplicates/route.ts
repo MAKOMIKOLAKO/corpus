@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getCurrentUserId } from '@/lib/session';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
     try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { url, doi, title } = body;
 
@@ -30,9 +36,10 @@ export async function POST(request: NextRequest) {
             searchCriteria.push({ title });
         }
 
-        // Find potential duplicates
+        // Find potential duplicates, scoped to the caller's own entries only
         const duplicates = await prisma.entry.findMany({
             where: {
+                userId,
                 OR: searchCriteria
             },
             orderBy: {
