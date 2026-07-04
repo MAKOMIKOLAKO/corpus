@@ -32,6 +32,7 @@ const AUTH_PATHS = new Set([
   "/api/auth/reset-password",
   "/api/auth/verify-email",
   "/api/auth/resend-verification",
+  "/api/auth/callback/credentials",
 ]);
 
 export function isAuthRateLimitPath(pathname: string): boolean {

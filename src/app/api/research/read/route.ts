@@ -190,6 +190,15 @@ export async function POST(request: NextRequest) {
     const { sessionId, message } = await request.json()
     if (!sessionId || !message) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
+    // Verify the reading session belongs to the caller before touching it
+    const readingSession = await (prisma as any).paperReadingSession.findUnique({
+      where: { id: sessionId },
+      select: { userId: true },
+    })
+    if (!readingSession || readingSession.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     // 1. Save user message
     await (prisma as any).paperReadingMessage.create({
       data: {
