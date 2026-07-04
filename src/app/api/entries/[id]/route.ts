@@ -79,7 +79,7 @@ export async function PATCH(
 
     const userEntry = await prisma.userEntry.findFirst({
       where: { id: params.id, userId },
-      select: { id: true, globalEntryId: true }
+      select: { id: true, globalEntryId: true, notes: true }
     });
     if (!userEntry) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -87,7 +87,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Handle notes append - this is now stored in metadata
+    // Handle notes append - stored per-user on UserEntry, never on the shared GlobalEntry
     if (
       body?.notes &&
       typeof body.notes === 'object' &&
@@ -101,15 +101,16 @@ export async function PATCH(
         );
       }
 
-      // Get current metadata
-      const current = await prisma.globalEntry.findUnique({
-        where: { id: userEntry.globalEntryId },
-        select: { metadata: true }
-      });
-
-      const existingNotes = current?.metadata && Array.isArray((current.metadata as any).notes)
-        ? (current.metadata as any).notes
-        : [];
+      let existingNotes: Array<{ text: string; createdAt: string }> = [];
+      if (userEntry.notes) {
+        try {
+          const parsedExisting = JSON.parse(userEntry.notes);
+          if (Array.isArray(parsedExisting)) existingNotes = parsedExisting;
+        } catch {
+          // Legacy plain-string note; carry it forward as the first entry
+          existingNotes = [{ text: userEntry.notes, createdAt: new Date(0).toISOString() }];
+        }
+      }
 
       const newNote = {
         text: parsed.data.notes.text,
@@ -118,15 +119,9 @@ export async function PATCH(
 
       const updatedNotes = [...existingNotes, newNote];
 
-      // Update metadata on GlobalEntry
-      await prisma.globalEntry.update({
-        where: { id: userEntry.globalEntryId },
-        data: {
-          metadata: {
-            ...(current?.metadata as any || {}),
-            notes: updatedNotes
-          }
-        }
+      await prisma.userEntry.update({
+        where: { id: params.id },
+        data: { notes: JSON.stringify(updatedNotes) }
       });
 
       const updated = await prisma.userEntry.findUnique({

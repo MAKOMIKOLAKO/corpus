@@ -18,6 +18,14 @@ export async function GET(request: NextRequest) {
   if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
 
   try {
+    const readingSession = await (prisma as any).paperReadingSession.findUnique({
+      where: { id: sessionId },
+      select: { userId: true },
+    })
+    if (!readingSession || readingSession.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const breakdown = await getMethodologyBreakdown(sessionId)
     return NextResponse.json({ breakdown })
   } catch (err: any) {
