@@ -32,6 +32,9 @@ tsc_full_output.txt
 tsc_output_debug.txt
 tmp-error.html
 
+# DB backups
+backup-before-migration.sql
+
 # OS files
 .DS_Store
 Thumbs.db

@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Play, Pause, Sparkles, Check, XCircle, Inbox, ListChecks } from 'lucide-react';
-import { useApiKey } from '@/hooks/useApiKey';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
 import { toast } from 'sonner';
@@ -71,7 +70,6 @@ interface AlertsManagementPanelProps {
 
 export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanelProps) {
   const { data: session, status } = useSession();
-  const apikey = useApiKey();
   const timezone = useTimezone();
 
   const [watchQueries, setWatchQueries] = useState<WatchQuery[]>([]);
@@ -101,11 +99,7 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     if (!session?.user?.id) return;
 
     try {
-      const response = await fetch('/api/watch-queries', {
-        headers: {
-          'x-api-key': apikey || '',
-        },
-      });
+      const response = await fetch('/api/watch-queries');
 
       if (!response.ok) {
         if (response.status === 403) {
@@ -126,18 +120,14 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, apikey]);
+  }, [session?.user?.id]);
 
   const fetchContainers = useCallback(async () => {
     if (!session?.user?.id) return;
 
     setLoadingContainers(true);
     try {
-      const response = await fetch('/api/alert-containers', {
-        headers: {
-          'x-api-key': apikey || '',
-        },
-      });
+      const response = await fetch('/api/alert-containers');
 
       if (!response.ok) {
         throw new Error('Failed to fetch alert containers');
@@ -160,16 +150,12 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     } finally {
       setLoadingContainers(false);
     }
-  }, [session?.user?.id, apikey, selectedContainerId]);
+  }, [session?.user?.id, selectedContainerId]);
 
   const fetchContainerDetail = useCallback(async (containerId: string) => {
     setLoadingContainerDetail(true);
     try {
-      const response = await fetch(`/api/alert-containers/${containerId}`, {
-        headers: {
-          'x-api-key': apikey || '',
-        },
-      });
+      const response = await fetch(`/api/alert-containers/${containerId}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch container details');
@@ -185,17 +171,13 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     } finally {
       setLoadingContainerDetail(false);
     }
-  }, [apikey]);
+  }, []);
 
   const fetchCollections = useCallback(async () => {
     if (!session?.user?.id) return;
 
     try {
-      const response = await fetch('/api/collections', {
-        headers: {
-          'x-api-key': apikey || '',
-        },
-      });
+      const response = await fetch('/api/collections');
 
       if (!response.ok) throw new Error('Failed to fetch collections');
 
@@ -216,7 +198,7 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     } catch (error) {
       console.error('Error fetching collections:', error);
     }
-  }, [session?.user?.id, apikey]);
+  }, [session?.user?.id]);
 
   const fetchAll = useCallback(() => {
     fetchWatchQueries();
@@ -225,7 +207,7 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
   }, [fetchWatchQueries, fetchCollections, fetchContainers]);
 
   useState(() => {
-    if (status === 'authenticated' && apikey) {
+    if (status === 'authenticated') {
       fetchAll();
     }
   });
@@ -250,7 +232,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apikey || '',
         },
         body: JSON.stringify({
           query: newQuery.trim(),
@@ -300,7 +281,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apikey || '',
         },
         body: JSON.stringify({ maxPapers: nextValue }),
       });
@@ -324,7 +304,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apikey || '',
         },
         body: JSON.stringify({ action }),
       });
@@ -392,7 +371,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apikey || '',
         },
         body: JSON.stringify({ action }),
       });
@@ -428,9 +406,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     try {
       const response = await fetch(`/api/alert-containers/${containerId}`, {
         method: 'DELETE',
-        headers: {
-          'x-api-key': apikey || '',
-        },
       });
 
       if (!response.ok) {
@@ -456,7 +431,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apikey || '',
         },
         body: JSON.stringify({ isActive: !isActive }),
       });
@@ -481,9 +455,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     try {
       const response = await fetch(`/api/watch-queries/${queryId}`, {
         method: 'DELETE',
-        headers: {
-          'x-api-key': apikey || '',
-        },
       });
 
       if (!response.ok) throw new Error('Failed to delete alert');

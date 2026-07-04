@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, CheckCircle, Loader2, Brain, Calendar, Check, X } from 'lucide-react';
-import { useApiKey } from '@/hooks/useApiKey';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
@@ -24,7 +23,6 @@ interface NotificationsResponse {
 
 export default function NotificationsPageClient() {
   const { data: session, status } = useSession();
-  const apikey = useApiKey();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -35,11 +33,7 @@ export default function NotificationsPageClient() {
     if (!session?.user?.id) return;
 
     try {
-      const response = await fetch('/api/notifications', {
-        headers: {
-          'x-api-key': apikey || '',
-        },
-      });
+      const response = await fetch('/api/notifications');
 
       if (!response.ok) throw new Error('Failed to fetch notifications');
 
@@ -55,17 +49,17 @@ export default function NotificationsPageClient() {
       if (isCancelled?.()) return;
       setLoading(false);
     }
-  }, [session?.user?.id, apikey]);
+  }, [session?.user?.id]);
 
   useEffect(() => {
-    if (status === 'authenticated' && apikey) {
+    if (status === 'authenticated') {
       let cancelled = false;
       fetchNotifications(() => cancelled);
       return () => {
         cancelled = true;
       };
     }
-  }, [status, apikey, fetchNotifications]);
+  }, [status, fetchNotifications]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     const target = notifications.find((n) => n.id === notificationId);
@@ -74,9 +68,6 @@ export default function NotificationsPageClient() {
     try {
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
-        headers: {
-          'x-api-key': apikey || '',
-        },
       });
 
       if (!response.ok) throw new Error('Failed to mark notification as read');
@@ -101,7 +92,6 @@ export default function NotificationsPageClient() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apikey || '',
         },
         body: JSON.stringify({ action: 'read-all' }),
       });
