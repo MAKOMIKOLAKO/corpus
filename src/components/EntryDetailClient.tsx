@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
-import { useApiKey } from '@/hooks/useApiKey';
 import { useEntry } from '@/hooks/useEntry';
 import SingleEntryCitationModal from '@/components/SingleEntryCitationModal';
 
@@ -46,8 +45,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
     const [showCitationModal, setShowCitationModal] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
     const [didCopyDoi, setDidCopyDoi] = useState(false);
-
-    const apiKey = useApiKey();
 
     // Scroll to top on mount
     useEffect(() => {
@@ -146,7 +143,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
                 },
                 body: JSON.stringify({ userEntryId: entry?.id }),
             });
@@ -175,9 +171,6 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         try {
             const response = await fetch(`/api/collections/${collectionId}/entries/${entry?.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'x-api-key': apiKey,
-                },
             });
 
             if (response.ok) {

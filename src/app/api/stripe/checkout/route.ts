@@ -5,16 +5,13 @@ import stripe from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("Checkout request received");
     const userId = await getCurrentUserId();
-    console.log("User ID:", userId);
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { priceId, billingCycle } = await request.json();
-    console.log("Request body:", { priceId, billingCycle });
 
     let actualPriceId = priceId;
     if (billingCycle === 'monthly') {
@@ -22,8 +19,6 @@ export async function POST(request: NextRequest) {
     } else if (billingCycle === 'annual') {
       actualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID;
     }
-
-    console.log("Using price ID:", actualPriceId);
 
     if (!actualPriceId) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
@@ -33,7 +28,6 @@ export async function POST(request: NextRequest) {
     const user = await (prisma as any).user.findUnique({
       where: { id: userId },
     });
-    console.log("User from DB:", user);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -42,7 +36,6 @@ export async function POST(request: NextRequest) {
     // Create or retrieve Stripe customer
     let customerId = user.stripeCustomerId;
     if (!customerId) {
-      console.log("Creating new Stripe customer for user:", user.email);
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.name || undefined,
@@ -57,13 +50,10 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: { stripeCustomerId: customerId },
       });
-      console.log("Created customer ID:", customerId);
-    } else {
-      console.log("Using existing customer ID:", customerId);
+      console.log("Stripe customer created for user:", userId);
     }
 
     // Create checkout session
-    console.log("Creating checkout session with metadata:", { userId: user.id });
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
