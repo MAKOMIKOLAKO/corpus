@@ -1,3 +1,4 @@
+import 'server-only';
 import { prisma, withRetry } from '@/lib/prismaWithRetry';
 import { computeCost } from '@/lib/geminiPricing';
 

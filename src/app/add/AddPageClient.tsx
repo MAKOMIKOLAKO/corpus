@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useApiKey } from '@/hooks/useApiKey';
 
 type Tab = 'PAPER' | 'BOOK' | 'URL';
 
@@ -83,7 +82,6 @@ function mergeQueueState(prev: QueueItem[], server: QueueItem[]): QueueItem[] {
 
 export default function AddEntryPage() {
   const router = useRouter();
-  const apiKey = useApiKey();
   const [activeTab, setActiveTab] = useState<Tab>('PAPER');
   const [queue, setQueue] = useState<{
     items: QueueItem[];
@@ -345,7 +343,6 @@ export default function AddEntryPage() {
           <PostSavePanel
             confirmation={saveConfirmation}
             onAddAnother={resetToDefault}
-            apiKey={apiKey}
             onViewEntry={() => router.push(`/entries/${saveConfirmation.id}`)}
           />
         ) : selectedResult ? (
@@ -1069,12 +1066,10 @@ function Field({
 function PostSavePanel({
   confirmation,
   onAddAnother,
-  apiKey,
   onViewEntry,
 }: {
   confirmation: { id: string; title: string; authors: string[]; url: string | null };
   onAddAnother: () => void;
-  apiKey: string;
   onViewEntry: () => void;
 }) {
   const [collections, setCollections] = useState<{ id: string; name: string }[]>([]);
@@ -1085,9 +1080,7 @@ function PostSavePanel({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/collections', {
-          headers: { 'x-api-key': apiKey },
-        });
+        const res = await fetch('/api/collections');
         if (!res.ok || cancelled) return;
         const data = await res.json();
         const owned = Array.isArray(data.owned) ? data.owned : [];
@@ -1109,7 +1102,7 @@ function PostSavePanel({
     return () => {
       cancelled = true;
     };
-  }, [apiKey]);
+  }, []);
 
   const addToCollection = async (collectionId: string, name: string) => {
     try {
@@ -1117,7 +1110,6 @@ function PostSavePanel({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
         },
         body: JSON.stringify({ userEntryId: confirmation.id }),
       });

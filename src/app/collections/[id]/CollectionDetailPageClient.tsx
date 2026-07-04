@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Search, Trash2, Eye, Loader2 } from 'lucide-react';
 import EntryCard from '@/components/EntryCard';
-import { useApiKey } from '@/hooks/useApiKey';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -54,7 +53,6 @@ interface Collection {
 export default function CollectionDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const apiKey = useApiKey();
     const { data: session } = useSession();
     const [collection, setCollection] = useState<Collection | null>(null);
     const [loading, setLoading] = useState(true);
@@ -100,9 +98,6 @@ export default function CollectionDetailPage() {
         try {
             const response = await fetch(`/api/collections/${params?.id}/entries/${entryId}`, {
                 method: 'DELETE',
-                headers: {
-                    'x-api-key': apiKey,
-                },
             });
 
             if (response.ok) {
@@ -137,7 +132,6 @@ export default function CollectionDetailPage() {
         try {
             const response = await fetch(`/api/collections/${params?.id}`, {
                 method: 'DELETE',
-                headers: { 'x-api-key': apiKey },
             });
 
             if (response.ok) {
