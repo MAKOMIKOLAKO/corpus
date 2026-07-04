@@ -34,6 +34,9 @@ export async function GET() {
     }
 
     const watchQueries = await prisma.watchQuery.findMany({
+      where: {
+        userId: session.user.id,
+      },
       select: {
         id: true,
         userId: true,
