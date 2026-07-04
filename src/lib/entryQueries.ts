@@ -10,6 +10,7 @@ export const userEntryWithGlobal = {
   userId: true,
   globalEntryId: true,
   readingStatus: true,
+  notes: true,
   addedVia: true,
   addedByQueryId: true,
   createdAt: true,
@@ -45,7 +46,21 @@ export const userEntryWithGlobal = {
 } satisfies Prisma.UserEntrySelect
 
 /**
- * Transform a UserEntry + GlobalEntry DB result into the 
+ * UserEntry.notes is stored as a JSON string ({text, createdAt}[]); older
+ * rows may hold a bare string from before notes were structured.
+ */
+function parseUserEntryNotes(raw: string | null | undefined): Array<{ text: string; createdAt: string }> {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return [{ text: raw, createdAt: new Date(0).toISOString() }]
+  }
+}
+
+/**
+ * Transform a UserEntry + GlobalEntry DB result into the
  * flat "entry" shape the frontend expects.
  * This is the single translation layer between DB and API response.
  */
@@ -70,6 +85,7 @@ export function flattenUserEntry(ue: any) {
 
     // Per-user fields
     readingStatus: ue.readingStatus,
+    notes: parseUserEntryNotes(ue.notes),
     addedVia: ue.addedVia,
     createdAt: ue.createdAt,
     updatedAt: ue.updatedAt,
