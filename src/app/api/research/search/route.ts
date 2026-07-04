@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[search-api] Error:', error)
     return NextResponse.json(
-      { error: 'Search failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Search failed' },
       { status: 500 }
     )
   }

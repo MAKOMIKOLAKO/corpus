@@ -5,25 +5,7 @@ import { normalizeTitle, normalizeFirstAuthor, normalizeDoi } from '@/lib/entryD
 import { embedBatch, embedText, buildPaperEmbeddingText } from '@/lib/research/embeddings'
 import { extractMetadata } from '@/lib/research/geminiResearch'
 import { Prisma } from '@prisma/client'
-
-const CRON_SECRET = process.env.CRON_SECRET
-
-function isVercelCronRequest(request: NextRequest): boolean {
-  return Boolean(request.headers.get('x-vercel-cron'))
-}
-
-function isCronAuthorized(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization')
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
-    return true
-  }
-
-  if (isVercelCronRequest(request)) {
-    return true
-  }
-
-  return false
-}
+import { verifyCronAuth } from '@/lib/verifyCronAuth'
 
 // ========== Ingestion Sources ==========
 
@@ -409,11 +391,8 @@ async function runEmbedOnlyPipeline(embedByTitle: boolean) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isCronAuthorized(request)) {
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    // In development, allow without secret
+  if (!verifyCronAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
