@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Play, Pause, Sparkles, Check, XCircle, Inbox, ListChecks } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { hasPaidFeature } from '@/lib/plans';
 import { toast } from 'sonner';
 import { useTimezone } from '@/hooks/useTimezone';
 
@@ -92,8 +91,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
   const [newQuery, setNewQuery] = useState('');
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
   const [newQueryMaxPapers, setNewQueryMaxPapers] = useState<string>('5');
-
-  const isPro = hasPaidFeature(session?.user?.plan || 'FREE', 'smart_alerts');
 
   const fetchWatchQueries = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -483,22 +480,6 @@ export function AlertsManagementPanel({ userId, onClose }: AlertsManagementPanel
     );
   }
 
-  if (!isPro) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Sparkles className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">Smart Alerts</h3>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Automatically discover relevant papers for your research interests and route them into the right collection.
-        </p>
-        <Button onClick={onClose} className="w-full">
-          Upgrade to Pro
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="h-full flex flex-col">

@@ -869,15 +869,6 @@ function PreviewForm({
         <ArrowLeft className="h-4 w-4" />← Back to results
       </button>
 
-      {error === 'LIMIT' && (
-        <div className="rounded-xl border border-border-strong bg-accent-muted p-4 text-sm text-content-primary">
-          You&apos;ve reached the 100 entry limit on the free plan.{' '}
-          <Link href="/pricing" className="font-medium underline text-accent">
-            Upgrade to Pro →
-          </Link>
-        </div>
-      )}
-
       {error === 'EXISTS' && (
         <div className="flex items-center gap-3 rounded-xl border border-border-strong bg-surface-raised p-4 text-sm text-content-primary">
           <CheckCircle2 className="h-5 w-5 shrink-0 text-accent" />

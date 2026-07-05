@@ -7,7 +7,7 @@ import type { Session } from "next-auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AccountHoverMenu } from "@/components/AccountHoverMenu";
 import TemporaryUsernameBanner from "@/components/TemporaryUsernameBanner";
-import { BookOpen, Compass, Folder, Plus, Shield } from "lucide-react";
+import { BookOpen, Compass, Folder, Plus } from "lucide-react";
 
 export function AppShell({
   children,
@@ -19,8 +19,6 @@ export function AppShell({
   const pathname = usePathname();
   const isLanding = pathname === "/";
   const isOnboarding = pathname === "/onboarding";
-  const sessionUser = session?.user as (Session["user"] & { isAdmin?: boolean }) | undefined;
-  const isAdmin = Boolean(sessionUser?.isAdmin);
   const [emailVerified, setEmailVerified] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -179,16 +177,6 @@ export function AppShell({
                       <Folder className="w-4 h-4" />
                       collections
                     </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        className={`${desktopNavLinkClassName} ${pathname?.startsWith("/admin") ? "bg-red-500/15 text-red-300 shadow-[rgba(239,68,68,0.35)_0px_0px_0px_1px]" : "text-amber-300 hover:text-amber-200 hover:bg-amber-500/10"}`}
-                        aria-current={pathname?.startsWith("/admin") ? "page" : undefined}
-                      >
-                        <Shield className="w-4 h-4" />
-                        admin
-                      </Link>
-                    )}
                     <AccountHoverMenu
                       displayName={session.user?.name || session.user?.email || "Account"}
                     />
@@ -242,15 +230,6 @@ export function AppShell({
                     <Folder className="w-5 h-5" />
                     collections
                   </Link>
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className={`${mobileNavLinkClassName} ${pathname?.startsWith("/admin") ? "bg-red-500/15 text-red-300 shadow-[rgba(239,68,68,0.35)_0px_0px_0px_1px]" : "text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"}`}
-                    >
-                      <Shield className="w-5 h-5" />
-                      admin
-                    </Link>
-                  )}
                   <div className="my-2 h-px bg-border" />
                   <div className="px-4 py-2">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12px] text-content-tertiary">Account</p>

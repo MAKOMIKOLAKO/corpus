@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { UpgradePrompt } from '@/components/UpgradePrompt'
-import { isPro } from '@/lib/plans'
-import type { Plan } from '@prisma/client'
 import { DiscoverTab } from '@/components/research/DiscoverTab'
 import { WorkspaceTab } from '@/components/research/WorkspaceTab'
 
@@ -47,17 +44,6 @@ export function ResearchPageClient({
 
   if (!mounted) {
     return null
-  }
-
-  // Pro gating for Discovery tab (full corpus search)
-  if (activeTab === 'discover' && !isPro(plan as Plan)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <UpgradePrompt reason="research_feed_pro_only" variant="inline" />
-        </div>
-      </div>
-    )
   }
 
   // Workspace tab is available to all, but non-library papers require Pro

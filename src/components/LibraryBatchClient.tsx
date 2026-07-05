@@ -8,12 +8,9 @@ import {
   Square,
   MoreHorizontal,
   FolderPlus,
-  CircleDot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Plan } from '@prisma/client';
-import { isPro } from '@/lib/plans';
-import { UpgradePrompt } from './UpgradePrompt';
 import BibliographyGenerateDialog from './BibliographyGenerateDialog';
 
 interface LibraryBatchClientProps {
@@ -36,8 +33,6 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<'batch_actions_pro_only' | 'bibliography_pro_only'>('batch_actions_pro_only');
   const [showBibliographyDialog, setShowBibliographyDialog] = useState(false);
   const [visibleEntriesCount, setVisibleEntriesCount] = useState(Math.max(user.entriesCount, 0));
 
@@ -46,11 +41,6 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
   }, [user.entriesCount]);
 
   const toggleSelectionMode = () => {
-    if (!isPro(user.plan)) {
-      setUpgradeReason('batch_actions_pro_only');
-      setShowUpgradeModal(true);
-      return;
-    }
     setIsSelectionMode(!isSelectionMode);
     setSelectedIds([]);
   };
@@ -81,11 +71,6 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
   const hasValidBibliographySelection = selectedIds.length >= 2 && selectedIds.length <= 200;
 
   const openBibliographyDialog = () => {
-    if (!isPro(user.plan)) {
-      setUpgradeReason('bibliography_pro_only');
-      setShowUpgradeModal(true);
-      return;
-    }
     if (!hasValidBibliographySelection) {
       return;
     }
@@ -204,20 +189,13 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
                 onClick={toggleSelectionMode}
                 className="gap-2"
               >
-                {isPro(user.plan) ? <CheckSquare size={16} /> : <CircleDot size={16} className="text-amber-500" />}
+                <CheckSquare size={16} />
                 Batch Select
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (!isPro(user.plan)) {
-                    setUpgradeReason('bibliography_pro_only');
-                    setShowUpgradeModal(true);
-                    return;
-                  }
-                  setIsSelectionMode(true);
-                }}
+                onClick={() => setIsSelectionMode(true)}
               >
                 Bibliography
               </Button>
@@ -225,15 +203,6 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
           )}
         </div>
       </div>
-
-      {showUpgradeModal && (
-        <div className="mb-4">
-          <UpgradePrompt
-            reason={upgradeReason}
-            onClose={() => setShowUpgradeModal(false)}
-          />
-        </div>
-      )}
 
       <BibliographyGenerateDialog
         isOpen={showBibliographyDialog}

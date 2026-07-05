@@ -9,9 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Calendar, FileText, Loader2, Trash2, Search, Brain, Bell, Play, Pause, Sparkles, Check, XCircle, Inbox, ListChecks } from 'lucide-react';
-import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
-import { hasPaidFeature } from '@/lib/plans';
 import { toast } from 'sonner';
 import { useTimezone } from '@/hooks/useTimezone';
 
@@ -123,8 +121,6 @@ export default function AlertsPageClient() {
   const [newQuery, setNewQuery] = useState('');
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
   const [newQueryMaxPapers, setNewQueryMaxPapers] = useState<string>('5');
-
-  const isPro = hasPaidFeature(session?.user?.plan || 'FREE', 'smart_alerts');
 
   const fetchWatchQueries = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -517,29 +513,6 @@ export default function AlertsPageClient() {
           </div>
         </div>
         <AlertsLoading />
-      </div>
-    );
-  }
-
-  if (!isPro) {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-            <Sparkles className="h-3.5 w-3.5" />
-            Smart discovery
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">Smart Alerts</h1>
-            <p className="max-w-2xl text-base leading-7 text-[var(--muted-foreground)]">
-              Automatically discover relevant papers for your research interests and route them into the right collection.
-            </p>
-          </div>
-        </div>
-        <UpgradeBanner
-          message="Smart Alerts require a Pro plan. Get automatic paper discovery and intelligent filtering with Smart Alerts."
-          ctaText="Upgrade to Pro"
-        />
       </div>
     );
   }
