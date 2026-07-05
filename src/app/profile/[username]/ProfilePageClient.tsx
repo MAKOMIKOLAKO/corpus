@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, UserCheck, Clock, X, Check, ChevronLeft, Shield, FileText, Users, Globe } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronLeft, FileText, Users, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -20,10 +19,6 @@ type Profile = {
   plan: string;
   isBetaTester?: boolean;
   createdAt: string;
-  connectionStatus: string | null;
-  connectionId: string | null;
-  isSentByMe: boolean;
-  totalConnections?: number;
 };
 
 export default function ProfilePageClient({
@@ -37,9 +32,7 @@ export default function ProfilePageClient({
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [acting, setActing] = useState(false);
   const [publicCollections, setPublicCollections] = useState<any[]>([]);
-  const [mutualConnections, setMutualConnections] = useState<any[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
 
   const isOwnProfile = currentUserId === profile?.id;
@@ -59,7 +52,7 @@ export default function ProfilePageClient({
   useEffect(() => { fetchProfile(); }, [username]);
 
   useEffect(() => {
-    if (profile && !isOwnProfile && currentUserId) {
+    if (profile && !isOwnProfile) {
       fetchExtras();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,68 +62,16 @@ export default function ProfilePageClient({
     if (!profile) return;
     setLoadingExtras(true);
     try {
-      const [collectionsRes, mutualRes] = await Promise.all([
-        fetch(`/api/users/${encodeURIComponent(username)}/public-collections`),
-        fetch(`/api/users/${encodeURIComponent(username)}/mutual-connections`)
-      ]);
+      const collectionsRes = await fetch(`/api/users/${encodeURIComponent(username)}/public-collections`);
 
       if (collectionsRes.ok) {
         const collectionsData = await collectionsRes.json();
         setPublicCollections(collectionsData.collections || []);
       }
-
-      if (mutualRes.ok) {
-        const mutualData = await mutualRes.json();
-        setMutualConnections(mutualData.mutualConnections || []);
-      }
     } catch (error) {
       console.error('Error fetching profile extras:', error);
     } finally {
       setLoadingExtras(false);
-    }
-  };
-
-  const sendRequest = async () => {
-    if (!profile) return;
-    setActing(true);
-    try {
-      const res = await fetch('/api/connections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiverId: profile.id }),
-      });
-      if (res.ok) {
-        const conn = await res.json();
-        setProfile(p => p ? { ...p, connectionStatus: 'PENDING', connectionId: conn.id, isSentByMe: true } : p);
-      }
-    } finally {
-      setActing(false);
-    }
-  };
-
-  const respond = async (status: 'ACCEPTED' | 'DECLINED') => {
-    if (!profile?.connectionId) return;
-    setActing(true);
-    try {
-      const res = await fetch(`/api/connections/${profile.connectionId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) setProfile(p => p ? { ...p, connectionStatus: status } : p);
-    } finally {
-      setActing(false);
-    }
-  };
-
-  const remove = async () => {
-    if (!profile?.connectionId || !confirm('Remove this connection?')) return;
-    setActing(true);
-    try {
-      const res = await fetch(`/api/connections/${profile.connectionId}`, { method: 'DELETE' });
-      if (res.ok) setProfile(p => p ? { ...p, connectionStatus: null, connectionId: null } : p);
-    } finally {
-      setActing(false);
     }
   };
 
@@ -182,82 +123,8 @@ export default function ProfilePageClient({
                 <p className="text-sm text-[var(--muted-foreground)]">@{profile.username}</p>
               )}
               <p className="text-xs text-[var(--muted-foreground)] mt-0.5">Member since {memberSince}</p>
-              {profile.totalConnections !== undefined && (
-                <p className="text-xs text-[var(--muted-foreground)]">
-                  {profile.totalConnections} {profile.totalConnections === 1 ? 'connection' : 'connections'}
-                </p>
-              )}
             </div>
           </div>
-
-          {/* Connection actions */}
-          {!isOwnProfile && currentUserId && (
-            <div className="w-full sm:w-auto shrink-0">
-              {!profile.connectionStatus && (
-                <Button
-                  onClick={sendRequest}
-                  disabled={acting}
-                  variant="default"
-                  className="w-full sm:w-auto gap-1.5 h-11 sm:h-9 touch-manipulation"
-                >
-                  <UserPlus className="w-4 h-4" /> Connect
-                </Button>
-              )}
-              {profile.connectionStatus === 'PENDING' && profile.isSentByMe && (
-                <div className="flex items-center justify-between sm:justify-end gap-2 p-2 sm:p-0 border sm:border-0 rounded-lg">
-                  <span className="inline-flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]">
-                    <Clock className="w-4 h-4" /> Pending
-                  </span>
-                  <button
-                    onClick={remove}
-                    disabled={acting}
-                    className="p-2 sm:p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors touch-manipulation"
-                    title="Cancel request"
-                  >
-                    <X className="w-5 h-5 sm:w-4 sm:h-4" />
-                  </button>
-                </div>
-              )}
-              {profile.connectionStatus === 'PENDING' && !profile.isSentByMe && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    onClick={() => respond('ACCEPTED')}
-                    disabled={acting}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-3 sm:px-3 sm:py-2 rounded-md bg-[var(--accent)] text-[var(--accent-foreground)] text-sm font-medium hover:opacity-90 disabled:opacity-50 touch-manipulation"
-                  >
-                    <Check className="w-4 h-4" /> Accept
-                  </button>
-                  <button
-                    onClick={() => respond('DECLINED')}
-                    disabled={acting}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-3 sm:px-3 sm:py-2 rounded-md border border-[var(--border)] text-sm hover:bg-[var(--accent)]/20 disabled:opacity-50 touch-manipulation"
-                  >
-                    <X className="w-4 h-4" /> Decline
-                  </button>
-                </div>
-              )}
-              {profile.connectionStatus === 'ACCEPTED' && (
-                <div className="flex items-center justify-between sm:justify-end gap-2 p-2 sm:p-0 border sm:border-0 rounded-lg">
-                  <span className="inline-flex items-center gap-1.5 text-sm text-accent">
-                    <UserCheck className="w-4 h-4" /> Connected
-                  </span>
-                  <button
-                    onClick={remove}
-                    disabled={acting}
-                    className="p-2 sm:p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors touch-manipulation"
-                    title="Remove connection"
-                  >
-                    <X className="w-5 h-5 sm:w-4 sm:h-4" />
-                  </button>
-                </div>
-              )}
-              {profile.connectionStatus === 'BLOCKED' && (
-                <span className="inline-flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]">
-                  <Shield className="w-4 h-4" /> Blocked
-                </span>
-              )}
-            </div>
-          )}
 
           {isOwnProfile && (
             <Link
@@ -329,39 +196,6 @@ export default function ProfilePageClient({
                       )}
                     </CardContent>
                   </Card>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Mutual Connections */}
-      {!isOwnProfile && mutualConnections.length > 0 && (
-        <Card className="border border-[var(--border)]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Mutual Connections ({mutualConnections.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {mutualConnections.map((connection: any) => (
-                <Link
-                  key={connection.id}
-                  href={`/profile/${connection.username}`}
-                  className="flex items-center gap-2 p-2 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-sm font-medium">
-                    {(connection.name || connection.username || '?')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{connection.name || connection.username}</p>
-                    {connection.username && connection.name && (
-                      <p className="text-xs text-[var(--muted-foreground)]">@{connection.username}</p>
-                    )}
-                  </div>
                 </Link>
               ))}
             </div>

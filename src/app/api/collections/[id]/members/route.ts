@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
-import { canManageCollection, canAssignAdmin, canShareCollection } from '@/lib/collectionPermissions';
+import { canManageCollection, canAssignAdmin } from '@/lib/collectionPermissions';
 import { canContributeToSharedCollection } from '@/lib/plans';
 
 export async function POST(
@@ -108,20 +108,6 @@ export async function POST(
       return NextResponse.json(
         { error: 'User is already a member of this collection' },
         { status: 409 }
-      );
-    }
-
-    const sharedCollectionsCount = await prisma.collection.count({
-      where: {
-        userId: collection.userId!,
-        isShared: true,
-      },
-    });
-
-    if (!canShareCollection(inviterUser, sharedCollectionsCount)) {
-      return NextResponse.json(
-        { error: 'Free accounts can share up to 3 collections. Upgrade to Pro for unlimited.' },
-        { status: 403 }
       );
     }
 
