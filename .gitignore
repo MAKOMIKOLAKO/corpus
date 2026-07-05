@@ -48,3 +48,12 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Claude Code worktrees (parallel work-in-progress, not for the main repo)
+.claude/worktrees/
+
+# Test coverage output
+coverage/
+
+# Internal architecture notes (not for public repo)
+ARCHITECTURE.md
