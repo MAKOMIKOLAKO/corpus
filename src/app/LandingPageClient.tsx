@@ -51,6 +51,9 @@ export default function LandingPage() {
             Corpus
           </Link>
           <div className="hidden items-center gap-4 md:flex">
+            <Link href="/privacy" className="text-[13px] text-[#7a8e86] transition-colors hover:text-[#4a5e56]">
+              Privacy
+            </Link>
             <Link href="/login" className="text-[15px] font-medium text-[#4a5e56] transition-colors hover:text-[#1e2d27]">
               Sign In
             </Link>
@@ -76,6 +79,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-3">
               <Link href="/login" className="py-2 font-medium text-[#1e2d27] text-[15px]">Sign In</Link>
               <Link href="/login" className="rounded-lg py-2 text-center font-medium text-[#f7f4ee] bg-[#c96442] shadow-[0_0_0_1px_#c96442]">Get Started</Link>
+              <Link href="/privacy" className="py-2 text-[13px] text-[#7a8e86]">Privacy</Link>
             </div>
           </div>
         )}
@@ -180,6 +184,9 @@ export default function LandingPage() {
             <span className="text-[1.06rem] font-serif font-medium text-[#1e2d27] transition-colors">Corpus</span>
             <p className="text-[14px] font-sans text-[#7a8e86] transition-colors">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
           </div>
+          <Link href="/privacy" className="text-[14px] font-sans text-[#7a8e86] hover:text-[#4a5e56] transition-colors">
+            Privacy Policy
+          </Link>
         </div>
       </footer>
     </div>

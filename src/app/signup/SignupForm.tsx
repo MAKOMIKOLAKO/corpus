@@ -112,6 +112,14 @@ export default function SignupForm() {
           Sign in
         </a>
       </div>
+
+      <p className="text-center text-xs text-[var(--muted-foreground)]">
+        By signing up, you agree to our{" "}
+        <a href="/privacy" className="hover:underline">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </div>
   );
 }
