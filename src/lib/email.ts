@@ -1,3 +1,5 @@
+import 'server-only';
+
 const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
