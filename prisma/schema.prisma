@@ -78,6 +78,16 @@ model User {
   @@index([plan, subscriptionStatus])
 }
 
+// Minimal audit trail for account deletions, kept separate from user data.
+// No PII beyond a one-way hash of the userId; pruned after ~30 days by a cron/cleanup job.
+model AccountDeletionLog {
+  id         String   @id @default(cuid())
+  userIdHash String
+  deletedAt  DateTime @default(now())
+
+  @@index([deletedAt])
+}
+
 model PasswordResetToken {
   id        String    @id @default(cuid())
   token     String    @unique

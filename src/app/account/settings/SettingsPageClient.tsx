@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ export default function AccountPage() {
     const { data: session } = useSession();
     const router = useRouter();
 
-    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; name: string | null; institution?: any } | null>(null);
+    const [profile, setProfile] = useState<{ username: string | null; bio: string | null; showSignals: boolean; name: string | null; institution?: any; hasPassword?: boolean } | null>(null);
     const [editingProfile, setEditingProfile] = useState(false);
     const [profileUsername, setProfileUsername] = useState('');
     const [profileBio, setProfileBio] = useState('');
@@ -40,6 +40,7 @@ export default function AccountPage() {
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [deletePassword, setDeletePassword] = useState('');
     const [deletingAccount, setDeletingAccount] = useState(false);
     const [deleteMsg, setDeleteMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -173,12 +174,18 @@ export default function AccountPage() {
 
     const handleDeleteAccount = async () => {
         if (deleteConfirmText !== 'delete my account') return;
+        if (profile?.hasPassword && !deletePassword) return;
         setDeletingAccount(true);
         setDeleteMsg(null);
         try {
-            const res = await fetch('/api/user/delete', { method: 'DELETE' });
+            const res = await fetch('/api/user/delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirmText: deleteConfirmText, password: deletePassword || undefined }),
+            });
             if (res.ok) {
-                router.push('/');
+                await signOut({ redirect: false });
+                router.push('/account/deleted');
             } else {
                 const data = await res.json();
                 setDeleteMsg({ type: 'error', text: data.error || 'Failed to delete account' });
@@ -437,16 +444,22 @@ export default function AccountPage() {
                         <div className="space-y-4">
                             <p className="text-sm text-muted-foreground">Type <strong>delete my account</strong> to confirm. This will permanently remove your account, all collections, and all saved papers.</p>
                             <Input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="delete my account" />
+                            {profile?.hasPassword && (
+                                <div className="space-y-1">
+                                    <Label htmlFor="deletePassword">Confirm your password</Label>
+                                    <Input id="deletePassword" type="password" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} autoComplete="current-password" />
+                                </div>
+                            )}
                             {deleteMsg && (
                                 <div className="p-3 rounded-lg flex items-center gap-2 text-sm bg-destructive/10 text-destructive border border-destructive/20">
                                     <XCircle className="w-4 h-4" />{deleteMsg.text}
                                 </div>
                             )}
                             <div className="flex gap-2">
-                                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deletingAccount || deleteConfirmText !== 'delete my account'}>
+                                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deletingAccount || deleteConfirmText !== 'delete my account' || (Boolean(profile?.hasPassword) && !deletePassword)}>
                                     {deletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Permanently Delete Account'}
                                 </Button>
-                                <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteMsg(null); }}>Cancel</Button>
+                                <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeletePassword(''); setDeleteMsg(null); }}>Cancel</Button>
                             </div>
                         </div>
                     )}
