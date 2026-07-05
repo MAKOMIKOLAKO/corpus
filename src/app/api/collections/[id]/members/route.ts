@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
-import { canManageCollection, canAssignAdmin } from '@/lib/collectionPermissions';
+import { canManageCollection } from '@/lib/collectionPermissions';
 import { canContributeToSharedCollection } from '@/lib/plans';
 
 export async function POST(
@@ -72,13 +72,6 @@ export async function POST(
       return NextResponse.json(
         { error: 'Collection owner is already part of the collection' },
         { status: 400 }
-      );
-    }
-
-    if (role === 'ADMIN' && !canAssignAdmin(inviterUser, targetUser)) {
-      return NextResponse.json(
-        { error: 'Admin role requires both users to have Pro accounts' },
-        { status: 403 }
       );
     }
 

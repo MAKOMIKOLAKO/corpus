@@ -45,7 +45,3 @@ export function canManageCollection(
     (m) => m.userId === userId && m.status === 'ACCEPTED' && m.role === 'ADMIN'
   );
 }
-
-export function canAssignAdmin(): boolean {
-  return true;
-}

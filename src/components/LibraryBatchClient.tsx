@@ -208,10 +208,6 @@ export default function LibraryBatchClient({ user, allEntryIds = [], onBatchDele
         isOpen={showBibliographyDialog}
         onClose={() => setShowBibliographyDialog(false)}
         userEntryIds={selectedIds}
-        onProRequired={() => {
-          setUpgradeReason('bibliography_pro_only');
-          setShowUpgradeModal(true);
-        }}
       />
 
       {children({ isSelectionMode, selectedIds, toggleSelection })}

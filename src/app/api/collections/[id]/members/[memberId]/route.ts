@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
-import { canManageCollection, canAssignAdmin } from '@/lib/collectionPermissions';
+import { canManageCollection } from '@/lib/collectionPermissions';
 
 export async function PATCH(
   request: NextRequest,
@@ -36,19 +36,6 @@ export async function PATCH(
           { error: 'You do not have permission to manage this collection' },
           { status: 403 }
         );
-      }
-
-      if (role === 'ADMIN') {
-        const inviterUser = await prisma.user.findUnique({
-          where: { id: session.user.id },
-        });
-
-        if (!inviterUser || !canAssignAdmin(inviterUser, member.user)) {
-          return NextResponse.json(
-            { error: 'Admin role requires both users to have Pro accounts' },
-            { status: 403 }
-          );
-        }
       }
 
       const updatedMember = await prisma.collectionMember.update({
