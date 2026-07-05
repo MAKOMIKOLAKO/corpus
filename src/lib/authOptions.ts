@@ -1,3 +1,5 @@
+import 'server-only';
+
 /**
  * Google OAuth Setup Instructions:
  * 1. Go to console.cloud.google.com
