@@ -1,8 +1,5 @@
 {
   "functions": {
-    "pages/api/**/*.js": {
-      "maxDuration": 30
-    },
     "src/app/api/research/feed/route.ts": {
       "maxDuration": 60
     },
@@ -26,22 +23,6 @@
     {
       "path": "/api/cron/smart-alerts",
       "schedule": "30 8 * * *"
-    },
-    {
-      "path": "/api/disabled-cron",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/disabled-cron",
-      "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/disabled-cron",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/disabled-cron",
-      "schedule": "0 5 * * *"
     },
     {
       "path": "/api/cron/daily-metrics-snapshot",
