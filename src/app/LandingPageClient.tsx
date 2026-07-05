@@ -92,17 +92,17 @@ export default function LandingPage() {
               className="max-w-2xl"
             >
               <h1 className="text-[3.25rem] sm:text-[4rem] leading-[1.10] font-serif font-medium text-[#1e2d27] tracking-tight transition-colors">
-                Your personal reading queue.
+                Keep track of everything you&apos;ve read — before it slips away.
               </h1>
               <p className="mt-6 text-[1.06rem] sm:text-[1.25rem] leading-[1.60] text-[#4a5e56] transition-colors">
-                Add papers, articles, and books. Track what you&apos;ve read. Organize everything into collections.
+                Corpus organizes your papers and sources into collections, then recommends what to read next based on your library as a whole — not one-off paper matching. It&apos;s not another discovery engine; it&apos;s a place to keep what you&apos;ve already found and build on it.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4">
                 <Link
                   href="/login"
                   className="inline-flex items-center justify-center rounded-[8px] px-[16px] py-[12px] text-[16px] font-medium text-[#f7f4ee] bg-[#c96442] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757] hover:shadow-[0_0_0_1px_#d97757]"
                 >
-                  Get started
+                  Try Corpus free
                 </Link>
                 <Link
                   href="/login"
@@ -111,6 +111,9 @@ export default function LandingPage() {
                   Sign in
                 </Link>
               </div>
+              <p className="mt-4 text-[13px] text-[#7a8e86] transition-colors">
+                Free for researchers and students — donation-supported, no premium tier.
+              </p>
             </motion.div>
           </div>
         </section>
