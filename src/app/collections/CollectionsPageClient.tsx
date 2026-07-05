@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2, X } from 'lucide-react';
-import UpgradeBanner from '@/components/UpgradeBanner';
 import { useSession } from 'next-auth/react';
 import { hasPaidFeature } from '@/lib/plans';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -416,13 +415,6 @@ export default function CollectionsPage() {
 
     return (
         <div style={{ background: '#f0ede4', minHeight: '100%' }}>
-            {session?.user && !hasPaidFeature(session.user.plan || 'FREE', 'collections') && (
-                <UpgradeBanner
-                    message="Create and share collections of entries with other users. Upgrade to Pro to unlock collections."
-                    ctaText="Upgrade to Pro for Collections"
-                />
-            )}
-
             {/* Pending invites (compact, above layout) */}
             {invites.length > 0 && (
                 <div style={{ padding: '12px 20px', borderBottom: '1px solid #e8e4d8', background: '#f7f4ee' }}>

@@ -180,9 +180,6 @@ export default function LandingPage() {
             <span className="text-[1.06rem] font-serif font-medium text-[#1e2d27] transition-colors">Corpus</span>
             <p className="text-[14px] font-sans text-[#7a8e86] transition-colors">© {new Date().getFullYear()} Corpus. All rights reserved.</p>
           </div>
-          <div className="flex gap-8 text-[15px] font-sans text-[#4a5e56] transition-colors">
-            <Link href="/pricing" className="transition hover:text-[#1e2d27]">Pricing</Link>
-          </div>
         </div>
       </footer>
     </div>

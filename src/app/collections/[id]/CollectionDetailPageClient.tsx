@@ -10,7 +10,6 @@ import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { FlatEntry } from '@/types/entry';
-import { UpgradePrompt } from '@/components/UpgradePrompt';
 import BibliographyGenerateDialog from '@/components/BibliographyGenerateDialog';
 
 interface CollectionEntry extends FlatEntry {
@@ -60,7 +59,6 @@ export default function CollectionDetailPage() {
     const [removing, setRemoving] = useState<string | null>(null);
     const [deletingCollection, setDeletingCollection] = useState(false);
     const [showBibliographyDialog, setShowBibliographyDialog] = useState(false);
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // Use scroll position restoration for collection pages
     if (params?.id) {
@@ -235,16 +233,11 @@ export default function CollectionDetailPage() {
                 </div>
             </div>
 
-            {showUpgradeModal && (
-                <UpgradePrompt reason="bibliography_pro_only" onClose={() => setShowUpgradeModal(false)} />
-            )}
-
             <BibliographyGenerateDialog
                 isOpen={showBibliographyDialog}
                 onClose={() => setShowBibliographyDialog(false)}
                 userEntryIds={bibliographyEntryIds}
                 defaultTitle={collection.name}
-                onProRequired={() => setShowUpgradeModal(true)}
             />
 
             <div className="flex items-center gap-2 border-b border-border pb-4">

@@ -208,16 +208,6 @@ export const userProfilePatchSchema = z
   })
   .strict();
 
-export const connectionCreateSchema = z.object({
-  receiverId: z.string().cuid(),
-});
-
-export const referenceRequestCreateSchema = z.object({
-  entryId: z.string().cuid(),
-  ownerId: z.string().cuid(),
-  message: textFieldSchema(280).optional().nullable(),
-});
-
 export const workspaceSessionCreateSchema = z
   .object({
     candidatePaperId: z.string().cuid().optional(),

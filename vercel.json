@@ -17,9 +17,6 @@
     },
     "src/app/api/cron/research-index/route.ts": {
       "maxDuration": 300
-    },
-    "src/app/api/cron/daily-metrics-snapshot/route.ts": {
-      "maxDuration": 60
     }
   },
   "crons": [
@@ -43,9 +40,5 @@
       "path": "/api/disabled-cron",
       "schedule": "0 5 * * *"
     },
-    {
-      "path": "/api/cron/daily-metrics-snapshot",
-      "schedule": "55 23 * * *"
-    }
   ]
 }
