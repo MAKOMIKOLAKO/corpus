@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { createGlobalEntryOnly } from '@/lib/globalEntryService';
 import { parseFeed } from '@/lib/rssParser';
+import { callGemini } from '@/lib/geminiClient';
 
 export interface RSSIngestionResult {
   sourceId: string;
@@ -8,29 +9,34 @@ export interface RSSIngestionResult {
   entriesCreated: number;
 }
 
-async function enqueueSummary(globalEntryId: string, summaryInput: string): Promise<void> {
+const MAX_SUMMARY_INPUT_LENGTH = 8000;
+
+async function enqueueSummary(globalEntryId: string, summaryInput: string, maxSentences = 3): Promise<void> {
   try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/summarize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: summaryInput,
-        maxSentences: 3,
-      }),
-    });
+    const text = summaryInput.slice(0, MAX_SUMMARY_INPUT_LENGTH);
+    const prompt = `Create a concise summary of exactly ${maxSentences} sentence(s) for the following text. The summary should capture the main points clearly and briefly.
 
-    if (!response.ok) {
-      return;
-    }
+Text:
+${text}
 
-    const data = await response.json().catch(() => null);
-    if (!data?.summary || typeof data.summary !== 'string') {
+Summary:`;
+
+    const summary = (await callGemini({
+      model: 'gemini-2.5-flash',
+      prompt,
+      systemPrompt: 'You write concise, accurate summaries in plain text.',
+      temperature: 0,
+      feature: 'rss_entry_summarization',
+      userId: null,
+    })).trim();
+
+    if (!summary) {
       return;
     }
 
     await prisma.globalEntry.update({
       where: { id: globalEntryId },
-      data: { summary: data.summary },
+      data: { summary },
     });
   } catch (error) {
     console.error('[rssIngestion] Failed to generate summary:', error);
