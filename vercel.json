@@ -14,19 +14,12 @@
     },
     "src/app/api/cron/research-index/route.ts": {
       "maxDuration": 300
-    },
-    "src/app/api/cron/daily-metrics-snapshot/route.ts": {
-      "maxDuration": 60
     }
   },
   "crons": [
     {
       "path": "/api/cron/smart-alerts",
       "schedule": "30 8 * * *"
-    },
-    {
-      "path": "/api/cron/daily-metrics-snapshot",
-      "schedule": "55 23 * * *"
     }
   ]
 }
