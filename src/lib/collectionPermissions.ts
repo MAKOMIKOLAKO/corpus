@@ -46,21 +46,6 @@ export function canManageCollection(
   );
 }
 
-export function canAssignAdmin(
-  inviterUser: User | { plan: 'FREE' | 'PRO' | 'LIFETIME_PRO' },
-  targetUser: User | { plan: 'FREE' | 'PRO' | 'LIFETIME_PRO' }
-): boolean {
-  const inviterIsPro = inviterUser.plan === 'PRO' || inviterUser.plan === 'LIFETIME_PRO';
-  const targetIsPro = targetUser.plan === 'PRO' || targetUser.plan === 'LIFETIME_PRO';
-  return inviterIsPro && targetIsPro;
-}
-
-export function canShareCollection(
-  user: User | { plan: 'FREE' | 'PRO' | 'LIFETIME_PRO' },
-  currentSharedCollectionCount: number
-): boolean {
-  if (user.plan === 'PRO' || user.plan === 'LIFETIME_PRO') {
-    return true;
-  }
-  return currentSharedCollectionCount < 3;
+export function canAssignAdmin(): boolean {
+  return true;
 }

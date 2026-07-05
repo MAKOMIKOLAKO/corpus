@@ -11,7 +11,6 @@ const PUBLIC_PAGE_EXACT = new Set([
   "/",
   "/login",
   "/signup",
-  "/pricing",
   "/privacy",
   "/forgot-password",
   "/setup-username",
@@ -68,7 +67,6 @@ function isPublicProfileUsernamePath(pathname: string): boolean {
 
 function isPublicApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/auth/")) return true;
-  if (pathname === "/api/stripe/webhook") return true;
   if (pathname.startsWith("/api/collections/public/")) return true;
   if (pathname.startsWith("/api/profile/")) return true;
   if (pathname === "/api/cron/smart-alerts") return true;
@@ -149,7 +147,6 @@ export default async function middleware(req: NextRequest) {
     }
 
     if (
-      pathname !== "/api/stripe/webhook" &&
       pathname !== "/api/cron/smart-alerts" &&
       pathname !== "/api/cron/research-ingest" &&
       pathname !== "/api/cron/research-profiles" &&

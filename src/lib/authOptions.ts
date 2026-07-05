@@ -16,7 +16,6 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma, withRetry } from "@/lib/prismaWithRetry";
 import { sendVerificationEmail } from "@/lib/email";
-import { isAdminUser } from "@/lib/adminAuth";
 import crypto from "crypto";
 
 export const authOptions: NextAuthOptions = {
@@ -121,7 +120,6 @@ export const authOptions: NextAuthOptions = {
           (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
           (token as any).entriesCount = dbUser.entriesCount || 0;
           (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
-          (token as any).isAdmin = isAdminUser(dbUser.id);
         }
       } else if (user?.id) {
         (token as any).userId = user.id;
@@ -144,12 +142,10 @@ export const authOptions: NextAuthOptions = {
             (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
             (token as any).entriesCount = dbUser.entriesCount || 0;
             (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
-            (token as any).isAdmin = isAdminUser(user.id);
           }
         } catch (error) {
           console.error('Error fetching user plan:', error);
           (token as any).plan = 'FREE';
-          (token as any).isAdmin = isAdminUser(user.id);
         }
       }
       // Re-fetch data when session is updated (trigger === 'update')
@@ -173,7 +169,6 @@ export const authOptions: NextAuthOptions = {
             (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
             (token as any).entriesCount = dbUser.entriesCount || 0;
             (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
-            (token as any).isAdmin = isAdminUser((token as any).userId);
           }
         } catch { }
       }
@@ -226,7 +221,6 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).entriesCount = dbUser.entriesCount || 0;
             (session.user as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
             (session.user as any).timezone = dbUser.timezone ?? 'UTC'; // Default to 'UTC' if timezone is not set
-            (session.user as any).isAdmin = isAdminUser((token as any).userId);
           } else {
             // Fallback to token data if user not found
             (session.user as any).id = (token as any).userId;
@@ -238,7 +232,6 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).entriesCount = (token as any).entriesCount || 0;
             (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
             (session.user as any).timezone = 'UTC'; // Default to 'UTC' if user is not found in DB
-            (session.user as any).isAdmin = isAdminUser((token as any).userId);
           }
         } catch (error) {
           console.error('Error fetching fresh session data:', error);
@@ -252,7 +245,6 @@ export const authOptions: NextAuthOptions = {
           (session.user as any).entriesCount = (token as any).entriesCount || 0;
           (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
           (session.user as any).timezone = 'UTC'; // Default to 'UTC' on error
-          (session.user as any).isAdmin = isAdminUser((token as any).userId);
         }
       }
       return session;

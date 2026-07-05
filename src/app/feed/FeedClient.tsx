@@ -17,7 +17,6 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { AddFeedDialog } from './AddFeedDialog';
 
 interface FeedSignal {
@@ -204,9 +203,7 @@ export default function FeedClient({
   initialRssPageSize = 20,
   initialRssHasMore = false,
 }: FeedClientProps) {
-  const isFree = userPlan === 'FREE';
   const rssPageSize = initialRssPageSize > 0 ? initialRssPageSize : 20;
-  const [upgradePromptShown, setUpgradePromptShown] = React.useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [feedList, setFeedList] = React.useState(userFeeds);
   const [showManageFeeds, setShowManageFeeds] = React.useState(false);
@@ -404,21 +401,6 @@ export default function FeedClient({
                 <ExternalLink size={14} className="text-muted-foreground shrink-0" />
               </div>
             )}
-            {/* Inline upgrade prompt for free users */}
-            {isFree && !upgradePromptShown && isSharedCollection && (
-              <div className="mt-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
-                <p className="text-xs text-amber-800 mb-2">
-                  Want to create your own shared collections?
-                  <Link
-                    href="/pricing"
-                    className="font-semibold text-amber-600 hover:underline ml-1"
-                    onClick={() => setUpgradePromptShown(true)}
-                  >
-                    Upgrade to Pro →
-                  </Link>
-                </p>
-              </div>
-            )}
           </div>
         );
 
@@ -434,21 +416,6 @@ export default function FeedClient({
                 {signal.metadata?.collectionName || signal.collection?.name || 'Untitled Collection'}
               </Link>
             </p>
-            {/* Inline upgrade prompt for free users */}
-            {isFree && !upgradePromptShown && signal.metadata?.collectionIsPublic && (
-              <div className="mt-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
-                <p className="text-xs text-amber-800 mb-2">
-                  Want to create your own shared collections?
-                  <Link
-                    href="/pricing"
-                    className="font-semibold text-amber-600 hover:underline ml-1"
-                    onClick={() => setUpgradePromptShown(true)}
-                  >
-                    Upgrade to Pro →
-                  </Link>
-                </p>
-              </div>
-            )}
           </div>
         );
 
@@ -472,7 +439,7 @@ export default function FeedClient({
           </p>
         );
     }
-  }, [isFree, upgradePromptShown]);
+  }, []);
 
   return (
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8">
@@ -612,13 +579,6 @@ export default function FeedClient({
                   </div>
                 </div>
 
-                {isFree && idx === 3 && (
-                  <div className="my-8">
-                    <UpgradePrompt
-                      reason="shared_collections_pro_only"
-                    />
-                  </div>
-                )}
               </React.Fragment>
             ))
           )
@@ -642,12 +602,6 @@ export default function FeedClient({
         )}
       </div>
 
-      {upgradePromptShown && (
-        <UpgradePrompt
-          reason="entry_limit_reached"
-          onClose={() => setUpgradePromptShown(false)}
-        />
-      )}
       <AddFeedDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
