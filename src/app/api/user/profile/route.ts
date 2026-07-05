@@ -19,12 +19,14 @@ export async function GET() {
       plan: true,
       createdAt: true,
       email: true,
-      showSignals: true
+      showSignals: true,
+      passwordHash: true
     }
   });
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  return NextResponse.json(user);
+  const { passwordHash, ...rest } = user;
+  return NextResponse.json({ ...rest, hasPassword: Boolean(passwordHash) });
 }
 
 export async function PATCH(request: NextRequest) {
