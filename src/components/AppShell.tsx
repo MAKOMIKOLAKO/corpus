@@ -97,7 +97,7 @@ export function AppShell({
           {children}
         </>
       ) : (
-        <>
+        <div className="min-h-screen flex flex-col">
           {session && <TemporaryUsernameBanner />}
           {session && !emailVerified && !bannerDismissed && (
             <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2.5 text-sm text-yellow-300 flex items-center justify-between gap-4 flex-wrap">
@@ -249,13 +249,21 @@ export function AppShell({
           </header>
           <main
             id="main-content"
-            className="max-w-5xl mx-auto px-4 py-6 sm:py-12"
+            className="max-w-5xl mx-auto px-4 py-6 sm:py-12 flex-1 w-full"
             role="main"
             tabIndex={-1}
           >
             {children}
           </main>
-        </>
+          <footer className="border-t border-border/50">
+            <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-content-tertiary">
+              <span>© {new Date().getFullYear()} Corpus</span>
+              <Link href="/privacy" className="hover:text-content-primary transition-colors">
+                Privacy Policy
+              </Link>
+            </div>
+          </footer>
+        </div>
       )}
     </>
   );

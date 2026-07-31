@@ -254,6 +254,17 @@ export const onboardingCompleteSchema = z
   })
   .strict();
 
+export const accountDeleteSchema = z
+  .object({
+    confirmText: z
+      .string()
+      .refine((v) => v === "delete my account", {
+        message: 'You must type "delete my account" to confirm',
+      }),
+    password: z.string().max(128).optional(),
+  })
+  .strict();
+
 export const researchInterestsUpdateSchema = z
   .object({
     selectedInterests: z
