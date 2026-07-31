@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Copy, Download, Loader2, Save } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { ContentRenderer } from '@/components/ui/content-renderer'
 import { CitationStyle, BibliographyOrdering } from '@/lib/bibliography'
 
 interface MissingFieldWarning {
@@ -314,7 +315,7 @@ export default function BibliographyGenerateDialog({
                     Copy Paragraph
                   </Button>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{result.relatedWork}</p>
+                <ContentRenderer text={result.relatedWork} className="text-sm" />
               </section>
             )}
 

@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "katex/dist/katex.min.css";
 
 @layer base {
 
@@ -485,4 +486,61 @@
       /* text-sm */
     }
   }
+}
+
+/* Markdown + LaTeX content rendered via ContentRenderer. Inherits surrounding
+   typography (font, size, color) instead of imposing its own prose scale. */
+.prose-content {
+  white-space: normal;
+}
+
+.prose-content p {
+  margin: 0 0 1em;
+}
+
+.prose-content p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-content ul,
+.prose-content ol {
+  margin: 0 0 1em;
+  padding-left: 1.5em;
+}
+
+.prose-content li {
+  margin: 0.25em 0;
+}
+
+.prose-content code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  background: var(--muted);
+  padding: 0.15em 0.35em;
+  border-radius: 0.25em;
+}
+
+.prose-content pre {
+  overflow-x: auto;
+  padding: 0.75em 1em;
+  margin: 0 0 1em;
+  background: var(--muted);
+  border-radius: 0.5em;
+}
+
+.prose-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.prose-content blockquote {
+  margin: 0 0 1em;
+  padding-left: 1em;
+  border-left: 2px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.prose-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
 }
