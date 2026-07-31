@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { ContentRenderer } from '@/components/ui/content-renderer'
 import { clearWorkspaceOpen } from '@/lib/workspaceOpenState'
 
 interface ExtractedSection {
@@ -336,9 +337,10 @@ export function WorkspaceClient({
                     <p className="font-serif text-[1.2rem] font-medium leading-[1.2] text-content-primary">
                       {section.heading}
                     </p>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-content-secondary sm:text-[0.98rem]">
-                      {section.text}
-                    </p>
+                    <ContentRenderer
+                      text={section.text}
+                      className="mt-3 text-sm leading-relaxed text-content-secondary sm:text-[0.98rem]"
+                    />
                   </div>
                 ))
               ) : (
@@ -369,7 +371,7 @@ export function WorkspaceClient({
                     : 'mr-auto max-w-[90%] bg-background text-content-secondary ring-shadow-warm'
                     }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <ContentRenderer text={message.content} />
                 </div>
               ))}
             </div>

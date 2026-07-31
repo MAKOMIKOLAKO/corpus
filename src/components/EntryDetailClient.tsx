@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { useEntry } from '@/hooks/useEntry';
 import SingleEntryCitationModal from '@/components/SingleEntryCitationModal';
+import { ContentRenderer } from '@/components/ui/content-renderer';
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -335,9 +336,11 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                 <div className="mb-12">
                     <div className="text-[10px] uppercase tracking-[0.5px] text-[#7a8e86] mb-4">Abstract</div>
                     {entry.abstract ? (
-                        <p className="font-serif text-base leading-[1.70] text-foreground" style={{ textWrap: 'pretty' as any }}>
-                            {entry.abstract}
-                        </p>
+                        <ContentRenderer
+                            text={entry.abstract}
+                            className="font-serif text-base leading-[1.70] text-foreground"
+                            style={{ textWrap: 'pretty' as any }}
+                        />
                     ) : (
                         <p className="font-serif text-base leading-[1.70] text-[#7a8e86] italic">No abstract available.</p>
                     )}
