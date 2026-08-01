@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio'
 import prisma from '@/lib/prisma'
 import { callGemini, safeParseJson } from './geminiResearch'
 import { normalizePaperIdentifier } from './paperIdentifier'
+import { sanitizeJatsMarkup } from '@/lib/jatsMarkup'
 
 type FetchContentStatus = 'full_text' | 'metadata_only'
 
@@ -119,7 +120,7 @@ async function fetchArxivTextById(arxivId: string): Promise<string | null> {
 }
 
 function stripHtmlLikeTags(text: string): string {
-  return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  return sanitizeJatsMarkup(text)
 }
 
 async function fetchCrossrefMetadata(doi: string): Promise<ResolvedPaperData | null> {

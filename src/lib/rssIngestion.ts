@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { createGlobalEntryOnly } from '@/lib/globalEntryService';
 import { parseFeed } from '@/lib/rssParser';
 import { callGemini } from '@/lib/geminiClient';
+import { sanitizeJatsMarkup } from '@/lib/jatsMarkup';
 
 export interface RSSIngestionResult {
   sourceId: string;
@@ -67,7 +68,9 @@ export async function ingestSourceById(sourceId: string): Promise<RSSIngestionRe
       title: item.title,
       authors: item.author ? [item.author] : [],
       year: item.publishedDate?.getFullYear() ?? null,
-      abstract: item.description || item.content,
+      abstract: (item.description || item.content)
+        ? sanitizeJatsMarkup((item.description || item.content) as string)
+        : undefined,
       source: displaySource,
       url: item.url,
       rawContentType: 'ARTICLE',
