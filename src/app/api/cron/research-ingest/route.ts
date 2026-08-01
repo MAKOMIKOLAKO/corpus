@@ -6,6 +6,7 @@ import { embedBatch, embedText, buildPaperEmbeddingText } from '@/lib/research/e
 import { extractMetadata } from '@/lib/research/geminiResearch'
 import { Prisma } from '@prisma/client'
 import { verifyCronAuth } from '@/lib/verifyCronAuth'
+import { sanitizeJatsMarkup } from '@/lib/jatsMarkup'
 
 // ========== Ingestion Sources ==========
 
@@ -64,7 +65,7 @@ async function ingestFromFeed(feedUrl: string, sourceLabel: string): Promise<Raw
       return {
         title: item.title,
         authors,
-        abstract: item.description ?? null,
+        abstract: item.description ? sanitizeJatsMarkup(item.description) : null,
         url: item.url,
         doi: doi ? normalizeDoi(doi) : null,
         arxivId,
