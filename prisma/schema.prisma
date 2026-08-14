@@ -33,8 +33,6 @@ model User {
   bio                       String?
   emailVerified             DateTime?
   username                  String?                  @unique
-  onboardingCompleted       Boolean                  @default(false)
-  onboardingCompletedAt     DateTime?
   lastFeedViewedAt          DateTime?
   showSignals               Boolean                  @default(true)
   usernameBannerShown       Boolean                  @default(false)

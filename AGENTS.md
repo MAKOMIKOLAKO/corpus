@@ -79,7 +79,6 @@ knowledge-indexer/
 │   │   ├── alerts/            # Watch query / alert management
 │   │   ├── connections/       # Connections dashboard
 │   │   ├── notifications/     # Notification center
-│   │   ├── onboarding/        # Onboarding flow
 │   │   ├── admin/             # Admin dashboard pages
 │   │   ├── [username]/        # Public profile short URL
 │   │   └── c/[slug]/          # Public collection view
@@ -243,7 +242,7 @@ When adding new entry-related features, use `UserEntry`/`GlobalEntry` patterns. 
 
 ### JWT Strategy
 - 30-day max session age, 24-hour refresh window.
-- Session tokens include: `userId`, `plan`, `username`, `emailVerified`, `onboardingCompleted`, `isAdmin`.
+- Session tokens include: `userId`, `plan`, `username`, `emailVerified`, `isAdmin`.
 - User data is re-fetched from DB on every session refresh to keep plan/subscription current.
 - Admin status is derived from `ADMIN_USER_IDS` env variable.
 
@@ -253,11 +252,10 @@ Request flow (in order):
 2. Skip JWT parsing for `/api/cron/*` and `/api/test-cron` (use Bearer token auth instead)
 3. Rate limit auth endpoints: 10 requests / 15 min per IP
 4. Rate limit API endpoints: 100 requests / min per userId or IP
-5. Allow public pages: `/`, `/login`, `/signup`, `/pricing`, `/privacy`, `/forgot-password`, `/setup-username`, `/onboarding`, `/reset-password/*`, `/verify-email/*`, `/c/*`, `/profile/*`, single-segment paths (treated as `/:username` public profiles)
+5. Allow public pages: `/`, `/login`, `/signup`, `/pricing`, `/privacy`, `/forgot-password`, `/setup-username`, `/reset-password/*`, `/verify-email/*`, `/c/*`, `/profile/*`, single-segment paths (treated as `/:username` public profiles)
 6. Allow public API paths: `/api/auth/*`, `/api/stripe/webhook`, `/api/profile/*`, `/api/cron/*`
-7. Redirect authenticated users away from `/login` and `/signup` to `/onboarding` or `/library`
-8. Redirect users with incomplete onboarding to `/onboarding`
-9. Require valid JWT for all other routes
+7. Redirect authenticated users away from `/login` and `/signup` to `/library`
+8. Require valid JWT for all other routes
 
 ### Authenticating in Route Handlers
 ```ts
