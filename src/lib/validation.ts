@@ -245,15 +245,6 @@ export const workspaceSessionListSchema = z
   })
   .strict();
 
-export const onboardingCompleteSchema = z
-  .object({
-    selectedInterests: z
-      .array(z.string())
-      .max(10, "Select at most 10 interests"),
-    selectedFeedIds: z.array(z.string()).default([]),
-  })
-  .strict();
-
 export const accountDeleteSchema = z
   .object({
     confirmText: z

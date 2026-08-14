@@ -14,7 +14,6 @@ const PUBLIC_PAGE_EXACT = new Set([
   "/privacy",
   "/forgot-password",
   "/setup-username",
-  "/onboarding",
   "/sitemap.xml",
   "/robots.txt",
 ]);
@@ -46,7 +45,6 @@ const RESERVED_ROOT_SEGMENTS = new Set([
   "entries",
   "account",
   "setup-username",
-  "onboarding",
   "forgot-password",
   "api",
   "c",
@@ -169,8 +167,7 @@ export default async function middleware(req: NextRequest) {
 
   if (isPublicPagePath(pathname)) {
     if ((pathname === "/login" || pathname === "/signup") && token) {
-      const destination = token?.onboardingCompleted === false ? "/onboarding" : "/library";
-      return NextResponse.redirect(new URL(destination, req.url));
+      return NextResponse.redirect(new URL("/library", req.url));
     }
     return NextResponse.next();
   }
@@ -189,25 +186,6 @@ export default async function middleware(req: NextRequest) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", req.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // Check onboarding status for protected routes using JWT data.
-  // Prisma cannot be imported here because middleware runs on the Edge Runtime
-  // which does not support Node.js native modules. The JWT callback already
-  // writes onboardingCompleted from the database on every sign-in and on
-  // trigger=update, so the JWT value is authoritative enough for routing.
-  if (
-    token?.userId &&
-    !pathname.startsWith("/api") &&
-    !pathname.startsWith("/_next") &&
-    !pathname.startsWith("/auth") &&
-    pathname !== "/onboarding" &&
-    pathname !== "/research" &&
-    !pathname.startsWith("/research/")
-  ) {
-    if (token?.onboardingCompleted === false) {
-      return NextResponse.redirect(new URL("/onboarding", req.url));
-    }
   }
 
   return NextResponse.next();
