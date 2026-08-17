@@ -8,68 +8,52 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Topic {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  description String?
-  explanation String?
-  keyConcepts String[] @default([])
-  createdAt   DateTime @default(now())
-}
-
 model User {
-  id                        String                   @id @default(cuid())
-  email                     String                   @unique
-  name                      String?
-  createdAt                 DateTime                 @default(now())
-  passwordHash              String?
-  plan                      Plan                     @default(FREE)
-  stripeCustomerId          String?                  @unique
-  stripePriceId             String?
-  stripeSubscriptionId      String?                  @unique
-  subscriptionEndsAt        DateTime?
-  subscriptionStatus        String?
-  bio                       String?
-  emailVerified             DateTime?
-  username                  String?                  @unique
-  lastFeedViewedAt          DateTime?
-  showSignals               Boolean                  @default(true)
-  usernameBannerShown       Boolean                  @default(false)
-  entriesCount              Int                      @default(0)
-  personalCollectionsCount  Int                      @default(0)
-  timezone                  String                   @default("UTC")
-  alertTime                 String?                  @default("09:00")
-  isBetaTester              Boolean                  @default(false)
-  alertContainers           AlertContainer[]
-  analyticsEvents           AnalyticsEvent[]
-  collections               Collection[]
-  sentInvites               CollectionMember[]       @relation("InvitedBy")
-  collectionMemberships     CollectionMember[]
-  receivedConnections       Connection[]             @relation("ConnectionReceiver")
-  sentConnections           Connection[]             @relation("ConnectionRequester")
-  emailVerificationTokens   EmailVerificationToken[]
-  entries                   Entry[]
-  feedback                  Feedback[]
-  notifications             Notification[]
-  passwordResetTokens       PasswordResetToken[]
-  promoCodes                PromoCode[]
-  queueItems                QueueItem[]
-  receivedReferenceRequests ReferenceRequest[]       @relation("ReferenceRequestOwner")
-  sentReferenceRequests     ReferenceRequest[]       @relation("ReferenceRequester")
-  receivedSharedEntries     SharedEntry[]            @relation("SharedEntryReceiver")
-  sentSharedEntries         SharedEntry[]            @relation("SharedEntrySender")
-  signals                   Signal[]
-  userEntries               UserEntry[]
-  generatedBibliographies   GeneratedBibliography[]
-  userSources               UserSource[]
-  watchQueries              WatchQuery[]
-  researchProfile           UserResearchProfile?
-  dailyPaperScores          DailyPaperScore[]
-  dailyBriefs               DailyBrief[]
-  readingSessions           PaperReadingSession[]
+  id                       String                   @id @default(cuid())
+  email                    String                   @unique
+  name                     String?
+  createdAt                DateTime                 @default(now())
+  passwordHash             String?
+  plan                     Plan                     @default(FREE)
+  stripeCustomerId         String?                  @unique
+  stripePriceId            String?
+  stripeSubscriptionId     String?                  @unique
+  subscriptionEndsAt       DateTime?
+  subscriptionStatus       String?
+  bio                      String?
+  emailVerified            DateTime?
+  username                 String?                  @unique
+  lastFeedViewedAt         DateTime?
+  showSignals              Boolean                  @default(true)
+  usernameBannerShown      Boolean                  @default(false)
+  entriesCount             Int                      @default(0)
+  personalCollectionsCount Int                      @default(0)
+  timezone                 String                   @default("UTC")
+  alertTime                String?                  @default("09:00")
+  isBetaTester             Boolean                  @default(false)
+  alertContainers          AlertContainer[]
+  analyticsEvents          AnalyticsEvent[]
+  collections              Collection[]
+  sentInvites              CollectionMember[]       @relation("InvitedBy")
+  collectionMemberships    CollectionMember[]
+  emailVerificationTokens  EmailVerificationToken[]
+  entries                  Entry[]
+  notifications            Notification[]
+  passwordResetTokens      PasswordResetToken[]
+  promoCodes               PromoCode[]
+  queueItems               QueueItem[]
+  receivedSharedEntries    SharedEntry[]            @relation("SharedEntryReceiver")
+  sentSharedEntries        SharedEntry[]            @relation("SharedEntrySender")
+  signals                  Signal[]
+  userEntries              UserEntry[]
+  generatedBibliographies  GeneratedBibliography[]
+  userSources              UserSource[]
+  watchQueries             WatchQuery[]
+  researchProfile          UserResearchProfile?
+  dailyBriefs              DailyBrief[]
+  readingSessions          PaperReadingSession[]
   paperWorkspaceSessions   PaperWorkspaceSession[]
-  geminiApiCalls            GeminiApiCall[]
+  geminiApiCalls           GeminiApiCall[]
 
   @@index([plan])
   @@index([createdAt])
@@ -107,59 +91,58 @@ model EmailVerificationToken {
 }
 
 model Entry {
-  id                String             @id @default(cuid())
-  title             String
-  authors           String[]
-  year              Int?
-  contentType       ContentType        @default(PAPER)
-  url               String?            @unique
-  doi               String?            @unique
-  abstract          String?
-  summary           String?
-  notes             Json               @default("[]")
-  readingStatus     ReadingStatus      @default(UNREAD)
-  createdAt         DateTime           @default(now())
-  cover             String?
-  description       String?
-  isbn13            String[]           @default([])
-  numberOfPages     Int?
-  publishDate       String?
-  publishers        String[]           @default([])
-  userId            String?
-  metaDescription   String?
-  slug              String?            @unique
-  autoKeywords      String[]           @default([])
-  userKeywords      String[]           @default([])
-  metadata          Json?
-  addedByQueryId    String?
-  source            EntrySource        @default(MANUAL)
-  watchQuery        WatchQuery?        @relation("WatchQueryEntries", fields: [addedByQueryId], references: [id])
-  user              User?              @relation(fields: [userId], references: [id])
-  collections       EntryCollection[]
-  referenceRequests ReferenceRequest[]
-  sharedEntries     SharedEntry[]
-  signals           Signal[]
+  id              String            @id @default(cuid())
+  title           String
+  authors         String[]
+  year            Int?
+  contentType     ContentType       @default(PAPER)
+  url             String?           @unique
+  doi             String?           @unique
+  abstract        String?
+  summary         String?
+  notes           Json              @default("[]")
+  readingStatus   ReadingStatus     @default(UNREAD)
+  createdAt       DateTime          @default(now())
+  cover           String?
+  description     String?
+  isbn13          String[]          @default([])
+  numberOfPages   Int?
+  publishDate     String?
+  publishers      String[]          @default([])
+  userId          String?
+  metaDescription String?
+  slug            String?           @unique
+  autoKeywords    String[]          @default([])
+  userKeywords    String[]          @default([])
+  metadata        Json?
+  addedByQueryId  String?
+  source          EntrySource       @default(MANUAL)
+  watchQuery      WatchQuery?       @relation("WatchQueryEntries", fields: [addedByQueryId], references: [id])
+  user            User?             @relation(fields: [userId], references: [id])
+  collections     EntryCollection[]
+  sharedEntries   SharedEntry[]
+  signals         Signal[]
 }
 
 model Collection {
-  id                String             @id @default(cuid())
-  name              String
-  description       String?
-  createdAt         DateTime           @default(now())
-  userId            String?
-  isShared          Boolean            @default(false)
-  isPublic          Boolean            @default(false)
-  publicDescription String?
-  publicSlug        String?            @unique
-  publicViewCount   Int                @default(0)
-  metadata          Json?
-  alertContainers   AlertContainer[]
-  user              User?              @relation(fields: [userId], references: [id])
-  members           CollectionMember[]
-  entries           EntryCollection[]
+  id                   String                @id @default(cuid())
+  name                 String
+  description          String?
+  createdAt            DateTime              @default(now())
+  userId               String?
+  isShared             Boolean               @default(false)
+  isPublic             Boolean               @default(false)
+  publicDescription    String?
+  publicSlug           String?               @unique
+  publicViewCount      Int                   @default(0)
+  metadata             Json?
+  alertContainers      AlertContainer[]
+  user                 User?                 @relation(fields: [userId], references: [id])
+  members              CollectionMember[]
+  entries              EntryCollection[]
   userEntryCollections UserEntryCollection[]
-  signals           Signal[]
-  watchQueries      WatchQuery[]
+  signals              Signal[]
+  watchQueries         WatchQuery[]
 
   @@index([isShared, isPublic])
 }
@@ -257,20 +240,6 @@ model PromoCode {
   @@index([usedAt])
 }
 
-model Connection {
-  id          String           @id @default(cuid())
-  requesterId String
-  receiverId  String
-  status      ConnectionStatus @default(PENDING)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  receiver    User             @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  requester   User             @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-
-  @@unique([requesterId, receiverId])
-  @@index([status, createdAt])
-}
-
 model SharedEntry {
   id            String            @id @default(cuid())
   entryId       String
@@ -290,37 +259,19 @@ model SharedEntry {
 }
 
 model Signal {
-  id           String      @id @default(cuid())
-  userId       String
-  type         SignalType
-  entryId      String?
+  id            String       @id @default(cuid())
+  userId        String
+  type          SignalType
+  entryId       String?
   globalEntryId String?
-  collectionId String?
-  metadata     Json?
-  createdAt    DateTime    @default(now())
-  isPublic     Boolean     @default(true)
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entry        Entry?      @relation(fields: [entryId], references: [id], onDelete: SetNull)
-  globalEntry  GlobalEntry? @relation("GlobalEntrySignals", fields: [globalEntryId], references: [id], onDelete: SetNull)
-  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-}
-
-model ReferenceRequest {
-  id           String               @id @default(cuid())
-  requesterId  String
-  ownerId      String
-  entryId      String
-  globalEntryId String?
-  message      String?
-  status       ReferenceRequestStatus @default(PENDING)
-  createdAt    DateTime             @default(now())
-  respondedAt  DateTime?
-  requester    User                 @relation("ReferenceRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  owner        User                 @relation("ReferenceRequestOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  entry        Entry                @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  globalEntry  GlobalEntry?         @relation("GlobalEntryReferenceRequests", fields: [globalEntryId], references: [id], onDelete: SetNull)
-
-  @@unique([requesterId, ownerId, entryId])
+  collectionId  String?
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+  isPublic      Boolean      @default(true)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry         Entry?       @relation(fields: [entryId], references: [id], onDelete: SetNull)
+  globalEntry   GlobalEntry? @relation("GlobalEntrySignals", fields: [globalEntryId], references: [id], onDelete: SetNull)
+  collection    Collection?  @relation(fields: [collectionId], references: [id], onDelete: SetNull)
 }
 
 model AnalyticsEvent {
@@ -336,36 +287,24 @@ model AnalyticsEvent {
   @@index([userId, timestamp])
 }
 
-model Feedback {
-  id        String   @id @default(cuid())
-  userId    String?
-  message   String
-  rating    Int?
-  email     String?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
-
-  @@index([createdAt])
-}
-
 model QueueItem {
-  id           String          @id @default(cuid())
-  userId       String
-  status       QueueItemStatus @default(PENDING)
-  inputType    QueueInputType
-  input        String
-  payload      Json?
-  result       Json?
-  entryId      String?
+  id            String          @id @default(cuid())
+  userId        String
+  status        QueueItemStatus @default(PENDING)
+  inputType     QueueInputType
+  input         String
+  payload       Json?
+  result        Json?
+  entryId       String?
   globalEntryId String?
-  errorMessage String?
-  position     Int
-  createdAt    DateTime        @default(now())
-  startedAt    DateTime?
-  completedAt  DateTime?
-  priority     Int             @default(0)
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  globalEntry  GlobalEntry?    @relation("GlobalEntryQueueItems", fields: [globalEntryId], references: [id], onDelete: SetNull)
+  errorMessage  String?
+  position      Int
+  createdAt     DateTime        @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  priority      Int             @default(0)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  globalEntry   GlobalEntry?    @relation("GlobalEntryQueueItems", fields: [globalEntryId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
@@ -438,13 +377,6 @@ enum InviteStatus {
   DECLINED
 }
 
-enum ConnectionStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
-  BLOCKED
-}
-
 enum SharedEntryStatus {
   PENDING
   ACCEPTED
@@ -459,12 +391,6 @@ enum SignalType {
   PAPER_SHARED
   REFERENCE_REQUESTED
   COLLECTION_MEMBER_JOINED
-}
-
-enum ReferenceRequestStatus {
-  PENDING
-  ACKNOWLEDGED
-  DISMISSED
 }
 
 enum EntrySource {
@@ -486,62 +412,61 @@ enum AlertEntryStatus {
 }
 
 model GlobalEntry {
-  id              String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Primary deduplication keys
-  doi             String?   @unique
-  isbn            String?   @unique
-  
+  doi  String? @unique
+  isbn String? @unique
+
   // Secondary deduplication key (title + first author + year)
   // Stored normalized for comparison
-  normalizedTitle     String?
+  normalizedTitle       String?
   normalizedFirstAuthor String?
-  publicationYear     Int?
-  
+  publicationYear       Int?
+
   // Tertiary deduplication key
-  canonicalUrl    String?   @unique
-  
+  canonicalUrl String? @unique
+
   // Content hash for additional safety
   // SHA-256 of: normalized(title + firstAuthor + year) or canonical URL
-  contentHash     String?   @unique
-  
+  contentHash String? @unique
+
   // Core metadata (shared across all users)
-  title           String
-  authors         String[]
-  year            Int?
-  abstract        String?
-  summary         String?   // AI-generated summary
-  source          String?   // journal, website, publisher
-  url             String?   // original URL (not normalized)
-  
+  title    String
+  authors  String[]
+  year     Int?
+  abstract String?
+  summary  String? // AI-generated summary
+  source   String? // journal, website, publisher
+  url      String? // original URL (not normalized)
+
   // Type information retained in DB but not shown in UI
-  rawContentType  String?   // stores original contentType value silently
-  
+  rawContentType String? // stores original contentType value silently
+
   // AI-generated data (shared, generated once)
   // Note: embedding field omitted until pgvector is properly installed
-  
+
   // Stored metadata (book pages, openAccessUrl, semanticScholarId etc.)
-  metadata        Json?
-  
+  metadata Json?
+
   // Source tracking
-  addedVia        String?   // "manual", "semantic_scholar", "open_library", 
-                            // "crossref", "url_fetch", "smart_alert"
-  
+  addedVia String? // "manual", "semantic_scholar", "open_library", 
+  // "crossref", "url_fetch", "smart_alert"
+
   // Global stats
-  saveCount       Int       @default(0)  // incremented when any user saves this
-  
+  saveCount Int @default(0) // incremented when any user saves this
+
   // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  userEntries     UserEntry[]
-  sharedEntries   SharedEntry[]   @relation("GlobalEntryShared")
-  alertEntries    WatchQuery[]    @relation("AlertGlobalEntries")
-  signals         Signal[]        @relation("GlobalEntrySignals")
-  referenceRequests ReferenceRequest[] @relation("GlobalEntryReferenceRequests")
-  queueItems      QueueItem[]     @relation("GlobalEntryQueueItems")
-  
+  userEntries   UserEntry[]
+  sharedEntries SharedEntry[] @relation("GlobalEntryShared")
+  alertEntries  WatchQuery[]  @relation("AlertGlobalEntries")
+  signals       Signal[]      @relation("GlobalEntrySignals")
+  queueItems    QueueItem[]   @relation("GlobalEntryQueueItems")
+
   // Indexes for deduplication lookups
   @@index([doi])
   @@index([isbn])
@@ -553,31 +478,31 @@ model GlobalEntry {
 }
 
 model UserEntry {
-  id              String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Core relations
-  userId          String
-  globalEntryId   String
-  
+  userId        String
+  globalEntryId String
+
   // Per-user state
-  readingStatus   ReadingStatus @default(UNREAD)
-  notes           String?   // User's personal notes about this entry
-  
+  readingStatus ReadingStatus @default(UNREAD)
+  notes         String? // User's personal notes about this entry
+
   // Source tracking per user
-  addedVia        String?   // "manual", "smart_alert", "shared", "collection"
-  addedByQueryId  String?   // WatchQuery.id if added via smart alert
-  
+  addedVia       String? // "manual", "smart_alert", "shared", "collection"
+  addedByQueryId String? // WatchQuery.id if added via smart alert
+
   // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  lastViewedAt    DateTime?
-  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastViewedAt DateTime?
+
   // Relations
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  globalEntry     GlobalEntry @relation(fields: [globalEntryId], references: [id], onDelete: Cascade)
-  collections     UserEntryCollection[]
-  addedByQuery    WatchQuery? @relation("UserAlertEntries", fields: [addedByQueryId], references: [id], onDelete: SetNull)
-  
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  globalEntry  GlobalEntry           @relation(fields: [globalEntryId], references: [id], onDelete: Cascade)
+  collections  UserEntryCollection[]
+  addedByQuery WatchQuery?           @relation("UserAlertEntries", fields: [addedByQueryId], references: [id], onDelete: SetNull)
+
   // One UserEntry per user per GlobalEntry
   @@unique([userId, globalEntryId])
   @@index([userId])
@@ -589,43 +514,43 @@ model UserEntry {
 }
 
 model UserEntryCollection {
-  id            String    @id @default(cuid())
-  userEntryId   String
-  collectionId  String
-  addedAt       DateTime  @default(now())
-  
-  userEntry     UserEntry   @relation(fields: [userEntryId], references: [id], onDelete: Cascade)
-  collection    Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  
+  id           String   @id @default(cuid())
+  userEntryId  String
+  collectionId String
+  addedAt      DateTime @default(now())
+
+  userEntry  UserEntry  @relation(fields: [userEntryId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
   @@unique([userEntryId, collectionId])
   @@index([collectionId])
   @@index([userEntryId])
 }
 
 model Source {
-  id            String   @id @default(cuid())
-  feedUrl       String   @unique
+  id            String    @id @default(cuid())
+  feedUrl       String    @unique
   domain        String
   title         String?
   lastFetchedAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  userSources   UserSource[]
-  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userSources UserSource[]
+
   @@index([feedUrl])
   @@index([domain])
   @@index([lastFetchedAt])
 }
 
 model DefaultFeed {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  url         String      @unique
+  url         String   @unique
   category    String
   description String?
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   userSources UserSource[]
 
@@ -634,18 +559,18 @@ model DefaultFeed {
 }
 
 model UserSource {
-  id            String       @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String
   sourceId      String
   feedUrl       String
-  isDefault     Boolean      @default(false)
+  isDefault     Boolean  @default(false)
   defaultFeedId String?
-  createdAt     DateTime     @default(now())
-  
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  source        Source       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  defaultFeed   DefaultFeed? @relation(fields: [defaultFeedId], references: [id], onDelete: SetNull)
-  
+  createdAt     DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source      Source       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  defaultFeed DefaultFeed? @relation(fields: [defaultFeedId], references: [id], onDelete: SetNull)
+
   @@unique([userId, sourceId])
   @@unique([userId, feedUrl])
   @@index([userId])
@@ -672,32 +597,6 @@ model GeneratedBibliography {
   @@index([citationStyle])
 }
 
-model DailyMetricsSnapshot {
-  id                     String   @id @default(cuid())
-  date                   DateTime
-  totalUsers             Int
-  newUsers               Int
-  activeUsers            Int
-  proUsers               Int
-  newProSubscriptions    Int
-  churnedSubscriptions   Int
-  totalEntries           Int
-  newEntries             Int
-  totalCollections       Int
-  newCollections         Int
-  totalConnections       Int
-  newConnections         Int
-  queueItemsProcessed    Int
-  queueSuccessRate       Float
-  dailyBriefsGenerated   Int
-  readingSessionsStarted Int
-  bibliographiesGenerated Int
-  createdAt              DateTime @default(now())
-
-  @@index([date])
-  @@unique([date])
-}
-
 model GeminiApiCall {
   id           String   @id @default(cuid())
   userId       String?
@@ -722,31 +621,12 @@ model GeminiApiCall {
   @@index([userId, feature, calledAt])
 }
 
-model DailyCostSnapshot {
-  id                   String   @id @default(cuid())
-  date                 DateTime
-  totalCost            Float
-  totalCalls           Int
-  totalInputTokens     Int
-  totalOutputTokens    Int
-  costByFeature        Json
-  callsByFeature       Json
-  costByModel          Json
-  uniqueUsersServed    Int
-  avgCostPerActiveUser Float
-  projectedMonthlyCost Float
-  reportText           String?  @db.Text
-  createdAt            DateTime @default(now())
-
-  @@unique([date])
-}
-
 // ===== RESEARCH READING SYSTEM =====
 
 model CandidatePaper {
-  id                String    @id @default(cuid())
-  doi               String?   @unique
-  arxivId           String?   @unique
+  id                String                      @id @default(cuid())
+  doi               String?                     @unique
+  arxivId           String?                     @unique
   title             String
   authors           String[]
   abstract          String?
@@ -756,18 +636,16 @@ model CandidatePaper {
   embedding         Unsupported("vector(768)")?
   clusterId         Int?
   clusterDate       DateTime?
-  candidateMetadata Json?     // { methodology, domainTags, noveltyIndicators, complexityScore }
-  plainSummary      String?   // cached, user-agnostic
-  technicalSummary  String?   // cached, user-agnostic
+  candidateMetadata Json? // { methodology, domainTags, noveltyIndicators, complexityScore }
+  plainSummary      String? // cached, user-agnostic
+  technicalSummary  String? // cached, user-agnostic
   noveltyTag        String?
-  ingestedAt        DateTime  @default(now())
+  ingestedAt        DateTime                    @default(now())
   embeddedAt        DateTime?
 
-  dailyScores       DailyPaperScore[]
   readingSessions   PaperReadingSession[]
   workspaceSessions PaperWorkspaceSession[]
   dailySetLinks     DailyCandidateSetPaper[]
-  dailyClusterLinks DailyClusterPaper[]
 
   @@index([publishedDate, embeddedAt])
   @@index([doi])
@@ -776,47 +654,22 @@ model CandidatePaper {
 }
 
 model UserResearchProfile {
-  id                      String   @id @default(cuid())
-  userId                  String   @unique
-  interestVector          Json?    // number[] — centroid of user's GlobalEntry embeddings
-  domainWeights           Json?    // Record<string, number> — domain tag frequency map
-  dismissedPaperIds       String[] // CandidatePaper ids the user has dismissed
-  preferredDailyCount     Int      @default(5)
-  lastRecomputedAt        DateTime?
-  feedSelectionMode       String   @default("profile") // "profile" | "collection" | "phrase"
+  id                        String    @id @default(cuid())
+  userId                    String    @unique
+  interestVector            Json? // number[] — centroid of user's GlobalEntry embeddings
+  domainWeights             Json? // Record<string, number> — domain tag frequency map
+  dismissedPaperIds         String[] // CandidatePaper ids the user has dismissed
+  preferredDailyCount       Int       @default(5)
+  lastRecomputedAt          DateTime?
+  feedSelectionMode         String    @default("profile") // "profile" | "collection" | "phrase"
   feedSelectionCollectionId String? // Collection ID for collection-based feed generation
-  feedSelectionPhrase     String? // Research phrase for phrase-based feed generation
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  feedSelectionPhrase       String? // Research phrase for phrase-based feed generation
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-}
-
-model DailyCluster {
-  id                String   @id @default(cuid())
-  date              DateTime // store as date-only (truncate to midnight UTC)
-  clusterId         Int
-  centroidEmbedding Unsupported("vector(3072)")
-  size              Int
-
-  papers DailyClusterPaper[]
-
-  @@unique([date, clusterId])
-  @@index([date])
-}
-
-model DailyClusterPaper {
-  id               String @id @default(cuid())
-  dailyClusterId   String
-  candidatePaperId String
-
-  dailyCluster   DailyCluster   @relation(fields: [dailyClusterId], references: [id], onDelete: Cascade)
-  candidatePaper CandidatePaper @relation(fields: [candidatePaperId], references: [id], onDelete: Cascade)
-
-  @@unique([dailyClusterId, candidatePaperId])
-  @@index([candidatePaperId])
 }
 
 model DailyCandidateSet {
@@ -841,31 +694,12 @@ model DailyCandidateSetPaper {
   @@index([candidatePaperId])
 }
 
-model DailyPaperScore {
-  id                String        @id @default(cuid())
-  userId            String
-  candidatePaperId  String
-  date              DateTime
-  compositeScore    Float
-  semanticScore     Float
-  domainScore       Float
-  noveltyScore      Float
-  citationScore     Float
-  engagementScore   Float
-
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  candidatePaper CandidatePaper @relation(fields: [candidatePaperId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date, candidatePaperId])
-  @@index([userId, date, compositeScore])
-}
-
 model DailyBrief {
   id                      String    @id @default(cuid())
   userId                  String
-  date                    DateTime  // truncated to midnight UTC
-  selectedPaperIds        String[]  // ordered CandidatePaper ids
-  whyExplanations         Json      // Record<candidatePaperId, string>
+  date                    DateTime // truncated to midnight UTC
+  selectedPaperIds        String[] // ordered CandidatePaper ids
+  whyExplanations         Json // Record<candidatePaperId, string>
   emergingTrendsParagraph String?
   generatedAt             DateTime  @default(now())
   viewedAt                DateTime?
@@ -879,19 +713,19 @@ model DailyBrief {
 }
 
 model PaperReadingSession {
-  id               String    @id @default(cuid())
+  id               String   @id @default(cuid())
   userId           String
   candidatePaperId String?
   globalEntryId    String?
-  paperText        String    @db.Text
-  sections         Json      // SectionObject[]
-  notes            String?   // User's notes for this session
-  sessionStarted   DateTime  @default(now())
-  lastActivity     DateTime  @updatedAt
+  paperText        String   @db.Text
+  sections         Json // SectionObject[]
+  notes            String? // User's notes for this session
+  sessionStarted   DateTime @default(now())
+  lastActivity     DateTime @updatedAt
 
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  candidatePaper CandidatePaper? @relation(fields: [candidatePaperId], references: [id], onDelete: SetNull)
-  messages      PaperReadingMessage[]
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidatePaper CandidatePaper?       @relation(fields: [candidatePaperId], references: [id], onDelete: SetNull)
+  messages       PaperReadingMessage[]
 
   @@index([userId, lastActivity])
   @@index([sessionStarted])
@@ -900,7 +734,7 @@ model PaperReadingSession {
 model PaperReadingMessage {
   id                 String   @id @default(cuid())
   sessionId          String
-  role               String   // "user" | "assistant"
+  role               String // "user" | "assistant"
   content            String   @db.Text
   referencedSections String[]
   createdAt          DateTime @default(now())
@@ -912,26 +746,26 @@ model PaperReadingMessage {
 }
 
 model PaperWorkspaceSession {
-  id                 String   @id @default(cuid())
-  userId             String
-  candidatePaperId   String?
-  arxivId            String
-  arxivUrl           String
-  paperTitle         String
-  paperAuthors       String[]
-  paperYear          Int?
-  paperAbstract      String?  @db.Text
-  fullText           String?  @db.Text
-  fullTextFetchedAt  DateTime?
-  sections           Json?
+  id                  String    @id @default(cuid())
+  userId              String
+  candidatePaperId    String?
+  arxivId             String
+  arxivUrl            String
+  paperTitle          String
+  paperAuthors        String[]
+  paperYear           Int?
+  paperAbstract       String?   @db.Text
+  fullText            String?   @db.Text
+  fullTextFetchedAt   DateTime?
+  sections            Json?
   sectionsExtractedAt DateTime?
-  createdAt          DateTime @default(now())
-  lastActivityAt     DateTime @default(now())
+  createdAt           DateTime  @default(now())
+  lastActivityAt      DateTime  @default(now())
 
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  candidatePaper  CandidatePaper? @relation(fields: [candidatePaperId], references: [id], onDelete: SetNull)
-  summaries       SectionSummary[]
-  messages        WorkspaceMessage[]
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidatePaper CandidatePaper?    @relation(fields: [candidatePaperId], references: [id], onDelete: SetNull)
+  summaries      SectionSummary[]
+  messages       WorkspaceMessage[]
 
   @@unique([userId, arxivId])
   @@index([userId, lastActivityAt])
@@ -939,7 +773,7 @@ model PaperWorkspaceSession {
 }
 
 model SectionSummary {
-  id            String   @id @default(cuid())
+  id             String   @id @default(cuid())
   sessionId      String
   sectionIndex   Int
   sectionHeading String

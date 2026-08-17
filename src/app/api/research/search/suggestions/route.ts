@@ -36,25 +36,6 @@ export async function GET(request: NextRequest) {
       ? Object.keys(researchProfile.domainWeights as Record<string, number>).slice(0, 3)
       : []
 
-    // Get today's cluster labels from DailyBrief
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
-    const dailyBrief = await prisma.dailyBrief.findUnique({
-      where: { userId_date: { userId: user.id, date: today } },
-      select: { selectedPaperIds: true },
-    })
-
-    let clusterLabels: string[] = []
-    if (dailyBrief && dailyBrief.selectedPaperIds.length > 0) {
-      const clusters = await prisma.dailyCluster.findMany({
-        where: { date: today },
-        select: { clusterId: true },
-        orderBy: { clusterId: 'asc' },
-        take: 3,
-      })
-      clusterLabels = clusters.map((c) => `Topic ${c.clusterId + 1}`)
-    }
-
     // Combine and deduplicate suggestions
     const suggestions = new Set<string>()
 
@@ -66,11 +47,6 @@ export async function GET(request: NextRequest) {
     // Add domain tag suggestions
     domainTags.forEach((tag) => {
       suggestions.add(tag)
-    })
-
-    // Add cluster label suggestions
-    clusterLabels.forEach((label) => {
-      suggestions.add(label)
     })
 
     // Convert to array and limit to 8
