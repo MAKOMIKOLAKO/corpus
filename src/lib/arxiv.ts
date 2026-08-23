@@ -146,19 +146,12 @@ function parseArxivFeed(xml: string): ArxivPaper[] {
 
 export type DiscoverSortMode = 'relevance' | 'recency'
 
-function sortParams(sortMode: DiscoverSortMode): string {
-  return sortMode === 'recency'
-    ? '&sortBy=submittedDate&sortOrder=descending'
-    : '&sortBy=relevance&sortOrder=descending'
-}
-
-async function fetchArxivQuery(
-  searchQuery: string,
-  maxResults: number,
-  sortMode: DiscoverSortMode = 'relevance'
-): Promise<ArxivPaper[]> {
+// Every fetch from arXiv is relevance-sorted, regardless of the requested
+// DiscoverSortMode — see the comment in searchArxiv for why "recency" is applied
+// as a re-sort of the relevance-ranked pool rather than at the API-fetch level.
+async function fetchArxivQuery(searchQuery: string, maxResults: number): Promise<ArxivPaper[]> {
   try {
-    const url = `${ARXIV_API_BASE}?search_query=${searchQuery}${sortParams(sortMode)}&start=0&max_results=${maxResults}`
+    const url = `${ARXIV_API_BASE}?search_query=${searchQuery}&sortBy=relevance&sortOrder=descending&start=0&max_results=${maxResults}`
     const response = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(15000),
@@ -184,16 +177,22 @@ export async function searchArxiv(params: {
   sortMode?: DiscoverSortMode
 }): Promise<ArxivPaper[]> {
   const sortMode = params.sortMode ?? 'relevance'
-  // Fetch extra results so filtering out already-saved papers downstream still
-  // leaves a reasonably full list.
-  const perQueryMax = 25
+  // Always fetch by relevance, regardless of sortMode: the keyword query is a broad
+  // OR across ~8 loosely-selected terms, so asking arXiv itself to sort that by
+  // submittedDate returns the newest papers matching *any single* keyword — bypassing
+  // relevance entirely and surfacing largely unrelated papers. "Recency" mode instead
+  // re-sorts this same relevance-ranked candidate pool by date below, so recent results
+  // are still drawn from what's actually relevant to the collection.
+  // Recency mode pulls a deeper relevance-ranked pool so there's more recent material
+  // to re-sort within, rather than just re-ordering the same top ~25 relevance hits.
+  const perQueryMax = sortMode === 'recency' ? 60 : 25
 
   const keywordQuery = buildKeywordQuery(params.keywords)
   const authorQuery = buildAuthorQuery(params.authors)
 
   const [keywordResults, authorResults] = await Promise.all([
-    keywordQuery ? fetchArxivQuery(keywordQuery, perQueryMax, sortMode) : Promise.resolve([]),
-    authorQuery ? fetchArxivQuery(authorQuery, perQueryMax, sortMode) : Promise.resolve([]),
+    keywordQuery ? fetchArxivQuery(keywordQuery, perQueryMax) : Promise.resolve([]),
+    authorQuery ? fetchArxivQuery(authorQuery, perQueryMax) : Promise.resolve([]),
   ])
 
   const merged = new Map<string, ArxivPaper>()
@@ -203,8 +202,14 @@ export async function searchArxiv(params: {
     }
   }
 
-  const results = Array.from(merged.values())
+  let results = Array.from(merged.values())
   if (sortMode === 'recency') {
+    // Relevance floor: only re-sort-by-date within the more relevant half of the
+    // fetched pool, rather than the whole thing — otherwise the least-relevant paper
+    // in the pool can still rank #1 just for being newest, which is what made
+    // "Recent" surface largely unrelated papers.
+    const RELEVANCE_FLOOR = 40
+    results = results.slice(0, RELEVANCE_FLOOR)
     // Plain lexical comparison rather than localeCompare: publishedDate is a fixed-format
     // ISO 8601 string (from arXiv's <published> tag), and localeCompare's ordering is
     // locale/collation-dependent rather than guaranteed byte-for-byte chronological.
