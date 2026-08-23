@@ -9,8 +9,6 @@ declare module "next-auth" {
       image?: string | null
       plan?: "FREE" | "PRO" | "LIFETIME_PRO"
       username?: string | null
-      onboardingCompleted?: boolean
-      onboardingCompletedAt?: Date | null
       emailVerified?: Date | null
     }
   }

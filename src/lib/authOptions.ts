@@ -109,7 +109,6 @@ export const authOptions: NextAuthOptions = {
               id: true,
               plan: true,
               username: true,
-              onboardingCompleted: true,
               entriesCount: true,
               personalCollectionsCount: true,
             },
@@ -117,7 +116,6 @@ export const authOptions: NextAuthOptions = {
           (token as any).userId = dbUser.id;
           (token as any).plan = dbUser.plan || 'FREE';
           (token as any).username = dbUser.username ?? null;
-          (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
           (token as any).entriesCount = dbUser.entriesCount || 0;
           (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
         }
@@ -130,7 +128,6 @@ export const authOptions: NextAuthOptions = {
               username: true,
               plan: true,
               emailVerified: true,
-              onboardingCompleted: true,
               entriesCount: true,
               personalCollectionsCount: true
             }
@@ -139,7 +136,6 @@ export const authOptions: NextAuthOptions = {
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).emailVerified = dbUser.emailVerified;
-            (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
             (token as any).entriesCount = dbUser.entriesCount || 0;
             (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
           }
@@ -157,7 +153,6 @@ export const authOptions: NextAuthOptions = {
               username: true,
               plan: true,
               emailVerified: true,
-              onboardingCompleted: true,
               entriesCount: true,
               personalCollectionsCount: true
             }
@@ -166,7 +161,6 @@ export const authOptions: NextAuthOptions = {
             (token as any).username = (dbUser as any).username ?? null;
             (token as any).plan = dbUser.plan || 'FREE';
             (token as any).emailVerified = dbUser.emailVerified;
-            (token as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
             (token as any).entriesCount = dbUser.entriesCount || 0;
             (token as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
           }
@@ -186,8 +180,6 @@ export const authOptions: NextAuthOptions = {
               subscriptionStatus: true,
               subscriptionEndsAt: true,
               username: true,
-              onboardingCompleted: true,
-              onboardingCompletedAt: true,
               entriesCount: true,
               personalCollectionsCount: true,
               timezone: true
@@ -216,8 +208,6 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).subscriptionEndsAt = dbUser.subscriptionEndsAt;
             (session.user as any).emailVerified = (token as any).emailVerified;
             (session.user as any).username = (token as any).username || null;
-            (session.user as any).onboardingCompleted = (dbUser as any).onboardingCompleted ?? false;
-            (session.user as any).onboardingCompletedAt = (dbUser as any).onboardingCompletedAt ?? null;
             (session.user as any).entriesCount = dbUser.entriesCount || 0;
             (session.user as any).personalCollectionsCount = dbUser.personalCollectionsCount || 0;
             (session.user as any).timezone = dbUser.timezone ?? 'UTC'; // Default to 'UTC' if timezone is not set
@@ -227,8 +217,6 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).plan = (token as any).plan || 'FREE';
             (session.user as any).emailVerified = (token as any).emailVerified;
             (session.user as any).username = (token as any).username || null;
-            (session.user as any).onboardingCompleted = (token as any).onboardingCompleted ?? false;
-            (session.user as any).onboardingCompletedAt = null;
             (session.user as any).entriesCount = (token as any).entriesCount || 0;
             (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
             (session.user as any).timezone = 'UTC'; // Default to 'UTC' if user is not found in DB
@@ -240,8 +228,6 @@ export const authOptions: NextAuthOptions = {
           (session.user as any).plan = (token as any).plan || 'FREE';
           (session.user as any).emailVerified = (token as any).emailVerified;
           (session.user as any).username = (token as any).username || null;
-          (session.user as any).onboardingCompleted = (token as any).onboardingCompleted ?? false;
-          (session.user as any).onboardingCompletedAt = null;
           (session.user as any).entriesCount = (token as any).entriesCount || 0;
           (session.user as any).personalCollectionsCount = (token as any).personalCollectionsCount || 0;
           (session.user as any).timezone = 'UTC'; // Default to 'UTC' on error

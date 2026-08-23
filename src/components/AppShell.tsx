@@ -18,7 +18,6 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const isLanding = pathname === "/";
-  const isOnboarding = pathname === "/onboarding";
   const [emailVerified, setEmailVerified] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -67,7 +66,7 @@ export function AppShell({
 
   return (
     <>
-      {isLanding || isOnboarding ? (
+      {isLanding ? (
         <>
           {isLanding && session && !emailVerified && !bannerDismissed && (
             <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2.5 text-sm text-yellow-300 flex items-center justify-between gap-4 flex-wrap">
