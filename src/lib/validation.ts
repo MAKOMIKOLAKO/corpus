@@ -208,6 +208,12 @@ export const userProfilePatchSchema = z
   })
   .strict();
 
+export const discoverSortModeSchema = z
+  .object({
+    sortMode: z.enum(['relevance', 'recency']),
+  })
+  .strict();
+
 export const workspaceSessionCreateSchema = z
   .object({
     candidatePaperId: z.string().cuid().optional(),

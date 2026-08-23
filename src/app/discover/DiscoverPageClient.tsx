@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ interface Collection {
 }
 
 type FetchStatus = "idle" | "loading" | "success" | "error";
+type SortMode = "relevance" | "recency";
 
 function SkeletonRow() {
   return (
@@ -54,24 +55,54 @@ export default function DiscoverPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("relevance");
+  // Guards against out-of-order responses: only the most recently issued fetch
+  // is allowed to commit its result, so rapidly toggling sort mode / switching
+  // collections can't have a stale, slower response clobber a newer one.
+  const latestRequestId = useRef(0);
 
-  const fetchRecommendations = useCallback(async (collectionId: string) => {
+  const fetchRecommendations = useCallback(async (collectionId: string, mode?: SortMode) => {
+    const requestId = ++latestRequestId.current;
     setStatus("loading");
     setError(null);
     try {
-      const res = await fetch(`/api/discover?collectionId=${encodeURIComponent(collectionId)}`);
+      const params = new URLSearchParams({ collectionId });
+      if (mode) params.set("sortMode", mode);
+      const res = await fetch(`/api/discover?${params.toString()}`);
       const data = await res.json().catch(() => ({}));
+      if (requestId !== latestRequestId.current) return;
       if (!res.ok) {
         throw new Error(data.error || "Could not fetch recommendations. Try again.");
       }
       setPapers(data.papers ?? []);
       setKeywords(data.keywords ?? []);
+      if (data.sortMode === "relevance" || data.sortMode === "recency") {
+        setSortMode(data.sortMode);
+      }
       setStatus("success");
     } catch (err) {
+      if (requestId !== latestRequestId.current) return;
       setError(err instanceof Error ? err.message : "Could not fetch recommendations. Try again.");
       setStatus("error");
     }
   }, []);
+
+  const handleSortModeChange = async (mode: SortMode) => {
+    if (mode === sortMode) return;
+    setSortMode(mode);
+    if (selectedCollectionId) {
+      fetchRecommendations(selectedCollectionId, mode);
+    }
+    try {
+      await fetch("/api/discover", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sortMode: mode }),
+      });
+    } catch {
+      // Best-effort persistence; the in-session toggle still works either way.
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -109,7 +140,7 @@ export default function DiscoverPageClient() {
     setSelectedCollectionId(id);
     const collection = collections.find((c) => c.id === id);
     if (collection && collection.entryCount >= 2) {
-      fetchRecommendations(id);
+      fetchRecommendations(id, sortMode);
     } else {
       setStatus("idle");
       setPapers([]);
@@ -174,27 +205,53 @@ export default function DiscoverPageClient() {
         </p>
       ) : (
         <>
-          <div className="mb-2 text-[13px] text-[#7a8e86]">Based on</div>
-          <div
-            className="flex gap-2 pb-3 overflow-x-auto"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {collections.map((c) => {
-              const active = c.id === selectedCollectionId;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => handleSelectCollection(c.id)}
-                  className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-sans transition-colors ${
-                    active
-                      ? "bg-[#c96442] text-[#f7f4ee]"
-                      : "bg-[#f7f4ee] border border-[#e8e4d8] text-[#1e2d27]"
-                  }`}
-                >
-                  {c.name}
-                </button>
-              );
-            })}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="mb-2 text-[13px] text-[#7a8e86]">Based on</div>
+              <div
+                className="flex gap-2 pb-3 overflow-x-auto"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {collections.map((c) => {
+                  const active = c.id === selectedCollectionId;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => handleSelectCollection(c.id)}
+                      className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-sans transition-colors ${
+                        active
+                          ? "bg-[#c96442] text-[#f7f4ee]"
+                          : "bg-[#f7f4ee] border border-[#e8e4d8] text-[#1e2d27]"
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end shrink-0">
+              <div className="mb-2 text-[13px] text-[#7a8e86]">Sort by</div>
+              <div className="flex rounded-full border border-[#e8e4d8] p-0.5 bg-[#f7f4ee]">
+                {(["relevance", "recency"] as const).map((mode) => {
+                  const active = sortMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => handleSortModeChange(mode)}
+                      className={`whitespace-nowrap rounded-full px-3 py-1 text-[13px] font-sans transition-colors capitalize ${
+                        active
+                          ? "bg-[#c96442] text-[#f7f4ee]"
+                          : "text-[#1e2d27] hover:bg-[#e8e4d8]"
+                      }`}
+                    >
+                      {mode === "recency" ? "Recent" : "Relevance"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {keywords.length > 0 && (
@@ -218,7 +275,7 @@ export default function DiscoverPageClient() {
                   {error || "Could not fetch recommendations. Try again."}
                 </p>
                 <button
-                  onClick={() => selectedCollectionId && fetchRecommendations(selectedCollectionId)}
+                  onClick={() => selectedCollectionId && fetchRecommendations(selectedCollectionId, sortMode)}
                   className="rounded-full bg-[#c96442] text-[#f7f4ee] text-[13px] px-4 py-1.5"
                 >
                   Retry
