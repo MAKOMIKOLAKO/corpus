@@ -208,6 +208,12 @@ export const userProfilePatchSchema = z
   })
   .strict();
 
+export const discoverSortModeSchema = z
+  .object({
+    sortMode: z.enum(['relevance', 'recency']),
+  })
+  .strict();
+
 export const workspaceSessionCreateSchema = z
   .object({
     candidatePaperId: z.string().cuid().optional(),
@@ -242,15 +248,6 @@ export const workspaceMessageListSchema = z
 export const workspaceSessionListSchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(20).default(10),
-  })
-  .strict();
-
-export const onboardingCompleteSchema = z
-  .object({
-    selectedInterests: z
-      .array(z.string())
-      .max(10, "Select at most 10 interests"),
-    selectedFeedIds: z.array(z.string()).default([]),
   })
   .strict();
 

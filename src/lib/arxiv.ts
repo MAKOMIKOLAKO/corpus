@@ -144,9 +144,21 @@ function parseArxivFeed(xml: string): ArxivPaper[] {
   return papers
 }
 
-async function fetchArxivQuery(searchQuery: string, maxResults: number): Promise<ArxivPaper[]> {
+export type DiscoverSortMode = 'relevance' | 'recency'
+
+function sortParams(sortMode: DiscoverSortMode): string {
+  return sortMode === 'recency'
+    ? '&sortBy=submittedDate&sortOrder=descending'
+    : '&sortBy=relevance&sortOrder=descending'
+}
+
+async function fetchArxivQuery(
+  searchQuery: string,
+  maxResults: number,
+  sortMode: DiscoverSortMode = 'relevance'
+): Promise<ArxivPaper[]> {
   try {
-    const url = `${ARXIV_API_BASE}?search_query=${searchQuery}&start=0&max_results=${maxResults}`
+    const url = `${ARXIV_API_BASE}?search_query=${searchQuery}${sortParams(sortMode)}&start=0&max_results=${maxResults}`
     const response = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(15000),
@@ -169,15 +181,19 @@ export async function searchArxiv(params: {
   keywords: string[]
   authors: string[]
   maxResults?: number
+  sortMode?: DiscoverSortMode
 }): Promise<ArxivPaper[]> {
-  const perQueryMax = 15
+  const sortMode = params.sortMode ?? 'relevance'
+  // Fetch extra results so filtering out already-saved papers downstream still
+  // leaves a reasonably full list.
+  const perQueryMax = 25
 
   const keywordQuery = buildKeywordQuery(params.keywords)
   const authorQuery = buildAuthorQuery(params.authors)
 
   const [keywordResults, authorResults] = await Promise.all([
-    keywordQuery ? fetchArxivQuery(keywordQuery, perQueryMax) : Promise.resolve([]),
-    authorQuery ? fetchArxivQuery(authorQuery, perQueryMax) : Promise.resolve([]),
+    keywordQuery ? fetchArxivQuery(keywordQuery, perQueryMax, sortMode) : Promise.resolve([]),
+    authorQuery ? fetchArxivQuery(authorQuery, perQueryMax, sortMode) : Promise.resolve([]),
   ])
 
   const merged = new Map<string, ArxivPaper>()
@@ -187,5 +203,17 @@ export async function searchArxiv(params: {
     }
   }
 
-  return Array.from(merged.values()).slice(0, 20)
+  const results = Array.from(merged.values())
+  if (sortMode === 'recency') {
+    // Plain lexical comparison rather than localeCompare: publishedDate is a fixed-format
+    // ISO 8601 string (from arXiv's <published> tag), and localeCompare's ordering is
+    // locale/collation-dependent rather than guaranteed byte-for-byte chronological.
+    results.sort((a, b) => {
+      const bDate = b.publishedDate || ''
+      const aDate = a.publishedDate || ''
+      return bDate > aDate ? 1 : bDate < aDate ? -1 : 0
+    })
+  }
+
+  return results.slice(0, 30)
 }

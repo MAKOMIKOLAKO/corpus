@@ -46,6 +46,7 @@ interface SearchResult {
   publisher?: string | null;
   pages?: number | null;
   coverUrl?: string | null;
+  url?: string | null;
   openAccessUrl?: string | null;
 }
 
@@ -775,7 +776,7 @@ function PreviewForm({
     abstract: item.abstract || '',
     source: item.source || item.publisher || '',
     doi: item.doi || '',
-    url: item.openAccessUrl || '',
+    url: item.url || item.openAccessUrl || '',
     isbn: item.isbn || '',
     readingStatus: 'UNREAD',
     notes: '',

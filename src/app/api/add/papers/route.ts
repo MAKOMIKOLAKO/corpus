@@ -64,9 +64,7 @@ export async function GET(request: NextRequest) {
         source: paper.venue || null,
         doi: paper.externalIds?.DOI || null,
         url: url,
-        metadata: {
-          openAccessUrl: paper.openAccessPdf?.url || null
-        }
+        openAccessUrl: paper.openAccessPdf?.url || null
       };
     });
 

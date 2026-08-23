@@ -43,6 +43,7 @@ model User {
   timezone                  String                   @default("UTC")
   alertTime                 String?                  @default("09:00")
   isBetaTester              Boolean                  @default(false)
+  discoverSortMode          String                   @default("relevance") // "relevance" | "recency"
   alertContainers           AlertContainer[]
   analyticsEvents           AnalyticsEvent[]
   collections               Collection[]
