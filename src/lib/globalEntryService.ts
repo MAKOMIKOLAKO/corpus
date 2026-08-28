@@ -92,6 +92,29 @@ export async function saveEntryForUser(
     })
     globalEntryId = globalEntry.id
     wasGlobalNew = true
+  } else if (identifiersOnly) {
+    // Manual entry matched an existing record by explicit identifier (DOI/ISBN).
+    // The hand-typed metadata is authoritative — repair the shared record rather
+    // than letting the manual entry silently inherit stale or garbage data
+    // (e.g. a "Client Challenge" / "Just a moment..." bot-block page that a
+    // previous URL fetch scraped instead of the real article).
+    await prisma.globalEntry.update({
+      where: { id: globalEntryId },
+      data: {
+        title: input.title,
+        authors: input.authors,
+        year: input.year ?? null,
+        abstract: input.abstract ?? undefined,
+        source: input.source ?? undefined,
+        url: input.url ?? undefined,
+        rawContentType: input.rawContentType ?? undefined,
+        // keep the non-unique fuzzy keys in sync; leave contentHash /
+        // canonicalUrl untouched to avoid unique-index collisions
+        normalizedTitle: keys.normalizedTitle,
+        normalizedFirstAuthor: keys.normalizedFirstAuthor,
+        publicationYear: keys.publicationYear,
+      },
+    })
   }
 
   // Step 3: Check if user already has this entry

@@ -7,6 +7,34 @@ import { callGemini, safeParseJson } from './research/geminiResearch';
 
 const STALE_QUEUE_PROCESSING_TIMEOUT_MS = 2 * 60 * 1000;
 
+const BOTBLOCK_TITLE_PATTERNS = [
+  'client challenge',
+  'just a moment',
+  'attention required',
+  'access denied',
+  'are you a robot',
+  'checking your browser',
+  'please verify you are a human',
+  'one moment, please',
+  'security check',
+  'verifying you are human',
+];
+
+function looksLikeBotBlock(title: string | null | undefined, html: string): boolean {
+  const t = (title || '').trim().toLowerCase();
+  if (t && BOTBLOCK_TITLE_PATTERNS.some((p) => t === p || t.startsWith(p))) return true;
+  // Cloudflare / hCaptcha / Imperva challenge markers with almost no real content
+  if (
+    html.length < 4000 &&
+    /cf-browser-verification|cf_chl_opt|_cf_chl_|challenge-platform|hcaptcha|imperva|incapsula|distil_r_captcha/i.test(
+      html
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function extractMeta(html: string) {
   const getTag = (pattern: RegExp) => {
     const match = html.match(pattern);
@@ -225,6 +253,16 @@ export async function processUserQueue(userId: string): Promise<void> {
   }
 
   const meta = extractMeta(html);
+
+  // Bail if the page we fetched is a bot-protection interstitial rather than the
+  // real article — otherwise we save an entry titled "Client Challenge" / "Just
+  // a moment..." and (worse) attach the real DOI to that junk record.
+  if (looksLikeBotBlock(meta.extractedTitle, html)) {
+    await failAndContinue(
+      'That site blocked automated access (bot check). Add it as a Manual Entry instead.'
+    );
+    return;
+  }
 
   const promptText = `Extract structured metadata from the following webpage content.
 Return ONLY a valid JSON object with no explanation, no markdown,
