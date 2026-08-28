@@ -40,6 +40,7 @@ export async function saveEntryForUser(
     addedVia?: string
     addedByQueryId?: string
     collectionId?: string
+    notes?: string | null
   }
 ): Promise<SaveEntryResult> {
 
@@ -111,6 +112,7 @@ export async function saveEntryForUser(
       readingStatus: (options?.readingStatus as any) ?? 'UNREAD',
       addedVia: options?.addedVia ?? 'manual',
       addedByQueryId: options?.addedByQueryId ?? null,
+      notes: options?.notes ?? null,
     }
   })
 

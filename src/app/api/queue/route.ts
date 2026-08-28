@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
           ? parseInt(String(pagesRaw), 10)
           : null;
 
+      const notesArr = normalizeNotes(p.notes);
+
       const result = await saveEntryForUser(
         userId,
         {
@@ -107,7 +109,7 @@ export async function POST(request: NextRequest) {
           authors: Array.isArray(p.authors) ? (p.authors as string[]) : [],
           year: year !== null && !Number.isNaN(year) ? year : null,
           abstract: (p.abstract as string) || null,
-          source: null,
+          source: (p.source as string) || (meta.source as string) || null,
           url: (p.url as string) || null,
           doi: (p.doi as string) || null,
           isbn: p.isbn ? [String(p.isbn)] : [],
@@ -116,13 +118,14 @@ export async function POST(request: NextRequest) {
             ...(p.metadata && typeof p.metadata === 'object' ? (p.metadata as Record<string, unknown>) : {}),
             pages: numberOfPages !== null && !Number.isNaN(numberOfPages) ? numberOfPages : null,
             coverUrl: (meta.coverUrl as string) || null,
-            source: (p.source as string) || null,
-            notes: normalizeNotes(p.notes),
+            source: (p.source as string) || (meta.source as string) || null,
+            notes: notesArr,
           },
         },
         {
           readingStatus,
           addedVia: 'manual',
+          notes: notesArr.length > 0 ? JSON.stringify(notesArr) : null,
         }
       );
 

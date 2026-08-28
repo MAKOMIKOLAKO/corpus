@@ -17,7 +17,17 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-type Tab = 'PAPER' | 'BOOK' | 'URL';
+type Tab = 'PAPER' | 'BOOK' | 'URL' | 'MANUAL';
+
+const MANUAL_CONTENT_TYPES = [
+  { value: 'PAPER', label: 'Research Paper' },
+  { value: 'BOOK', label: 'Book' },
+  { value: 'ARTICLE', label: 'Article' },
+  { value: 'BLOG', label: 'Blog Post' },
+  { value: 'ESSAY', label: 'Essay' },
+  { value: 'POLICY_REPORT', label: 'Policy Report' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
 
 interface QueueItem {
   id: string;
@@ -289,7 +299,6 @@ export default function AddEntryPage() {
     setSearchQuery('');
     setSearchError(null);
     setHasSearched(false);
-    setActiveTab('PAPER');
   };
 
   const switchTab = (tab: Tab) => {
@@ -335,6 +344,11 @@ export default function AddEntryPage() {
               onClick={() => switchTab('URL')}
               label="URL / Article"
             />
+            <TabButton
+              active={activeTab === 'MANUAL'}
+              onClick={() => switchTab('MANUAL')}
+              label="Manual Entry"
+            />
           </div>
         )}
       </header>
@@ -359,7 +373,15 @@ export default function AddEntryPage() {
           />
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
-            {activeTab === 'URL' ? (
+            {activeTab === 'MANUAL' ? (
+              <ManualEntryForm
+                onSave={(id, title, authors, url) =>
+                  setSaveConfirmation({ id, title, authors, url })
+                }
+                setQueue={setQueue}
+                refreshQueue={refreshQueue}
+              />
+            ) : activeTab === 'URL' ? (
               <div className="space-y-4">
                 <form onSubmit={handleAddUrl} className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -1019,6 +1041,280 @@ function PreviewForm({
           type="button"
           onClick={handleSave}
           disabled={isSaving || !formData.title}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-medium text-content-inverse whisper-shadow transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
+          style={{ backgroundColor: 'var(--accent)' }}
+        >
+          {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+          Save to Library
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ManualEntryForm({
+  onSave,
+  setQueue,
+  refreshQueue,
+}: {
+  onSave: (id: string, title: string, authors: string[], url: string | null) => void;
+  setQueue: React.Dispatch<React.SetStateAction<{
+    items: QueueItem[];
+    processingCount: number;
+    pendingCount: number;
+  }>>;
+  refreshQueue: () => Promise<void>;
+}) {
+  const [formData, setFormData] = useState({
+    contentType: 'PAPER' as (typeof MANUAL_CONTENT_TYPES)[number]['value'],
+    title: '',
+    authors: '',
+    year: '' as string | number,
+    abstract: '',
+    source: '',
+    doi: '',
+    url: '',
+    isbn: '',
+    readingStatus: 'UNREAD',
+    notes: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isBook = formData.contentType === 'BOOK';
+
+  const handleSave = async () => {
+    if (!formData.title.trim()) return;
+
+    const trimmedUrl = formData.url.trim();
+    if (trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)) {
+      setError('URL must start with http:// or https://');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    const authorsArr = formData.authors
+      .split(',')
+      .map((a) => a.trim())
+      .filter(Boolean);
+
+    try {
+      const payload = {
+        title: formData.title.trim(),
+        authors: authorsArr,
+        year:
+          formData.year === '' || formData.year === null
+            ? null
+            : parseInt(String(formData.year), 10),
+        contentType: formData.contentType,
+        abstract: formData.abstract || null,
+        doi: formData.doi || null,
+        url: trimmedUrl || null,
+        isbn: formData.isbn || null,
+        source: formData.source || null,
+        readingStatus: formData.readingStatus,
+        notes: formData.notes
+          ? [{ text: formData.notes, createdAt: new Date().toISOString() }]
+          : [],
+        metadata: {
+          source: formData.source || null,
+        },
+      };
+
+      const res = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputType: isBook ? 'BOOK' : 'PAPER',
+          input: formData.title.trim(),
+          payload,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 403 && data.error === 'entry_limit_reached') {
+          throw new Error('LIMIT_REACHED');
+        }
+        if (res.status === 409 && data.error === 'ALREADY_EXISTS') {
+          throw new Error('ALREADY_EXISTS');
+        }
+        throw new Error(data.error || data.message || 'Failed to save');
+      }
+
+      const queueItem = data.queueItem;
+      if (queueItem) {
+        setQueue((prev) => ({
+          ...prev,
+          items: mergeQueueState(prev.items, [queueItem]),
+        }));
+      }
+
+      onSave(
+        (queueItem?.entryId as string | undefined) || '',
+        formData.title.trim(),
+        authorsArr,
+        formData.url || null
+      );
+      refreshQueue();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save';
+      if (msg === 'LIMIT_REACHED') setError('LIMIT');
+      else if (msg === 'ALREADY_EXISTS') setError('EXISTS');
+      else setError(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-300">
+      {error === 'EXISTS' && (
+        <div className="flex items-center gap-3 rounded-xl border border-border-strong bg-surface-raised p-4 text-sm text-content-primary">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-accent" />
+          <div className="flex-1">
+            <p className="font-medium">Already in your library</p>
+            <p className="opacity-80">This entry has already been saved.</p>
+          </div>
+          <Link href="/library" className="text-xs font-medium whitespace-nowrap underline text-accent">
+            Open Library
+          </Link>
+        </div>
+      )}
+
+      {error === 'LIMIT' && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          You&apos;ve reached your library entry limit.
+        </div>
+      )}
+
+      {error && error !== 'LIMIT' && error !== 'EXISTS' && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-md">
+        <Field label="Type">
+          <select
+            value={formData.contentType}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                contentType: e.target.value as typeof formData.contentType,
+              })
+            }
+            className="w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+          >
+            {MANUAL_CONTENT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Title" required>
+          <input
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+          />
+        </Field>
+
+        <Field label="Authors" hint="Separate multiple authors with commas">
+          <input
+            value={formData.authors}
+            onChange={(e) => setFormData({ ...formData, authors: e.target.value })}
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-3 sm:py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none touch-manipulation"
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[120px_1fr]">
+          <Field label="Year">
+            <input
+              type="number"
+              value={formData.year}
+              onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+              className="w-full max-w-[120px] rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+            />
+          </Field>
+        </div>
+
+        <Field label="Reading Status">
+          <select
+            value={formData.readingStatus}
+            onChange={(e) => setFormData({ ...formData, readingStatus: e.target.value })}
+            className="w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+          >
+            <option value="UNREAD">Unread</option>
+            <option value="READING">Reading</option>
+            <option value="READ">Completed</option>
+          </select>
+        </Field>
+
+        <Field label={isBook ? 'Description' : 'Abstract'}>
+          <textarea
+            rows={4}
+            value={formData.abstract}
+            onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
+            placeholder="Add a description..."
+            className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+          />
+        </Field>
+
+        <Field label="Source / Publisher">
+          <input
+            value={formData.source}
+            onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="URL">
+            <input
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              placeholder="https://..."
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+            />
+          </Field>
+          {isBook ? (
+            <Field label="ISBN">
+              <input
+                value={formData.isbn}
+                onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+              />
+            </Field>
+          ) : (
+            <Field label="DOI">
+              <input
+                value={formData.doi}
+                onChange={(e) => setFormData({ ...formData, doi: e.target.value })}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+              />
+            </Field>
+          )}
+        </div>
+
+        <Field label="Notes">
+          <textarea
+            rows={3}
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Personal notes..."
+            className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] transition-all focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+          />
+        </Field>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving || !formData.title.trim()}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-medium text-content-inverse whisper-shadow transition-all hover:opacity-90 disabled:opacity-50 active:scale-[0.98]"
           style={{ backgroundColor: 'var(--accent)' }}
         >
