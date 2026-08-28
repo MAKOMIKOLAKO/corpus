@@ -404,8 +404,8 @@ export default function EntryCard({
                             {displayTitle}
                         </span>
                         {entry.authors && entry.authors.length > 0 && (
-                            <span style={{ color: 'var(--muted-foreground)', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0, maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                — {entry.authors.slice(0, 3).join(', ')}{entry.authors.length > 3 ? ` +${entry.authors.length - 3}` : ''}
+                            <span style={{ color: 'var(--muted-foreground)', fontSize: '13px', whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0, maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                — {entry.authors[0]}{entry.authors.length > 1 ? ' et al.' : ''}
                             </span>
                         )}
                         {entry.year && (
@@ -435,7 +435,7 @@ export default function EntryCard({
                         {(entry.authors?.length > 0 || entry.year) && (
                             <div style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: '1px' }}>
                                 {entry.authors?.length > 0
-                                    ? `${entry.authors.slice(0, 2).join(', ')}${entry.authors.length > 2 ? ' et al.' : ''}`
+                                    ? `${entry.authors[0]}${entry.authors.length > 1 ? ' et al.' : ''}`
                                     : ''}
                                 {entry.authors?.length > 0 && entry.year ? ' · ' : ''}
                                 {entry.year ?? ''}
