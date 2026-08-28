@@ -41,8 +41,15 @@ export async function saveEntryForUser(
     addedByQueryId?: string
     collectionId?: string
     notes?: string | null
+    // 'identifiers-only' restricts dedup to explicit DOI/ISBN matches (no fuzzy
+    // title/author/year or URL matching) and stores the new GlobalEntry without
+    // the fuzzy keys, so a hand-typed entry can never merge into or be blocked
+    // by an unrelated existing entry. Default: 'full'.
+    dedupMode?: 'full' | 'identifiers-only'
   }
 ): Promise<SaveEntryResult> {
+
+  const identifiersOnly = options?.dedupMode === 'identifiers-only'
 
   // Step 1: Compute deduplication keys
   const keys = getDeduplicationKeys({
@@ -55,7 +62,7 @@ export async function saveEntryForUser(
   })
 
   // Step 2: Find existing GlobalEntry or create new one
-  let globalEntryId = await findExistingGlobalEntry(prisma, keys)
+  let globalEntryId = await findExistingGlobalEntry(prisma, keys, { identifiersOnly })
   let wasGlobalNew = false
 
   if (!globalEntryId) {
@@ -67,8 +74,10 @@ export async function saveEntryForUser(
         normalizedTitle: keys.normalizedTitle,
         normalizedFirstAuthor: keys.normalizedFirstAuthor,
         publicationYear: keys.publicationYear,
-        canonicalUrl: keys.canonicalUrl,
-        contentHash: keys.contentHash,
+        // For manual entries, leave the unique fuzzy keys null so two hand-typed
+        // works that happen to normalize alike don't collide on the unique index.
+        canonicalUrl: identifiersOnly ? null : keys.canonicalUrl,
+        contentHash: identifiersOnly ? null : keys.contentHash,
         title: input.title,
         authors: input.authors,
         year: input.year,

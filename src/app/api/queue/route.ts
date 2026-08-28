@@ -126,6 +126,8 @@ export async function POST(request: NextRequest) {
           readingStatus,
           addedVia: 'manual',
           notes: notesArr.length > 0 ? JSON.stringify(notesArr) : null,
+          // Hand-typed entries: never fuzzy-merge into an existing record.
+          dedupMode: p.manualEntry === true ? 'identifiers-only' : 'full',
         }
       );
 

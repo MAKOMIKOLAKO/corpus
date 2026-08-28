@@ -1109,6 +1109,7 @@ function ManualEntryForm({
             ? null
             : parseInt(String(formData.year), 10),
         contentType: formData.contentType,
+        manualEntry: true,
         abstract: formData.abstract || null,
         doi: formData.doi || null,
         url: trimmedUrl || null,

@@ -144,7 +144,8 @@ export function getDeduplicationKeys(entry: {
  */
 export async function findExistingGlobalEntry(
   prisma: any,
-  keys: ReturnType<typeof getDeduplicationKeys>
+  keys: ReturnType<typeof getDeduplicationKeys>,
+  opts?: { identifiersOnly?: boolean }
 ): Promise<string | null> {
   // Priority 1: DOI
   if (keys.doi) {
@@ -163,6 +164,12 @@ export async function findExistingGlobalEntry(
     })
     if (found) return found.id
   }
+
+  // identifiersOnly: only trust explicit identifiers (DOI/ISBN). Skip the fuzzy
+  // title+author+year content hash and URL matching — used for hand-typed manual
+  // entries, where a fuzzy match would silently merge a distinct work into an
+  // unrelated existing entry.
+  if (opts?.identifiersOnly) return null
 
   // Priority 3: Content hash (covers title+author+year and canonical URL)
   if (keys.contentHash) {
