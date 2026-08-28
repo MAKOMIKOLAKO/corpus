@@ -299,7 +299,6 @@ export default function AddEntryPage() {
     setSearchQuery('');
     setSearchError(null);
     setHasSearched(false);
-    setActiveTab('PAPER');
   };
 
   const switchTab = (tab: Tab) => {
@@ -1086,6 +1085,13 @@ function ManualEntryForm({
 
   const handleSave = async () => {
     if (!formData.title.trim()) return;
+
+    const trimmedUrl = formData.url.trim();
+    if (trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)) {
+      setError('URL must start with http:// or https://');
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -1105,7 +1111,7 @@ function ManualEntryForm({
         contentType: formData.contentType,
         abstract: formData.abstract || null,
         doi: formData.doi || null,
-        url: formData.url || null,
+        url: trimmedUrl || null,
         isbn: formData.isbn || null,
         source: formData.source || null,
         readingStatus: formData.readingStatus,
