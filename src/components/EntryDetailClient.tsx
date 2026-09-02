@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { useEntry } from '@/hooks/useEntry';
@@ -35,7 +35,13 @@ type EntryCollection = { collectionId: string; name: string; addedAt: string };
 export default function EntryDetailClient({ userEntryId }: { userEntryId: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { entry, loading, error, updateReadingStatus, deleteEntry } = useEntry(userEntryId);
+    const { entry, loading, error, updateReadingStatus, updateNote, deleteEntry } = useEntry(userEntryId);
+
+    // Note state — a single free-text reminder of what the entry is about
+    const [note, setNote] = useState('');
+    const [noteStatus, setNoteStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const noteHydratedFor = useRef<string | null>(null);
+    const noteSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Collections state
     const [entryCollections, setEntryCollections] = useState<EntryCollection[]>([]);
@@ -62,6 +68,34 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
         const t = setTimeout(() => setToast(null), 2200);
         return () => clearTimeout(t);
     }, [toast]);
+
+    // Hydrate the note box once per entry, without clobbering in-progress edits
+    useEffect(() => {
+        if (!entry || noteHydratedFor.current === entry.id) return;
+        noteHydratedFor.current = entry.id;
+        setNote(entry.notes?.[0]?.text ?? '');
+        setNoteStatus('idle');
+    }, [entry]);
+
+    useEffect(() => {
+        return () => {
+            if (noteSaveTimer.current) clearTimeout(noteSaveTimer.current);
+        };
+    }, []);
+
+    const handleNoteChange = (value: string) => {
+        setNote(value);
+        setNoteStatus('saving');
+        if (noteSaveTimer.current) clearTimeout(noteSaveTimer.current);
+        noteSaveTimer.current = setTimeout(async () => {
+            try {
+                await updateNote(value);
+                setNoteStatus('saved');
+            } catch {
+                setNoteStatus('error');
+            }
+        }, 800);
+    };
 
     const handleBack = () => {
         if (!searchParams) {
@@ -344,6 +378,25 @@ export default function EntryDetailClient({ userEntryId }: { userEntryId: string
                     ) : (
                         <p className="font-serif text-base leading-[1.70] text-[#7a8e86] italic">No abstract available.</p>
                     )}
+                </div>
+
+                {/* Note */}
+                <div className="mb-12">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="text-[10px] uppercase tracking-[0.5px] text-[#7a8e86]">Note</div>
+                        <span className="text-[11px] text-[#7a8e86]">
+                            {noteStatus === 'saving' && 'Saving…'}
+                            {noteStatus === 'saved' && 'Saved'}
+                            {noteStatus === 'error' && <span className="text-red-600">Not saved</span>}
+                        </span>
+                    </div>
+                    <textarea
+                        value={note}
+                        onChange={(e) => handleNoteChange(e.target.value)}
+                        rows={3}
+                        placeholder="A short reminder of what this is about…"
+                        className="w-full resize-y rounded-lg border border-border bg-card px-3 py-2 font-serif text-[15px] leading-[1.6] text-foreground placeholder:text-[#7a8e86] focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
                 </div>
 
                 {/* Collections */}

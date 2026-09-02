@@ -137,6 +137,13 @@ export const entryNoteAppendSchema = z
   })
   .strict();
 
+/** PATCH /api/entries/[id] — set (replace) the entry's single note */
+export const entryNoteSetSchema = z
+  .object({
+    note: z.string().max(50000),
+  })
+  .strict();
+
 /** PATCH /api/entries/[id] — field updates (no mass assignment) */
 export const entryPatchSchema = z
   .object({

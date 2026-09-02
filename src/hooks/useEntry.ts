@@ -41,9 +41,20 @@ export function useEntry(userEntryId: string) {
     }
   }
 
+  const updateNote = async (text: string) => {
+    const response = await fetch(`/api/entries/${userEntryId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: text })
+    })
+    if (!response.ok) throw new Error('Failed to save note')
+    const updated = await response.json()
+    setEntry(e => e ? { ...e, notes: updated.notes ?? [] } : e)
+  }
+
   const deleteEntry = async () => {
     await fetch(`/api/entries/${userEntryId}`, { method: 'DELETE' })
   }
 
-  return { entry, loading, error, updateReadingStatus, deleteEntry }
+  return { entry, loading, error, updateReadingStatus, updateNote, deleteEntry }
 }
