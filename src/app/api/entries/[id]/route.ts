@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import {
   entryNoteAppendSchema,
+  entryNoteSetSchema,
   entryPatchSchema,
 } from '@/lib/validation';
 import { userEntryWithGlobal, flattenUserEntry } from '@/lib/entryQueries';
@@ -85,6 +86,35 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // Handle single-note set (replace) — sent as { note: string } from the
+    // entry detail page. An empty string clears the note.
+    if (typeof body?.note === 'string') {
+      const parsed = entryNoteSetSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Invalid input', details: parsed.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      const text = parsed.data.note.trim();
+      const notes = text
+        ? [{ text, createdAt: new Date().toISOString() }]
+        : [];
+
+      await prisma.userEntry.update({
+        where: { id: params.id },
+        data: { notes: JSON.stringify(notes) }
+      });
+
+      const updated = await prisma.userEntry.findUnique({
+        where: { id: params.id },
+        select: userEntryWithGlobal
+      });
+
+      return NextResponse.json(flattenUserEntry(updated));
+    }
 
     // Handle notes append - stored per-user on UserEntry, never on the shared GlobalEntry
     if (

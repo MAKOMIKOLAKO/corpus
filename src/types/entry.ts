@@ -22,6 +22,7 @@ export interface FlatEntry {
 
   // Per-user state (from UserEntry — editable)
   readingStatus: 'UNREAD' | 'BACKLOG' | 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED'
+  notes: Array<{ text: string; createdAt: string }>
   addedVia: string | null
   createdAt: string       // when THIS USER saved it
   updatedAt: string
